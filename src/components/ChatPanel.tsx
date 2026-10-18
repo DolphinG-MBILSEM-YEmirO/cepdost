@@ -161,6 +161,7 @@ export function ChatPanel({ kayitlar, onClose }: ChatPanelProps) {
           tarih: oneri.tarih,
           saat: oneri.saat,
           sure: oneri.sure,
+          tumGun: oneri.tumGun,
           konum: oneri.konum,
           not: oneri.ozetNot,
           emoji: oneri.emoji,
@@ -295,9 +296,9 @@ function adlariBirlestir(adlar: string[]): string {
 
 // Whether the chosen time suits everyone, as the server checked it.
 function UygunlukSatiri({ plan }: { plan: HazirPlan }) {
-  const { uygunluk, saat, tarih } = plan.oneri
+  const { uygunluk, saat, tarih, tumGun } = plan.oneri
   const birlikte = plan.grup !== null || plan.kisiler.length > 0
-  if (!saat) {
+  if (!saat && !tumGun) {
     return <p className="text-xs text-ink-400">Saat belirtilmedi, gün içinde serbest.</p>
   }
   if (!uygunluk) {
@@ -311,14 +312,22 @@ function UygunlukSatiri({ plan }: { plan: HazirPlan }) {
       {uygunluk.mesgul.length === 0 ? (
         <p className="text-xs font-medium text-teal-700 flex items-center gap-1.5">
           <Icon name="CheckCircle2" className="w-3.5 h-3.5 shrink-0" />
-          {birlikte ? 'Bu saatte herkes müsait görünüyor' : 'Bu saatte başka planın yok'}
+          {tumGun
+            ? birlikte
+              ? 'O gün herkes müsait görünüyor'
+              : 'O gün başka planın yok'
+            : birlikte
+              ? 'Bu saatte herkes müsait görünüyor'
+              : 'Bu saatte başka planın yok'}
         </p>
       ) : (
         <p className="text-xs font-medium text-amber-700 flex items-start gap-1.5">
           <Icon name="AlertCircle" className="w-3.5 h-3.5 shrink-0 mt-px" />
           {[
-            uygunluk.mesgul.includes('Sen') ? 'Bu saatte başka bir planın var' : null,
-            digerleri.length > 0 ? `${adlariBirlestir(digerleri)} bu saatte dolu görünüyor` : null,
+            uygunluk.mesgul.includes('Sen') ? (tumGun ? 'O gün başka bir planın var' : 'Bu saatte başka bir planın var') : null,
+            digerleri.length > 0
+              ? `${adlariBirlestir(digerleri)} ${tumGun ? 'o gün meşgul' : 'bu saatte dolu'} görünüyor`
+              : null,
           ]
             .filter(Boolean)
             .join('; ')}
@@ -372,7 +381,9 @@ function PlanKarti({
   }
 
   const renk = CATEGORY_COLORS[oneri.kategori]
-  const zaman = [formatDate(oneri.tarih), oneri.saat, formatDuration(oneri.sure)].filter(Boolean).join(' · ')
+  const zaman = [formatDate(oneri.tarih), oneri.tumGun ? 'Tüm gün' : oneri.saat, formatDuration(oneri.sure)]
+    .filter(Boolean)
+    .join(' · ')
   const birlikte = grup !== null || kisiler.length > 0
   const tarihEksik = birlikte && !oneri.tarih
   const dugme = grup

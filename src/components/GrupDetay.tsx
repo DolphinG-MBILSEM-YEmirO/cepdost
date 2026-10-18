@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Icon, type IconName } from './Icon'
 import { Avatar, GrupAvatari } from './Avatar'
 import { GrupDuzenle } from './GrupDuzenle'
-import { EmojiSecici } from './Seciciler'
+import { EmojiSecici, TumGunAnahtari } from './Seciciler'
 import { AniArsivi } from './AniArsivi'
 import {
   grubaUyeEkle,
@@ -37,7 +37,7 @@ import { GrupPlanKartiSohbet } from './SohbetPlanKarti'
 import { PlanPaylasSheet } from './PlanPaylas'
 import { useSohbetTemasi } from '../sohbetTema'
 import { grupPlaniYanitla, planGectiMi } from '../lib/planPaylasimi'
-import { formatDate, formatMessageTime, formatTime, toDateString } from '../lib/format'
+import { formatDate, formatMessageTime, formatPlanTime, toDateString } from '../lib/format'
 import { useSosyalSurum } from '../sosyal/cekirdek'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 import { ETKINLIK_EMOJILERI, renkAl } from '../lib/kisisellestirme'
@@ -351,7 +351,7 @@ function PlanKarti({
 }) {
   const benimYanit = yanitlar.find((y) => y.kullanici_id === benimId)?.durum ?? null
   const gelenler = yanitlar.filter((y) => y.durum === 'geliyorum')
-  const detay = [formatDate(plan.tarih), plan.saat ? formatTime(plan.saat.slice(0, 5)) : null, plan.konum]
+  const detay = [formatDate(plan.tarih), formatPlanTime(plan.saat, plan.tum_gun), plan.konum]
     .filter(Boolean)
     .join(' · ')
 
@@ -412,6 +412,7 @@ function PlanEkleModal({
   const [tarih, setTarih] = useState(toDateString(new Date()))
   const [saat, setSaat] = useState('')
   const [sure, setSure] = useState('')
+  const [tumGun, setTumGun] = useState(false)
   const [konum, setKonum] = useState('')
   const [notlar, setNotlar] = useState('')
   const [emoji, setEmoji] = useState<string | null>(null)
@@ -430,8 +431,9 @@ function PlanEkleModal({
         grupId: grup.id,
         baslik: baslik.trim(),
         tarih,
-        saat: saat || null,
-        sure: sure ? Number(sure) : null,
+        saat: tumGun ? null : saat || null,
+        sure: tumGun ? null : sure ? Number(sure) : null,
+        tumGun,
         konum: konum.trim() || null,
         notlar: notlar.trim() || null,
         emoji,
@@ -483,29 +485,36 @@ function PlanEkleModal({
           <EmojiSecici secenekler={ETKINLIK_EMOJILERI} secili={emoji} onSec={setEmoji} />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className={`grid gap-3 mb-3 ${tumGun ? 'grid-cols-1' : 'grid-cols-2'}`}>
           <div>
             <FieldLabel>Tarih</FieldLabel>
             <input type="date" value={tarih} onChange={(e) => setTarih(e.target.value)} className="input-field" />
           </div>
-          <div>
-            <FieldLabel>Saat</FieldLabel>
-            <input type="time" value={saat} onChange={(e) => setSaat(e.target.value)} className="input-field" />
-          </div>
+          {!tumGun && (
+            <div>
+              <FieldLabel>Saat</FieldLabel>
+              <input type="time" value={saat} onChange={(e) => setSaat(e.target.value)} className="input-field" />
+            </div>
+          )}
+        </div>
+        <div className="mb-4">
+          <TumGunAnahtari acik={tumGun} onDegistir={setTumGun} />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div>
-            <FieldLabel>Süre (dk)</FieldLabel>
-            <input
-              type="number"
-              value={sure}
-              onChange={(e) => setSure(e.target.value)}
-              placeholder="120"
-              min="0"
-              className="input-field"
-            />
-          </div>
+        <div className={`grid gap-3 mb-4 ${tumGun ? 'grid-cols-1' : 'grid-cols-2'}`}>
+          {!tumGun && (
+            <div>
+              <FieldLabel>Süre (dk)</FieldLabel>
+              <input
+                type="number"
+                value={sure}
+                onChange={(e) => setSure(e.target.value)}
+                placeholder="120"
+                min="0"
+                className="input-field"
+              />
+            </div>
+          )}
           <div>
             <FieldLabel>Nerede</FieldLabel>
             <input value={konum} onChange={(e) => setKonum(e.target.value)} placeholder="Moda" className="input-field" />

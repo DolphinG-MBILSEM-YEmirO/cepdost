@@ -13,11 +13,11 @@ import {
 } from '../sosyal/api'
 import { gruplarimiGetir, grupUyeleriGetir, type Grup } from '../sosyal/gruplar'
 import { kendiBloklarim, ortakPlanOner } from '../sosyal/ortakPlan'
-import { addDays, formatDate, toDateString } from '../lib/format'
+import { addDays, formatBusyRanges, formatDate, toDateString } from '../lib/format'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 import { planiKur, type PlanKitlesi } from '../lib/planPaylasimi'
 import { ETKINLIK_EMOJILERI } from '../lib/kisisellestirme'
-import { EmojiSecici } from './Seciciler'
+import { EmojiSecici, TumGunAnahtari } from './Seciciler'
 
 // F19 — "+" akışı yeniden tasarlandı (2026-08-08).
 //
@@ -99,6 +99,7 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
   const [tarih, setTarih] = useState(toDateString(new Date()))
   const [saat, setSaat] = useState('')
   const [sure, setSure] = useState(90)
+  const [tumGun, setTumGun] = useState(false)
 
   const [musaitlik, setMusaitlik] = useState<Map<string, ArkadasTakvimi>>(new Map())
   const [benimBloklarim, setBenimBloklarim] = useState<Array<{ baslangic: string; bitis: string }>>([])
@@ -200,11 +201,12 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
   const baslik = etkinlik ? (serbestBaslik.trim() || etkinlik.ad) : serbestBaslik.trim()
   const kategori: Kategori = etkinlik?.kategori ?? 'etkinlik'
 
-  // Seçilen saat kimseyle çakışıyor mu?
+  // Seçilen saat kimseyle çakışıyor mu? An all-day plan clashes with
+  // anything busy that day.
   const cakisanlar = useMemo(() => {
-    if (!saat) return []
-    const bas = dakikaya(saat)
-    const bit = bas + sure
+    if (!saat && !tumGun) return []
+    const bas = tumGun ? 0 : dakikaya(saat)
+    const bit = tumGun ? 24 * 60 : bas + sure
     return katilimcilar.filter((p) =>
       (musaitlik.get(p.id)?.bloklar ?? []).some((b) => {
         const bBas = dakikaya(b.baslangic.slice(0, 5))
@@ -212,14 +214,15 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
         return bas < bBit && bit > bBas
       }),
     )
-  }, [saat, sure, katilimcilar, musaitlik])
+  }, [saat, sure, tumGun, katilimcilar, musaitlik])
 
   const benimCakismam = useMemo(() => {
+    if (tumGun) return benimBloklarim.length > 0
     if (!saat) return false
     const bas = dakikaya(saat)
     const bit = bas + sure
     return benimBloklarim.some((b) => bas < dakikaya(b.bitis) && bit > dakikaya(b.baslangic))
-  }, [saat, sure, benimBloklarim])
+  }, [saat, sure, tumGun, benimBloklarim])
 
   async function yakindaAra() {
     setKonumAraniyor(true)
@@ -257,6 +260,7 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
         enAzDakika: sure,
       })
       if (sonuc.plan) {
+        setTumGun(false)
         setSaat(sonuc.plan.saat)
         setSure(sonuc.plan.sure)
       } else {
@@ -286,7 +290,18 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
       // Sends the group plan or the invites (with chat cards) and puts the
       // plan in my calendar, linked to them.
       await planiKur(
-        { baslik, tarih, saat: saat || null, sure, konum: konum.trim() || null, not: null, emoji, kategori, yakinOneriler },
+        {
+          baslik,
+          tarih,
+          saat: tumGun ? null : saat || null,
+          sure: tumGun ? null : sure,
+          tumGun,
+          konum: konum.trim() || null,
+          not: null,
+          emoji,
+          kategori,
+          yakinOneriler,
+        },
         kitle,
       )
 
@@ -373,6 +388,8 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
             onSaat={setSaat}
             sure={sure}
             onSure={setSure}
+            tumGun={tumGun}
+            onTumGun={setTumGun}
             katilimcilar={katilimcilar}
             musaitlik={musaitlik}
             musaitlikYukleniyor={musaitlikYukleniyor}
@@ -390,6 +407,7 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
             tarih={tarih}
             saat={saat}
             sure={sure}
+            tumGun={tumGun}
             konum={konum}
             kapsam={kapsam}
             grup={seciliGrup}
@@ -632,6 +650,8 @@ function DetayAdimi(p: {
   onSaat: (v: string) => void
   sure: number
   onSure: (v: number) => void
+  tumGun: boolean
+  onTumGun: (v: boolean) => void
   katilimcilar: Profil[]
   musaitlik: Map<string, ArkadasTakvimi>
   musaitlikYukleniyor: boolean
@@ -743,7 +763,7 @@ function DetayAdimi(p: {
           ))}
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className={`grid gap-3 mb-3 ${p.tumGun ? 'grid-cols-1' : 'grid-cols-2'}`}>
           <div>
             <FieldLabel>Tarih</FieldLabel>
             <input
@@ -753,55 +773,67 @@ function DetayAdimi(p: {
               className="input-field"
             />
           </div>
-          <div>
-            <FieldLabel>Saat</FieldLabel>
-            <input
-              type="time"
-              value={p.saat}
-              onChange={(e) => p.onSaat(e.target.value)}
-              className="input-field"
-            />
-          </div>
+          {!p.tumGun && (
+            <div>
+              <FieldLabel>Saat</FieldLabel>
+              <input
+                type="time"
+                value={p.saat}
+                onChange={(e) => p.onSaat(e.target.value)}
+                className="input-field"
+              />
+            </div>
+          )}
         </div>
 
-        <FieldLabel>Ne kadar sürsün?</FieldLabel>
-        <div className="flex gap-2">
-          {SURELER.map((s) => (
-            <button
-              key={s}
-              onClick={() => p.onSure(s)}
-              className={`chip flex-1 justify-center ${
-                p.sure === s
-                  ? 'bg-coral-500 text-white'
-                  : 'bg-cream-100 text-ink-500 border border-ink-100/40'
-              }`}
-            >
-              {s >= 60 ? `${s / 60} sa` : `${s} dk`}
-            </button>
-          ))}
+        <div className="mb-3">
+          <TumGunAnahtari acik={p.tumGun} onDegistir={p.onTumGun} />
         </div>
+
+        {!p.tumGun && (
+          <>
+            <FieldLabel>Ne kadar sürsün?</FieldLabel>
+            <div className="flex gap-2">
+              {SURELER.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => p.onSure(s)}
+                  className={`chip flex-1 justify-center ${
+                    p.sure === s
+                      ? 'bg-coral-500 text-white'
+                      : 'bg-cream-100 text-ink-500 border border-ink-100/40'
+                  }`}
+                >
+                  {s >= 60 ? `${s / 60} sa` : `${s} dk`}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         {p.benimCakismam && (
           <p className="flex items-start gap-2 text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3 mt-3">
             <Icon name="AlertTriangle" className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-            Bu saatte başka bir planın var.
+            {p.tumGun ? 'O gün başka bir planın var.' : 'Bu saatte başka bir planın var.'}
           </p>
         )}
       </Bolum>
 
       {p.katilimcilar.length > 0 && (
         <Bolum baslik="Müsaitlik" ikon="CalendarClock">
-          <button
-            onClick={p.onUygunSaatiBul}
-            disabled={p.saatAraniyor}
-            className="btn-ghost w-full border border-ink-100/40 text-sm py-2.5 flex items-center justify-center gap-2 disabled:opacity-50 mb-3"
-          >
-            <Icon
-              name={p.saatAraniyor ? 'Loader2' : 'Wand2'}
-              className={`w-4 h-4 ${p.saatAraniyor ? 'animate-spin' : ''}`}
-            />
-            {p.saatAraniyor ? 'Bakıyorum...' : 'Bu gün için herkese uyan saati bul'}
-          </button>
+          {!p.tumGun && (
+            <button
+              onClick={p.onUygunSaatiBul}
+              disabled={p.saatAraniyor}
+              className="btn-ghost w-full border border-ink-100/40 text-sm py-2.5 flex items-center justify-center gap-2 disabled:opacity-50 mb-3"
+            >
+              <Icon
+                name={p.saatAraniyor ? 'Loader2' : 'Wand2'}
+                className={`w-4 h-4 ${p.saatAraniyor ? 'animate-spin' : ''}`}
+              />
+              {p.saatAraniyor ? 'Bakıyorum...' : 'Bu gün için herkese uyan saati bul'}
+            </button>
+          )}
 
           {p.musaitlikYukleniyor ? (
             <div className="space-y-2">
@@ -833,9 +865,7 @@ function DetayAdimi(p: {
                             ? 'Takvimi henüz gelmedi'
                             : bloklar.length === 0
                             ? 'Bu gün tamamen müsait'
-                            : bloklar
-                                .map((b) => `${b.baslangic.slice(0, 5)}–${b.bitis.slice(0, 5)}`)
-                                .join(', ') + ' dolu'}
+                            : formatBusyRanges(bloklar)}
                       </p>
                     </div>
                     {cakisiyor && (
@@ -851,8 +881,9 @@ function DetayAdimi(p: {
             <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3 mt-3">
               <Icon name="AlertTriangle" className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
               <p className="text-sm text-amber-800">
-                Seçtiğin saat {p.cakisanlar.map((c) => c.ad).join(', ')} için dolu. Yine de davet
-                gönderebilirsin ama başka bir saat daha kolay olabilir.
+                {p.tumGun
+                  ? `O gün ${p.cakisanlar.map((c) => c.ad).join(', ')} için dolu saatler var. Yine de davet gönderebilirsin.`
+                  : `Seçtiğin saat ${p.cakisanlar.map((c) => c.ad).join(', ')} için dolu. Yine de davet gönderebilirsin ama başka bir saat daha kolay olabilir.`}
               </p>
             </div>
           )}
@@ -874,6 +905,7 @@ function OzetAdimi({
   tarih,
   saat,
   sure,
+  tumGun,
   konum,
   kapsam,
   grup,
@@ -886,6 +918,7 @@ function OzetAdimi({
   tarih: string
   saat: string
   sure: number
+  tumGun: boolean
   konum: string
   kapsam: Kapsam
   grup: Grup | null
@@ -905,8 +938,7 @@ function OzetAdimi({
           <p className="flex items-center gap-2">
             <Icon name="CalendarDays" className="w-4 h-4 text-ink-300 shrink-0" />
             {formatDate(tarih) ?? tarih}
-            {saat && ` · ${saat}`}
-            {` · ${sure} dk`}
+            {tumGun ? ' · Tüm gün' : `${saat ? ` · ${saat}` : ''} · ${sure} dk`}
           </p>
           {konum.trim() && (
             <p className="flex items-center gap-2">
@@ -917,10 +949,10 @@ function OzetAdimi({
           {benimCakismam && (
             <p className="flex items-center gap-2 text-amber-700">
               <Icon name="AlertTriangle" className="w-4 h-4 shrink-0" />
-              Bu saatte başka bir planın var.
+              {tumGun ? 'O gün başka bir planın var.' : 'Bu saatte başka bir planın var.'}
             </p>
           )}
-          {!saat && (
+          {!saat && !tumGun && (
             <p className="flex items-center gap-2 text-amber-700">
               <Icon name="Info" className="w-4 h-4 shrink-0" />
               Saat belirtmedin — plan gün içinde serbest kalacak.

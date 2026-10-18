@@ -22,6 +22,8 @@ export interface PlanOnerisi {
   emoji: string | null
   tarih: string | null
   saat: string | null
+  // Takes the whole day; saat and sure are null.
+  tumGun: boolean
   konum: string | null
   oncelik: Oncelik
   sure: number | null
@@ -120,7 +122,7 @@ export async function sohbetGonder(
     yanit: data.yanit ?? null,
     // Fields an older server doesn't send get their empty values.
     planOnerisi: data.planOnerisi
-      ? { emoji: null, kisiler: [], grup: null, uygunluk: null, ...data.planOnerisi }
+      ? { emoji: null, kisiler: [], grup: null, uygunluk: null, tumGun: false, ...data.planOnerisi }
       : null,
   }
 }

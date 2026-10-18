@@ -56,3 +56,32 @@ export function RenkSecici({ secili, onSec }: { secili: string | null; onSec: (r
     </div>
   )
 }
+
+// "Takes the whole day" switch for the plan forms. While it is on the form
+// hides its time and duration fields.
+export function TumGunAnahtari({ acik, onDegistir }: { acik: boolean; onDegistir: (acik: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={acik}
+      onClick={() => onDegistir(!acik)}
+      className="w-full flex items-center gap-3 text-left active:scale-[0.98] transition-transform"
+    >
+      <span
+        className={`w-11 h-6 rounded-full transition-colors shrink-0 relative ${acik ? 'bg-coral-500' : 'bg-ink-200'}`}
+        aria-hidden="true"
+      >
+        <span
+          className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-soft transition-all ${
+            acik ? 'left-[1.375rem]' : 'left-0.5'
+          }`}
+        />
+      </span>
+      <span className="flex-1 min-w-0">
+        <span className="block text-sm font-medium text-ink-600">Tüm gün</span>
+        <span className="block text-xs text-ink-400">Saati yok; arkadaşların o günü dolu görür.</span>
+      </span>
+    </button>
+  )
+}

@@ -50,6 +50,20 @@ export function formatMessageTime(iso: string): string | null {
   return `${date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })} ${saat}`
 }
 
+// A plan's time for display: "Tüm gün" for an all-day plan, else its clock
+// time (null when it has none).
+export function formatPlanTime(saat: string | null, tumGun?: boolean | null): string | null {
+  if (tumGun) return 'Tüm gün'
+  return saat ? formatTime(saat.slice(0, 5)) : null
+}
+
+// A day's busy ranges for display. A range covering the whole day (an
+// all-day plan) reads as such instead of "00:00–23:59".
+export function formatBusyRanges(bloklar: ReadonlyArray<{ baslangic: string; bitis: string }>): string {
+  if (bloklar.some((b) => b.baslangic.slice(0, 5) === '00:00' && b.bitis.slice(0, 5) >= '23:59')) return 'Bütün gün dolu'
+  return bloklar.map((b) => `${b.baslangic.slice(0, 5)}–${b.bitis.slice(0, 5)}`).join(', ') + ' dolu'
+}
+
 export function formatDuration(min: number | null): string | null {
   if (!min || min <= 0) return null
   if (min < 60) return `${min} dk`
@@ -106,8 +120,9 @@ export function isPast(dateStr: string | null): boolean {
 
 export function sortByTime(kayitlar: Kayit[]): Kayit[] {
   return [...kayitlar].sort((a, b) => {
-    const aTime = a.saat ?? '99:99'
-    const bTime = b.saat ?? '99:99'
+    // All-day plans first, untimed ones last.
+    const aTime = a.tumGun ? '' : (a.saat ?? '99:99')
+    const bTime = b.tumGun ? '' : (b.saat ?? '99:99')
     return aTime.localeCompare(bTime)
   })
 }

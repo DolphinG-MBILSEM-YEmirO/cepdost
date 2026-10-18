@@ -12,7 +12,7 @@ import {
   sortByPriority,
   toDateString,
   addDays,
-  formatTime,
+  formatPlanTime,
   formatDuration,
   isPast,
   formatDate,
@@ -47,8 +47,9 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
   const pending = useMemo(() => allDayRecords.filter((k) => k.durum === 'bekliyor'), [allDayRecords])
   const done = useMemo(() => allDayRecords.filter((k) => k.durum === 'yapildi'), [allDayRecords])
 
-  const scheduled = useMemo(() => sortByTime(pending.filter((k) => k.saat)), [pending])
-  const unscheduled = useMemo(() => sortByPriority(pending.filter((k) => !k.saat)), [pending])
+  // All-day plans head the timeline; plans with no time go under it.
+  const scheduled = useMemo(() => sortByTime(pending.filter((k) => k.saat || k.tumGun)), [pending])
+  const unscheduled = useMemo(() => sortByPriority(pending.filter((k) => !k.saat && !k.tumGun)), [pending])
   const doneSorted = useMemo(() => sortByTime(done), [done])
 
   const isTodayView = isToday(toDateString(selectedDate))
@@ -273,7 +274,7 @@ function RescheduleBar({ onReschedule, busy }: { onReschedule: (d: Date) => void
 
 function TimelineItem({ kayit, onClick, onToggle, onReschedule, rescheduling }: { kayit: Kayit; onClick: () => void; onToggle: () => void; onReschedule: (d: Date) => void; rescheduling: boolean }) {
   const colors = CATEGORY_COLORS[kayit.kategori ?? 'not']
-  const timeLabel = formatTime(kayit.saat)
+  const timeLabel = formatPlanTime(kayit.saat, kayit.tumGun)
   const durLabel = formatDuration(kayit.sure)
   const [showReschedule, setShowReschedule] = useState(false)
   const baslik = goruntulemeBasligi(kayit)
@@ -281,7 +282,9 @@ function TimelineItem({ kayit, onClick, onToggle, onReschedule, rescheduling }: 
   return (
     <div className="flex items-start gap-3">
       <div className="flex flex-col items-center w-[52px] shrink-0 pt-1">
-        <span className="text-sm font-bold text-ink-600 font-display">{timeLabel}</span>
+        <span className={`font-bold font-display text-center ${kayit.tumGun ? 'text-xs text-coral-600 leading-tight' : 'text-sm text-ink-600'}`}>
+          {timeLabel}
+        </span>
         {durLabel && <span className="text-[10px] text-ink-300 mt-0.5">{durLabel}</span>}
       </div>
       <div className="relative">
@@ -371,7 +374,7 @@ function UnscheduledItem({ kayit, onClick, onToggle, onReschedule, rescheduling 
 
 function DoneItem({ kayit, onClick, onToggle }: { kayit: Kayit; onClick: () => void; onToggle: () => void }) {
   const colors = CATEGORY_COLORS[kayit.kategori ?? 'not']
-  const timeLabel = formatTime(kayit.saat)
+  const timeLabel = formatPlanTime(kayit.saat, kayit.tumGun)
   const baslik = goruntulemeBasligi(kayit)
 
   return (

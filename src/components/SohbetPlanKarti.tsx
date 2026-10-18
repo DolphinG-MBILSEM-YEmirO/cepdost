@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Icon } from './Icon'
-import { formatDate, formatDuration } from '../lib/format'
+import { formatDate, formatDuration, formatPlanTime } from '../lib/format'
 import { davetKaydi, planGectiMi } from '../lib/planPaylasimi'
 import { planiTakvimeIndir } from '../takvim'
 import { kayitSil } from '../db'
@@ -19,13 +19,14 @@ interface CerceveProps {
   tarih: string
   saat: string | null
   sure: number | null
+  tumGun: boolean
   konum: string | null
   not: string | null
   children: ReactNode
 }
 
-function KartCercevesi({ etiket, emoji, baslik, tarih, saat, sure, konum, not, children }: CerceveProps) {
-  const zaman = [formatDate(tarih) ?? tarih, saat?.slice(0, 5), formatDuration(sure)].filter(Boolean).join(' · ')
+function KartCercevesi({ etiket, emoji, baslik, tarih, saat, sure, tumGun, konum, not, children }: CerceveProps) {
+  const zaman = [formatDate(tarih) ?? tarih, formatPlanTime(saat, tumGun), formatDuration(sure)].filter(Boolean).join(' · ')
   return (
     <div className="w-72 max-w-full rounded-2xl bg-cream-50 border border-ink-100/50 shadow-soft p-3.5 text-ink-700">
       <div className="flex items-start gap-3">
@@ -218,6 +219,7 @@ export function DavetKartiSohbet({
       tarih={davet.tarih}
       saat={davet.saat}
       sure={davet.sure}
+      tumGun={davet.tum_gun}
       konum={davet.konum}
       not={davet.mesaj}
     >
@@ -264,6 +266,7 @@ export function GrupPlanKartiSohbet({
       tarih={plan.tarih}
       saat={plan.saat}
       sure={plan.sure}
+      tumGun={plan.tum_gun}
       konum={plan.konum}
       not={plan.notlar}
     >

@@ -270,6 +270,13 @@ export function nesneMi(deger: unknown): deger is Record<string, unknown> {
   return typeof deger === 'object' && deger !== null && !Array.isArray(deger)
 }
 
+// The time fields of a shared plan (an invite or a group plan). An all-day
+// plan has no time or duration, whatever the payload says.
+export function planZamani(veri: Record<string, unknown>): { saat: string | null; sure: number | null; tum_gun: boolean } {
+  if (veri.tumGun === true) return { saat: null, sure: null, tum_gun: true }
+  return { saat: metinAl(veri.saat, 5), sure: sayiAl(veri.sure), tum_gun: false }
+}
+
 // Milliseconds a record speaks for: its own `zaman` field when it has one
 // (finer than the event's second resolution), else the event time.
 export function kayitZamani(k: SosyalKayit): number {

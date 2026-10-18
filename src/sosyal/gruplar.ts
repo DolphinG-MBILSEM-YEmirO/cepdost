@@ -11,6 +11,7 @@ import {
   metinAl,
   motor,
   nesneMi,
+  planZamani,
   profilOzetiAl,
   sayiAl,
   simdiMs,
@@ -54,6 +55,8 @@ export interface GrupPlani {
   tarih: string
   saat: string | null
   sure: number | null
+  // All-day plan: saat and sure are null.
+  tum_gun: boolean
   konum: string | null
   notlar: string | null
   emoji: string | null
@@ -274,6 +277,7 @@ export interface YeniGrupPlani {
   tarih: string
   saat?: string | null
   sure?: number | null
+  tumGun?: boolean
   konum?: string | null
   notlar?: string | null
   emoji?: string | null
@@ -286,8 +290,9 @@ export async function grupPlaniOlustur(plan: YeniGrupPlani): Promise<string> {
   await motor().yayinla(kanal, TUR.plan, `plan:${id}`, {
     baslik: plan.baslik.trim().slice(0, 120),
     tarih: plan.tarih,
-    saat: plan.saat || null,
-    sure: plan.sure ?? null,
+    saat: plan.tumGun ? null : plan.saat || null,
+    sure: plan.tumGun ? null : plan.sure ?? null,
+    tumGun: plan.tumGun === true,
     konum: plan.konum?.trim() || null,
     notlar: plan.notlar?.trim() || null,
     emoji: plan.emoji || null,
@@ -308,8 +313,7 @@ function planKur(k: SosyalKayit): GrupPlani | null {
     olusturan_id: k.yazar,
     baslik,
     tarih,
-    saat: metinAl(k.veri.saat, 5),
-    sure: sayiAl(k.veri.sure),
+    ...planZamani(k.veri),
     konum: metinAl(k.veri.konum, 200),
     notlar: metinAl(k.veri.notlar, 1000),
     emoji: metinAl(k.veri.emoji, 16),

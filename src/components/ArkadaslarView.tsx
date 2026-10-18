@@ -25,7 +25,7 @@ import { GrupDetay } from './GrupDetay'
 import { OrtakPlanSihirbazi } from './OrtakPlanSihirbazi'
 import { grupOlustur, gruplarimiGetir, type Grup } from '../sosyal/gruplar'
 import { davetiYanitla, planGectiMi } from '../lib/planPaylasimi'
-import { formatDate, formatTime } from '../lib/format'
+import { formatDate, formatPlanTime } from '../lib/format'
 import { GRUP_ACIKLAMA_MAKS, GRUP_EMOJILERI, renkAl } from '../lib/kisisellestirme'
 import { EmojiSecici, RenkSecici } from './Seciciler'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
@@ -985,7 +985,7 @@ function DavetKarti({
       setIsleniyor(false)
     }
   }
-  const detay = [formatDate(davet.tarih), davet.saat ? formatTime(davet.saat.slice(0, 5)) : null, davet.konum]
+  const detay = [formatDate(davet.tarih), formatPlanTime(davet.saat, davet.tum_gun), davet.konum]
     .filter(Boolean)
     .join(' · ')
 

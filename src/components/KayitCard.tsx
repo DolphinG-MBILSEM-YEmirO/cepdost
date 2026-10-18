@@ -6,7 +6,7 @@ import {
   CATEGORY_ICON_NAME,
   PRIORITY_COLORS,
   formatDate,
-  formatTime,
+  formatPlanTime,
   formatDuration,
   formatRelativeTime,
   isPast,
@@ -24,7 +24,7 @@ interface KayitCardProps {
 export function KayitCard({ kayit, onToggleStatus, onDelete, onClick }: KayitCardProps) {
   const colors = CATEGORY_COLORS[kayit.kategori ?? 'not']
   const dateLabel = formatDate(kayit.tarih)
-  const timeLabel = formatTime(kayit.saat)
+  const timeLabel = formatPlanTime(kayit.saat, kayit.tumGun)
   const durLabel = formatDuration(kayit.sure)
   const past = isPast(kayit.tarih)
   const mapsLink = mapUrl(kayit)

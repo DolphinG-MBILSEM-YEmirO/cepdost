@@ -38,6 +38,9 @@ export interface Kayit {
   baslik: string | null
   tarih: string | null // YYYY-MM-DD
   saat: string | null // HH:MM
+  // Takes the whole day (a trip, a festival, moving house): no time or
+  // duration, and the day counts as busy for friends.
+  tumGun?: boolean
   konum: string | null
   oncelik: Oncelik
   sure: number | null // dakika

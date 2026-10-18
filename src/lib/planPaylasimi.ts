@@ -55,6 +55,7 @@ export async function davetiYanitla(davet: PlanDaveti, kabul: boolean, gonderenA
       baslik: davet.baslik,
       tarih: davet.tarih,
       saat: davet.saat ? davet.saat.slice(0, 5) : null,
+      tumGun: davet.tum_gun,
       konum: davet.konum,
       sure: davet.sure,
       ozetNot: davet.mesaj,
@@ -80,6 +81,8 @@ export interface KurulacakPlan {
   tarih: string | null
   saat: string | null
   sure: number | null
+  // Takes the whole day; the time and duration are dropped.
+  tumGun?: boolean
   konum: string | null
   // Goes to friends with the invite (or into the group plan) and into my
   // calendar entry's note.
@@ -98,10 +101,12 @@ const GRUP_PLANI_MESAJI = 'Yeni bir plan 👇'
 // the photo prompt find it. The "+" flow, the AI planner, the assistant and
 // a friend's availability screen all end here.
 export async function planiKur(plan: KurulacakPlan, kitle: PlanKitlesi, sohbetMesaji?: string): Promise<void> {
+  const tumGun = plan.tumGun === true
   const ortak = {
     baslik: plan.baslik,
-    saat: plan.saat ? plan.saat.slice(0, 5) : null,
-    sure: plan.sure,
+    saat: !tumGun && plan.saat ? plan.saat.slice(0, 5) : null,
+    sure: tumGun ? null : plan.sure,
+    tumGun,
     konum: plan.konum,
     emoji: plan.emoji,
   }
@@ -158,6 +163,7 @@ export async function grupPlaniYanitla(plan: GrupPlani, durum: YanitDurumu, grup
       baslik: `${plan.baslik} (${grup.ad})`,
       tarih: plan.tarih,
       saat: plan.saat ? plan.saat.slice(0, 5) : null,
+      tumGun: plan.tum_gun,
       konum: plan.konum,
       sure: plan.sure,
       ozetNot: plan.notlar,
@@ -188,8 +194,9 @@ export async function planiPaylas(kayit: Kayit, hedef: PaylasimHedefi): Promise<
   const plan = {
     baslik: goruntulemeBasligi(kayit),
     tarih: kayit.tarih,
-    saat: kayit.saat,
-    sure: kayit.sure,
+    saat: kayit.tumGun ? null : kayit.saat,
+    sure: kayit.tumGun ? null : kayit.sure,
+    tumGun: kayit.tumGun === true,
     konum: kayit.konum,
     emoji: kayit.emoji ?? null,
   }

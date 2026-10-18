@@ -255,7 +255,9 @@ function GunSatiri({
               className="inline-flex items-center gap-1.5 rounded-xl bg-cream-100 border border-ink-100/40 px-2.5 py-1.5 text-xs font-medium text-ink-500"
             >
               <Icon name="Clock" className="w-3.5 h-3.5 text-ink-300" />
-              {b.baslangic.slice(0, 5)} – {b.bitis.slice(0, 5)}
+              {b.baslangic.slice(0, 5) === '00:00' && b.bitis.slice(0, 5) >= '23:59'
+                ? 'Bütün gün'
+                : `${b.baslangic.slice(0, 5)} – ${b.bitis.slice(0, 5)}`}
             </span>
           ))}
         </div>

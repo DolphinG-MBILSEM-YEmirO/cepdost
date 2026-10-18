@@ -11,6 +11,7 @@ import {
   metinAl,
   motor,
   nesneMi,
+  planZamani,
   profilOzetiAl,
   profilVerisiAl,
   sayiAl,
@@ -95,6 +96,8 @@ export interface PlanDaveti {
   tarih: string
   saat: string | null
   sure: number | null
+  // All-day plan: saat and sure are null.
+  tum_gun: boolean
   konum: string | null
   mesaj: string | null
   emoji: string | null
@@ -435,6 +438,7 @@ export interface YeniDavet {
   tarih: string
   saat?: string | null
   sure?: number | null
+  tumGun?: boolean
   konum?: string | null
   mesaj?: string | null
   emoji?: string | null
@@ -453,8 +457,9 @@ export async function davetGonder(davet: YeniDavet): Promise<string> {
   await motor().yayinla(kanal, TUR.davet, `davet:${id}`, {
     baslik: davet.baslik.trim().slice(0, 120),
     tarih: davet.tarih,
-    saat: davet.saat || null,
-    sure: davet.sure ?? null,
+    saat: davet.tumGun ? null : davet.saat || null,
+    sure: davet.tumGun ? null : davet.sure ?? null,
+    tumGun: davet.tumGun === true,
     konum: davet.konum?.trim() || null,
     mesaj: davet.mesaj?.trim() || null,
     emoji: davet.emoji || null,
@@ -485,8 +490,7 @@ async function davetKur(k: SosyalKayit): Promise<PlanDaveti | null> {
     alan_id: alan,
     baslik,
     tarih,
-    saat: metinAl(k.veri.saat, 5),
-    sure: sayiAl(k.veri.sure),
+    ...planZamani(k.veri),
     konum: metinAl(k.veri.konum, 200),
     mesaj: metinAl(k.veri.mesaj, 500),
     emoji: metinAl(k.veri.emoji, 16),

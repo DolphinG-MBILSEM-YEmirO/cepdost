@@ -454,7 +454,7 @@ export function kayittanIcsIndir(kayit: Kayit): void {
     // hamBaslik is '' (not null) for shared items, so ?? would keep it.
     baslik: kayit.baslik || kayit.hamBaslik || 'CepDost planı',
     tarih: kayit.tarih!,
-    saat: kayit.saat,
+    saat: kayit.tumGun ? null : kayit.saat,
     sure: kayit.sure,
     konum: kayit.konum,
     notlar: kayit.ozetNot,

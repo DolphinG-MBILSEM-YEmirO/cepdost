@@ -231,13 +231,17 @@ export const PLAN_KUR_FONKSIYONU = {
       tarih: { type: 'STRING', description: 'YYYY-MM-DD, takvim tablosundan; bilinmiyorsa boş string' },
       saat: { type: 'STRING', description: 'HH:MM ya da boş string' },
       sure: { type: 'STRING', description: 'Dakika (sayı, string olarak)' },
+      tum_gun: {
+        type: 'BOOLEAN',
+        description: 'Plan bütün günü kaplıyorsa (kamp, gezi, festival, taşınma, düğün) true; o zaman saat ve süre boş string',
+      },
       konum: { type: 'STRING', description: 'Yalnızca kullanıcı söylediyse yer adı, yoksa boş string — uydurma' },
       oncelik: { type: 'STRING', enum: ['dusuk', 'orta', 'yuksek'] },
       not: { type: 'STRING', description: 'Davete eklenecek kısa not ya da boş string' },
       kisiler: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Davet edilecek arkadaş kodları (k1...). Grup planıysa boş.' },
       grup: { type: 'STRING', description: 'Grup planıysa grup kodu (g1...), değilse boş string' },
     },
-    required: ['kategori', 'baslik', 'emoji', 'tarih', 'saat', 'sure', 'konum', 'oncelik', 'not', 'kisiler', 'grup'],
+    required: ['kategori', 'baslik', 'emoji', 'tarih', 'saat', 'sure', 'tum_gun', 'konum', 'oncelik', 'not', 'kisiler', 'grup'],
   },
 }
 
@@ -312,6 +316,8 @@ export interface AsistanPlani {
   emoji: string | null
   tarih: string | null
   saat: string | null
+  // Takes the whole day: saat and sure are null.
+  tumGun: boolean
   konum: string | null
   oncelik: string
   sure: number | null
@@ -339,19 +345,22 @@ export function planiDogrula(args: Record<string, unknown>, b: AsistanBaglami, z
 
   const tarihHam = metin(args.tarih, 10)
   const tarih = TARIH.test(tarihHam) && tarihHam >= z.bugun ? tarihHam : null
+  // An all-day plan needs a day; without one the flag means nothing.
+  const tumGun = (args.tum_gun === true || args.tum_gun === 'true') && tarih !== null
   const saatHam = metin(args.saat, 5)
-  const saat = SAAT.test(saatHam) ? saatHam : null
+  const saat = !tumGun && SAAT.test(saatHam) ? saatHam : null
 
   let sure: number | null = null
   const sureSayi = Number(args.sure)
-  if (!Number.isNaN(sureSayi) && sureSayi > 0) sure = Math.min(Math.round(sureSayi), 1440)
+  if (!tumGun && !Number.isNaN(sureSayi) && sureSayi > 0) sure = Math.min(Math.round(sureSayi), 1440)
 
   const secim = kimlerOku(b, args.kisiler, args.grup)
 
   let uygunluk: AsistanPlani['uygunluk'] = null
-  if (tarih && saat && tarih <= musaitlikUfku(b, z)) {
-    const bas = dakikaya(saat)
-    const bit = bas + (sure ?? 60)
+  if (tarih && (saat || tumGun) && tarih <= musaitlikUfku(b, z)) {
+    // All day: anything busy that day is a clash.
+    const bas = saat ? dakikaya(saat) : 0
+    const bit = saat ? bas + (sure ?? 60) : 24 * 60
     const mesgul = secim.kisiler.filter((k) => k.paylasiyor && mesgulMu(k, tarih, bas, bit)).map((k) => k.ad)
     if (mesgulMu({ bloklar: b.benimBloklarim }, tarih, bas, bit)) mesgul.unshift('Sen')
     uygunluk = { mesgul, bilinmiyor: secim.kisiler.filter((k) => !k.paylasiyor).map((k) => k.ad) }
@@ -363,6 +372,7 @@ export function planiDogrula(args: Record<string, unknown>, b: AsistanBaglami, z
     emoji: emojiOku(args.emoji),
     tarih,
     saat,
+    tumGun,
     konum: metin(args.konum, 120) || null,
     oncelik: ONCELIKLER.includes(String(args.oncelik)) ? String(args.oncelik) : 'orta',
     sure,

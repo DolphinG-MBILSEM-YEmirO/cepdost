@@ -193,7 +193,7 @@ test('chat: request shape; plan_kur validated', async () => {
   assert.deepEqual(await json(res), {
     yanit: 'İşte bir öneri!',
     planOnerisi: {
-      kategori: 'etkinlik', baslik: 'Sinema', emoji: null, tarih: null, saat: '20:00', konum: null, oncelik: 'orta',
+      kategori: 'etkinlik', baslik: 'Sinema', emoji: null, tarih: null, saat: '20:00', tumGun: false, konum: null, oncelik: 'orta',
       sure: 130, ozetNot: null, kisiler: [], grup: null, uygunluk: null,
     },
   })
@@ -252,7 +252,7 @@ test('chat: free-slot lookup is answered by code, then the plan is checked', asy
   assert.deepEqual(await json(res), {
     yanit: 'Cumartesi 12:00 herkese uyuyor.',
     planOnerisi: {
-      kategori: 'mekan', baslik: 'Kahvaltı', emoji: '🍳', tarih: '2026-10-24', saat: '12:00', konum: 'Moda', oncelik: 'orta',
+      kategori: 'mekan', baslik: 'Kahvaltı', emoji: '🍳', tarih: '2026-10-24', saat: '12:00', tumGun: false, konum: 'Moda', oncelik: 'orta',
       sure: 90, ozetNot: 'Gel!',
       kisiler: ['k1', 'k2'], // Deniz isn't a friend, so no invite
       grup: null,
@@ -836,4 +836,11 @@ test('asistan: availability is never claimed past the shared range', async () =>
   assert.deepEqual(plan('2026-10-24')?.uygunluk, { mesgul: ['Ayşe'], bilinmiyor: [] })
   assert.equal(plan('2026-11-20')?.uygunluk, null)
   assert.equal(plan('2026-11-20')?.saat, '10:30')
+
+  // All day: no time or duration, and any busy range that day is a clash.
+  const kamp = a.planiDogrula({ baslik: 'Kamp', tarih: '2026-10-24', saat: '22:00', sure: '60', tum_gun: true, kisiler: ['k1'] }, b, z)
+  assert.deepEqual([kamp?.tumGun, kamp?.saat, kamp?.sure], [true, null, null])
+  assert.deepEqual(kamp?.uygunluk, { mesgul: ['Sen', 'Ayşe'], bilinmiyor: [] })
+  // Without a day the flag is dropped.
+  assert.equal(a.planiDogrula({ baslik: 'Kamp', tarih: '', tum_gun: true }, b, z)?.tumGun, false)
 })

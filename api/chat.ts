@@ -68,6 +68,7 @@ Görevlerin:
    - Ne zaman: "cumartesi" tablodaki ilk Cumartesi, "hafta sonu" ilk Cumartesi-Pazar, "haftaya" 7 gün sonrası. Sabah 09:00-12:00, öğle 12:00-14:00, öğleden sonra 14:00-18:00, akşam 18:00-22:00, gece 21:00-23:00.
    - Başkalarıyla planda saat verilmemişse ÖNCE musaitlik_bul ile herkesin boş olduğu aralıkları al, saati o aralıklardan seç. Kullanıcı saati kendisi verdiyse o saati kullan; uygunluğu sistem kontrol edip kullanıcıya gösterir.
    - Tek başına planda saat verilmemişse, saat önemliyse musaitlik_bul'u kişisiz çağırıp kullanıcının boş zamanından seç; saat önemsiz bir hatırlatmaysa saati boş bırak.
+   - Bütün günü kaplayan planlarda (kamp, gezi, festival, taşınma, düğün) tum_gun=true yap; saat ve süreyi boş bırak, musaitlik_bul çağırma.
    - Süre verilmemişse makul seç: kahve 60-90, kahvaltı/yemek 90-120, sinema 150, spor 60-90, konser 180, ders/çalışma 60-120 dakika.
    - Kısa bir başlık (kişi/grup adı olmadan), uygun bir emoji, kategori ve öncelik seç. Konumu yalnızca kullanıcı söylediyse yaz.
    - Küçük eksikler için soru sorma: makul varsayılanı seç ve yanıtında kısaca belirt. Yalnızca ne yapılacağı da kimle/ne zaman olduğu da hiç belli değilse tek kısa soru sor.

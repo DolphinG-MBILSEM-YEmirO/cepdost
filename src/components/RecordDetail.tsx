@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
 import { type Kayit, type Kategori, type Oncelik, kayitGuncelle, kayitDurumDegistir, kayitSil, goruntulemeBasligi } from '../db'
-import { CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_ICON_NAME, PRIORITY_LABELS, PRIORITY_COLORS, CATEGORIES, PRIORITIES, formatDate, formatTime, formatDuration, formatRelativeTime, isPast, isUpcoming, mapUrl, toDateString, addDays } from '../lib/format'
+import { CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_ICON_NAME, PRIORITY_LABELS, PRIORITY_COLORS, CATEGORIES, PRIORITIES, formatDate, formatPlanTime, formatDuration, formatRelativeTime, isPast, isUpcoming, mapUrl, toDateString, addDays } from '../lib/format'
 import { ConfirmDialog } from './ConfirmDialog'
 import { AniEkleModal } from './AniArsivi'
 import { kayittanIcsIndir } from '../takvim'
 import { PaylasimHedefiSheet } from './PlanPaylas'
-import { EmojiSecici } from './Seciciler'
+import { EmojiSecici, TumGunAnahtari } from './Seciciler'
 import { ETKINLIK_EMOJILERI } from '../lib/kisisellestirme'
 import { paylasilabilirPlanlar } from '../lib/planPaylasimi'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
@@ -25,6 +25,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
   const [category, setCategory] = useState<Kategori>(kayit.kategori ?? 'not')
   const [eventDate, setEventDate] = useState(kayit.tarih ?? '')
   const [eventTime, setEventTime] = useState(kayit.saat ?? '')
+  const [allDay, setAllDay] = useState(kayit.tumGun === true)
   const [locationName, setLocationName] = useState(kayit.konum ?? '')
   const [priority, setPriority] = useState<Oncelik>(kayit.oncelik)
   const [duration, setDuration] = useState(kayit.sure ? String(kayit.sure) : '')
@@ -45,6 +46,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
     setCategory(kayit.kategori ?? 'not')
     setEventDate(kayit.tarih ?? '')
     setEventTime(kayit.saat ?? '')
+    setAllDay(kayit.tumGun === true)
     setLocationName(kayit.konum ?? '')
     setPriority(kayit.oncelik)
     setDuration(kayit.sure ? String(kayit.sure) : '')
@@ -63,7 +65,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
 
   const colors = CATEGORY_COLORS[kayit.kategori ?? 'not']
   const dateLabel = formatDate(kayit.tarih)
-  const timeLabel = formatTime(kayit.saat)
+  const timeLabel = formatPlanTime(kayit.saat, kayit.tumGun)
   const durLabel = formatDuration(kayit.sure)
   const past = isPast(kayit.tarih)
   const upcoming = isUpcoming(kayit.tarih)
@@ -86,10 +88,12 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
         baslik: title.trim() || baslik,
         kategori: category,
         tarih: eventDate || null,
-        saat: eventTime || null,
+        // An all-day plan keeps no time or duration.
+        saat: allDay ? null : eventTime || null,
+        tumGun: allDay,
         konum: locationName.trim() || null,
         oncelik: priority,
-        sure: duration ? Number(duration) : null,
+        sure: allDay ? null : duration ? Number(duration) : null,
         ozetNot: notes.trim() || null,
         emoji,
       })
@@ -186,15 +190,20 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
                 <EmojiSecici secenekler={ETKINLIK_EMOJILERI} secili={emoji} onSec={setEmoji} />
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className={`grid gap-3 mb-3 ${allDay ? 'grid-cols-1' : 'grid-cols-2'}`}>
                 <div>
                   <FieldLabel>Tarih</FieldLabel>
                   <input type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} className="input-field" />
                 </div>
-                <div>
-                  <FieldLabel>Saat</FieldLabel>
-                  <input type="time" value={eventTime} onChange={(e) => setEventTime(e.target.value)} className="input-field" />
-                </div>
+                {!allDay && (
+                  <div>
+                    <FieldLabel>Saat</FieldLabel>
+                    <input type="time" value={eventTime} onChange={(e) => setEventTime(e.target.value)} className="input-field" />
+                  </div>
+                )}
+              </div>
+              <div className="mb-4">
+                <TumGunAnahtari acik={allDay} onDegistir={setAllDay} />
               </div>
 
               <FieldLabel>Konum</FieldLabel>
@@ -214,8 +223,12 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
                 ))}
               </div>
 
-              <FieldLabel>Tahmini süre (dakika)</FieldLabel>
-              <input type="number" value={duration} onChange={(e) => setDuration(e.target.value)} placeholder="örn. 60" min="0" className="input-field mb-4" />
+              {!allDay && (
+                <>
+                  <FieldLabel>Tahmini süre (dakika)</FieldLabel>
+                  <input type="number" value={duration} onChange={(e) => setDuration(e.target.value)} placeholder="örn. 60" min="0" className="input-field mb-4" />
+                </>
+              )}
 
               <FieldLabel>Notlar</FieldLabel>
               <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ek not, açıklama, ne getireceğini..." className="input-field resize-none" rows={3} />

@@ -58,7 +58,8 @@ interface Blok {
 
 // Yalnızca tarihi VE saati olan, henüz yapılmamış, tarih penceresindeki
 // kayıtlar müsaitliğe dönüşür. Saatsiz bir plan ("bir ara kitapçıya
-// uğra") kimseyi meşgul göstermemeli.
+// uğra") kimseyi meşgul göstermemeli. The exception is a plan marked
+// "all day": the person said the day is taken, so all of it is busy.
 export function bloklariCikar(
   kayitlar: Kayit[],
   bugun = new Date(),
@@ -75,8 +76,13 @@ export function bloklariCikar(
   const bloklar: Blok[] = []
   for (const k of kayitlar) {
     if (k.durum === 'yapildi') continue
-    if (!k.tarih || !k.saat) continue
+    if (!k.tarih) continue
     if (k.tarih < altStr || k.tarih > ustStr) continue
+    if (k.tumGun) {
+      bloklar.push({ yerel_kayit_id: k.id, tarih: k.tarih, baslangic: '00:00', bitis: '23:59' })
+      continue
+    }
+    if (!k.saat) continue
 
     const baslangic = k.saat.slice(0, 5)
     for (const b of plandanBloklar(k.tarih, baslangic, k.sure && k.sure > 0 ? k.sure : VARSAYILAN_SURE_DK)) {

@@ -44,6 +44,7 @@ import {
 import {
   grupOlustur,
   grupPlaniOlustur,
+  grupPlanlariGetir,
   grupUyeleriGetir,
   gruplarimiGetir,
   gruptanAyril,
@@ -230,6 +231,23 @@ test('busy ranges: untimed and done plans are skipped, late plans spill into the
   )
 })
 
+test('busy ranges: an all-day plan fills its day, and only with a date', () => {
+  const bugun = new Date(2026, 9, 18, 12)
+  const kayit = (k: Partial<Kayit>) => ({ id: k.baslik, durum: 'bekliyor', tarih: '2026-10-22', saat: null, sure: null, ...k }) as Kayit
+  const bloklar = bloklariCikar(
+    [
+      kayit({ baslik: 'kamp', tumGun: true }),
+      kayit({ baslik: 'tarihsiz', tarih: null, tumGun: true }),
+      kayit({ baslik: 'bitti', tumGun: true, durum: 'yapildi' }),
+    ],
+    bugun,
+  )
+  assert.deepEqual(
+    bloklar.map((b) => `${b.yerel_kayit_id} ${b.tarih} ${b.baslangic}-${b.bitis}`),
+    ['kamp 2026-10-22 00:00-23:59'],
+  )
+})
+
 test('direct messages, unread counts and read receipts', async () => {
   await olarak(ali, () => direktMesajGonder(ayse.motor.benimId, 'Selam!'))
   await esitle(ayse)
@@ -266,6 +284,15 @@ test('plan invites and answers', async () => {
     olarak(can, () => davetGonder({ alanId: ayse.motor.benimId, baslik: 'X', tarih: '2099-02-01' })),
     /arkadaş olmanız/,
   )
+
+  // An all-day invite arrives without a time, whatever was filled in.
+  const kampId = await olarak(ali, () =>
+    davetGonder({ alanId: ayse.motor.benimId, baslik: 'Kamp', tarih: '2099-02-07', saat: '10:00', sure: 60, tumGun: true }),
+  )
+  await esitle(ayse)
+  const kamp = (await olarak(ayse, () => davetleriGetir())).gelen.find((d) => d.id === kampId)
+  assert.deepEqual([kamp?.tum_gun, kamp?.saat, kamp?.sure], [true, null, null])
+  assert.equal((await olarak(ayse, () => davetleriGetir())).gelen.find((d) => d.id === davetId)?.tum_gun, false)
 })
 
 test('groups: join through a friend, plans, answers, chat, member availability', async () => {
@@ -282,10 +309,21 @@ test('groups: join through a friend, plans, answers, chat, member availability',
   assert.equal(uyeler.find((u) => u.kullanici_id === ayse.motor.benimId)?.profil?.musaitlik_paylas, true)
 
   const planId = await olarak(ali, () => grupPlaniOlustur({ grupId, baslik: 'Piknik', tarih: '2099-03-01', saat: '12:00' }))
+  const festivalId = await olarak(ali, () =>
+    grupPlaniOlustur({ grupId, baslik: 'Festival', tarih: '2099-03-02', saat: '09:00', tumGun: true }),
+  )
   await olarak(ali, () => mesajGonder(grupId, 'Yeni plan', planId))
   await esitle(ayse)
   await olarak(ayse, () => planaYanitVer(planId, 'geliyorum'))
   await olarak(ayse, () => mesajGonder(grupId, 'Ben de varım'))
+  const grupPlanlari = await olarak(ayse, () => grupPlanlariGetir(grupId))
+  assert.deepEqual(
+    grupPlanlari.map((p) => [p.id, p.saat, p.tum_gun]),
+    [
+      [planId, '12:00', false],
+      [festivalId, null, true],
+    ],
+  )
   await esitle(ali)
   const yanitlar = await olarak(ali, () => planYanitlariGetir([planId]))
   assert.deepEqual(yanitlar.map((y) => [y.kullanici_id, y.durum]), [[ayse.motor.benimId, 'geliyorum']])
