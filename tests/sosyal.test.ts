@@ -52,8 +52,8 @@ import {
   planaYanitVer,
   planYanitlariGetir,
 } from '../src/sosyal/gruplar'
-import { musaitligiSenkronla } from '../src/sosyal/musaitlikSenkron'
-import { kayitOlustur } from '../src/db'
+import { bloklariCikar, musaitligiSenkronla } from '../src/sosyal/musaitlikSenkron'
+import { kayitOlustur, type Kayit } from '../src/db'
 
 let relay: { url: string; close: () => Promise<void> }
 const motorlar: SosyalMotor[] = []
@@ -203,6 +203,31 @@ test('availability is shared with friends as busy ranges only', async () => {
     [[tarih, '10:00', '11:00']],
   )
   assert.ok(!JSON.stringify(bloklar).includes('Dişçi'))
+})
+
+test('busy ranges: untimed and done plans are skipped, late plans spill into the next day', () => {
+  const bugun = new Date(2026, 9, 18, 12)
+  const kayit = (k: Partial<Kayit>) => ({ id: k.baslik, durum: 'bekliyor', tarih: '2026-10-20', saat: null, sure: null, ...k }) as Kayit
+  const bloklar = bloklariCikar(
+    [
+      kayit({ baslik: 'parti', saat: '22:00', sure: 240 }),
+      kayit({ baslik: 'kahve', saat: '10:00' }),
+      kayit({ baslik: 'saatsiz' }),
+      kayit({ baslik: 'bitti', saat: '12:00', durum: 'yapildi' }),
+      kayit({ baslik: 'ay sonu', tarih: '2026-10-31', saat: '23:30', sure: 60 }),
+    ],
+    bugun,
+  )
+  assert.deepEqual(
+    bloklar.map((b) => `${b.yerel_kayit_id} ${b.tarih} ${b.baslangic}-${b.bitis}`),
+    [
+      'parti 2026-10-20 22:00-23:59',
+      'parti 2026-10-21 00:00-02:00',
+      'kahve 2026-10-20 10:00-11:00',
+      'ay sonu 2026-10-31 23:30-23:59',
+      'ay sonu 2026-11-01 00:00-00:30',
+    ],
+  )
 })
 
 test('direct messages, unread counts and read receipts', async () => {

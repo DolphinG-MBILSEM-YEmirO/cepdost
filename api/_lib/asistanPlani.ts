@@ -41,6 +41,9 @@ export interface AsistanBaglami {
   benimBloklarim: DoluBlok[]
   kisiler: AsistanKisisi[]
   gruplar: AsistanGrubu[]
+  // The last date the busy ranges above cover; after it nobody's calendar
+  // is known, so nobody may look free.
+  sonGun: string | null
 }
 
 export interface Zaman {
@@ -56,6 +59,8 @@ const AZAMI_BLOK = 400
 export const TAKVIM_GUN_SAYISI = 14
 // Upper bound for days in one availability lookup.
 const AZAMI_ARAMA_GUNU = 21
+// The coverage assumed when the client doesn't say (two weeks).
+const VARSAYILAN_KAPSAM_GUNU = 14
 
 const TARIH = /^\d{4}-\d{2}-\d{2}$/
 const SAAT = /^([01]\d|2[0-3]):[0-5]\d$/
@@ -114,6 +119,7 @@ export function baglamiOku(ham: unknown): AsistanBaglami {
     benimBloklarim: bloklariOku(g.benimBloklarim),
     kisiler,
     gruplar,
+    sonGun: TARIH.test(metin(g.sonGun, 10)) ? metin(g.sonGun, 10) : null,
   }
 }
 
@@ -131,6 +137,14 @@ export function tarihEkle(tarih: string, gun: number): string {
 export function gunAdi(tarih: string): string {
   const [y, a, g] = tarih.split('-').map(Number)
   return GUN_ADLARI[new Date(Date.UTC(y, a - 1, g)).getUTCDay()]
+}
+
+// The last date availability can be judged for: what the client sent busy
+// ranges for, and never beyond one lookup's reach.
+export function musaitlikUfku(b: AsistanBaglami, z: Zaman): string {
+  const kapsam = b.sonGun ?? tarihEkle(z.bugun, VARSAYILAN_KAPSAM_GUNU - 1)
+  const sinir = tarihEkle(z.bugun, AZAMI_ARAMA_GUNU - 1)
+  return kapsam < sinir ? kapsam : sinir
 }
 
 // One line per day, so "Saturday" or "next weekend" never needs date
@@ -228,14 +242,27 @@ function kimlerOku(b: AsistanBaglami, kisilerHam: unknown, grupHam: unknown): Se
 // The response to a musaitlik_bul call.
 export function musaitlikBul(args: Record<string, unknown>, b: AsistanBaglami, z: Zaman): Record<string, unknown> {
   const secim = kimlerOku(b, args.kisiler, args.grup)
-  const sonGun = tarihEkle(z.bugun, AZAMI_ARAMA_GUNU - 1)
-  let gunler = (Array.isArray(args.gunler) ? args.gunler : [])
+  const ufuk = musaitlikUfku(b, z)
+  const istenen = (Array.isArray(args.gunler) ? args.gunler : [])
     .map((t) => metin(t, 10))
-    .filter((t) => TARIH.test(t) && t >= z.bugun && t <= sonGun)
-  gunler = [...new Set(gunler)].sort()
-  if (gunler.length === 0) gunler = Array.from({ length: 7 }, (_, i) => tarihEkle(z.bugun, i))
-
+    .filter((t) => TARIH.test(t) && t >= z.bugun)
+  let gunler = [...new Set(istenen.filter((t) => t <= ufuk))].sort()
+  const katilimcilar = [b.benimAdim, ...secim.kisiler.map((k) => k.ad)]
   const bilinmeyenler = secim.kisiler.filter((k) => !k.paylasiyor).map((k) => k.ad)
+
+  // Only dates past what anyone's calendar covers: saying "free" there
+  // would be a guess.
+  if (istenen.length > 0 && gunler.length === 0) {
+    return {
+      katilimcilar,
+      takvimi_bilinmeyenler: bilinmeyenler,
+      bosluklar: [],
+      not: `Müsaitlik yalnızca ${ufuk} tarihine kadar biliniyor. Bu tarih için saati kullanıcının söylediğine göre koy ya da boş bırak; kimsenin boş olduğunu iddia etme.`,
+    }
+  }
+  if (gunler.length === 0) {
+    gunler = Array.from({ length: 7 }, (_, i) => tarihEkle(z.bugun, i)).filter((t) => t <= ufuk)
+  }
   const bosluklar = bosluklariHesapla({
     gunler,
     katilimcilar: [{ bloklar: b.benimBloklarim }, ...secim.kisiler.map((k) => ({ bloklar: k.bloklar }))],
@@ -247,7 +274,7 @@ export function musaitlikBul(args: Record<string, unknown>, b: AsistanBaglami, z
   })
 
   return {
-    katilimcilar: [b.benimAdim, ...secim.kisiler.map((k) => k.ad)],
+    katilimcilar,
     takvimi_bilinmeyenler: bilinmeyenler,
     bosluklar: bosluklar.slice(0, 30).map((a) => ({ ...saatliAralik(a), gun: gunAdi(a.tarih) })),
     not:
@@ -271,7 +298,8 @@ export interface AsistanPlani {
   kisiler: string[]
   grup: string | null
   // Checked by code for the chosen time: who is busy then, whose calendar
-  // is unknown. null when there is no time to check.
+  // is unknown. null when there is no time to check, or the date is past
+  // what the busy ranges cover.
   uygunluk: { mesgul: string[]; bilinmiyor: string[] } | null
 }
 
@@ -299,7 +327,7 @@ export function planiDogrula(args: Record<string, unknown>, b: AsistanBaglami, z
   const secim = kimlerOku(b, args.kisiler, args.grup)
 
   let uygunluk: AsistanPlani['uygunluk'] = null
-  if (tarih && saat) {
+  if (tarih && saat && tarih <= musaitlikUfku(b, z)) {
     const bas = dakikaya(saat)
     const bit = bas + (sure ?? 60)
     const mesgul = secim.kisiler.filter((k) => k.paylasiyor && mesgulMu(k, tarih, bas, bit)).map((k) => k.ad)

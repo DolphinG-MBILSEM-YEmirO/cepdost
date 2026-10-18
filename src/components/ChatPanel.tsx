@@ -295,10 +295,15 @@ function adlariBirlestir(adlar: string[]): string {
 
 // Whether the chosen time suits everyone, as the server checked it.
 function UygunlukSatiri({ plan }: { plan: HazirPlan }) {
-  const { uygunluk, saat } = plan.oneri
+  const { uygunluk, saat, tarih } = plan.oneri
   const birlikte = plan.grup !== null || plan.kisiler.length > 0
-  if (!saat || !uygunluk) {
+  if (!saat) {
     return <p className="text-xs text-ink-400">Saat belirtilmedi, gün içinde serbest.</p>
+  }
+  if (!uygunluk) {
+    // A time without a check: the date is further out than shared calendars
+    // reach (or missing, which the card already flags).
+    return tarih ? <p className="text-xs text-ink-400">Bu tarih için müsaitlik henüz görünmüyor.</p> : null
   }
   const digerleri = uygunluk.mesgul.filter((a) => a !== 'Sen')
   return (

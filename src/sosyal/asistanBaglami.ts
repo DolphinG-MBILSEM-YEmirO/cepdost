@@ -1,14 +1,15 @@
-import { arkadaslariGetir, arkadasMusaitligi, profilimiGetir, type Profil } from './api'
+import { arkadaslariGetir, musaitlikKaydi, profilimiGetir, type Profil } from './api'
 import { gruplarimiGetir, grupUyeleriGetir, type Grup } from './gruplar'
 import { gunleriUret, kendiBloklarim } from './ortakPlan'
 
 // What the assistant needs to plan with people: the user's friends and
 // groups under short handles (k1, g1), with only their BUSY time ranges for
-// the next two weeks, the same data the availability layer already shares.
+// the next three weeks, the same data the availability layer already shares.
 // The handles go to the server; the maps back to accounts stay here (see
 // api/_lib/asistanPlani.ts).
 
-const GUN_SAYISI = 14
+// The server looks up at most this far ahead (api/_lib/asistanPlani.ts).
+const GUN_SAYISI = 21
 
 interface DoluBlok {
   tarih: string
@@ -30,21 +31,25 @@ export interface AsistanBaglami {
       bloklar: DoluBlok[]
     }>
     gruplar: Array<{ ref: string; ad: string; uyeler: string[] }>
+    // The last date the busy ranges cover.
+    sonGun: string
   }
   kisiler: Map<string, Profil>
   gruplar: Map<string, Grup>
 }
 
-async function bloklari(p: Profil, ilk: string, son: string): Promise<DoluBlok[]> {
-  if (!p.musaitlik_paylas) return []
+// null when nothing is known: sharing is off, or their ranges haven't
+// reached this device. Either way they must not look free all day.
+async function bloklari(p: Profil, ilk: string, son: string): Promise<DoluBlok[] | null> {
+  if (!p.musaitlik_paylas) return null
   try {
-    return (await arkadasMusaitligi(p.id, ilk, son)).map((b) => ({
-      tarih: b.tarih,
-      baslangic: b.baslangic.slice(0, 5),
-      bitis: b.bitis.slice(0, 5),
-    }))
+    const veri = await musaitlikKaydi(p.id)
+    if (!veri) return null
+    return veri.bloklar
+      .filter((b) => b.tarih >= ilk && b.tarih <= son)
+      .map((b) => ({ tarih: b.tarih, baslangic: b.baslangic.slice(0, 5), bitis: b.bitis.slice(0, 5) }))
   } catch {
-    return []
+    return null
   }
 }
 
@@ -87,14 +92,15 @@ export async function asistanBaglamiHazirla(): Promise<AsistanBaglami> {
         ad: k.profil.ad,
         kullaniciAdi: k.profil.kullanici_adi,
         arkadas: k.arkadas,
-        paylasiyor: k.profil.musaitlik_paylas,
-        bloklar: blokListesi[i],
+        paylasiyor: blokListesi[i] !== null,
+        bloklar: blokListesi[i] ?? [],
       })),
       gruplar: gruplar.map((g, i) => ({
         ref: `g${i + 1}`,
         ad: g.ad,
         uyeler: grupUyeleri[i].flatMap((u) => refler.get(u.kullanici_id) ?? []),
       })),
+      sonGun: son,
     },
     kisiler: new Map(liste.map((k) => [refler.get(k.profil.id)!, k.profil])),
     gruplar: new Map(gruplar.map((g, i) => [`g${i + 1}`, g])),

@@ -22,16 +22,30 @@ function tarihStr(d: Date): string {
   return `${y}-${m}-${g}`
 }
 
-function saatEkle(saat: string, dakika: number): string {
-  const [s, d] = saat.split(':').map(Number)
-  if (Number.isNaN(s) || Number.isNaN(d)) return '23:59'
-  const toplam = s * 60 + d + dakika
-  // Gece yarısını aşan planlar için günü bölmek yerine 23:59'a sabitliyoruz —
-  // müsaitlik göstermek için bu yeterli, veri modelini karmaşıklaştırmıyor.
-  if (toplam >= 24 * 60) return '23:59'
-  const ss = String(Math.floor(toplam / 60)).padStart(2, '0')
-  const dd = String(toplam % 60).padStart(2, '0')
-  return `${ss}:${dd}`
+function saatStr(dakika: number): string {
+  return `${String(Math.floor(dakika / 60)).padStart(2, '0')}:${String(dakika % 60).padStart(2, '0')}`
+}
+
+function ertesiGun(tarih: string): string {
+  const [y, a, g] = tarih.split('-').map(Number)
+  return tarihStr(new Date(y, a - 1, g + 1))
+}
+
+// A plan as one or two busy ranges: one that runs past midnight ("22:00,
+// 4 hours") also fills the start of the next day. Days end at 23:59, the
+// same convention the calendar import uses.
+function plandanBloklar(tarih: string, baslangic: string, sureDk: number): Array<Omit<Blok, 'yerel_kayit_id'>> {
+  const [s, d] = baslangic.split(':').map(Number)
+  if (Number.isNaN(s) || Number.isNaN(d)) return []
+  const bas = s * 60 + d
+  const bit = bas + sureDk
+  const GUN = 24 * 60
+  if (bit < GUN) return [{ tarih, baslangic, bitis: saatStr(bit) }]
+  const bloklar = [{ tarih, baslangic, bitis: '23:59' }]
+  // Longer than a day is not a meeting worth blocking a second day for.
+  const tasan = Math.min(bit - GUN, GUN - 1)
+  if (tasan > 0) bloklar.push({ tarih: ertesiGun(tarih), baslangic: '00:00', bitis: saatStr(tasan) })
+  return bloklar
 }
 
 interface Blok {
@@ -63,11 +77,10 @@ export function bloklariCikar(
     if (!k.tarih || !k.saat) continue
     if (k.tarih < altStr || k.tarih > ustStr) continue
 
-    const baslangic = k.saat.length === 5 ? k.saat : k.saat.slice(0, 5)
-    const bitis = saatEkle(baslangic, k.sure && k.sure > 0 ? k.sure : VARSAYILAN_SURE_DK)
-    if (bitis <= baslangic) continue
-
-    bloklar.push({ yerel_kayit_id: k.id, tarih: k.tarih, baslangic, bitis })
+    const baslangic = k.saat.slice(0, 5)
+    for (const b of plandanBloklar(k.tarih, baslangic, k.sure && k.sure > 0 ? k.sure : VARSAYILAN_SURE_DK)) {
+      if (b.bitis > b.baslangic) bloklar.push({ yerel_kayit_id: k.id, ...b })
+    }
   }
 
   // F15: telefon takviminden içe aktarılanlar da "dolu" sayılır. Buradan da

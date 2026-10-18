@@ -12,7 +12,7 @@ import {
   type Profil,
 } from '../sosyal/api'
 import { gruplarimiGetir, grupUyeleriGetir, type Grup } from '../sosyal/gruplar'
-import { ortakPlanOner } from '../sosyal/ortakPlan'
+import { kendiBloklarim, ortakPlanOner } from '../sosyal/ortakPlan'
 import { addDays, formatDate, toDateString } from '../lib/format'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 import { planiKur, type PlanKitlesi } from '../lib/planPaylasimi'
@@ -101,6 +101,7 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
   const [sure, setSure] = useState(90)
 
   const [musaitlik, setMusaitlik] = useState<Map<string, MusaitlikBlogu[]>>(new Map())
+  const [benimBloklarim, setBenimBloklarim] = useState<Array<{ baslangic: string; bitis: string }>>([])
   const [musaitlikYukleniyor, setMusaitlikYukleniyor] = useState(false)
   const [saatAraniyor, setSaatAraniyor] = useState(false)
 
@@ -135,8 +136,8 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
     grupUyeleriGetir(seciliGrup.id)
       .then((uyeler) => {
         if (iptal) return
-        // Profili okunamayan üyeler (arkadaşım olmayanlar) listeye giremiyor;
-        // müsaitliklerini zaten RLS döndürmezdi.
+        // Members whose profile hasn't reached this device yet can't be
+        // listed; there would be no availability to show for them either.
         setGrupUyeProfilleri(
           uyeler.filter((u) => u.kullanici_id !== kullanici?.id && u.profil).map((u) => u.profil!),
         )
@@ -184,6 +185,18 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
     if (adim === 'detay') void musaitligiYukle()
   }, [adim, musaitligiYukle])
 
+  // My own busy ranges that day, so a clash with my other plans shows too.
+  useEffect(() => {
+    if (adim === 'kiminle' || !tarih) return
+    let iptal = false
+    kendiBloklarim([tarih])
+      .then((b) => !iptal && setBenimBloklarim(b))
+      .catch(() => !iptal && setBenimBloklarim([]))
+    return () => {
+      iptal = true
+    }
+  }, [adim, tarih])
+
   const baslik = etkinlik ? (serbestBaslik.trim() || etkinlik.ad) : serbestBaslik.trim()
   const kategori: Kategori = etkinlik?.kategori ?? 'etkinlik'
 
@@ -200,6 +213,13 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
       }),
     )
   }, [saat, sure, katilimcilar, musaitlik])
+
+  const benimCakismam = useMemo(() => {
+    if (!saat) return false
+    const bas = dakikaya(saat)
+    const bit = bas + sure
+    return benimBloklarim.some((b) => bas < dakikaya(b.bitis) && bit > dakikaya(b.baslangic))
+  }, [saat, sure, benimBloklarim])
 
   async function yakindaAra() {
     setKonumAraniyor(true)
@@ -357,6 +377,7 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
             musaitlik={musaitlik}
             musaitlikYukleniyor={musaitlikYukleniyor}
             cakisanlar={cakisanlar}
+            benimCakismam={benimCakismam}
             saatAraniyor={saatAraniyor}
             onUygunSaatiBul={() => void uygunSaatiBul()}
           />
@@ -374,6 +395,7 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
             grup={seciliGrup}
             katilimcilar={katilimcilar}
             cakisanlar={cakisanlar}
+            benimCakismam={benimCakismam}
           />
         )}
       </div>
@@ -614,6 +636,7 @@ function DetayAdimi(p: {
   musaitlik: Map<string, MusaitlikBlogu[]>
   musaitlikYukleniyor: boolean
   cakisanlar: Profil[]
+  benimCakismam: boolean
   saatAraniyor: boolean
   onUygunSaatiBul: () => void
 }) {
@@ -757,6 +780,13 @@ function DetayAdimi(p: {
             </button>
           ))}
         </div>
+
+        {p.benimCakismam && (
+          <p className="flex items-start gap-2 text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3 mt-3">
+            <Icon name="AlertTriangle" className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            Bu saatte başka bir planın var.
+          </p>
+        )}
       </Bolum>
 
       {p.katilimcilar.length > 0 && (
@@ -846,6 +876,7 @@ function OzetAdimi({
   grup,
   katilimcilar,
   cakisanlar,
+  benimCakismam,
 }: {
   baslik: string
   emoji: string | null
@@ -857,6 +888,7 @@ function OzetAdimi({
   grup: Grup | null
   katilimcilar: Profil[]
   cakisanlar: Profil[]
+  benimCakismam: boolean
 }) {
   return (
     <>
@@ -877,6 +909,12 @@ function OzetAdimi({
             <p className="flex items-center gap-2">
               <Icon name="MapPin" className="w-4 h-4 text-coral-500 shrink-0" />
               {konum.trim()}
+            </p>
+          )}
+          {benimCakismam && (
+            <p className="flex items-center gap-2 text-amber-700">
+              <Icon name="AlertTriangle" className="w-4 h-4 shrink-0" />
+              Bu saatte başka bir planın var.
             </p>
           )}
           {!saat && (

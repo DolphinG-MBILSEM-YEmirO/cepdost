@@ -21,6 +21,7 @@ import {
   baglamiOku,
   gunAdi,
   musaitlikBul,
+  musaitlikUfku,
   planiDogrula,
   takvimTablosu,
   type AsistanBaglami,
@@ -33,7 +34,7 @@ import {
 export const config = { maxDuration: 60 }
 
 // 20 messages of 2,000 characters, a 6,000 character summary, and the busy
-// ranges of the user's friends and group members for two weeks.
+// ranges of the user's friends and group members for three weeks.
 const AZAMI_ISTEK = 512 * 1024
 
 // Model calls per request: free slots at most twice, then the plan.
@@ -55,6 +56,7 @@ ${takvimTablosu(z.bugun)}
 
 Arkadaşları ve grupları (plan kurarken bu kısa kodları kullan):
 ${baglamMetni(b)}
+Dolu saatler ${musaitlikUfku(b, z)} tarihine kadar biliniyor; daha ilerisi için kimsenin müsait olduğunu söyleme.
 
 Kullanıcının kayıtlı planları:
 ${planOzeti || '(Henüz kayıtlı planı yok.)'}

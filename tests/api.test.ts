@@ -783,9 +783,31 @@ test('asistan: date helpers and context parsing', async () => {
   assert.equal(a.tarihEkle('2026-12-30', 3), '2027-01-02')
   assert.equal(a.gunAdi('2026-10-18'), 'Pazar')
   assert.equal(a.takvimTablosu('2026-10-18', 2), '2026-10-18 Pazar (bugün)\n2026-10-19 Pazartesi (yarın)')
-  assert.deepEqual(a.baglamiOku('çöp'), { benimAdim: 'Kullanıcı', benimBloklarim: [], kisiler: [], gruplar: [] })
+  assert.deepEqual(a.baglamiOku('çöp'), { benimAdim: 'Kullanıcı', benimBloklarim: [], kisiler: [], gruplar: [], sonGun: null })
   const b = a.baglamiOku(BAGLAM)
   assert.deepEqual(b.kisiler.map((k) => k.ref), ['k1', 'k2', 'k3'])
   assert.deepEqual(b.kisiler[2].bloklar, [{ tarih: '2026-10-24', baslangic: '18:00', bitis: '19:00' }])
   assert.deepEqual(b.gruplar[0].uyeler, ['k1', 'k3'])
+})
+
+test('asistan: availability is never claimed past the shared range', async () => {
+  const a = await import('../api/_lib/asistanPlani.ts')
+  const z = { bugun: '2026-10-18', simdiSaat: '14:30' }
+  const b = a.baglamiOku({ ...BAGLAM, sonGun: '2026-11-07' })
+  assert.equal(a.musaitlikUfku(b, z), '2026-11-07')
+  // Without a date from the client: two weeks; never past one lookup's reach.
+  assert.equal(a.musaitlikUfku(a.baglamiOku(BAGLAM), z), '2026-10-31')
+  assert.equal(a.musaitlikUfku(a.baglamiOku({ ...BAGLAM, sonGun: '2027-01-01' }), z), '2026-11-07')
+
+  const uzak = a.musaitlikBul({ kisiler: ['k1'], gunler: ['2026-11-20'], en_az_dakika: '60' }, b, z)
+  assert.deepEqual(uzak.bosluklar, [])
+  assert.match(String(uzak.not), /2026-11-07 tarihine kadar/)
+  // In range days are still looked up; the far one is dropped.
+  const karisik = a.musaitlikBul({ kisiler: ['k1'], gunler: ['2026-10-24', '2026-11-20'], en_az_dakika: '60' }, b, z) as { bosluklar: Array<{ tarih: string }> }
+  assert.ok(karisik.bosluklar.length > 0 && karisik.bosluklar.every((x) => x.tarih === '2026-10-24'))
+
+  const plan = (tarih: string) => a.planiDogrula({ baslik: 'Kahve', tarih, saat: '10:30', sure: '60', kisiler: ['k1'] }, b, z)
+  assert.deepEqual(plan('2026-10-24')?.uygunluk, { mesgul: ['Ayşe'], bilinmiyor: [] })
+  assert.equal(plan('2026-11-20')?.uygunluk, null)
+  assert.equal(plan('2026-11-20')?.saat, '10:30')
 })
