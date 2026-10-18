@@ -1,0 +1,19 @@
+# `vercel deploy` uploads only what the build needs. Everything else in the
+# folder stays on this computer: env files, the Android signing key, APK
+# builds, Gradle output, OCR data, tests and spikes.
+/*
+!api
+!public
+!shared
+!src
+!index.html
+!package.json
+!package-lock.json
+!postcss.config.js
+!tailwind.config.js
+!tsconfig.json
+!tsconfig.app.json
+!tsconfig.api.json
+!tsconfig.node.json
+!vercel.json
+!vite.config.ts
