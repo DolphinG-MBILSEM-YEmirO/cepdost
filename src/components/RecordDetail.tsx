@@ -5,6 +5,8 @@ import { CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_ICON_NAME, PRIORITY_LABELS, 
 import { ConfirmDialog } from './ConfirmDialog'
 import { AniEkleModal } from './AniArsivi'
 import { kayittanIcsIndir } from '../takvim'
+import { PaylasimHedefiSheet } from './PlanPaylas'
+import { paylasilabilirPlanlar } from '../lib/planPaylasimi'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 
 interface RecordDetailProps {
@@ -28,6 +30,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
   const [saving, setSaving] = useState(false)
   const [showDelete, setShowDelete] = useState(false)
   const [aniAcik, setAniAcik] = useState(false)
+  const [paylasAcik, setPaylasAcik] = useState(false)
 
   // Refresh the form from the record, but never while the user is editing:
   // any write to the table hands us a new copy of the record (a status
@@ -69,6 +72,8 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
   const aniHedefAdi = kayit.grupAdi ?? kayit.arkadasAdi ?? 'arkadaşın'
   const aniSorulabilir =
     !kayit.aniEklendi && (!!kayit.grupId || !!kayit.arkadasId) && (past || done)
+  // Upcoming plans of my own can go to a friend or a group as a chat card.
+  const paylasilabilir = paylasilabilirPlanlar([kayit]).length > 0
 
   async function handleSave() {
     setSaving(true)
@@ -363,6 +368,16 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
           </div>
         )}
 
+        {paylasilabilir && !editing && (
+          <button
+            onClick={() => setPaylasAcik(true)}
+            className="w-full bg-coral-50 text-coral-700 font-medium rounded-2xl px-5 py-3.5 flex items-center justify-center gap-2 active:scale-[0.97] transition-all hover:bg-coral-100 mb-3"
+          >
+            <Icon name="Send" className="w-5 h-5" />
+            Arkadaşlarınla paylaş
+          </button>
+        )}
+
         {/* Tarayıcıdan telefonun takvimine doğrudan yazan bir API yok;
             standart yol .ics indirip takvim uygulamasında açmak. */}
         {kayit.tarih && (
@@ -387,6 +402,8 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
       {showDelete && (
         <ConfirmDialog title="Kaydı sil?" message="Bu kayıt kalıcı olarak silinecek. Geri alınamaz." onConfirm={handleDelete} onCancel={() => setShowDelete(false)} />
       )}
+
+      {paylasAcik && <PaylasimHedefiSheet kayit={kayit} onKapat={() => setPaylasAcik(false)} />}
 
       {aniAcik && (
         <AniEkleModal

@@ -12,7 +12,6 @@ import {
   arkadaslikYanitla,
   arkadasliktanCik,
   davetleriGetir,
-  davetYanitla,
   profilAra,
   profilGuncelle,
   profilimiGetir,
@@ -24,7 +23,7 @@ import {
 import { GrupDetay } from './GrupDetay'
 import { OrtakPlanSihirbazi } from './OrtakPlanSihirbazi'
 import { grupOlustur, gruplarimiGetir, type Grup } from '../sosyal/gruplar'
-import { kayitOlustur } from '../db'
+import { davetiYanitla, planGectiMi } from '../lib/planPaylasimi'
 import { formatDate, formatTime } from '../lib/format'
 import { GRUP_EMOJILERI, renkAl } from '../lib/kisisellestirme'
 
@@ -73,7 +72,8 @@ function ArkadaslarIcerik({
       ])
       setProfil(p)
       setArkadaslar(a)
-      setGelenDavetler(d.gelen.filter((x) => x.durum === 'bekliyor'))
+      // A pending invite for a day that has passed can't be answered any more.
+      setGelenDavetler(d.gelen.filter((x) => x.durum === 'bekliyor' && !planGectiMi(x.tarih)))
       setGruplar(g)
       onDegisti?.()
     } catch (err) {
@@ -89,35 +89,11 @@ function ArkadaslarIcerik({
     void tazele()
   }, [tazele, surum])
 
-  async function davetiKabulEt(davet: PlanDaveti) {
-    // Önce yerel kayıt: sunucu güncellemesi başarısız olsa bile kullanıcı
-    // kabul ettiği planı kaybetmesin.
-    await kayitOlustur({
-      kategori: 'etkinlik',
-      baslik: davet.baslik,
-      tarih: davet.tarih,
-      saat: davet.saat ? davet.saat.slice(0, 5) : null,
-      konum: davet.konum,
-      oncelik: 'orta',
-      sure: davet.sure,
-      ozetNot: davet.mesaj,
-      mekanOnerisi: null,
-      yakinOneriler: null,
-      kaynakTipi: 'metin',
-      hamBaslik: '',
-      hamMetin: '',
-      hamLink: '',
-      gorseller: [],
-      // Tarihi geçince anıyı doğru arşive (davet edenin) yönlendirmek için.
-      arkadasId: davet.gonderen_id,
-      arkadasAdi: arkadaslar.find((a) => a.profil.id === davet.gonderen_id)?.profil.ad ?? null,
-    })
-    await davetYanitla(davet.id, true)
-    await tazele()
-  }
-
-  async function davetiReddet(davet: PlanDaveti) {
-    await davetYanitla(davet.id, false)
+  // Same helper the chat card uses: accepting adds the plan to my calendar,
+  // declining keeps it out.
+  async function davetiYanitlaVeTazele(davet: PlanDaveti, kabul: boolean) {
+    const gonderenAd = arkadaslar.find((a) => a.profil.id === davet.gonderen_id)?.profil.ad ?? null
+    await davetiYanitla(davet, kabul, gonderenAd)
     await tazele()
   }
 
@@ -189,8 +165,8 @@ function ArkadaslarIcerik({
                         gonderenAd={
                           arkadaslar.find((a) => a.profil.id === d.gonderen_id)?.profil.ad ?? 'Bir arkadaşın'
                         }
-                        onKabul={() => davetiKabulEt(d)}
-                        onRed={() => davetiReddet(d)}
+                        onKabul={() => davetiYanitlaVeTazele(d, true)}
+                        onRed={() => davetiYanitlaVeTazele(d, false)}
                       />
                     ))}
                   </div>

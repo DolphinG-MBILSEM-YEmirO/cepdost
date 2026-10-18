@@ -3,6 +3,7 @@ import { Icon } from './Icon'
 import { Avatar } from './Avatar'
 import { davetGonder, type Arkadas, type Profil } from '../sosyal/api'
 import { grupPlaniOlustur, mesajGonder, planaYanitVer, type Grup } from '../sosyal/gruplar'
+import { direktMesajGonder } from '../sosyal/mesajlar'
 import { gunleriUret, ortakPlanOner, type BosAralik, type OnerilenPlan } from '../sosyal/ortakPlan'
 import { kayitOlustur } from '../db'
 import { formatDate } from '../lib/format'
@@ -23,8 +24,8 @@ interface Props {
   grup?: Grup
   grupUyeleri?: Profil[]
   arkadaslar?: Arkadas[]
-  // Grup modunda: plan oluşturulunca grup sohbetine de kart olarak düşsün.
-  sohbetePaylas?: boolean
+  // Opened from a one-to-one chat: the people are fixed, no picking step.
+  sabitKisiler?: Profil[]
   onKapat: () => void
   onOlusturuldu: () => void | Promise<void>
 }
@@ -50,7 +51,7 @@ export function OrtakPlanSihirbazi({
   grup,
   grupUyeleri,
   arkadaslar,
-  sohbetePaylas = false,
+  sabitKisiler,
   onKapat,
   onOlusturuldu,
 }: Props) {
@@ -61,7 +62,8 @@ export function OrtakPlanSihirbazi({
     [arkadaslar],
   )
 
-  const [asama, setAsama] = useState<Asama>(grupModu ? 'istek' : 'kisiler')
+  const kisilerSabit = grupModu || !!sabitKisiler
+  const [asama, setAsama] = useState<Asama>(kisilerSabit ? 'istek' : 'kisiler')
   const [secili, setSecili] = useState<string[]>([])
   const [istek, setIstek] = useState('')
   const [gunSayisi, setGunSayisi] = useState(7)
@@ -76,7 +78,7 @@ export function OrtakPlanSihirbazi({
 
   const katilimcilar = grupModu
     ? (grupUyeleri ?? [])
-    : secilebilir.filter((p) => secili.includes(p.id))
+    : (sabitKisiler ?? secilebilir.filter((p) => secili.includes(p.id)))
 
   async function oneriAl() {
     if (!istek.trim()) {
@@ -127,19 +129,20 @@ export function OrtakPlanSihirbazi({
         // Planı öneren zaten geliyor — grupta da öyle görünsün.
         await planaYanitVer(planId, 'geliyorum')
 
-        if (sohbetePaylas) {
-          // Sohbete kart olarak düşür. Sohbet mesajı gönderilemese bile plan
-          // oluştu — bu yüzden hata kullanıcıyı bloklamıyor, sadece not.
-          try {
-            await mesajGonder(grup.id, `${benimAdim} bir plan önerdi 👇`, planId)
-          } catch {
-            /* plan zaten oluştu, kart paylaşımı isteğe bağlı bir ekstra */
-          }
+        // The plan always lands in the group chat as a card, wherever the
+        // wizard was opened from; otherwise members only see it if they
+        // look at the Plans tab. A failed chat card doesn't undo the plan.
+        try {
+          await mesajGonder(grup.id, `${benimAdim} bir plan önerdi 👇`, planId)
+        } catch {
+          /* plan zaten oluştu, kart paylaşımı isteğe bağlı bir ekstra */
         }
       } else {
         // Her katılımcıya ayrı davet — kabul eden kendi takvimine ekler.
+        // The invite also shows up as a card in our chat, like every other
+        // way of inviting someone.
         for (const p of katilimcilar) {
-          await davetGonder({
+          const davetId = await davetGonder({
             alanId: p.id,
             baslik: plan.baslik,
             tarih: plan.tarih,
@@ -148,6 +151,11 @@ export function OrtakPlanSihirbazi({
             konum: plan.konum,
             mesaj: plan.gerekce,
           })
+          try {
+            await direktMesajGonder(p.id, 'Bir plan önerdim 👇', davetId)
+          } catch {
+            /* davet zaten gitti; sohbet kartı isteğe bağlı bir ekstra */
+          }
         }
       }
 
@@ -199,10 +207,8 @@ export function OrtakPlanSihirbazi({
             </p>
             <p className="text-sm text-ink-500">
               {grupModu
-                ? sohbetePaylas
-                  ? 'Plan grup sohbetine düştü. "Geliyorum" diyen herkesin takvimine eklenecek.'
-                  : 'Grup planı oluşturuldu. "Geliyorum" diyen herkesin takvimine düşecek.'
-                : `${katilimcilar.length} kişiye davet gönderildi. Kabul edenlerin takvimine düşecek.`}
+                ? 'Plan grup sohbetine düştü. "Geliyorum" diyen herkesin takvimine eklenecek.'
+                : `${katilimcilar.length} kişiye davet gönderildi ve sohbetinize düştü. Kabul edenlerin takvimine eklenecek.`}
             </p>
           </div>
           <button onClick={onKapat} className="btn-primary w-full mt-4">
@@ -369,7 +375,7 @@ export function OrtakPlanSihirbazi({
               {yukleniyor ? 'Takvimlere bakıyorum...' : 'Uygun saati bul'}
             </button>
 
-            {!grupModu && (
+            {!kisilerSabit && (
               <button onClick={() => setAsama('kisiler')} className="btn-ghost w-full text-sm">
                 Kişileri değiştir
               </button>
@@ -479,10 +485,10 @@ export function OrtakPlanSihirbazi({
                     className={`w-4 h-4 ${yukleniyor ? 'animate-spin' : ''}`}
                   />
                   {grupModu
-                    ? sohbetePaylas
-                      ? 'Planı grupla paylaş'
-                      : 'Grup planı olarak ekle'
-                    : `${katilimcilar.length} kişiye gönder`}
+                    ? 'Planı grupla paylaş'
+                    : katilimcilar.length === 1
+                      ? `${katilimcilar[0].ad} ile paylaş`
+                      : `${katilimcilar.length} kişiye gönder`}
                 </button>
               </>
             ) : (

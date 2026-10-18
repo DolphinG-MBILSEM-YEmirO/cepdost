@@ -9,23 +9,21 @@ import {
   useYeniMesajEsigi,
 } from './SohbetGovde'
 import { TemaSheet } from './SohbetTemaSecici'
+import { DavetKartiSohbet } from './SohbetPlanKarti'
+import { PlanPaylasSheet } from './PlanPaylas'
+import { OrtakPlanSihirbazi } from './OrtakPlanSihirbazi'
 import { useSohbetTemasi } from '../sohbetTema'
 import { formatMessageTime } from '../lib/format'
+import { davetiYanitla } from '../lib/planPaylasimi'
 import { useSosyalSurum } from '../sosyal/cekirdek'
+import { useAuth } from '../sosyal/auth'
 import {
   direktMesajGonder,
   direktMesajlariGetir,
   okunduIsaretle,
   type DirektMesaj,
 } from '../sosyal/mesajlar'
-import {
-  davetleriIdyeGoreGetir,
-  davetYanitla,
-  type PlanDaveti,
-  type Profil,
-} from '../sosyal/api'
-import { kayitOlustur } from '../db'
-import { formatDate } from '../lib/format'
+import { davetiIptalEt, davetleriIdyeGoreGetir, profilimiGetir, type PlanDaveti, type Profil } from '../sosyal/api'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 
 // One-to-one chat with a friend. Messages are read from the local copy and
@@ -52,6 +50,8 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
   // baloncuk animasyonuyla girsin.
   const yeniMi = useYeniMesajEsigi(mesajlar, !yukleniyor)
   const [davetler, setDavetler] = useState<Map<string, PlanDaveti>>(new Map())
+  const [paylasAcik, setPaylasAcik] = useState(false)
+  const [sihirbazAcik, setSihirbazAcik] = useState(false)
   const sosyalSurum = useSosyalSurum()
 
   useEffect(() => {
@@ -79,38 +79,6 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
       iptal = true
     }
   }, [arkadas.id, sosyalSurum])
-
-  // Karttan kabul/red. Kabulde plan kendi takvimime de düşüyor — davetler
-  // sekmesindeki akışla aynı davranış.
-  async function davetiYanitla(davet: PlanDaveti, kabul: boolean) {
-    if (kabul) {
-      await kayitOlustur({
-        kategori: 'etkinlik',
-        baslik: davet.baslik,
-        tarih: davet.tarih,
-        saat: davet.saat ? davet.saat.slice(0, 5) : null,
-        konum: davet.konum,
-        oncelik: 'orta',
-        sure: davet.sure,
-        ozetNot: davet.mesaj,
-        mekanOnerisi: null,
-        yakinOneriler: null,
-        kaynakTipi: 'metin',
-        hamBaslik: '',
-        hamMetin: '',
-        hamLink: '',
-        gorseller: [],
-        arkadasId: davet.gonderen_id,
-        arkadasAdi: arkadas.ad,
-      })
-    }
-    await davetYanitla(davet.id, kabul)
-    setDavetler((eski) => {
-      const yeni = new Map(eski)
-      yeni.set(davet.id, { ...davet, durum: kabul ? 'kabul' : 'red' })
-      return yeni
-    })
-  }
 
   async function gonder() {
     const metin = girdi.trim()
@@ -162,6 +130,21 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
 
       {temaAcik && <TemaSheet onKapat={() => setTemaAcik(false)} />}
 
+      {paylasAcik && (
+        <PlanPaylasSheet
+          hedef={{ tur: 'arkadas', id: arkadas.id, ad: arkadas.ad }}
+          onKapat={() => setPaylasAcik(false)}
+          onUygunSaat={() => {
+            setPaylasAcik(false)
+            setSihirbazAcik(true)
+          }}
+        />
+      )}
+
+      {sihirbazAcik && (
+        <SihirbazAc arkadas={arkadas} onKapat={() => setSihirbazAcik(false)} />
+      )}
+
       <SohbetZemini tema={tema} className="px-5 py-4">
         <div className="space-y-2">
           {yukleniyor ? (
@@ -181,15 +164,19 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
                   benim={m.gonderen_id === benimId}
                   yeni={yeniMi(m.olusturulma)}
                   zaman={formatMessageTime(m.olusturulma) ?? undefined}
+                  ek={
+                    davet && (
+                      <DavetKartiSohbet
+                        davet={davet}
+                        benimId={benimId}
+                        karsiAd={arkadas.ad}
+                        onYanit={(kabul) => davetiYanitla(davet, kabul, arkadas.ad)}
+                        onIptal={() => davetiIptalEt(davet.id)}
+                      />
+                    )
+                  }
                 >
                   {m.metin}
-                  {davet && (
-                    <DavetKartiSohbet
-                      davet={davet}
-                      benimId={benimId}
-                      onYanit={(kabul) => void davetiYanitla(davet, kabul)}
-                    />
-                  )}
                 </Baloncuk>
               )
             })
@@ -208,6 +195,13 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
 
       <div className="px-5 pb-[calc(1rem+var(--safe-bottom))] pt-3 border-t border-ink-100/40 safe-x shrink-0 bg-cream-100">
         <div className="flex items-end gap-2">
+          <button
+            onClick={() => setPaylasAcik(true)}
+            aria-label="Plan paylaş"
+            className="w-11 h-11 rounded-full bg-coral-100 text-coral-600 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          >
+            <Icon name="CalendarPlus" className="w-5 h-5" />
+          </button>
           <textarea
             value={girdi}
             onChange={(e) => setGirdi(e.target.value)}
@@ -232,83 +226,14 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
   )
 }
 
-// Sohbetteki plan daveti kartı. Baloncuğun içinde durduğu için kendi
-// rengini baloncuktan bağımsız tutuyoruz — koyu temada da okunur kalsın.
-function DavetKartiSohbet({
-  davet,
-  benimId,
-  onYanit,
-}: {
-  davet: PlanDaveti
-  benimId: string
-  onYanit: (kabul: boolean) => void
-}) {
-  const [isleniyor, setIsleniyor] = useState(false)
-  const bana = davet.alan_id === benimId
-  const bekliyor = davet.durum === 'bekliyor'
-
-  return (
-    <div className="mt-2 rounded-xl bg-cream-50 border border-ink-100/50 p-3 text-ink-700">
-      <div className="flex items-center gap-1.5 mb-1.5">
-        <Icon name="CalendarClock" className="w-3.5 h-3.5 text-coral-500 shrink-0" />
-        <span className="text-[10px] font-bold uppercase tracking-wide text-coral-600">
-          Plan daveti
-        </span>
-      </div>
-      <p className="text-sm font-semibold leading-snug">{davet.baslik}</p>
-      <p className="text-xs text-ink-400 mt-0.5">
-        {formatDate(davet.tarih) ?? davet.tarih}
-        {davet.saat && ` · ${davet.saat.slice(0, 5)}`}
-        {davet.sure ? ` · ${davet.sure} dk` : ''}
-      </p>
-      {davet.konum && (
-        <p className="flex items-center gap-1 text-xs text-ink-500 mt-1">
-          <Icon name="MapPin" className="w-3 h-3 text-coral-500 shrink-0" />
-          {davet.konum}
-        </p>
-      )}
-      {davet.mesaj && <p className="text-xs text-ink-400 mt-1.5">{davet.mesaj}</p>}
-
-      {bekliyor && bana ? (
-        <div className="flex gap-2 mt-3">
-          <button
-            onClick={() => {
-              setIsleniyor(true)
-              onYanit(false)
-            }}
-            disabled={isleniyor}
-            className="flex-1 rounded-xl bg-cream-100 border border-ink-100/40 text-ink-500 text-xs font-semibold py-2 active:scale-95 transition-transform disabled:opacity-50"
-          >
-            Uymuyor
-          </button>
-          <button
-            onClick={() => {
-              setIsleniyor(true)
-              onYanit(true)
-            }}
-            disabled={isleniyor}
-            className="flex-1 rounded-xl bg-coral-500 text-white text-xs font-semibold py-2 active:scale-95 transition-transform disabled:opacity-50"
-          >
-            Geliyorum
-          </button>
-        </div>
-      ) : (
-        <p
-          className={`text-[11px] mt-2 font-medium ${
-            davet.durum === 'kabul'
-              ? 'text-teal-600'
-              : davet.durum === 'red'
-                ? 'text-ink-400'
-                : 'text-ink-300'
-          }`}
-        >
-          {davet.durum === 'kabul'
-            ? 'Kabul edildi'
-            : davet.durum === 'red'
-              ? 'Reddedildi'
-              : 'Yanıt bekleniyor'}
-        </p>
-      )}
-    </div>
-  )
+// The AI planner for just this friend. My own name goes into the plan
+// message, so it waits for my profile.
+function SihirbazAc({ arkadas, onKapat }: { arkadas: Profil; onKapat: () => void }) {
+  const { kullanici } = useAuth()
+  const [benimAdim, setBenimAdim] = useState<string | null>(null)
+  useEffect(() => {
+    void profilimiGetir().then((p) => setBenimAdim(p?.ad ?? 'Ben'))
+  }, [kullanici])
+  if (!benimAdim) return null
+  return <OrtakPlanSihirbazi benimAdim={benimAdim} sabitKisiler={[arkadas]} onKapat={onKapat} onOlusturuldu={() => {}} />
 }

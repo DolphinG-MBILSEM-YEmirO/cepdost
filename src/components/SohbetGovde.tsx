@@ -31,17 +31,20 @@ export function SohbetZemini({
 
 // Mesaj baloncuğu. `yeni` true ise giriş animasyonu oynar — ilk yüklemede
 // tüm geçmiş aynı anda zıplamasın diye sadece sonradan gelenlerde açılıyor.
+// `ek` (a plan card) sits under the bubble, on the same side.
 export function Baloncuk({
   benim,
   yeni,
   gonderenAd,
   zaman,
+  ek,
   children,
 }: {
   benim: boolean
   yeni?: boolean
   gonderenAd?: string | null
   zaman?: string
+  ek?: ReactNode
   children: ReactNode
 }) {
   const tema = useSohbetTemasi()
@@ -65,6 +68,7 @@ export function Baloncuk({
         >
           {children}
         </div>
+        {ek && <div className={`mt-1.5 flex ${benim ? 'justify-end' : 'justify-start'}`}>{ek}</div>}
         {zaman && (
           <p
             className={`text-[10px] text-ink-300 mt-0.5 px-1 ${benim ? 'text-right' : 'text-left'}`}

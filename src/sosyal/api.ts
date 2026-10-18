@@ -507,6 +507,16 @@ export async function bekleyenSayisi(): Promise<number> {
   return istekler + gelen.filter((d) => d.durum === 'bekliyor' && d.tarih >= bugun).length
 }
 
+// The sender withdraws an invite; the card turns into "cancelled" for both.
+export async function davetiIptalEt(davetId: string): Promise<void> {
+  const m = motor()
+  const [k] = (await m.anahtarIle([`davet:${davetId}`])).filter((x) => x.tur === TUR.davet && x.yazar === m.benimId)
+  await kanalDurumu()
+  const kanal = k ? kanalBilgisi(k.konu) : undefined
+  if (!k || !kanal || !nesneMi(k.veri)) throw new Error('Davet bulunamadı.')
+  await m.yayinla(kanal, TUR.davet, `davet:${davetId}`, { ...k.veri, iptal: true, zaman: simdiMs() })
+}
+
 export async function davetYanitla(davetId: string, kabul: boolean): Promise<void> {
   const m = motor()
   const [k] = (await m.anahtarIle([`davet:${davetId}`])).filter((x) => x.tur === TUR.davet)

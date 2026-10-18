@@ -66,6 +66,9 @@ export interface Kayit {
   // Bu kayıt hangi grup planından geldi. Aynı plana ikinci bir kayıt
   // açılmasın ve yanıt "geliyorum"dan çıkınca kayıt kaldırılabilsin diye.
   grupPlanId?: string | null
+  // Same for a friend's plan invite: set when I accepted it, so declining
+  // later (or the sender cancelling) can take it off my calendar.
+  davetId?: string | null
   // Anı eklendiyse tekrar tekrar sorulmasın.
   aniEklendi?: boolean
 }
