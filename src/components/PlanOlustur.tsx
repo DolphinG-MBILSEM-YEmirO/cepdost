@@ -1,29 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Icon, type IconName } from './Icon'
 import { Avatar, GrupAvatari } from './Avatar'
-import { kayitOlustur, type Kategori, type YakinOneri } from '../db'
+import { type Kategori, type YakinOneri } from '../db'
 import { siniflandirOnizleme } from '../classify'
 import { useAuth } from '../sosyal/auth'
 import {
   arkadaslariGetir,
   arkadasMusaitligi,
-  davetGonder,
   type Arkadas,
   type MusaitlikBlogu,
   type Profil,
 } from '../sosyal/api'
-import {
-  grupPlaniOlustur,
-  gruplarimiGetir,
-  grupUyeleriGetir,
-  mesajGonder,
-  planaYanitVer,
-  type Grup,
-} from '../sosyal/gruplar'
-import { direktMesajGonder } from '../sosyal/mesajlar'
+import { gruplarimiGetir, grupUyeleriGetir, type Grup } from '../sosyal/gruplar'
 import { ortakPlanOner } from '../sosyal/ortakPlan'
 import { addDays, formatDate, toDateString } from '../lib/format'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
+import { planiKur, type PlanKitlesi } from '../lib/planPaylasimi'
 import { ETKINLIK_EMOJILERI } from '../lib/kisisellestirme'
 import { EmojiSecici } from './Seciciler'
 
@@ -265,77 +257,18 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
     setKaydediliyor(true)
     setHata(null)
     try {
-      let grupPlanId: string | null = null
-      if (kapsam === 'grup' && seciliGrup) {
-        const planId = await grupPlaniOlustur({
-          grupId: seciliGrup.id,
-          baslik,
-          tarih,
-          saat: saat || null,
-          sure,
-          konum: konum.trim() || null,
-          notlar: null,
-          emoji,
-        })
-        grupPlanId = planId
-        // Planı kuran zaten geliyor.
-        await planaYanitVer(planId, 'geliyorum')
-        try {
-          await mesajGonder(seciliGrup.id, 'Yeni bir plan 👇', planId)
-        } catch {
-          /* plan oluştu; sohbet kartı isteğe bağlı bir ekstra */
-        }
-      } else if (kapsam === 'arkadas') {
-        for (const p of katilimcilar) {
-          const davetId = await davetGonder({
-            alanId: p.id,
-            baslik,
-            tarih,
-            saat: saat || null,
-            sure,
-            konum: konum.trim() || null,
-            mesaj: null,
-            emoji,
-          })
-          // Davet, o kişiyle olan sohbete de kart olarak düşsün — böylece
-          // "bir yerde bir davet var" diye aramak gerekmiyor.
-          try {
-            await direktMesajGonder(p.id, 'Bir plan önerdim 👇', davetId)
-          } catch {
-            /* davet zaten gitti; sohbet kartı isteğe bağlı bir ekstra */
-          }
-        }
-      }
-
-      // Her durumda kendi takvimime düşsün.
-      await kayitOlustur({
-        kategori,
-        baslik: kapsam === 'grup' && seciliGrup ? `${baslik} (${seciliGrup.ad})` : baslik,
-        tarih,
-        saat: saat || null,
-        konum: konum.trim() || null,
-        oncelik: 'orta',
-        sure,
-        ozetNot: null,
-        emoji,
-        mekanOnerisi: null,
-        yakinOneriler,
-        kaynakTipi: 'metin',
-        hamBaslik: '',
-        hamMetin: '',
-        hamLink: '',
-        gorseller: [],
-        // Tarihi geçince "anı ekle" çağrısını doğru arşive yönlendirmek için.
-        grupId: kapsam === 'grup' ? (seciliGrup?.id ?? null) : null,
-        grupAdi: kapsam === 'grup' ? (seciliGrup?.ad ?? null) : null,
-        // Links the local copy to the group plan, so answering the plan
-        // later from the group screen doesn't add a second copy.
-        grupPlanId,
-        // Tek kişilik planlarda anı doğrudan o arkadaşın arşivine gidebilir;
-        // kalabalık planlarda hedef belirsiz olurdu, o yüzden boş bırakılıyor.
-        arkadasId: kapsam === 'arkadas' && katilimcilar.length === 1 ? katilimcilar[0].id : null,
-        arkadasAdi: kapsam === 'arkadas' && katilimcilar.length === 1 ? katilimcilar[0].ad : null,
-      })
+      const kitle: PlanKitlesi =
+        kapsam === 'grup' && seciliGrup
+          ? { tur: 'grup', grup: seciliGrup }
+          : kapsam === 'arkadas'
+            ? { tur: 'arkadaslar', kisiler: katilimcilar }
+            : { tur: 'tek' }
+      // Sends the group plan or the invites (with chat cards) and puts the
+      // plan in my calendar, linked to them.
+      await planiKur(
+        { baslik, tarih, saat: saat || null, sure, konum: konum.trim() || null, not: null, emoji, kategori, yakinOneriler },
+        kitle,
+      )
 
       onSaved()
       onClose()

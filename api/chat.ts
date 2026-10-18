@@ -1,106 +1,76 @@
-// F8 — CepDost assistant: chat about the user's saved plans, + F9: SUGGEST a
-// new plan during the chat. Uses the same Gemini provider as classify (see
-// api/_lib/gemini.ts). Instead of ALL records the client sends a compact text
-// summary it builds itself (planOzeti), which is lighter on both tokens and
-// privacy (see src/chat.ts planOzetiOlustur).
+// The CepDost assistant: chats about the user's saved plans and, from a
+// single message, prepares a whole plan: what, when, where and with whom.
+// Uses the same Gemini provider as classify (see api/_lib/gemini.ts).
 //
-// F9 uses Gemini's function calling (tools/functionDeclarations): when the
-// user clearly asks to add a new plan, the model calls plan_oner and we hand
-// its arguments to the client as a structured "planOnerisi". The call is
-// ONLY a suggestion: nothing is written to Dexie here, and no record exists
-// until the user taps "Plana ekle" on the client (see ChatPanel).
+// Instead of ALL records the client sends a compact text summary it builds
+// itself (planOzeti), plus its friends and groups under short handles with
+// only their busy time ranges (see api/_lib/asistanPlani.ts).
+//
+// The model works with two tools in a short loop inside this one request:
+// musaitlik_bul returns the slots when everyone is free (computed by code),
+// plan_kur hands back the finished plan. The plan is ONLY a suggestion:
+// nothing is written or sent here, and no record, invite or group plan
+// exists until the user taps the card on the client (see ChatPanel).
 
-import { anahtarEksikYaniti, geminiAnahtari, geminiCagir, geminiParcalari } from './_lib/gemini.js'
+import { anahtarEksikYaniti, geminiAnahtari, geminiCagir, geminiParcalari, type GeminiParcasi } from './_lib/gemini.js'
 import { jsonGovdeOku, kaynakReddi, metinAl, yanit } from './_lib/http.js'
+import {
+  MUSAITLIK_FONKSIYONU,
+  PLAN_KUR_FONKSIYONU,
+  baglamMetni,
+  baglamiOku,
+  gunAdi,
+  musaitlikBul,
+  planiDogrula,
+  takvimTablosu,
+  type AsistanBaglami,
+  type AsistanPlani,
+  type Zaman,
+} from './_lib/asistanPlani.js'
 
-export const config = { maxDuration: 30 }
+// Up to three model calls in a row (look up free slots, maybe again, then
+// the plan), each with its own timeout.
+export const config = { maxDuration: 60 }
 
-// The server uses at most 20 messages of 2,000 characters plus a 6,000
-// character summary; this leaves room for UTF-8 Turkish text and JSON.
-const AZAMI_ISTEK = 128 * 1024
+// 20 messages of 2,000 characters, a 6,000 character summary, and the busy
+// ranges of the user's friends and group members for two weeks.
+const AZAMI_ISTEK = 512 * 1024
+
+// Model calls per request: free slots at most twice, then the plan.
+const AZAMI_TUR = 3
+// Leaves room under maxDuration for our own error answer.
+const SURE_BUTCESI_MS = 55_000
 
 interface SohbetMesaji {
   rol: 'kullanici' | 'asistan'
   metin: string
 }
 
-// Same field contract as KAYIT_SCHEMA in classify, kept identical on purpose
-// so the client can map both onto the same Kayit/PlanOnerisi shape.
-const PLAN_ONERISI_SCHEMA = {
-  type: 'OBJECT',
-  properties: {
-    kategori: { type: 'STRING', enum: ['mekan', 'tarif', 'urun', 'etkinlik', 'not'] },
-    baslik: { type: 'STRING', description: 'Kısa, okunabilir başlık (max 60 karakter)' },
-    tarih: { type: 'STRING', description: 'YYYY-MM-DD, belirsizse boş string — uydurma' },
-    saat: { type: 'STRING', description: 'HH:MM, belirsizse boş string' },
-    konum: { type: 'STRING', description: 'Yer adı/adres, yoksa boş string' },
-    oncelik: { type: 'STRING', enum: ['dusuk', 'orta', 'yuksek'] },
-    sure: { type: 'STRING', description: 'Tahmini dakika (sayı, string olarak), yoksa boş string' },
-    ozet_not: { type: 'STRING', description: 'Ek not, yoksa boş string' },
-  },
-  required: ['kategori', 'baslik', 'tarih', 'saat', 'konum', 'oncelik', 'sure', 'ozet_not'],
-}
+function sistemPrompt(planOzeti: string, z: Zaman, b: AsistanBaglami): string {
+  return `Sen CepDost uygulamasının içinde yaşayan, dostane ve kısa konuşan planlama asistanısın. Kullanıcı (${b.benimAdim}) Türkiye'de yaşayan genç bir yetişkin.
 
-const PLAN_ONER_FONKSIYONU = {
-  name: 'plan_oner',
-  description:
-    'Kullanıcı sohbette CepDost\'a YENİ bir plan/hatırlatma/etkinlik/mekan fikri eklemek istediğini AÇIKÇA belirttiğinde ve en azından bir başlık çıkarılabilecek kadar bilgi verdiğinde çağrılır. Kullanıcı sadece mevcut planlarını soruyorsa, genel sohbet ediyorsa veya yeterli bilgi yoksa ASLA çağırma — bunun yerine metinle netleştirici bir soru sor.',
-  parameters: PLAN_ONERISI_SCHEMA,
-}
+Bugün: ${z.bugun} ${gunAdi(z.bugun)}${z.simdiSaat ? `, saat ${z.simdiSaat}` : ''}
+Önümüzdeki günler (göreli tarihleri SADECE bu tablodan çöz):
+${takvimTablosu(z.bugun)}
 
-function sistemPrompt(planOzeti: string, bugun: string): string {
-  return `Sen CepDost uygulamasının içinde yaşayan, dostane ve kısa konuşan bir kişisel planlama asistanısın. Kullanıcı Türkiye'de yaşayan genç bir yetişkin. Kullanıcının CepDost'ta kayıtlı planları aşağıda listelenmiş; görevin bu planlar hakkında sohbet etmek: hangi planı var, ne zaman, çakışma var mı, bugün/bu hafta önceliği ne olmalı, kısa öneriler sunmak.
-
-Kurallar:
-- Kısa ve sıcak yanıt ver — gereksiz uzatma, gerekirse madde işareti kullan.
-- SADECE aşağıdaki plan listesindeki bilgilere dayan. Listede olmayan bir tarihi/mekanı/detayı ASLA uydurma.
-- Kullanıcı sohbette YENİ bir plan eklemek isterse VE yeterince bilgi verdiyse (en azından ne olduğu belliyse), plan_oner fonksiyonunu çağırarak öner. Bu sadece bir ÖNERİ — kaydı SEN oluşturmuyorsun, kullanıcı ekranda "Plana ekle"ye basarsa kaydediliyor. Bu yüzden "ekledim" gibi kesin bir dille konuşma, "işte bir öneri, eklemek ister misin?" havasında ol.
-- Yeterli bilgi yoksa (örn. sadece "bir şey eklemek istiyorum" derse) fonksiyonu çağırmadan önce kısa bir netleştirici soru sor.
-- Türkçe yanıtla.
-
-Bugünün tarihi: ${bugun}
+Arkadaşları ve grupları (plan kurarken bu kısa kodları kullan):
+${baglamMetni(b)}
 
 Kullanıcının kayıtlı planları:
-${planOzeti || '(Henüz kayıtlı planı yok.)'}`
-}
+${planOzeti || '(Henüz kayıtlı planı yok.)'}
 
-interface GecerliPlanOnerisi {
-  kategori: string
-  baslik: string | null
-  tarih: string | null
-  saat: string | null
-  konum: string | null
-  oncelik: string
-  sure: number | null
-  ozetNot: string | null
-}
-
-function planOnerisiDogrula(args: Record<string, unknown>): GecerliPlanOnerisi | null {
-  const gecerliKategoriler = ['mekan', 'tarif', 'urun', 'etkinlik', 'not']
-  const gecerliOncelikler = ['dusuk', 'orta', 'yuksek']
-
-  const bosYoksaNull = (v: unknown): string | null => {
-    const s = typeof v === 'string' ? v.trim() : ''
-    return s || null
-  }
-
-  const baslik = bosYoksaNull(args.baslik)
-  if (!baslik) return null // a suggestion without a title is useless; don't show it
-
-  let sure: number | null = null
-  const sureSayi = Number(args.sure)
-  if (!Number.isNaN(sureSayi) && sureSayi > 0) sure = Math.min(Math.round(sureSayi), 1440)
-
-  return {
-    kategori: gecerliKategoriler.includes(String(args.kategori)) ? String(args.kategori) : 'not',
-    baslik,
-    tarih: bosYoksaNull(args.tarih),
-    saat: bosYoksaNull(args.saat),
-    konum: bosYoksaNull(args.konum),
-    oncelik: gecerliOncelikler.includes(String(args.oncelik)) ? String(args.oncelik) : 'orta',
-    sure,
-    ozetNot: bosYoksaNull(args.ozet_not),
-  }
+Görevlerin:
+1. Planlar hakkındaki soruları yanıtla: bugün/bu hafta ne var, çakışma var mı, neye öncelik vermeli. SADECE listedeki bilgilere dayan, tarih/mekan/detay uydurma.
+2. Kullanıcı bir plan kurmak, eklemek ya da ayarlamak istediğinde BÜTÜN PLANI TEK SEFERDE hazırla ve plan_kur'u çağır:
+   - Kimle: isimleri yukarıdaki listeyle eşleştir; Türkçe ekleri ve küçük harfi tanı ("ayşeyle", "Ayşe'ye", "Can'la"). Bir grup adı geçiyorsa (ya da "ekip", "grup" diyip tek bir grup varsa) grubu seç. Listede olmayan birini ASLA ekleme; eşleşmeyen ismi yanıtında söyle.
+   - Ne zaman: "cumartesi" tablodaki ilk Cumartesi, "hafta sonu" ilk Cumartesi-Pazar, "haftaya" 7 gün sonrası. Sabah 09:00-12:00, öğle 12:00-14:00, öğleden sonra 14:00-18:00, akşam 18:00-22:00, gece 21:00-23:00.
+   - Başkalarıyla planda saat verilmemişse ÖNCE musaitlik_bul ile herkesin boş olduğu aralıkları al, saati o aralıklardan seç. Kullanıcı saati kendisi verdiyse o saati kullan; uygunluğu sistem kontrol edip kullanıcıya gösterir.
+   - Tek başına planda saat verilmemişse, saat önemliyse musaitlik_bul'u kişisiz çağırıp kullanıcının boş zamanından seç; saat önemsiz bir hatırlatmaysa saati boş bırak.
+   - Süre verilmemişse makul seç: kahve 60-90, kahvaltı/yemek 90-120, sinema 150, spor 60-90, konser 180, ders/çalışma 60-120 dakika.
+   - Kısa bir başlık (kişi/grup adı olmadan), uygun bir emoji, kategori ve öncelik seç. Konumu yalnızca kullanıcı söylediyse yaz.
+   - Küçük eksikler için soru sorma: makul varsayılanı seç ve yanıtında kısaca belirt. Yalnızca ne yapılacağı da kimle/ne zaman olduğu da hiç belli değilse tek kısa soru sor.
+   - plan_kur bir ÖNERİDİR: kullanıcı karttaki düğmeye basınca plan takvimine eklenir, davetler ya da grup planı o zaman gider. "Kurdum, gönderdim" deme; "Hazırladım, uygunsa dokunman yeterli" havasında konuş.
+3. Türkçe, kısa ve sıcak yanıt ver. Plan hazırladığında 1-2 cümleyle neyi neden seçtiğini söyle (ör. "Herkes cumartesi 11:00'de boş görünüyor").`
 }
 
 // Caps a long history and abuse: the last 20 messages, each of a sane length.
@@ -114,6 +84,68 @@ function mesajlariSinirla(ham: unknown): SohbetMesaji[] {
       rol: m.rol === 'kullanici' ? ('kullanici' as const) : ('asistan' as const),
       metin: String(m.metin ?? '').slice(0, 2000),
     }))
+}
+
+interface SohbetSonucu {
+  yanit: string | null
+  planOnerisi: AsistanPlani | null
+}
+
+// Runs the model with the two tools: free-slot lookups are answered here
+// and fed back until it hands over a plan or just answers. Returns null when
+// Gemini fails.
+async function sohbetEt(
+  anahtar: string,
+  sistem: string,
+  gecmis: Array<{ role: string; parts: unknown[] }>,
+  b: AsistanBaglami,
+  z: Zaman,
+): Promise<SohbetSonucu | null> {
+  const baslangic = Date.now()
+  const contents = [...gecmis]
+  let sonMetin: string | null = null
+
+  for (let tur = 1; tur <= AZAMI_TUR; tur++) {
+    const kalan = SURE_BUTCESI_MS - (Date.now() - baslangic)
+    if (kalan < 5_000) break
+    // On the last turn only the plan tool is left, so the loop always ends.
+    const sonTur = tur === AZAMI_TUR
+    const veri = await geminiCagir(
+      anahtar,
+      {
+        systemInstruction: { parts: [{ text: sistem }] },
+        contents,
+        tools: [{ functionDeclarations: sonTur ? [PLAN_KUR_FONKSIYONU] : [MUSAITLIK_FONKSIYONU, PLAN_KUR_FONKSIYONU] }],
+        toolConfig: { functionCallingConfig: { mode: 'AUTO' } },
+        generationConfig: { maxOutputTokens: 800 },
+      },
+      { etiket: 'chat', zamanAsimiMs: Math.min(25_000, kalan - 2_000) },
+    )
+    if (!veri) return tur === 1 ? null : { yanit: sonMetin, planOnerisi: null }
+
+    const parcalar = geminiParcalari(veri)
+    const metin = parcalar.find((p) => typeof p.text === 'string' && p.text.trim())?.text?.trim() ?? null
+    if (metin) sonMetin = metin
+
+    const planCagrisi = parcalar.find((p) => p.functionCall?.name === 'plan_kur')?.functionCall
+    if (planCagrisi) {
+      return { yanit: metin, planOnerisi: planiDogrula(planCagrisi.args ?? {}, b, z) }
+    }
+
+    const aramalar = parcalar.filter((p) => p.functionCall?.name === 'musaitlik_bul')
+    if (aramalar.length === 0 || sonTur) return { yanit: sonMetin, planOnerisi: null }
+
+    // The model's turn goes back exactly as it came (Gemini needs its
+    // thought signatures), followed by one answer per lookup.
+    contents.push({ role: 'model', parts: parcalar })
+    contents.push({
+      role: 'user',
+      parts: aramalar.map((p: GeminiParcasi) => ({
+        functionResponse: { name: 'musaitlik_bul', response: musaitlikBul(p.functionCall?.args ?? {}, b, z) },
+      })),
+    })
+  }
+  return { yanit: sonMetin, planOnerisi: null }
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -130,37 +162,25 @@ export async function POST(request: Request): Promise<Response> {
   const sinirliMesajlar = mesajlariSinirla(girdi.mesajlar)
   if (sinirliMesajlar.length === 0) return yanit({ error: 'boş mesaj listesi' }, 400)
 
-  // The client's local date: the function runs in UTC, which lags Turkey by
-  // three hours around midnight.
+  // The client's local date and time: the function runs in UTC, which lags
+  // Turkey by three hours around midnight.
   const bugunHam = metinAl(girdi.bugun)
-  const bugun = /^\d{4}-\d{2}-\d{2}$/.test(bugunHam) ? bugunHam : new Date().toISOString().slice(0, 10)
+  const simdiHam = metinAl(girdi.simdiSaat)
+  const zaman: Zaman = {
+    bugun: /^\d{4}-\d{2}-\d{2}$/.test(bugunHam) ? bugunHam : new Date().toISOString().slice(0, 10),
+    simdiSaat: /^\d{2}:\d{2}$/.test(simdiHam) ? simdiHam : '',
+  }
   const planOzeti = String(girdi.planOzeti ?? '').slice(0, 6000)
+  const baglam = baglamiOku(girdi.baglam)
 
   const contents = sinirliMesajlar.map((m) => ({
     role: m.rol === 'kullanici' ? 'user' : 'model',
     parts: [{ text: m.metin }],
   }))
 
-  const veri = await geminiCagir(
-    anahtar,
-    {
-      systemInstruction: { parts: [{ text: sistemPrompt(planOzeti, bugun) }] },
-      contents,
-      tools: [{ functionDeclarations: [PLAN_ONER_FONKSIYONU] }],
-      toolConfig: { functionCallingConfig: { mode: 'AUTO' } },
-      generationConfig: { maxOutputTokens: 500 },
-    },
-    { etiket: 'chat' },
-  )
-  if (!veri) return yanit({ error: 'sohbet başarısız' }, 502)
+  const sonuc = await sohbetEt(anahtar, sistemPrompt(planOzeti, zaman, baglam), contents, baglam, zaman)
+  if (!sonuc) return yanit({ error: 'sohbet başarısız' }, 502)
+  if (!sonuc.yanit && !sonuc.planOnerisi) return yanit({ error: 'yanıt üretilemedi' }, 502)
 
-  const parcalar = geminiParcalari(veri)
-  const metinParcasi = parcalar.find((p) => typeof p.text === 'string' && p.text.trim())?.text ?? null
-  const fonksiyonCagrisi = parcalar.find((p) => p.functionCall?.name === 'plan_oner')?.functionCall ?? null
-
-  const planOnerisi = fonksiyonCagrisi ? planOnerisiDogrula(fonksiyonCagrisi.args ?? {}) : null
-
-  if (!metinParcasi && !planOnerisi) return yanit({ error: 'yanıt üretilemedi' }, 502)
-
-  return yanit({ yanit: metinParcasi?.trim() ?? null, planOnerisi })
+  return yanit(sonuc)
 }

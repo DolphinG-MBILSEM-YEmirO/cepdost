@@ -2,12 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { Icon } from './Icon'
 import { Avatar } from './Avatar'
 import { AniArsivi } from './AniArsivi'
-import { arkadasMusaitligi, davetGonder, type MusaitlikBlogu, type Profil } from '../sosyal/api'
-import { direktMesajGonder } from '../sosyal/mesajlar'
+import { arkadasMusaitligi, type MusaitlikBlogu, type Profil } from '../sosyal/api'
 import { addDays, toDateString, formatDate } from '../lib/format'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 import { ETKINLIK_EMOJILERI, renkAl } from '../lib/kisisellestirme'
-import { davetimiTakvimeEkle } from '../lib/planPaylasimi'
+import { planiKur } from '../lib/planPaylasimi'
 import { EmojiSecici } from './Seciciler'
 
 // Kaç günlük müsaitlik gösterilsin. Bir haftalık pencere, "bu hafta ne
@@ -251,23 +250,18 @@ function DavetModal({
     setGonderiliyor(true)
     setHata(null)
     try {
-      const davet = {
-        baslik: baslik.trim(),
-        tarih,
-        saat: saat || null,
-        sure: sure ? Number(sure) : null,
-        konum: konum.trim() || null,
-        mesaj: mesaj.trim() || null,
-        emoji,
-      }
-      const davetId = await davetGonder({ ...davet, alanId: arkadas.id })
-      await davetimiTakvimeEkle(davet, arkadas)
-      // Davet sohbette de kart olarak görünsün.
-      try {
-        await direktMesajGonder(arkadas.id, 'Bir plan önerdim 👇', davetId)
-      } catch {
-        /* davet gitti; sohbet kartı isteğe bağlı bir ekstra */
-      }
+      await planiKur(
+        {
+          baslik: baslik.trim(),
+          tarih,
+          saat: saat || null,
+          sure: sure ? Number(sure) : null,
+          konum: konum.trim() || null,
+          not: mesaj.trim() || null,
+          emoji,
+        },
+        { tur: 'arkadaslar', kisiler: [arkadas] },
+      )
       setBasarili(true)
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Davet gönderilemedi')

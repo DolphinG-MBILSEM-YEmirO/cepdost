@@ -123,7 +123,7 @@ test('missing GEMINI_API_KEY -> 503 on chat, classify, ortak-plan', async () => 
 })
 
 test('body limit: content-length over limit -> 413', async () => {
-  const buyuk = JSON.stringify({ mesajlar: [{ rol: 'kullanici', metin: 'a'.repeat(200 * 1024) }] })
+  const buyuk = JSON.stringify({ mesajlar: [{ rol: 'kullanici', metin: 'a'.repeat(600 * 1024) }] })
   const res = await chatPOST(istek('/api/chat', null, { ham: buyuk }))
   assert.equal(res.status, 413)
   assert.equal((await json(res)).error, 'İstek gövdesi çok büyük.')
@@ -161,7 +161,7 @@ test('chat: empty messages -> 400', async () => {
   assert.equal((await json(res)).error, 'boş mesaj listesi')
 })
 
-test('chat: text + plan_oner function call, validated; request shape', async () => {
+test('chat: request shape; plan_kur validated', async () => {
   process.env.GEMINI_MODEL = 'gemini-test-model'
   fetchIsleyici = (url, init) => {
     assert.equal(url.host, 'generativelanguage.googleapis.com')
@@ -172,23 +172,129 @@ test('chat: text + plan_oner function call, validated; request shape', async () 
     assert.equal(govde.contents[0].role, 'model')
     assert.equal(govde.contents.at(-1).role, 'user')
     assert.equal(govde.contents.at(-1).parts[0].text.length, 2000)
-    assert.match(govde.systemInstruction.parts[0].text, /Bugünün tarihi: 2026-10-18/)
-    assert.match(govde.systemInstruction.parts[0].text, /- \[•\] Kahve/)
-    assert.equal(govde.tools[0].functionDeclarations[0].name, 'plan_oner')
+    const sistem = govde.systemInstruction.parts[0].text
+    assert.match(sistem, /Bugün: 2026-10-18 Pazar, saat 14:30/)
+    assert.match(sistem, /2026-10-19 Pazartesi \(yarın\)/)
+    assert.match(sistem, /2026-10-24 Cumartesi/)
+    assert.match(sistem, /2026-10-31 Cumartesi/)
+    assert.match(sistem, /- \[•\] Kahve/)
+    assert.match(sistem, /Henüz arkadaşı ya da grubu yok/)
+    assert.deepEqual(govde.tools[0].functionDeclarations.map((f: { name: string }) => f.name), ['musaitlik_bul', 'plan_kur'])
     assert.equal(govde.toolConfig.functionCallingConfig.mode, 'AUTO')
-    assert.equal(govde.generationConfig.maxOutputTokens, 500)
+    assert.equal(govde.generationConfig.maxOutputTokens, 800)
     return geminiParcalar([
       { text: '  İşte bir öneri!  ' },
-      { functionCall: { name: 'plan_oner', args: { kategori: 'uydurma', baslik: ' Sinema ', tarih: '', saat: '20:00', konum: '', oncelik: 'x', sure: '130.4', ozet_not: '' } } },
+      { functionCall: { name: 'plan_kur', args: { kategori: 'uydurma', baslik: ' Sinema ', emoji: 'abc', tarih: '', saat: '20:00', konum: '', oncelik: 'x', sure: '130.4', not: '', kisiler: ['k9'], grup: '' } } },
     ])
   }
   const mesajlar = Array.from({ length: 25 }, (_, i) => ({ rol: i % 2 ? 'asistan' : 'kullanici', metin: i === 24 ? 'z'.repeat(3000) : `m${i}` }))
-  const res = await chatPOST(istek('/api/chat', { mesajlar, planOzeti: '- [•] Kahve', bugun: '2026-10-18' }))
+  const res = await chatPOST(istek('/api/chat', { mesajlar, planOzeti: '- [•] Kahve', bugun: '2026-10-18', simdiSaat: '14:30' }))
   assert.equal(res.status, 200)
   assert.deepEqual(await json(res), {
     yanit: 'İşte bir öneri!',
-    planOnerisi: { kategori: 'not', baslik: 'Sinema', tarih: null, saat: '20:00', konum: null, oncelik: 'orta', sure: 130, ozetNot: null },
+    planOnerisi: {
+      kategori: 'etkinlik', baslik: 'Sinema', emoji: null, tarih: null, saat: '20:00', konum: null, oncelik: 'orta',
+      sure: 130, ozetNot: null, kisiler: [], grup: null, uygunluk: null,
+    },
   })
+})
+
+// Me, a friend who shares, a friend who doesn't, a group member who isn't a
+// friend, and a group of the two.
+const BAGLAM = {
+  benimAdim: 'Ali',
+  benimBloklarim: [{ tarih: '2026-10-24', baslangic: '14:00', bitis: '15:00' }],
+  kisiler: [
+    { ref: 'k1', ad: 'Ayşe', kullaniciAdi: 'ayse', arkadas: true, paylasiyor: true, bloklar: [{ tarih: '2026-10-24', baslangic: '10:00', bitis: '12:00' }] },
+    { ref: 'k2', ad: 'Can', kullaniciAdi: null, arkadas: true, paylasiyor: false, bloklar: [] },
+    { ref: 'k3', ad: 'Deniz', kullaniciAdi: 'deniz', arkadas: false, paylasiyor: true, bloklar: [{ tarih: '2026-10-24', baslangic: '18:00', bitis: '19:00' }, { tarih: 'bozuk' }] },
+    { ref: 'x1', ad: 'Geçersiz kod' },
+  ],
+  gruplar: [{ ref: 'g1', ad: 'Moda Ekibi', uyeler: ['k1', 'k3', 'k99'] }],
+}
+
+test('chat: free-slot lookup is answered by code, then the plan is checked', async () => {
+  let tur = 0
+  fetchIsleyici = (_u, init) => {
+    const govde = JSON.parse(String(init?.body))
+    tur++
+    if (tur === 1) {
+      const sistem = govde.systemInstruction.parts[0].text
+      assert.match(sistem, /k1: Ayşe \(@ayse\) — takvimini paylaşıyor/)
+      assert.match(sistem, /k2: Can — takvimini paylaşmıyor/)
+      assert.doesNotMatch(sistem, /k3: Deniz/) // not a friend: only listed inside the group
+      assert.match(sistem, /g1: Moda Ekibi grubu — üyeler: Ayşe \(k1\), Deniz \(k3, arkadaşın değil\)/)
+      assert.doesNotMatch(sistem, /x1/)
+      return geminiParcalar([
+        { functionCall: { name: 'musaitlik_bul', args: { kisiler: ['k1'], grup: '', gunler: ['2026-10-24', '2026-10-01', 'x'], en_az_dakika: '90', en_erken: '09:00', en_gec: '' } }, thoughtSignature: 'imza' },
+      ])
+    }
+    // The model's turn comes back untouched, then the computed slots.
+    const [modelTuru, cevap] = govde.contents.slice(-2)
+    assert.equal(modelTuru.role, 'model')
+    assert.equal(modelTuru.parts[0].thoughtSignature, 'imza')
+    assert.equal(cevap.role, 'user')
+    const yanitVerisi = cevap.parts[0].functionResponse
+    assert.equal(yanitVerisi.name, 'musaitlik_bul')
+    assert.deepEqual(yanitVerisi.response.katilimcilar, ['Ali', 'Ayşe'])
+    assert.deepEqual(yanitVerisi.response.bosluklar, [
+      { tarih: '2026-10-24', baslangic: '12:00', bitis: '14:00', gun: 'Cumartesi' },
+      { tarih: '2026-10-24', baslangic: '15:00', bitis: '23:00', gun: 'Cumartesi' },
+    ])
+    return geminiParcalar([
+      { text: 'Cumartesi 12:00 herkese uyuyor.' },
+      { functionCall: { name: 'plan_kur', args: { kategori: 'mekan', baslik: 'Kahvaltı', emoji: '🍳', tarih: '2026-10-24', saat: '12:00', sure: '90', konum: 'Moda', oncelik: 'orta', not: 'Gel!', kisiler: ['k1', 'k2', 'k3'], grup: '' } } },
+    ])
+  }
+  const res = await chatPOST(istek('/api/chat', { mesajlar: [{ rol: 'kullanici', metin: 'cumartesi ayşe ve canla kahvaltı' }], bugun: '2026-10-18', simdiSaat: '14:30', baglam: BAGLAM }))
+  assert.equal(res.status, 200)
+  assert.equal(tur, 2)
+  assert.deepEqual(await json(res), {
+    yanit: 'Cumartesi 12:00 herkese uyuyor.',
+    planOnerisi: {
+      kategori: 'mekan', baslik: 'Kahvaltı', emoji: '🍳', tarih: '2026-10-24', saat: '12:00', konum: 'Moda', oncelik: 'orta',
+      sure: 90, ozetNot: 'Gel!',
+      kisiler: ['k1', 'k2'], // Deniz isn't a friend, so no invite
+      grup: null,
+      uygunluk: { mesgul: [], bilinmiyor: ['Can'] },
+    },
+  })
+})
+
+test('chat: a time the user picked is checked; a group reaches its members; past dates dropped', async () => {
+  fetchIsleyici = () =>
+    geminiParcalar([{ functionCall: { name: 'plan_kur', args: { baslik: 'Brunch', tarih: '2026-10-24', saat: '11:00', sure: '240', kisiler: ['k2'], grup: 'g1' } } }])
+  let res = await chatPOST(istek('/api/chat', { mesajlar: [{ rol: 'kullanici', metin: 'ekiple cumartesi 11de brunch' }], bugun: '2026-10-18', baglam: BAGLAM }))
+  let plan = (await json(res)).planOnerisi
+  assert.equal(plan.grup, 'g1')
+  assert.deepEqual(plan.kisiler, [])
+  // 11:00-15:00 overlaps Ayşe (10-12) and me (14-15), not Deniz (18-19).
+  assert.deepEqual(plan.uygunluk, { mesgul: ['Sen', 'Ayşe'], bilinmiyor: [] })
+
+  fetchIsleyici = () =>
+    geminiParcalar([{ functionCall: { name: 'plan_kur', args: { baslik: 'Eski', tarih: '2026-10-01', saat: '25:00', kisiler: [], grup: '' } } }])
+  res = await chatPOST(istek('/api/chat', { mesajlar: [{ rol: 'kullanici', metin: 'x' }], bugun: '2026-10-18', baglam: BAGLAM }))
+  plan = (await json(res)).planOnerisi
+  assert.equal(plan.tarih, null)
+  assert.equal(plan.saat, null)
+  assert.equal(plan.uygunluk, null)
+})
+
+test('chat: endless lookups stop; the last turn only offers the plan tool', async () => {
+  let tur = 0
+  fetchIsleyici = (_u, init) => {
+    const govde = JSON.parse(String(init?.body))
+    tur++
+    const araclar = govde.tools[0].functionDeclarations.map((f: { name: string }) => f.name)
+    if (tur === 3) {
+      assert.deepEqual(araclar, ['plan_kur'])
+      return geminiParcalar([{ text: 'Uygun bir zaman bulamadım.' }])
+    }
+    return geminiParcalar([{ functionCall: { name: 'musaitlik_bul', args: { kisiler: [], grup: 'g1', gunler: [], en_az_dakika: '60', en_erken: '', en_gec: '' } } }])
+  }
+  const res = await chatPOST(istek('/api/chat', { mesajlar: [{ rol: 'kullanici', metin: 'x' }], bugun: '2026-10-18', baglam: BAGLAM }))
+  assert.equal(tur, 3)
+  assert.deepEqual(await json(res), { yanit: 'Uygun bir zaman bulamadım.', planOnerisi: null })
 })
 
 test('chat: Gemini HTTP error -> 502 sohbet başarısız; no parts -> 502 yanıt üretilemedi', async () => {
@@ -663,4 +769,23 @@ test('bosluklar: bosluklariHesapla handles today, defaults and custom window', (
   assert.deepEqual(s(bos.bosluklariHesapla({ gunler: ['2026-10-18'], katilimcilar: k, enErken: '18:00', enGec: '21:00', enAzDakika: 180 })), ['2026-10-18 18:00-21:00'])
   // today, 08:00 local: preparation time does not push before the window start
   assert.deepEqual(s(bos.bosluklariHesapla({ gunler: ['2026-10-18'], katilimcilar: k, simdiTarih: '2026-10-18', simdiSaat: '08:00' })), ['2026-10-18 09:00-23:00'])
+})
+
+test('bosluklar: mesgulMu overlaps only within the same day', () => {
+  const kisi = { bloklar: [{ tarih: '2026-10-20', baslangic: '10:00', bitis: '12:00' }] }
+  assert.equal(bos.mesgulMu(kisi, '2026-10-20', 11 * 60, 13 * 60), true)
+  assert.equal(bos.mesgulMu(kisi, '2026-10-20', 12 * 60, 13 * 60), false) // touching is fine
+  assert.equal(bos.mesgulMu(kisi, '2026-10-21', 11 * 60, 13 * 60), false)
+})
+
+test('asistan: date helpers and context parsing', async () => {
+  const a = await import('../api/_lib/asistanPlani.ts')
+  assert.equal(a.tarihEkle('2026-12-30', 3), '2027-01-02')
+  assert.equal(a.gunAdi('2026-10-18'), 'Pazar')
+  assert.equal(a.takvimTablosu('2026-10-18', 2), '2026-10-18 Pazar (bugün)\n2026-10-19 Pazartesi (yarın)')
+  assert.deepEqual(a.baglamiOku('çöp'), { benimAdim: 'Kullanıcı', benimBloklarim: [], kisiler: [], gruplar: [] })
+  const b = a.baglamiOku(BAGLAM)
+  assert.deepEqual(b.kisiler.map((k) => k.ref), ['k1', 'k2', 'k3'])
+  assert.deepEqual(b.kisiler[2].bloklar, [{ tarih: '2026-10-24', baslangic: '18:00', bitis: '19:00' }])
+  assert.deepEqual(b.gruplar[0].uyeler, ['k1', 'k3'])
 })

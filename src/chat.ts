@@ -13,18 +13,24 @@ export interface SohbetMesaji {
   metin: string
 }
 
-// F9: sohbet sırasında Gemini'nin (function calling ile) önerdiği yeni
-// plan — bkz. api/chat.ts plan_oner. Bu sadece bir
-// ÖNERİ, ChatPanel kullanıcı "Plana ekle"ye basmadan Dexie'ye yazmaz.
+// The whole plan the assistant prepared from one message (see plan_kur in
+// api/chat.ts). Only a suggestion: nothing is saved or sent until the user
+// taps the card in ChatPanel.
 export interface PlanOnerisi {
   kategori: Kategori
   baslik: string
+  emoji: string | null
   tarih: string | null
   saat: string | null
   konum: string | null
   oncelik: Oncelik
   sure: number | null
   ozetNot: string | null
+  // Handles from the assistant context (k1, g1); ChatPanel maps them back.
+  kisiler: string[]
+  grup: string | null
+  // Checked by the server for the chosen time.
+  uygunluk: { mesgul: string[]; bilinmiyor: string[] } | null
 }
 
 export interface SohbetYaniti {
@@ -70,26 +76,58 @@ export function planOzetiOlustur(kayitlar: Kayit[], bugun = localDateString()): 
     .join('\n')
 }
 
-// Sends the chat history and the compact plan summary to /api/chat and
-// returns the assistant's answer. Writes nothing to Dexie: the message
-// history lives only in ChatPanel's React state (no persistent chat history,
-// on purpose: simplicity).
-export async function sohbetGonder(mesajlar: SohbetMesaji[], kayitlar: Kayit[]): Promise<SohbetYaniti> {
-  const res = await fetch('/api/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      mesajlar: mesajlar.slice(-GONDERILEN_MESAJ_SAYISI),
-      planOzeti: planOzetiOlustur(kayitlar),
-      bugun: localDateString(),
-    }),
-  })
+// The server may call the model up to three times for one message.
+const ZAMAN_ASIMI_MS = 60_000
+
+// Sends the chat history, the compact plan summary and (when signed in) the
+// friends/groups context to /api/chat and returns the assistant's answer.
+// Writes nothing to Dexie: the message history lives only in ChatPanel's
+// React state (no persistent chat history, on purpose: simplicity).
+export async function sohbetGonder(
+  mesajlar: SohbetMesaji[],
+  kayitlar: Kayit[],
+  baglam: unknown = null,
+): Promise<SohbetYaniti> {
+  const simdi = new Date()
+  let res: Response
+  try {
+    res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mesajlar: mesajlar.slice(-GONDERILEN_MESAJ_SAYISI),
+        planOzeti: planOzetiOlustur(kayitlar),
+        bugun: localDateString(),
+        simdiSaat: `${String(simdi.getHours()).padStart(2, '0')}:${String(simdi.getMinutes()).padStart(2, '0')}`,
+        baglam,
+      }),
+      signal: AbortSignal.timeout(ZAMAN_ASIMI_MS),
+    })
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'TimeoutError') {
+      throw new Error('Asistan gecikti, tekrar dener misin?')
+    }
+    throw new Error('Asistana ulaşılamadı. İnternet bağlantını kontrol et.')
+  }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: `Sunucu hatası ${res.status}` }))
-    throw new Error(err.error ?? `Sunucu hatası ${res.status}`)
+    throw new Error(SUNUCU_HATALARI[err.error] ?? err.error ?? `Sunucu hatası ${res.status}`)
   }
 
   const data = await res.json()
-  return { yanit: data.yanit ?? null, planOnerisi: data.planOnerisi ?? null }
+  return {
+    yanit: data.yanit ?? null,
+    // Fields an older server doesn't send get their empty values.
+    planOnerisi: data.planOnerisi
+      ? { emoji: null, kisiler: [], grup: null, uygunluk: null, ...data.planOnerisi }
+      : null,
+  }
+}
+
+// The server's short error codes, in words for the user.
+const SUNUCU_HATALARI: Record<string, string> = {
+  'sohbet başarısız': 'Asistan şu an yanıt veremedi, birazdan tekrar dener misin?',
+  'yanıt üretilemedi': 'Asistan bir yanıt üretemedi, isteğini biraz farklı yazmayı dener misin?',
+  'GEMINI_API_KEY tanımlı değil': 'Asistan henüz açılmamış: sunucuda GEMINI_API_KEY tanımlı değil.',
 }

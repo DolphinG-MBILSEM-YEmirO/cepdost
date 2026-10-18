@@ -1,4 +1,4 @@
-import { db, goruntulemeBasligi, kayitGuncelle, kayitOlustur, kayitSil, type Kayit } from '../db'
+import { db, goruntulemeBasligi, kayitGuncelle, kayitOlustur, kayitSil, type Kategori, type Kayit, type Oncelik, type YakinOneri } from '../db'
 import { davetGonder, davetYanitla, type PlanDaveti } from '../sosyal/api'
 import { direktMesajGonder } from '../sosyal/mesajlar'
 import { grupPlaniOlustur, mesajGonder, planaYanitVer, type Grup, type GrupPlani, type YanitDurumu } from '../sosyal/gruplar'
@@ -69,23 +69,75 @@ export async function davetiYanitla(davet: PlanDaveti, kabul: boolean, gonderenA
   if (!kabul && mevcut) await kayitSil(mevcut.id)
 }
 
-// My own copy of a plan I invited one friend to: I'm coming either way, so
-// it goes in my calendar (and my shared availability) right away.
-export async function davetimiTakvimeEkle(
-  davet: { baslik: string; tarih: string; saat: string | null; sure: number | null; konum: string | null; mesaj: string | null; emoji: string | null },
-  arkadas: { id: string; ad: string },
-): Promise<void> {
+// Who a new plan is for.
+export type PlanKitlesi =
+  | { tur: 'tek' }
+  | { tur: 'arkadaslar'; kisiler: ReadonlyArray<{ id: string; ad: string }> }
+  | { tur: 'grup'; grup: Grup }
+
+export interface KurulacakPlan {
+  baslik: string
+  tarih: string | null
+  saat: string | null
+  sure: number | null
+  konum: string | null
+  // Goes to friends with the invite (or into the group plan) and into my
+  // calendar entry's note.
+  not: string | null
+  emoji: string | null
+  kategori?: Kategori
+  oncelik?: Oncelik
+  yakinOneriler?: YakinOneri[] | null
+}
+
+const DAVET_MESAJI = 'Bir plan önerdim 👇'
+const GRUP_PLANI_MESAJI = 'Yeni bir plan 👇'
+
+// Sets up a new plan in one go: the group plan or the invites (each with a
+// card in the chat), then my own calendar entry, linked so later answers and
+// the photo prompt find it. The "+" flow, the AI planner, the assistant and
+// a friend's availability screen all end here.
+export async function planiKur(plan: KurulacakPlan, kitle: PlanKitlesi, sohbetMesaji?: string): Promise<void> {
+  const ortak = {
+    baslik: plan.baslik,
+    saat: plan.saat ? plan.saat.slice(0, 5) : null,
+    sure: plan.sure,
+    konum: plan.konum,
+    emoji: plan.emoji,
+  }
+  if (kitle.tur !== 'tek' && !plan.tarih) throw new Error('Paylaşmak için plana bir tarih ver.')
+
+  let grupPlanId: string | null = null
+  if (kitle.tur === 'grup') {
+    grupPlanId = await grupPlaniOlustur({ ...ortak, tarih: plan.tarih!, grupId: kitle.grup.id, notlar: plan.not })
+    // Whoever sets it up is coming.
+    await planaYanitVer(grupPlanId, 'geliyorum')
+    // The card is a convenience; the plan already exists.
+    await mesajGonder(kitle.grup.id, sohbetMesaji ?? GRUP_PLANI_MESAJI, grupPlanId).catch(() => {})
+  } else if (kitle.tur === 'arkadaslar') {
+    for (const k of kitle.kisiler) {
+      const davetId = await davetGonder({ ...ortak, tarih: plan.tarih!, alanId: k.id, mesaj: plan.not })
+      await direktMesajGonder(k.id, sohbetMesaji ?? DAVET_MESAJI, davetId).catch(() => {})
+    }
+  }
+
+  // With one friend the "how was it?" photo can go to our shared archive;
+  // with several the target would be unclear.
+  const tekKisi = kitle.tur === 'arkadaslar' && kitle.kisiler.length === 1 ? kitle.kisiler[0] : null
   await kayitOlustur({
     ...ortakAlanlar(),
-    baslik: davet.baslik,
-    tarih: davet.tarih,
-    saat: davet.saat ? davet.saat.slice(0, 5) : null,
-    konum: davet.konum,
-    sure: davet.sure,
-    ozetNot: davet.mesaj,
-    emoji: davet.emoji,
-    arkadasId: arkadas.id,
-    arkadasAdi: arkadas.ad,
+    ...ortak,
+    baslik: kitle.tur === 'grup' ? `${plan.baslik} (${kitle.grup.ad})` : plan.baslik,
+    tarih: plan.tarih,
+    kategori: plan.kategori ?? 'etkinlik',
+    oncelik: plan.oncelik ?? 'orta',
+    yakinOneriler: plan.yakinOneriler ?? null,
+    ozetNot: plan.not,
+    grupId: kitle.tur === 'grup' ? kitle.grup.id : null,
+    grupAdi: kitle.tur === 'grup' ? kitle.grup.ad : null,
+    grupPlanId,
+    arkadasId: tekKisi?.id ?? null,
+    arkadasAdi: tekKisi?.ad ?? null,
   })
 }
 

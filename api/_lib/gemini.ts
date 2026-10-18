@@ -34,6 +34,9 @@ function geminiUrl(): string {
 export interface GeminiParcasi {
   text?: string
   functionCall?: { name?: string; args?: Record<string, unknown> }
+  // Gemini 3 signs its reasoning; a function-call turn sent back without
+  // it is rejected, so parts are always passed back untouched.
+  thoughtSignature?: string
 }
 
 export interface GeminiYaniti {

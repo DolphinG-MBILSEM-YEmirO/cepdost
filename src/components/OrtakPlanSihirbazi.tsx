@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Icon } from './Icon'
 import { Avatar } from './Avatar'
-import { davetGonder, type Arkadas, type Profil } from '../sosyal/api'
-import { grupPlaniOlustur, mesajGonder, planaYanitVer, type Grup } from '../sosyal/gruplar'
-import { direktMesajGonder } from '../sosyal/mesajlar'
+import type { Arkadas, Profil } from '../sosyal/api'
+import type { Grup } from '../sosyal/gruplar'
 import { gunleriUret, ortakPlanOner, type BosAralik, type OnerilenPlan } from '../sosyal/ortakPlan'
-import { kayitOlustur } from '../db'
+import { planiKur } from '../lib/planPaylasimi'
 import { formatDate } from '../lib/format'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 
@@ -113,76 +112,14 @@ export function OrtakPlanSihirbazi({
     setYukleniyor(true)
     setHata(null)
     try {
-      let grupPlanId: string | null = null
-
-      if (grupModu && grup) {
-        const planId = await grupPlaniOlustur({
-          grupId: grup.id,
-          baslik: plan.baslik,
-          tarih: plan.tarih,
-          saat: plan.saat,
-          sure: plan.sure,
-          konum: plan.konum,
-          notlar: plan.gerekce,
-        })
-        grupPlanId = planId
-        // Planı öneren zaten geliyor — grupta da öyle görünsün.
-        await planaYanitVer(planId, 'geliyorum')
-
-        // The plan always lands in the group chat as a card, wherever the
-        // wizard was opened from; otherwise members only see it if they
-        // look at the Plans tab. A failed chat card doesn't undo the plan.
-        try {
-          await mesajGonder(grup.id, `${benimAdim} bir plan önerdi 👇`, planId)
-        } catch {
-          /* plan zaten oluştu, kart paylaşımı isteğe bağlı bir ekstra */
-        }
-      } else {
-        // Her katılımcıya ayrı davet — kabul eden kendi takvimine ekler.
-        // The invite also shows up as a card in our chat, like every other
-        // way of inviting someone.
-        for (const p of katilimcilar) {
-          const davetId = await davetGonder({
-            alanId: p.id,
-            baslik: plan.baslik,
-            tarih: plan.tarih,
-            saat: plan.saat,
-            sure: plan.sure,
-            konum: plan.konum,
-            mesaj: plan.gerekce,
-          })
-          try {
-            await direktMesajGonder(p.id, 'Bir plan önerdim 👇', davetId)
-          } catch {
-            /* davet zaten gitti; sohbet kartı isteğe bağlı bir ekstra */
-          }
-        }
-      }
-
-      // Planı öneren kişi zaten geliyor sayılır — kendi takvimine hemen düşsün.
-      await kayitOlustur({
-        kategori: 'etkinlik',
-        baslik: grupModu && grup ? `${plan.baslik} (${grup.ad})` : plan.baslik,
-        tarih: plan.tarih,
-        saat: plan.saat,
-        konum: plan.konum,
-        oncelik: 'orta',
-        sure: plan.sure,
-        ozetNot: plan.gerekce,
-        mekanOnerisi: null,
-        yakinOneriler: null,
-        kaynakTipi: 'metin',
-        hamBaslik: '',
-        hamMetin: '',
-        hamLink: '',
-        gorseller: [],
-        grupId: grupModu ? (grup?.id ?? null) : null,
-        grupAdi: grupModu ? (grup?.ad ?? null) : null,
-        // Yanıtı sonradan değiştirirsem bu kayıt mükerrer açılmasın/silinebilsin.
-        grupPlanId,
-        arkadasId: !grupModu && katilimcilar.length === 1 ? katilimcilar[0].id : null,
-        arkadasAdi: !grupModu && katilimcilar.length === 1 ? katilimcilar[0].ad : null,
-      })
+      // The plan always lands in the chat as a card (the group's, or ours
+      // with each friend), wherever the wizard was opened from, and goes in
+      // my calendar: whoever suggests it is coming.
+      await planiKur(
+        { ...plan, not: plan.gerekce, emoji: null },
+        grupModu && grup ? { tur: 'grup', grup } : { tur: 'arkadaslar', kisiler: katilimcilar },
+        grupModu ? `${benimAdim} bir plan önerdi 👇` : undefined,
+      )
 
       setGonderildi(true)
       await onOlusturuldu()

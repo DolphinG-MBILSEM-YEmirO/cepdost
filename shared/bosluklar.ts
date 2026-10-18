@@ -139,6 +139,14 @@ export function gunBosluklari(
   return bosluklar
 }
 
+// Whether any of someone's busy blocks overlaps [baslangic, bitis) on that
+// date. Used to check a time the user picked themselves.
+export function mesgulMu(kisi: BlokSahibi, tarih: string, baslangic: number, bitis: number): boolean {
+  return kisi.bloklar.some(
+    (b) => b.tarih === tarih && dakikaya(b.baslangic) < bitis && dakikaya(b.bitis) > baslangic,
+  )
+}
+
 // All free slots over the candidate days, in day order. For today the window
 // starts no earlier than "now + HAZIRLIK_DK", so past hours are never offered.
 export function bosluklariHesapla(secenekler: BoslukSecenekleri): Aralik[] {

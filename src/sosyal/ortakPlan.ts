@@ -49,7 +49,7 @@ export function gunleriUret(gunSayisi: number, baslangic = new Date()): string[]
 // Kendi dolu saatlerim: yerel planlar + (izin verilmişse) içe aktarılmış
 // takvim. Sunucudaki kopyayı okumak yerine yereli kullanıyoruz — müsaitlik
 // paylaşımını kapatmış biri de kendi planını yapabilmeli.
-async function kendiBloklarim(gunler: string[]): Promise<Array<{ tarih: string; baslangic: string; bitis: string }>> {
+export async function kendiBloklarim(gunler: string[]): Promise<Array<{ tarih: string; baslangic: string; bitis: string }>> {
   const [kayitlar, takvim] = await Promise.all([
     db.kayitlar.toArray(),
     db.takvimEtkinlikleri.toArray(),
