@@ -6,7 +6,7 @@ import { HesapGuvenligi } from './HesapGuvenligi'
 // Not: Hallet referansındaki "Gemini API Anahtarı" kartı buraya bilerek
 // taşınmadı. Sınıflandırma sunucu-taraflı bir secret ile çalışıyor
 // (bkz. api/classify.ts) — kullanıcı hiçbir zaman bir API anahtarı
-// görmüyor/girmiyor, bu CepDost'un "sıfır kurulum" ilkesi.
+// görmüyor/girmiyor, bu SharOS'un "sıfır kurulum" ilkesi.
 
 export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
   return (
@@ -53,7 +53,7 @@ export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
             <h2 className="font-semibold text-ink-700">Paylaş menüsüne ekle</h2>
           </div>
           <p className="text-sm text-ink-400">
-            Uygulamayı ana ekrana ekle, sonra herhangi bir yerden paylaş menüsünde "CepDost" görünecek. Reel, TikTok, ekran görüntüsü — hepsi direkt arşive.
+            Uygulamayı ana ekrana ekle, sonra herhangi bir yerden paylaş menüsünde "SharOS" görünecek. Reel, TikTok, ekran görüntüsü — hepsi direkt arşive.
           </p>
           <p className="text-xs text-ink-300 mt-3">
             Chrome'da sağ üstteki ⋮ menüsünden "Ana ekrana ekle" seçeneğini seç.
@@ -61,7 +61,7 @@ export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
         </div>
 
         <div className="text-center pt-2">
-          <p className="text-xs text-ink-300">CepDost · Faz 0 MVP</p>
+          <p className="text-xs text-ink-300">SharOS · Faz 0 MVP</p>
           <p className="text-xs text-ink-300 mt-1">Kaydettiğin şey nihayet işe yarasın.</p>
         </div>
       </div>

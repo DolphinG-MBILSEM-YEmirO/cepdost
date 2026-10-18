@@ -1,4 +1,4 @@
-// The CepDost assistant: chats about the user's saved plans and, from a
+// The SharOS assistant: chats about the user's saved plans and, from a
 // single message, prepares a whole plan: what, when, where and with whom.
 // Uses the same Gemini provider as classify (see api/_lib/gemini.ts).
 //
@@ -48,7 +48,7 @@ interface SohbetMesaji {
 }
 
 function sistemPrompt(planOzeti: string, z: Zaman, b: AsistanBaglami): string {
-  return `Sen CepDost uygulamasının içinde yaşayan, dostane ve kısa konuşan planlama asistanısın. Kullanıcı (${b.benimAdim}) Türkiye'de yaşayan genç bir yetişkin.
+  return `Sen SharOS uygulamasının içinde yaşayan, dostane ve kısa konuşan planlama asistanısın. Kullanıcı (${b.benimAdim}) Türkiye'de yaşayan genç bir yetişkin.
 
 Bugün: ${z.bugun} ${gunAdi(z.bugun)}${z.simdiSaat ? `, saat ${z.simdiSaat}` : ''}
 Önümüzdeki günler (göreli tarihleri SADECE bu tablodan çöz):

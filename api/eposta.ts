@@ -76,19 +76,19 @@ function kodPostasi(alici: string, kod: string) {
   const dakika = Math.round(KOD_GECERLILIK_MS / 60_000)
   return {
     alici,
-    konu: `CepDost doğrulama kodun: ${gosterilen}`,
+    konu: `SharOS doğrulama kodun: ${gosterilen}`,
     metin:
-      `CepDost'ta e-posta adresini doğrulamak için bu kodu gir:\n\n${gosterilen}\n\n` +
+      `SharOS'ta e-posta adresini doğrulamak için bu kodu gir:\n\n${gosterilen}\n\n` +
       `Kod ${dakika} dakika geçerli. Bu isteği sen yapmadıysan bu e-postayı yok sayabilirsin.`,
     html: `<!doctype html>
 <html lang="tr"><body style="margin:0;padding:32px 16px;background:#eef2fb;font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#1c2340">
   <div style="max-width:440px;margin:0 auto;background:#ffffff;border-radius:20px;overflow:hidden;border:1px solid #dde3f3">
     <div style="padding:28px 28px 22px;background:linear-gradient(135deg,#2563eb 0%,#4f46e5 55%,#7c6cf2 100%);color:#ffffff">
-      <div style="font-size:20px;font-weight:700">CepDost</div>
+      <div style="font-size:20px;font-weight:700">SharOS</div>
       <div style="font-size:14px;opacity:.85;margin-top:4px">E-posta doğrulama</div>
     </div>
     <div style="padding:28px">
-      <p style="margin:0 0 16px;font-size:15px;line-height:1.5">CepDost'ta e-posta adresini doğrulamak için bu kodu gir:</p>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.5">SharOS'ta e-posta adresini doğrulamak için bu kodu gir:</p>
       <div style="font-size:30px;font-weight:700;letter-spacing:6px;text-align:center;padding:16px;border-radius:14px;background:#f1f4fd;color:#2f3fc4">${gosterilen}</div>
       <p style="margin:16px 0 0;font-size:13px;line-height:1.5;color:#5a6488">Kod ${dakika} dakika geçerli. Bu isteği sen yapmadıysan bu e-postayı yok sayabilirsin.</p>
     </div>

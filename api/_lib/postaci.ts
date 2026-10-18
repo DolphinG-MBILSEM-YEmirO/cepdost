@@ -39,7 +39,7 @@ async function gmailIleGonder(posta: Posta): Promise<void> {
     socketTimeout: 15_000,
   })
   await tasiyici.sendMail({
-    from: { name: 'CepDost', address: a.adres },
+    from: { name: 'SharOS', address: a.adres },
     to: posta.alici,
     subject: posta.konu,
     text: posta.metin,

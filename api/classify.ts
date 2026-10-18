@@ -126,7 +126,7 @@ async function instagramUnfurl(url: string): Promise<string | null> {
 async function genelUnfurl(url: string): Promise<string | null> {
   try {
     const res = await guvenliFetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; CepDostBot/1.0)' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SharOSBot/1.0)' },
       zamanAsimiMs: UNFURL_ZAMAN_ASIMI_MS,
     })
     if (!res.ok) return null

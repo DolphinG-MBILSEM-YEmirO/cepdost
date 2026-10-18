@@ -133,8 +133,8 @@ export default defineConfig({
       // Spike A: served over HTTPS + installed, this is what proves (or
       // disproves) that Android's share sheet can hand data to the app.
       manifest: {
-        name: 'CepDost',
-        short_name: 'CepDost',
+        name: 'SharOS',
+        short_name: 'SharOS',
         description: 'Kaydettiğin şey nihayet işe yarasın.',
         start_url: '/',
         scope: '/',

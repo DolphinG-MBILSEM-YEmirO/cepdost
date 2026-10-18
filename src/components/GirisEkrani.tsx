@@ -16,7 +16,7 @@ interface Props {
 }
 
 export function GirisEkrani({
-  baslik = "CepDost'a hoş geldin",
+  baslik = "SharOS'a hoş geldin",
   altBaslik = 'Başlamak için bir hesap aç ya da giriş yap',
   tanitimBaslik = 'Kaydettiğin şey işe yarasın',
   tanitimMetin = 'Paylaştığın linkleri ve görselleri otomatik planlara çevirir, arkadaşlarınla birlikte plan yapmanı sağlar.',
@@ -195,7 +195,7 @@ export function GirisEkrani({
           <div className="flex items-start gap-2.5">
             <Icon name="Info" className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-800 leading-relaxed">
-              CepDost hesapları yenilendi: sosyal veriler artık şifreli saklanıyor ve giriş
+              SharOS hesapları yenilendi: sosyal veriler artık şifreli saklanıyor ve giriş
               kullanıcı adı ile şifreyle yapılıyor. Planların ve arşivin bu telefonda duruyor; arkadaşlarını yeni hesabınla
               tekrar eklemen yeterli.
             </p>

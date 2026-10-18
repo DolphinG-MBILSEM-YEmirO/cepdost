@@ -92,7 +92,7 @@ export function bloklariCikar(
 
   // F15: telefon takviminden içe aktarılanlar da "dolu" sayılır. Buradan da
   // yalnızca saat aralığı çıkıyor — etkinliğin başlığı/konumu sunucuya
-  // GİTMİYOR, tıpkı CepDost planlarında olduğu gibi.
+  // GİTMİYOR, tıpkı SharOS planlarında olduğu gibi.
   for (const e of takvimEtkinlikleri) {
     // Tüm gün etkinlikleri (doğum günü, bayram, "izinliyim") kişiyi bütün
     // gün meşgul göstermemeli — bunlar bilgi amaçlı kayıtlar.

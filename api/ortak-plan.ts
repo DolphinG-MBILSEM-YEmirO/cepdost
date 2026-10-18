@@ -80,7 +80,7 @@ function sistemPrompt(istek: string, katilimcilar: Katilimci[], bosluklar: Arali
 
   const aralikMetni = bosluklar.map((b) => `- ${b.tarih} ${saate(b.baslangic)}–${saate(b.bitis)}`).join('\n')
 
-  return `Sen CepDost'un ortak plan asistanısın. Türkiye'de yaşayan genç bir arkadaş grubuna, HERKESİN müsait olduğu bir saatte buluşma planı öneriyorsun.
+  return `Sen SharOS'un ortak plan asistanısın. Türkiye'de yaşayan genç bir arkadaş grubuna, HERKESİN müsait olduğu bir saatte buluşma planı öneriyorsun.
 
 Katılımcılar: ${isimler}
 ${paylasmayanlar.length > 0 ? `Not: ${paylasmayanlar.join(', ')} takvimini paylaşmıyor, onların uygunluğu bilinmiyor.` : ''}

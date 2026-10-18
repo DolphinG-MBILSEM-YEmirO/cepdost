@@ -466,10 +466,10 @@ function KimlikKarti({ profil, onDegisti }: { profil: Profil; onDegisti: () => P
   }
 
   async function paylas() {
-    const metin = `CepDost'ta arkadaşım ol! Kodum: ${kodGosterim}`
+    const metin = `SharOS'ta arkadaşım ol! Kodum: ${kodGosterim}`
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'CepDost', text: metin, url: davetLinki })
+        await navigator.share({ title: 'SharOS', text: metin, url: davetLinki })
         return
       } catch {
         // Kullanıcı paylaşımı iptal etti — sessizce geç.
@@ -636,7 +636,7 @@ function KimlikKarti({ profil, onDegisti }: { profil: Profil; onDegisti: () => P
           baslik="Hesabım herkese açık"
           aciklama={
             profil.gizlilik === 'herkes'
-              ? 'Profilini tüm CepDost kullanıcıları görebilir'
+              ? 'Profilini tüm SharOS kullanıcıları görebilir'
               : 'Profilini yalnızca arkadaşların görebilir'
           }
         />

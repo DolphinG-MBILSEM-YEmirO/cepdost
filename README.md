@@ -1,13 +1,20 @@
-# CepDost
+# SharOS
 
-CepDost is a mobile-first PWA (also packaged for Android as a TWA) for turning
+SharOS is a mobile-first PWA (also packaged for Android as a TWA) for turning
 things you save into plans and making plans with friends.
 
-Live: https://cepdost.vercel.app
+Live: https://sharos.vercel.app (also https://cepdost.vercel.app)
+
+The app was called CepDost until 2026-10-18. Internal names still say
+cepdost on purpose: the local database and storage keys (renaming them would
+lose people's data), the Android package id and its host (the Play listing is
+tied to them), the Vercel project and this repository. Each web address keeps
+its own device data, so someone who opens the other address signs in once
+with their username and password.
 
 ## Features
 
-- **Share to CepDost**: links, text and images shared from other apps land in
+- **Share to SharOS**: links, text and images shared from other apps land in
   the archive and are classified into plans in the background
   (`api/classify.ts`, Gemini + Foursquare).
 - **Plans and reminders**: local-first, stored on the device with Dexie

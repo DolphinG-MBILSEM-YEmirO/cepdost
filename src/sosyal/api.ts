@@ -132,7 +132,7 @@ function profilKur(id: string, veri: Partial<BenimProfilVerim> & { ad: string })
 }
 
 export function ozettenProfil(id: string, ozet: ProfilOzeti | null): Profil {
-  return profilKur(id, ozet ?? { ad: 'CepDost kullanıcısı' })
+  return profilKur(id, ozet ?? { ad: 'SharOS kullanıcısı' })
 }
 
 export async function profilimiGetir(): Promise<Profil | null> {

@@ -84,7 +84,7 @@ export interface Kayit {
   aniEklendi?: boolean
 }
 
-// F15 — telefon takviminden içe aktarılan etkinlikler. CepDost kayıtlarından
+// F15 — telefon takviminden içe aktarılan etkinlikler. SharOS kayıtlarından
 // ayrı bir tabloda duruyorlar: kullanıcının yazdığı planlar ile dışarıdan
 // gelen veriyi karıştırmak istemiyoruz — "takvim bağlantısını kaldır"
 // dendiğinde tek seferde silinebilmeli ve arşivde plan gibi görünmemeli.

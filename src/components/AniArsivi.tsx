@@ -274,7 +274,7 @@ export function AniEkleModal({
         </div>
         {gorunurluk === 'herkes' && (
           <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 mb-4">
-            Bu fotoğraf Keşfet'te tüm CepDost kullanıcılarına görünecek. Mekan adı da paylaşılıyor.
+            Bu fotoğraf Keşfet'te tüm SharOS kullanıcılarına görünecek. Mekan adı da paylaşılıyor.
           </p>
         )}
 

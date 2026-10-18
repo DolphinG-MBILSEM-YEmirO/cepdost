@@ -1,8 +1,8 @@
 {
   "packageId": "app.vercel.cepdost.twa",
   "host": "cepdost.vercel.app",
-  "name": "CepDost",
-  "launcherName": "CepDost",
+  "name": "SharOS",
+  "launcherName": "SharOS",
   "display": "standalone",
   "themeColor": "#3549DB",
   "themeColorDark": "#000000",

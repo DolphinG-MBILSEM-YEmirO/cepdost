@@ -428,7 +428,7 @@ function MarkaPaneli() {
       <div aria-hidden className="absolute -bottom-36 -left-24 w-[28rem] h-[28rem] rounded-full bg-sky-400/20 blur-3xl" />
       <div className="relative flex items-center gap-3">
         <img src="/icons/icon-192.png" alt="" className="w-11 h-11 rounded-2xl ring-2 ring-white/30" />
-        <span className="font-display text-2xl font-bold">CepDost</span>
+        <span className="font-display text-2xl font-bold">SharOS</span>
       </div>
       <div className="relative max-w-md">
         <h2 className="font-display text-4xl font-bold leading-tight mb-8">Kaydettiğin şey nihayet işe yarasın.</h2>

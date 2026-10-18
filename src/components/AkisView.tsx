@@ -108,7 +108,7 @@ export function AkisView() {
 function AkisKarti({ ani, sahip }: { ani: Ani; sahip: Profil | null }) {
   // Fotoğrafını herkese açmış ama profili kapalı biri olabilir — o zaman
   // profili okuyamayız, isim yerine nötr bir etiket gösteriyoruz.
-  const ad = sahip?.ad ?? 'CepDost kullanıcısı'
+  const ad = sahip?.ad ?? 'SharOS kullanıcısı'
 
   return (
     <div className="card overflow-hidden">

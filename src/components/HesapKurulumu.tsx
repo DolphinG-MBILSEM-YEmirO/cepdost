@@ -149,7 +149,7 @@ export function HesapKurulumu({ profil, onTamamlandi }: Props) {
               secili={gizlilik === 'herkes'}
               onSec={() => setGizlilik('herkes')}
               baslik="Herkes"
-              aciklama="Profilin CepDost'taki diğer kullanıcılara açık olur; istersen fotoğraflarını Keşfet'te paylaşabilirsin."
+              aciklama="Profilin SharOS'taki diğer kullanıcılara açık olur; istersen fotoğraflarını Keşfet'te paylaşabilirsin."
               ikon="Users"
             />
           </div>
