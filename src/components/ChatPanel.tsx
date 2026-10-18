@@ -3,6 +3,7 @@ import { Icon } from './Icon'
 import { kayitOlustur, type Kayit } from '../db'
 import { sohbetGonder, type PlanOnerisi, type SohbetMesaji } from '../chat'
 import { CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_ICON_NAME } from '../lib/format'
+import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 
 interface ChatPanelProps {
   kayitlar: Kayit[]
@@ -41,6 +42,7 @@ function apiMetni(m: GosterilenMesaj): string {
 }
 
 export function ChatPanel({ kayitlar, onClose }: ChatPanelProps) {
+  useEscapeIleKapat(onClose)
   const [mesajlar, setMesajlar] = useState<GosterilenMesaj[]>([KARSILAMA_MESAJI])
   const [girdi, setGirdi] = useState('')
   const [loading, setLoading] = useState(false)
@@ -109,7 +111,7 @@ export function ChatPanel({ kayitlar, onClose }: ChatPanelProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-cream-100/95 backdrop-blur-md animate-slide-up">
+    <div className="panel-tam z-50">
       <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-4 border-b border-ink-100/40 shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center">

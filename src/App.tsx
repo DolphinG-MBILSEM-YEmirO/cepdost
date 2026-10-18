@@ -8,6 +8,7 @@ import { PlanOlustur } from './components/PlanOlustur'
 import { RecordDetail } from './components/RecordDetail'
 import { Onboarding } from './components/Onboarding'
 import { BottomNav, type Tab } from './components/BottomNav'
+import { KenarCubugu } from './components/KenarCubugu'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { ChatButton } from './components/ChatButton'
 import { ChatPanel } from './components/ChatPanel'
@@ -211,13 +212,7 @@ export default function App() {
   // gelen içerik kapıdan ÖNCE Dexie'ye yazıldığı için (bkz. sw.ts ve
   // handleGetShareTarget) kaybolmuyor; kullanıcı giriş yaptıktan sonra
   // arşivinde onu buluyor.
-  if (showOnboarding) {
-    return (
-      <div className="min-h-screen bg-cream-100 max-w-md mx-auto relative">
-        <Onboarding onDone={handleOnboardingDone} />
-      </div>
-    )
-  }
+  if (showOnboarding) return <Onboarding onDone={handleOnboardingDone} />
 
   if (authYukleniyor) return <Bekleme />
 
@@ -260,9 +255,13 @@ export default function App() {
     )
   }
 
-  return (
-    <div className="min-h-screen bg-cream-100 max-w-md mx-auto relative">
+  // Phone: one column under a bottom bar. Desktop (lg): a sidebar and a
+  // wider content area; chats use the full width for their two panes.
+  const icerikGenisligi =
+    activeTab === 'sohbet' ? 'lg:max-w-none lg:px-0' : activeTab === 'akis' ? 'lg:max-w-4xl lg:pt-4' : 'lg:max-w-6xl lg:pt-4'
 
+  return (
+    <div className="min-h-screen bg-cream-100">
       {banner === 'ok' && (
         <div className="fixed top-0 left-0 right-0 z-50 safe-top px-4 pt-2 animate-slide-down">
           <div className="bg-teal-500 text-white text-sm font-medium rounded-2xl px-4 py-3 shadow-float flex items-center gap-2 max-w-md mx-auto">
@@ -280,40 +279,52 @@ export default function App() {
         </div>
       )}
 
-      <div className="min-h-screen">
-        {activeTab === 'planlar' && (
-          <PlanlarView
-            kayitlar={kayitlar}
-            loading={loading}
-            onAddClick={() => setShowCapture(true)}
-            onRecordClick={(k) => setDetailKayit(k)}
-            onToggleStatus={handleToggleStatus}
-            onDelete={(id) => {
-              const k = kayitlar.find((r) => r.id === id)
-              if (k) setDeleteTarget(k)
-            }}
-          />
-        )}
+      <KenarCubugu
+        active={activeTab}
+        onChange={setActiveTab}
+        onAddClick={() => setShowCapture(true)}
+        onAsistan={() => setShowChat(true)}
+        profil={profil}
+        profilRozeti={rozet}
+        sohbetRozeti={mesajRozeti}
+      />
 
-        {activeTab === 'sohbet' && <SohbetlerView onDegisti={rozetiTazele} />}
+      <main className="lg:pl-64">
+        <div className={`min-h-screen max-w-md md:max-w-2xl mx-auto relative lg:px-6 ${icerikGenisligi}`}>
+          {activeTab === 'planlar' && (
+            <PlanlarView
+              kayitlar={kayitlar}
+              loading={loading}
+              onAddClick={() => setShowCapture(true)}
+              onRecordClick={(k) => setDetailKayit(k)}
+              onToggleStatus={handleToggleStatus}
+              onDelete={(id) => {
+                const k = kayitlar.find((r) => r.id === id)
+                if (k) setDeleteTarget(k)
+              }}
+            />
+          )}
 
-        {activeTab === 'akis' && <AkisView />}
+          {activeTab === 'sohbet' && <SohbetlerView onDegisti={rozetiTazele} />}
 
-        {activeTab === 'profil' && (
-          <ProfilView
-            kayitlar={kayitlar}
-            loading={loading}
-            baslangicKodu={davetKodu}
-            onDegisti={rozetiTazele}
-            onRecordClick={(k) => setDetailKayit(k)}
-            onToggleStatus={handleToggleStatus}
-            onDelete={(id) => {
-              const k = kayitlar.find((r) => r.id === id)
-              if (k) setDeleteTarget(k)
-            }}
-          />
-        )}
-      </div>
+          {activeTab === 'akis' && <AkisView />}
+
+          {activeTab === 'profil' && (
+            <ProfilView
+              kayitlar={kayitlar}
+              loading={loading}
+              baslangicKodu={davetKodu}
+              onDegisti={rozetiTazele}
+              onRecordClick={(k) => setDetailKayit(k)}
+              onToggleStatus={handleToggleStatus}
+              onDelete={(id) => {
+                const k = kayitlar.find((r) => r.id === id)
+                if (k) setDeleteTarget(k)
+              }}
+            />
+          )}
+        </div>
+      </main>
 
       {/* Sohbet butonu Profil sekmesinde gizleniyor — o ekranın kendi
           aksiyonları var, sağ altta ikinci bir yüzen buton kalabalık yapıyor. */}
@@ -354,8 +365,47 @@ export default function App() {
   )
 }
 
+// Sign-in and setup screens. On desktop the form sits next to a brand
+// panel instead of stretching across the screen.
 function TekEkran({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-screen bg-cream-100 max-w-md mx-auto relative">{children}</div>
+  return (
+    <div className="min-h-screen bg-cream-100 lg:grid lg:grid-cols-2">
+      <MarkaPaneli />
+      <div className="max-w-md mx-auto w-full relative min-h-screen lg:min-h-0 lg:flex lg:flex-col lg:justify-center lg:py-12">
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function MarkaPaneli() {
+  const maddeler: { ikon: 'Share2' | 'Users' | 'ShieldCheck'; metin: string }[] = [
+    { ikon: 'Share2', metin: 'Paylaştığın linkler ve ekran görüntüleri kendiliğinden plana dönüşür.' },
+    { ikon: 'Users', metin: 'Arkadaşlarınla herkesin boş olduğu saati tek dokunuşla bul.' },
+    { ikon: 'ShieldCheck', metin: 'Planların telefonunda kalır, arkadaşlarınla paylaştıkların şifrelenir.' },
+  ]
+  return (
+    <div className="hidden lg:flex flex-col justify-between bg-gradient-to-br from-coral-500 to-coral-700 text-white p-12">
+      <div className="flex items-center gap-3">
+        <img src="/icons/icon-192.png" alt="" className="w-11 h-11 rounded-2xl ring-2 ring-white/30" />
+        <span className="font-display text-2xl font-bold">CepDost</span>
+      </div>
+      <div className="max-w-md">
+        <h2 className="font-display text-4xl font-bold leading-tight mb-8">Kaydettiğin şey nihayet işe yarasın.</h2>
+        <ul className="space-y-5">
+          {maddeler.map((m) => (
+            <li key={m.ikon} className="flex items-start gap-3">
+              <span className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                <Icon name={m.ikon} className="w-5 h-5" />
+              </span>
+              <span className="text-white/90 leading-relaxed pt-1.5">{m.metin}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <p className="text-sm text-white/70">Ücretsiz. Reklamsız. E-posta istemez.</p>
+    </div>
+  )
 }
 
 function Bekleme({ metin }: { metin?: string }) {

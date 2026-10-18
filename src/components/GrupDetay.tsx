@@ -35,6 +35,7 @@ import { useSohbetTemasi } from '../sohbetTema'
 import { db, kayitOlustur, kayitSil } from '../db'
 import { formatDate, formatMessageTime, formatTime, toDateString } from '../lib/format'
 import { useSosyalSurum } from '../sosyal/cekirdek'
+import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 
 type Sekme = 'planlar' | 'sohbet' | 'anilar' | 'uyeler'
 
@@ -44,9 +45,12 @@ interface Props {
   arkadaslar: Arkadas[]
   onClose: () => void
   onAyrildi: () => Promise<void>
+  // Desktop: shown in the chat list's side pane instead of over the page.
+  gomulu?: boolean
 }
 
-export function GrupDetay({ grup, benimId, arkadaslar, onClose, onAyrildi }: Props) {
+export function GrupDetay({ grup, benimId, arkadaslar, onClose, onAyrildi, gomulu = false }: Props) {
+  useEscapeIleKapat(onClose, !gomulu)
   const [sekme, setSekme] = useState<Sekme>('planlar')
   const [uyeler, setUyeler] = useState<GrupUyesi[]>([])
   // Everything in the group (members, plans, answers, messages) is read
@@ -76,7 +80,7 @@ export function GrupDetay({ grup, benimId, arkadaslar, onClose, onAyrildi }: Pro
   ]
 
   return (
-    <div className="fixed inset-0 z-[55] flex flex-col bg-cream-100/95 backdrop-blur-md animate-slide-up">
+    <div className={gomulu ? 'flex flex-col h-full min-h-0' : 'panel-tam z-[55]'}>
       <div className="flex items-center gap-3 px-5 pt-[calc(1rem+var(--safe-top))] pb-3 shrink-0">
         <button
           onClick={onClose}

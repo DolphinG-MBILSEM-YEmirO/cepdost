@@ -143,9 +143,9 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 pb-24">
+      <div className="flex-1 overflow-y-auto px-5 pb-24 lg:pb-10">
         {loading ? (
-          <div className="space-y-3 mt-2">
+          <div className="space-y-3 mt-2 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="card p-4">
                 <div className="flex gap-3">
@@ -162,7 +162,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
         ) : filtered.length === 0 ? (
           <EmptyState search={search} filter={filter} onLinkEkle={() => setLinkEkleAcik(true)} />
         ) : (
-          <div className="space-y-3 mt-2">
+          <div className="space-y-3 mt-2 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0 lg:items-start">
             {filtered.map((kayit) => (
               <KayitCard
                 key={kayit.id}

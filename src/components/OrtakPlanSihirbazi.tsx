@@ -6,6 +6,7 @@ import { grupPlaniOlustur, mesajGonder, planaYanitVer, type Grup } from '../sosy
 import { gunleriUret, ortakPlanOner, type BosAralik, type OnerilenPlan } from '../sosyal/ortakPlan'
 import { kayitOlustur } from '../db'
 import { formatDate } from '../lib/format'
+import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 
 // F16 — "herkese uyan plan" sihirbazı.
 //
@@ -53,6 +54,7 @@ export function OrtakPlanSihirbazi({
   onKapat,
   onOlusturuldu,
 }: Props) {
+  useEscapeIleKapat(onKapat)
   const grupModu = !!grup
   const secilebilir = useMemo(
     () => (arkadaslar ?? []).filter((a) => a.durum === 'kabul').map((a) => a.profil),
@@ -517,7 +519,7 @@ function Kabuk({
   children: React.ReactNode
 }) {
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-cream-100/95 backdrop-blur-md animate-slide-up">
+    <div className="panel-tam z-[60]">
       <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-4 border-b border-ink-100/40 shrink-0">
         <h2 className="font-display text-base font-bold text-ink-700 truncate">{baslik}</h2>
         <button

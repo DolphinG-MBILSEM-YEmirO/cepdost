@@ -1,10 +1,13 @@
 import { Icon, type IconName } from './Icon'
+import { SAG_TABLAR as sagTablar, SOL_TABLAR as solTablar, type Tab } from './sekmeler'
+
+export type { Tab }
 
 // 4 sekme + tam ortada + butonu. Önceki 5 sekmeli düzende buton sola
 // kayıyordu (2 sol + 3 sağ) ve seçenek kalabalığı vardı; Hatırlatmalar
 // "Planlar" içine, Ayarlar "Profil" içine taşındı.
 // Arşiv alt bardan çıkıp Profil'in içine taşındı; yeri Sohbet'e verildi.
-export type Tab = 'planlar' | 'sohbet' | 'akis' | 'profil'
+// Masaüstünde (lg) bu çubuk gizli; yerini KenarCubugu alıyor.
 
 interface BottomNavProps {
   active: Tab
@@ -16,17 +19,6 @@ interface BottomNavProps {
   sohbetRozeti?: number
 }
 
-const solTablar: { id: Tab; label: string; icon: IconName }[] = [
-  { id: 'planlar', label: 'Planlar', icon: 'CalendarDays' },
-  { id: 'sohbet', label: 'Sohbet', icon: 'MessagesSquare' },
-]
-
-const sagTablar: { id: Tab; label: string; icon: IconName }[] = [
-  { id: 'akis', label: 'Akış', icon: 'ImageIcon' },
-  // Klasik profil simgesi: yuvarlak baş + gövde.
-  { id: 'profil', label: 'Profil', icon: 'UserRound' },
-]
-
 export function BottomNav({
   active,
   onChange,
@@ -35,11 +27,11 @@ export function BottomNav({
   sohbetRozeti = 0,
 }: BottomNavProps) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30">
+    <div className="fixed bottom-0 left-0 right-0 z-30 lg:hidden">
       <div className="glass safe-x">
         {/* grid-cols-5 + ortadaki hücre: buton matematiksel olarak tam
             merkezde kalıyor, sekme etiketlerinin uzunluğundan etkilenmiyor. */}
-        <div className="grid grid-cols-5 items-center px-2 py-2 pb-[calc(0.5rem+var(--safe-bottom))] max-w-md mx-auto">
+        <div className="grid grid-cols-5 items-center px-2 py-2 pb-[calc(0.5rem+var(--safe-bottom))] max-w-md md:max-w-2xl mx-auto">
           {solTablar.map((t) => (
             <NavButton
               key={t.id}

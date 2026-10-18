@@ -136,7 +136,7 @@ function ArkadaslarIcerik({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 pb-24 space-y-6">
+      <div className="flex-1 overflow-y-auto px-5 pb-24 space-y-6 lg:pb-10">
         {hata && (
           <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3">
             <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
@@ -151,134 +151,140 @@ function ArkadaslarIcerik({
             ))}
           </div>
         ) : (
-          <>
-            {profil && <KimlikKarti profil={profil} onDegisti={tazele} />}
+          // Desktop: who I am and adding people on the left, everything
+          // that needs attention and my lists on the right.
+          <div className="space-y-6 lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-6 lg:space-y-0 lg:items-start">
+            <div className="space-y-6 lg:sticky lg:top-6">
+              {profil && <KimlikKarti profil={profil} onDegisti={tazele} />}
 
-            {kabulEdilmis.length > 0 && (
-              <button
-                onClick={() => setSihirbazAcik(true)}
-                className="w-full card p-4 flex items-center gap-3 text-left active:scale-[0.98] transition-transform"
-              >
-                <div className="w-10 h-10 rounded-2xl bg-coral-100 flex items-center justify-center shrink-0">
-                  <Icon name="Wand2" className="w-5 h-5 text-coral-500" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-ink-700">Herkese uyan saati bul</p>
-                  <p className="text-xs text-ink-400">
-                    Arkadaşlarını seç, gerisini yapay zekâ halletsin
-                  </p>
-                </div>
-                <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />
-              </button>
-            )}
-
-            <ArkadasEkle onEklendi={tazele} baslangicKodu={baslangicKodu} />
-
-            {gelenDavetler.length > 0 && (
-              <Bolum baslik="Plan davetleri" ikon="CalendarClock" sayi={gelenDavetler.length}>
-                <div className="space-y-3">
-                  {gelenDavetler.map((d) => (
-                    <DavetKarti
-                      key={d.id}
-                      davet={d}
-                      gonderenAd={
-                        arkadaslar.find((a) => a.profil.id === d.gonderen_id)?.profil.ad ?? 'Bir arkadaşın'
-                      }
-                      onKabul={() => davetiKabulEt(d)}
-                      onRed={() => davetiReddet(d)}
-                    />
-                  ))}
-                </div>
-              </Bolum>
-            )}
-
-            {gelenIstekler.length > 0 && (
-              <Bolum baslik="Arkadaşlık istekleri" ikon="UserPlus" sayi={gelenIstekler.length}>
-                <div className="space-y-3">
-                  {gelenIstekler.map((a) => (
-                    <IstekKarti key={a.arkadaslikId} arkadas={a} onYanit={tazele} />
-                  ))}
-                </div>
-              </Bolum>
-            )}
-
-            <Bolum baslik="Gruplar" ikon="Users" sayi={gruplar.length}>
-              <div className="space-y-3">
-                {gruplar.map((g) => (
-                  <button
-                    key={g.id}
-                    onClick={() => setSeciliGrup(g)}
-                    className="card p-4 w-full flex items-center gap-3 text-left active:scale-[0.98] transition-transform"
-                  >
-                    <div
-                      className={`w-9 h-9 rounded-2xl ${renkAl(g.renk ?? 'gok').yumusak} flex items-center justify-center shrink-0`}
-                    >
-                      {g.emoji ? <span className="text-lg">{g.emoji}</span> : <Icon name="Users" className="w-4.5 h-4.5" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-ink-700 truncate">{g.ad}</p>
-                      {g.aciklama && <p className="text-xs text-ink-400 truncate">{g.aciklama}</p>}
-                    </div>
-                    <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />
-                  </button>
-                ))}
+              {kabulEdilmis.length > 0 && (
                 <button
-                  onClick={() => setGrupKurAcik(true)}
-                  disabled={kabulEdilmis.length === 0}
-                  className="w-full btn-ghost border border-ink-100/40 text-sm py-3 flex items-center justify-center gap-2 disabled:opacity-40"
+                  onClick={() => setSihirbazAcik(true)}
+                  className="w-full card p-4 flex items-center gap-3 text-left active:scale-[0.98] transition-transform"
                 >
-                  <Icon name="Plus" className="w-4 h-4" />
-                  {kabulEdilmis.length === 0 ? 'Grup için önce arkadaş ekle' : 'Grup kur'}
+                  <div className="w-10 h-10 rounded-2xl bg-coral-100 flex items-center justify-center shrink-0">
+                    <Icon name="Wand2" className="w-5 h-5 text-coral-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-ink-700">Herkese uyan saati bul</p>
+                    <p className="text-xs text-ink-400">
+                      Arkadaşlarını seç, gerisini yapay zekâ halletsin
+                    </p>
+                  </div>
+                  <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />
                 </button>
-              </div>
-            </Bolum>
-
-            <Bolum baslik="Arkadaşların" ikon="Users" sayi={kabulEdilmis.length}>
-              {kabulEdilmis.length === 0 ? (
-                <div className="card p-5 text-center">
-                  <p className="text-sm text-ink-400">
-                    Henüz arkadaşın yok. Yukarıdaki kodunu paylaş ya da bir arkadaşının kodunu gir.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {kabulEdilmis.map((a) => (
-                    <ArkadasKarti
-                      key={a.arkadaslikId}
-                      arkadas={a}
-                      onAc={() => setSecili(a.profil)}
-                      onCikar={tazele}
-                    />
-                  ))}
-                </div>
               )}
-            </Bolum>
 
-            {gidenIstekler.length > 0 && (
-              <Bolum baslik="Bekleyen isteklerin" ikon="Clock" sayi={gidenIstekler.length} soluk>
+              <ArkadasEkle onEklendi={tazele} baslangicKodu={baslangicKodu} />
+            </div>
+            <div className="space-y-6">
+
+              {gelenDavetler.length > 0 && (
+                <Bolum baslik="Plan davetleri" ikon="CalendarClock" sayi={gelenDavetler.length}>
+                  <div className="space-y-3">
+                    {gelenDavetler.map((d) => (
+                      <DavetKarti
+                        key={d.id}
+                        davet={d}
+                        gonderenAd={
+                          arkadaslar.find((a) => a.profil.id === d.gonderen_id)?.profil.ad ?? 'Bir arkadaşın'
+                        }
+                        onKabul={() => davetiKabulEt(d)}
+                        onRed={() => davetiReddet(d)}
+                      />
+                    ))}
+                  </div>
+                </Bolum>
+              )}
+
+              {gelenIstekler.length > 0 && (
+                <Bolum baslik="Arkadaşlık istekleri" ikon="UserPlus" sayi={gelenIstekler.length}>
+                  <div className="space-y-3">
+                    {gelenIstekler.map((a) => (
+                      <IstekKarti key={a.arkadaslikId} arkadas={a} onYanit={tazele} />
+                    ))}
+                  </div>
+                </Bolum>
+              )}
+
+              <Bolum baslik="Gruplar" ikon="Users" sayi={gruplar.length}>
                 <div className="space-y-3">
-                  {gidenIstekler.map((a) => (
-                    <div key={a.arkadaslikId} className="card p-4 flex items-center gap-3">
-                      <Avatar ad={a.profil.ad} foto={a.profil.avatar} emoji={a.profil.emoji} renk={a.profil.renk} boyut="sm" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-ink-600 truncate">{a.profil.ad}</p>
-                        <p className="text-xs text-ink-300">Onay bekleniyor</p>
-                      </div>
-                      <button
-                        onClick={async () => {
-                          await arkadasliktanCik(a.arkadaslikId)
-                          await tazele()
-                        }}
-                        className="text-xs font-medium text-ink-400 active:scale-95 transition-transform"
+                  {gruplar.map((g) => (
+                    <button
+                      key={g.id}
+                      onClick={() => setSeciliGrup(g)}
+                      className="card p-4 w-full flex items-center gap-3 text-left active:scale-[0.98] transition-transform"
+                    >
+                      <div
+                        className={`w-9 h-9 rounded-2xl ${renkAl(g.renk ?? 'gok').yumusak} flex items-center justify-center shrink-0`}
                       >
-                        İptal
-                      </button>
-                    </div>
+                        {g.emoji ? <span className="text-lg">{g.emoji}</span> : <Icon name="Users" className="w-4.5 h-4.5" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-ink-700 truncate">{g.ad}</p>
+                        {g.aciklama && <p className="text-xs text-ink-400 truncate">{g.aciklama}</p>}
+                      </div>
+                      <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />
+                    </button>
                   ))}
+                  <button
+                    onClick={() => setGrupKurAcik(true)}
+                    disabled={kabulEdilmis.length === 0}
+                    className="w-full btn-ghost border border-ink-100/40 text-sm py-3 flex items-center justify-center gap-2 disabled:opacity-40"
+                  >
+                    <Icon name="Plus" className="w-4 h-4" />
+                    {kabulEdilmis.length === 0 ? 'Grup için önce arkadaş ekle' : 'Grup kur'}
+                  </button>
                 </div>
               </Bolum>
-            )}
-          </>
+
+              <Bolum baslik="Arkadaşların" ikon="Users" sayi={kabulEdilmis.length}>
+                {kabulEdilmis.length === 0 ? (
+                  <div className="card p-5 text-center">
+                    <p className="text-sm text-ink-400">
+                      Henüz arkadaşın yok. Yukarıdaki kodunu paylaş ya da bir arkadaşının kodunu gir.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {kabulEdilmis.map((a) => (
+                      <ArkadasKarti
+                        key={a.arkadaslikId}
+                        arkadas={a}
+                        onAc={() => setSecili(a.profil)}
+                        onCikar={tazele}
+                      />
+                    ))}
+                  </div>
+                )}
+              </Bolum>
+
+              {gidenIstekler.length > 0 && (
+                <Bolum baslik="Bekleyen isteklerin" ikon="Clock" sayi={gidenIstekler.length} soluk>
+                  <div className="space-y-3">
+                    {gidenIstekler.map((a) => (
+                      <div key={a.arkadaslikId} className="card p-4 flex items-center gap-3">
+                        <Avatar ad={a.profil.ad} foto={a.profil.avatar} emoji={a.profil.emoji} renk={a.profil.renk} boyut="sm" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-ink-600 truncate">{a.profil.ad}</p>
+                          <p className="text-xs text-ink-300">Onay bekleniyor</p>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            await arkadasliktanCik(a.arkadaslikId)
+                            await tazele()
+                          }}
+                          className="text-xs font-medium text-ink-400 active:scale-95 transition-transform"
+                        >
+                          İptal
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </Bolum>
+              )}
+            </div>
+          </div>
         )}
       </div>
 

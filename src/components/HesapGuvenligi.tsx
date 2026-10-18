@@ -103,8 +103,8 @@ export function HesapGuvenligi() {
       </div>
 
       {sifreAcik && (
-        <div className="fixed inset-0 z-[60] bg-cream-100 animate-slide-up">
-          <div className="max-w-md mx-auto h-full">
+        <div className="panel-tam z-[60]">
+          <div className="h-full overflow-y-auto">
             <SifreBelirle
               degistir
               onVazgec={() => setSifreAcik(false)}

@@ -66,9 +66,9 @@ export function AkisView() {
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 pb-24 space-y-4">
+      <div className="flex-1 overflow-y-auto px-5 pb-24 space-y-4 lg:pb-10 lg:grid lg:grid-cols-2 lg:gap-5 lg:space-y-0 lg:items-start">
         {hata && (
-          <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3">
+          <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3 lg:col-span-2">
             <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
             <p className="text-sm text-rose-700">{hata}</p>
           </div>
@@ -80,7 +80,7 @@ export function AkisView() {
             <div className="skeleton h-72 rounded-3xl" />
           </>
         ) : anilar && anilar.length === 0 ? (
-          <div className="card p-6 text-center">
+          <div className="card p-6 text-center lg:col-span-2">
             <div className="w-14 h-14 rounded-full bg-sky-100 flex items-center justify-center mx-auto mb-3">
               <Icon name="ImageIcon" className="w-7 h-7 text-sky-600" />
             </div>

@@ -9,10 +9,13 @@ import { sohbetleriGetir, type Sohbet } from '../sosyal/mesajlar'
 import { arkadaslariGetir, type Arkadas, type Profil } from '../sosyal/api'
 import type { Grup } from '../sosyal/gruplar'
 import { formatRelativeTime } from '../lib/format'
+import { useMasaustu } from '../lib/useMasaustu'
 
 // Arkadaşlarla birebir yazışmalar ve grup sohbetleri tek listede.
 // Henüz yazışılmamış arkadaş/grup da listede kalıyor — yoksa yeni bir
 // sohbet başlatmanın yolu olmazdı.
+// Phone: the list, with a chat opening over it. Desktop: the list on the
+// left and the open chat beside it.
 export function SohbetlerView({ onDegisti }: { onDegisti?: () => void }) {
   const { kullanici } = useAuth()
   const sosyalSurum = useSosyalSurum()
@@ -21,6 +24,7 @@ export function SohbetlerView({ onDegisti }: { onDegisti?: () => void }) {
   const [hata, setHata] = useState<string | null>(null)
   const [acikArkadas, setAcikArkadas] = useState<Profil | null>(null)
   const [acikGrup, setAcikGrup] = useState<Grup | null>(null)
+  const masaustu = useMasaustu()
 
   const tazele = useCallback(async () => {
     setHata(null)
@@ -45,103 +49,144 @@ export function SohbetlerView({ onDegisti }: { onDegisti?: () => void }) {
 
   const yazisilmis = sohbetler?.filter((s) => s.sonZaman) ?? []
   const bos = sohbetler?.filter((s) => !s.sonZaman) ?? []
+  const aciksa = (s: Sohbet) => (s.tur === 'grup' ? acikGrup?.id === s.id : acikArkadas?.id === s.id)
+
+  function ac(s: Sohbet) {
+    if (s.tur === 'grup') {
+      setAcikArkadas(null)
+      setAcikGrup(s.grup!)
+    } else {
+      setAcikGrup(null)
+      setAcikArkadas(s.profil!)
+    }
+  }
+
+  const sohbetPenceresi = acikArkadas ? (
+    <DirektSohbet
+      key={acikArkadas.id}
+      arkadas={acikArkadas}
+      benimId={kullanici.id}
+      gomulu={masaustu}
+      onClose={() => {
+        setAcikArkadas(null)
+        void tazele()
+      }}
+    />
+  ) : acikGrup ? (
+    <GrupDetay
+      key={acikGrup.id}
+      grup={acikGrup}
+      benimId={kullanici.id}
+      arkadaslar={arkadaslar}
+      gomulu={masaustu}
+      onClose={() => {
+        setAcikGrup(null)
+        void tazele()
+      }}
+      onAyrildi={async () => {
+        setAcikGrup(null)
+        await tazele()
+      }}
+    />
+  ) : null
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3">
-        <h1 className="font-display text-2xl font-bold text-ink-700">Sohbet</h1>
-        <p className="text-sm text-ink-400 mt-0.5">Arkadaşların ve grupların</p>
-      </div>
+    <div className="flex flex-col h-full lg:flex-row lg:h-screen">
+      <div className="flex flex-col h-full min-h-0 lg:w-[360px] lg:shrink-0 lg:border-r lg:border-ink-100/50">
+        <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3 lg:pt-8">
+          <h1 className="font-display text-2xl font-bold text-ink-700">Sohbet</h1>
+          <p className="text-sm text-ink-400 mt-0.5">Arkadaşların ve grupların</p>
+        </div>
 
-      <div className="flex-1 overflow-y-auto px-5 pb-24">
-        {hata && (
-          <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3 mb-4">
-            <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
-            <p className="text-sm text-rose-700">{hata}</p>
-          </div>
-        )}
-
-        {sohbetler === null ? (
-          <div className="space-y-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="skeleton h-16 rounded-2xl" />
-            ))}
-          </div>
-        ) : sohbetler.length === 0 ? (
-          <div className="card p-6 text-center">
-            <div className="w-14 h-14 rounded-full bg-coral-100 flex items-center justify-center mx-auto mb-3">
-              <Icon name="MessagesSquare" className="w-7 h-7 text-coral-500" />
+        <div className="flex-1 overflow-y-auto px-5 pb-24 lg:pb-6">
+          {hata && (
+            <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3 mb-4">
+              <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+              <p className="text-sm text-rose-700">{hata}</p>
             </div>
-            <p className="font-semibold text-ink-600 mb-1">Henüz sohbet yok</p>
-            <p className="text-sm text-ink-400">
-              Profil sekmesinden arkadaş ekle ya da grup kur, sohbetler burada görünsün.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {yazisilmis.map((s) => (
-              <SohbetSatiri
-                key={`${s.tur}-${s.id}`}
-                sohbet={s}
-                onAc={() => (s.tur === 'grup' ? setAcikGrup(s.grup!) : setAcikArkadas(s.profil!))}
-              />
-            ))}
+          )}
 
-            {bos.length > 0 && (
-              <>
-                {yazisilmis.length > 0 && (
-                  <p className="text-xs font-semibold text-ink-300 uppercase tracking-wide pt-4 pb-1 px-1">
-                    Yeni sohbet başlat
-                  </p>
-                )}
-                {bos.map((s) => (
-                  <SohbetSatiri
-                    key={`${s.tur}-${s.id}`}
-                    sohbet={s}
-                    onAc={() => (s.tur === 'grup' ? setAcikGrup(s.grup!) : setAcikArkadas(s.profil!))}
-                  />
-                ))}
-              </>
-            )}
-          </div>
-        )}
+          {sohbetler === null ? (
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="skeleton h-16 rounded-2xl" />
+              ))}
+            </div>
+          ) : sohbetler.length === 0 ? (
+            <div className="card p-6 text-center">
+              <div className="w-14 h-14 rounded-full bg-coral-100 flex items-center justify-center mx-auto mb-3">
+                <Icon name="MessagesSquare" className="w-7 h-7 text-coral-500" />
+              </div>
+              <p className="font-semibold text-ink-600 mb-1">Henüz sohbet yok</p>
+              <p className="text-sm text-ink-400">
+                Profil sekmesinden arkadaş ekle ya da grup kur, sohbetler burada görünsün.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {yazisilmis.map((s) => (
+                <SohbetSatiri
+                  key={`${s.tur}-${s.id}`}
+                  sohbet={s}
+                  secili={masaustu && aciksa(s)}
+                  onAc={() => ac(s)}
+                />
+              ))}
+
+              {bos.length > 0 && (
+                <>
+                  {yazisilmis.length > 0 && (
+                    <p className="text-xs font-semibold text-ink-300 uppercase tracking-wide pt-4 pb-1 px-1">
+                      Yeni sohbet başlat
+                    </p>
+                  )}
+                  {bos.map((s) => (
+                    <SohbetSatiri
+                      key={`${s.tur}-${s.id}`}
+                      sohbet={s}
+                      secili={masaustu && aciksa(s)}
+                      onAc={() => ac(s)}
+                    />
+                  ))}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
       </div>
 
-      {acikArkadas && (
-        <DirektSohbet
-          arkadas={acikArkadas}
-          benimId={kullanici.id}
-          onClose={() => {
-            setAcikArkadas(null)
-            void tazele()
-          }}
-        />
-      )}
-
-      {acikGrup && (
-        <GrupDetay
-          grup={acikGrup}
-          benimId={kullanici.id}
-          arkadaslar={arkadaslar}
-          onClose={() => {
-            setAcikGrup(null)
-            void tazele()
-          }}
-          onAyrildi={async () => {
-            setAcikGrup(null)
-            await tazele()
-          }}
-        />
+      {masaustu ? (
+        <section className="flex-1 min-w-0 flex flex-col">{sohbetPenceresi ?? <SohbetSecilmedi />}</section>
+      ) : (
+        sohbetPenceresi
       )}
     </div>
   )
 }
 
-function SohbetSatiri({ sohbet, onAc }: { sohbet: Sohbet; onAc: () => void }) {
+function SohbetSecilmedi() {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center text-center px-8">
+      <div className="w-16 h-16 rounded-3xl bg-coral-100 flex items-center justify-center mb-4">
+        <Icon name="MessagesSquare" className="w-8 h-8 text-coral-500" />
+      </div>
+      <p className="font-semibold text-ink-600 mb-1">Bir sohbet seç</p>
+      <p className="text-sm text-ink-400 max-w-xs">
+        Soldan bir arkadaşını ya da grubunu seç; mesajlar ve planlar burada açılır.
+      </p>
+    </div>
+  )
+}
+
+function SohbetSatiri({ sohbet, secili = false, onAc }: { sohbet: Sohbet; secili?: boolean; onAc: () => void }) {
   return (
     <button
       onClick={onAc}
-      className="w-full card p-3 flex items-center gap-3 text-left active:scale-[0.98] transition-transform"
+      aria-current={secili ? 'true' : undefined}
+      className={`w-full card p-3 flex items-center gap-3 text-left active:scale-[0.98] transition-all lg:hover:border-coral-200 ${
+        secili ? 'ring-2 ring-coral-300 border-transparent' : ''
+      }`}
     >
       {sohbet.tur === 'grup' ? (
         <div className="w-11 h-11 rounded-2xl bg-sky-100 flex items-center justify-center shrink-0">

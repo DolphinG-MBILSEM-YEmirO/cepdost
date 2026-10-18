@@ -96,6 +96,22 @@
     animation: shimmer 1.8s linear infinite;
   }
 
+  /* Full-screen sheet on phones. On desktop it becomes a centred window
+     over the dimmed page (the 100vmax shadow is the backdrop), so the
+     sidebar and the page under it stay in place. */
+  .panel-tam {
+    @apply fixed inset-0 flex flex-col bg-cream-100/95 backdrop-blur-md animate-slide-up;
+  }
+  @media (min-width: 1024px) {
+    .panel-tam {
+      inset: max(1.5rem, calc(50% - 28rem)) max(1.5rem, calc(50% - 22.5rem));
+      @apply rounded-3xl overflow-hidden bg-cream-100;
+      box-shadow:
+        0 0 0 100vmax rgba(15, 12, 8, 0.35),
+        0 24px 64px -12px rgba(15, 12, 8, 0.35);
+    }
+  }
+
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }

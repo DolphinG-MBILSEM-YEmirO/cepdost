@@ -4,10 +4,12 @@ import { BugunView } from './BugunView'
 import { RemindersView } from './RemindersView'
 import { AniHatirlatici } from './AniHatirlatici'
 import type { Kayit } from '../db'
+import { useMasaustu } from '../lib/useMasaustu'
 
 // "Hatırlat" ayrı bir alt sekmeydi ama Bugün ile aynı veriye bakıyordu
 // (tarihli, bekleyen kayıtlar) — alt bar kalabalığını azaltmak için ikisi
 // tek sekmede birleştirildi.
+// Masaüstünde ikisi yan yana duruyor: solda gün, sağda hatırlatmalar.
 type Gorunum = 'bugun' | 'hatirlat'
 
 interface Props {
@@ -28,14 +30,34 @@ export function PlanlarView({
   onDelete,
 }: Props) {
   const [gorunum, setGorunum] = useState<Gorunum>('bugun')
+  const masaustu = useMasaustu()
 
   // Geciken/bekleyen sayısı rozet olarak gösteriliyor ki "Hatırlat"
   // görünümü gizlendiğinde gözden kaçmasın.
   const bekleyen = kayitlar.filter((k) => k.durum === 'bekliyor' && k.tarih).length
 
+  const bugun = (
+    <BugunView
+      kayitlar={kayitlar}
+      loading={loading}
+      onAddClick={onAddClick}
+      onRecordClick={onRecordClick}
+      onToggleStatus={onToggleStatus}
+    />
+  )
+  const hatirlat = (
+    <RemindersView
+      kayitlar={kayitlar}
+      onToggleStatus={onToggleStatus}
+      onDelete={onDelete}
+      onAddClick={onAddClick}
+      onRecordClick={onRecordClick}
+    />
+  )
+
   return (
     <div className="flex flex-col h-full">
-      <div className="flex gap-1.5 px-5 pt-[calc(1rem+var(--safe-top))] pb-2 shrink-0">
+      <div className="flex gap-1.5 px-5 pt-[calc(1rem+var(--safe-top))] pb-2 shrink-0 lg:hidden">
         <button
           onClick={() => setGorunum('bugun')}
           className={`chip ${
@@ -68,22 +90,15 @@ export function PlanlarView({
       <AniHatirlatici kayitlar={kayitlar} />
 
       <div className="flex-1 min-h-0">
-        {gorunum === 'bugun' ? (
-          <BugunView
-            kayitlar={kayitlar}
-            loading={loading}
-            onAddClick={onAddClick}
-            onRecordClick={onRecordClick}
-            onToggleStatus={onToggleStatus}
-          />
+        {masaustu ? (
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,400px)] gap-6 items-start">
+            {bugun}
+            <div className="card overflow-hidden">{hatirlat}</div>
+          </div>
+        ) : gorunum === 'bugun' ? (
+          bugun
         ) : (
-          <RemindersView
-            kayitlar={kayitlar}
-            onToggleStatus={onToggleStatus}
-            onDelete={onDelete}
-            onAddClick={onAddClick}
-            onRecordClick={onRecordClick}
-          />
+          hatirlat
         )}
       </div>
     </div>

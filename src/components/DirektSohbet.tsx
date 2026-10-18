@@ -26,6 +26,7 @@ import {
 } from '../sosyal/api'
 import { kayitOlustur } from '../db'
 import { formatDate } from '../lib/format'
+import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 
 // One-to-one chat with a friend. Messages are read from the local copy and
 // reloaded whenever social data changes (live events, sync, own sends).
@@ -33,9 +34,12 @@ interface Props {
   arkadas: Profil
   benimId: string
   onClose: () => void
+  // Desktop: shown in the chat list's side pane instead of over the page.
+  gomulu?: boolean
 }
 
-export function DirektSohbet({ arkadas, benimId, onClose }: Props) {
+export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Props) {
+  useEscapeIleKapat(onClose, !gomulu)
   const [mesajlar, setMesajlar] = useState<DirektMesaj[]>([])
   const [yukleniyor, setYukleniyor] = useState(true)
   const [girdi, setGirdi] = useState('')
@@ -125,7 +129,7 @@ export function DirektSohbet({ arkadas, benimId, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-[55] flex flex-col bg-cream-100/95 backdrop-blur-md animate-slide-up">
+    <div className={gomulu ? 'flex flex-col h-full min-h-0' : 'panel-tam z-[55]'}>
       <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-4 border-b border-ink-100/40 shrink-0">
         <div className="flex items-center gap-3 min-w-0">
           <Avatar ad={arkadas.ad} foto={arkadas.avatar} emoji={arkadas.emoji} renk={arkadas.renk} boyut="sm" />

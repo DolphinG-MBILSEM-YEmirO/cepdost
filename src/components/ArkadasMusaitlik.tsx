@@ -5,6 +5,7 @@ import { AniArsivi } from './AniArsivi'
 import { arkadasMusaitligi, davetGonder, type MusaitlikBlogu, type Profil } from '../sosyal/api'
 import { direktMesajGonder } from '../sosyal/mesajlar'
 import { addDays, toDateString, formatDate } from '../lib/format'
+import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 
 // Kaç günlük müsaitlik gösterilsin. Bir haftalık pencere, "bu hafta ne
 // zaman buluşabiliriz" sorusunun doğal kapsamı.
@@ -19,6 +20,7 @@ interface Props {
 type Sekme = 'musaitlik' | 'anilar'
 
 export function ArkadasMusaitlik({ arkadas, benimId, onClose }: Props) {
+  useEscapeIleKapat(onClose)
   const [sekme, setSekme] = useState<Sekme>('musaitlik')
   const [bloklar, setBloklar] = useState<MusaitlikBlogu[] | null>(null)
   const [hata, setHata] = useState<string | null>(null)
@@ -61,7 +63,7 @@ export function ArkadasMusaitlik({ arkadas, benimId, onClose }: Props) {
   const paylasimKapali = !arkadas.musaitlik_paylas
 
   return (
-    <div className="fixed inset-0 z-[55] flex flex-col bg-cream-100/95 backdrop-blur-md animate-slide-up">
+    <div className="panel-tam z-[55]">
       <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-4 border-b border-ink-100/40 shrink-0">
         <div className="flex items-center gap-3 min-w-0">
           <Avatar ad={arkadas.ad} foto={arkadas.avatar} emoji={arkadas.emoji} renk={arkadas.renk} />

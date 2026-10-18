@@ -5,6 +5,7 @@ import { CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_ICON_NAME, PRIORITY_LABELS, 
 import { ConfirmDialog } from './ConfirmDialog'
 import { AniEkleModal } from './AniArsivi'
 import { kayittanIcsIndir } from '../takvim'
+import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 
 interface RecordDetailProps {
   kayit: Kayit
@@ -14,6 +15,7 @@ interface RecordDetailProps {
 }
 
 export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDetailProps) {
+  useEscapeIleKapat(onClose)
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState(goruntulemeBasligi(kayit))
   const [category, setCategory] = useState<Kategori>(kayit.kategori ?? 'not')
@@ -104,7 +106,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-cream-100 animate-slide-up">
+    <div className="panel-tam z-50">
       <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-3">
         <button onClick={onClose} aria-label="Geri" className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform">
           <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />

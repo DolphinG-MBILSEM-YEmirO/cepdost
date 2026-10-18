@@ -23,6 +23,7 @@ import {
 import { direktMesajGonder } from '../sosyal/mesajlar'
 import { ortakPlanOner } from '../sosyal/ortakPlan'
 import { addDays, formatDate, toDateString } from '../lib/format'
+import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 
 // F19 — "+" akışı yeniden tasarlandı (2026-08-08).
 //
@@ -81,6 +82,7 @@ function dakikaya(saat: string): number {
 }
 
 export function PlanOlustur({ onClose, onSaved }: Props) {
+  useEscapeIleKapat(onClose)
   const { kullanici } = useAuth()
 
   const [adim, setAdim] = useState<Adim>('kiminle')
@@ -343,7 +345,7 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
     (kapsam === 'grup' && !!seciliGrup)
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-cream-100/95 backdrop-blur-md animate-slide-up">
+    <div className="panel-tam z-50">
       <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-3 shrink-0">
         <div className="min-w-0">
           <h2 className="font-display text-xl font-bold text-ink-700">

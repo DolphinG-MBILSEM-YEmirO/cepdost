@@ -15,7 +15,7 @@ export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
         <h1 className="font-display text-2xl font-bold text-ink-700">Ayarlar</h1>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 pb-24 space-y-6">
+      <div className="flex-1 overflow-y-auto px-5 pb-24 flex flex-col gap-6 lg:block lg:pb-10 lg:columns-2 lg:[&>*]:break-inside-avoid lg:[&>*]:mb-6">
         <div className="card p-5">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center">
