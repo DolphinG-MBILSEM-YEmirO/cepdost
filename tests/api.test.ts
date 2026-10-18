@@ -41,7 +41,7 @@ const guvenli = await import('../api/_lib/guvenliFetch.ts')
 const gemini = await import('../api/_lib/gemini.ts')
 const bos = await import('../shared/bosluklar.ts')
 const { GET: epostaGET, POST: epostaPOST } = await import('../api/eposta.ts')
-const { postaci } = await import('../api/_lib/postaci.ts')
+const { postaci, girisDurumunuUnut } = await import('../api/_lib/postaci.ts')
 const onayi = await import('../shared/epostaOnayi.ts')
 
 // ---------- fetch mock ----------
@@ -869,6 +869,13 @@ function epostaAyarla(acik: boolean) {
   postaci.gonder = async (posta) => {
     gidenPostalar.push(posta)
   }
+  postaci.girisiDene = async () => {}
+  girisDurumunuUnut()
+}
+
+// What nodemailer throws when Gmail turns the login down.
+function girisReddi(): Error {
+  return Object.assign(new Error('Invalid login: 535-5.7.8 Username and Password not accepted'), { code: 'EAUTH' })
 }
 
 // A code request as the app makes it: signed, with proof of work. (Not
@@ -898,26 +905,26 @@ async function epostaIstek(govde: unknown): Promise<Response> {
 
 test('eposta: off until the secret and Gmail are set; short secrets do not count', async () => {
   epostaAyarla(false)
-  assert.deepEqual(await json(epostaGET()), { imzaci: null })
+  assert.deepEqual(await json(await epostaGET()), { imzaci: null })
   assert.equal((await epostaIstek({ islem: 'kod' })).status, 503)
 
   epostaAyarla(true)
   process.env.EPOSTA_GIZLI = 'kisa'
-  assert.deepEqual(await json(epostaGET()), { imzaci: null })
+  assert.deepEqual(await json(await epostaGET()), { imzaci: null })
   epostaAyarla(true)
   delete process.env.GMAIL_UYGULAMA_SIFRESI
-  assert.deepEqual(await json(epostaGET()), { imzaci: null })
+  assert.deepEqual(await json(await epostaGET()), { imzaci: null })
 
   epostaAyarla(true)
-  const { imzaci } = await json(epostaGET())
+  const { imzaci } = await json(await epostaGET())
   assert.match(imzaci, /^[0-9a-f]{64}$/)
   // The key comes from the secret alone, so attestations survive redeploys.
-  assert.equal((await json(epostaGET())).imzaci, imzaci)
+  assert.equal((await json(await epostaGET())).imzaci, imzaci)
 })
 
 test('eposta: the mailed code comes back as an attestation for that account', async () => {
   epostaAyarla(true)
-  const { imzaci } = await json(epostaGET())
+  const { imzaci } = await json(await epostaGET())
   const sk = generateSecretKey()
   const pk = getPublicKey(sk)
 
@@ -993,6 +1000,44 @@ test('eposta: unsigned, stale or effortless requests are refused; codes expire; 
   const hatali = await epostaIstek({ islem: 'kod', istek: kodIstegi(sk, 'a@example.com') })
   assert.equal(hatali.status, 502)
   assert.equal((await json(hatali)).bilet, undefined)
+  // A failed send that isn't a login problem leaves verification on.
+  assert.match((await json(await epostaGET())).imzaci, /^[0-9a-f]{64}$/)
+  postaci.gonder = gercekGonder
+})
+
+test('eposta: a Gmail login that is refused switches verification off until it works', async () => {
+  epostaAyarla(true)
+  let denemeler = 0
+  postaci.girisiDene = async () => {
+    denemeler++
+    throw girisReddi()
+  }
+  assert.deepEqual(await json(await epostaGET()), { imzaci: null })
+  // The answer is kept for a while instead of logging in on every request.
+  assert.deepEqual(await json(await epostaGET()), { imzaci: null })
+  assert.equal(denemeler, 1)
+
+  // A check that fails for another reason (a slow network) keeps it on.
+  epostaAyarla(true)
+  postaci.girisiDene = async () => {
+    throw Object.assign(new Error('Connection timeout'), { code: 'ETIMEDOUT' })
+  }
+  const { imzaci } = await json(await epostaGET())
+  assert.match(imzaci, /^[0-9a-f]{64}$/)
+
+  // A send refused for the login says so, and GET follows at once.
+  postaci.gonder = async () => {
+    throw girisReddi()
+  }
+  const sk = generateSecretKey()
+  const res = await epostaIstek({ islem: 'kod', istek: kodIstegi(sk, 'a@example.com') })
+  assert.equal(res.status, 503)
+  assert.match((await json(res)).error, /yenile/)
+  assert.deepEqual(await json(await epostaGET()), { imzaci: null })
+
+  // Once the login works again, the same key is back.
+  epostaAyarla(true)
+  assert.equal((await json(await epostaGET())).imzaci, imzaci)
   postaci.gonder = gercekGonder
 })
 

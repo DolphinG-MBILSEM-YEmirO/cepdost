@@ -27,10 +27,8 @@ export function postaAyarliMi(): boolean {
   return ayarlar() !== null
 }
 
-async function gmailIleGonder(posta: Posta): Promise<void> {
-  const a = ayarlar()
-  if (!a) throw new Error('GMAIL_ADRESI / GMAIL_UYGULAMA_SIFRESI tanımlı değil')
-  const tasiyici = nodemailer.createTransport({
+function tasiyiciKur(a: { adres: string; sifre: string }) {
+  return nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
     secure: true,
@@ -38,7 +36,12 @@ async function gmailIleGonder(posta: Posta): Promise<void> {
     connectionTimeout: 10_000,
     socketTimeout: 15_000,
   })
-  await tasiyici.sendMail({
+}
+
+async function gmailIleGonder(posta: Posta): Promise<void> {
+  const a = ayarlar()
+  if (!a) throw new Error('GMAIL_ADRESI / GMAIL_UYGULAMA_SIFRESI tanımlı değil')
+  await tasiyiciKur(a).sendMail({
     from: { name: 'SharOS', address: a.adres },
     to: posta.alici,
     subject: posta.konu,
@@ -47,5 +50,53 @@ async function gmailIleGonder(posta: Posta): Promise<void> {
   })
 }
 
+// Logs in to Gmail without sending anything.
+async function gmailGirisiniDene(): Promise<void> {
+  const a = ayarlar()
+  if (!a) throw new Error('GMAIL_ADRESI / GMAIL_UYGULAMA_SIFRESI tanımlı değil')
+  const tasiyici = tasiyiciKur(a)
+  try {
+    await tasiyici.verify()
+  } finally {
+    tasiyici.close()
+  }
+}
+
 // Swappable so tests can read the mail instead of sending it.
-export const postaci = { gonder: gmailIleGonder }
+export const postaci = { gonder: gmailIleGonder, girisiDene: gmailGirisiniDene }
+
+// Gmail turned the login down: a wrong address or app password, which only
+// a change in the settings fixes (unlike a timeout or a refused recipient).
+export function girisReddiMi(err: unknown): boolean {
+  return typeof err === 'object' && err !== null && (err as { code?: unknown }).code === 'EAUTH'
+}
+
+// Whether Gmail takes our login, as this instance last saw it. A rejected
+// login is checked again soon, a working one rarely; a check that fails for
+// any other reason counts as working, so a slow network never switches
+// verification off.
+const GIRIS_TAZELIGI_MS = { tamam: 30 * 60_000, red: 2 * 60_000 }
+let giris: { tamam: boolean; yenidenBak: number } | null = null
+
+export function girisSonucunuKaydet(tamam: boolean): void {
+  giris = { tamam, yenidenBak: Date.now() + (tamam ? GIRIS_TAZELIGI_MS.tamam : GIRIS_TAZELIGI_MS.red) }
+}
+
+// Tests start each case from a clean slate.
+export function girisDurumunuUnut(): void {
+  giris = null
+}
+
+export async function postaCalisiyorMu(): Promise<boolean> {
+  if (!postaAyarliMi()) return false
+  if (giris && Date.now() < giris.yenidenBak) return giris.tamam
+  let tamam = true
+  try {
+    await postaci.girisiDene()
+  } catch (err) {
+    tamam = !girisReddiMi(err)
+    if (!tamam) console.error('[eposta] Gmail girişi reddedildi:', err instanceof Error ? err.message : err)
+  }
+  girisSonucunuKaydet(tamam)
+  return tamam
+}

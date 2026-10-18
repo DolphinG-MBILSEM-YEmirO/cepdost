@@ -135,7 +135,7 @@ export default defineConfig({
       manifest: {
         name: 'SharOS',
         short_name: 'SharOS',
-        description: 'Kaydettiğin şey nihayet işe yarasın.',
+        description: 'Paylaş. Planla. Birlikte yaşa.',
         start_url: '/',
         scope: '/',
         display: 'standalone',

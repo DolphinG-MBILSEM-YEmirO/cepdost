@@ -110,6 +110,9 @@ Other scripts: `npm test`, `npm run build`, `npm run lint`, `npm run preview`.
   verification `EPOSTA_GIZLI` (a random secret of 32+ characters),
   `GMAIL_ADRESI` and `GMAIL_UYGULAMA_SIFRESI` (a Google app password). Until
   all three are set, verification stays off and nobody is asked for an email.
+  It also stays off while Gmail refuses the login (a wrong address or app
+  password; the function log says "Gmail girişi reddedildi"), so nobody is
+  locked behind a code that can never arrive. Fix the variables and redeploy.
 - Android: Bubblewrap TWA (`twa-manifest.json`). The signing key
   (`android.keystore`) is intentionally not in the repository. Keep it backed
   up somewhere safe: without it the Play Store app can never be updated.

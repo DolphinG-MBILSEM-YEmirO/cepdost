@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Icon } from './Icon'
 import { useAuth } from '../sosyal/auth'
+import { SLOGAN } from '../lib/marka'
 
 // The gate before the app. A new account is created on the spot (no email,
 // no waiting for a code); returning users sign in with username + password,
@@ -18,8 +19,8 @@ interface Props {
 export function GirisEkrani({
   baslik = "SharOS'a hoş geldin",
   altBaslik = 'Başlamak için bir hesap aç ya da giriş yap',
-  tanitimBaslik = 'Kaydettiğin şey işe yarasın',
-  tanitimMetin = 'Paylaştığın linkleri ve görselleri otomatik planlara çevirir, arkadaşlarınla birlikte plan yapmanı sağlar.',
+  tanitimBaslik = SLOGAN,
+  tanitimMetin = 'Paylaştığın linkleri ve görselleri plana çevirir, arkadaşlarınla herkese uyan zamanı bulmanı sağlar.',
   altNot = 'Hesabın plan detaylarını telefonundan çıkarmaz. Arkadaşlarınla paylaştıkların uçtan uca şifrelenir.',
 }: Props = {}) {
   const { hesapOlustur, girisSifre, girisKod, eskiHesapVardi } = useAuth()

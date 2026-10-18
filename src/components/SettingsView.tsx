@@ -2,6 +2,7 @@ import { Icon } from './Icon'
 import { TakvimAyarlari } from './TakvimAyarlari'
 import { SohbetTemaSecici } from './SohbetTemaSecici'
 import { HesapGuvenligi } from './HesapGuvenligi'
+import { SLOGAN } from '../lib/marka'
 
 // Not: Hallet referansındaki "Gemini API Anahtarı" kartı buraya bilerek
 // taşınmadı. Sınıflandırma sunucu-taraflı bir secret ile çalışıyor
@@ -34,7 +35,7 @@ export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
             </div>
             <div className="flex gap-3">
               <span className="w-6 h-6 rounded-full bg-orchid-100 text-orchid-600 font-bold text-xs flex items-center justify-center shrink-0">3</span>
-              <p>Arşivde arar, hatırlatır, harita bağlantısı verir. Kaydettiğin şey nihayet işe yarasın.</p>
+              <p>Arşivde arar, hatırlatır, harita bağlantısı verir.</p>
             </div>
           </div>
         </div>
@@ -62,7 +63,7 @@ export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
 
         <div className="text-center pt-2">
           <p className="text-xs text-ink-300">SharOS · Faz 0 MVP</p>
-          <p className="text-xs text-ink-300 mt-1">Kaydettiğin şey nihayet işe yarasın.</p>
+          <p className="text-xs text-ink-300 mt-1">{SLOGAN}</p>
         </div>
       </div>
     </div>

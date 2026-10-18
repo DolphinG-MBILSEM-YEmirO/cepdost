@@ -16,7 +16,7 @@ import { GirisEkrani } from './components/GirisEkrani'
 import { HesapKurulumu } from './components/HesapKurulumu'
 import { SifreBelirle } from './components/SifreBelirle'
 import { EpostaDogrulamaEkrani } from './components/EpostaDogrulama'
-import { Icon } from './components/Icon'
+import { Icon, type IconName } from './components/Icon'
 import { useTakvimOtomatikYenile } from './components/TakvimAyarlari'
 import { useAuth } from './sosyal/auth'
 import { motor, useSosyalSurum } from './sosyal/cekirdek'
@@ -26,6 +26,7 @@ import { okunmamisMesajSayisi } from './sosyal/mesajlar'
 import { musaitligiSenkronla } from './sosyal/musaitlikSenkron'
 import { planlariArkadaEsitle } from './sosyal/planEsitleme'
 import { usePlanAyarlari } from './lib/planAyarlari'
+import { SLOGAN } from './lib/marka'
 import { type Kayit, db, tumKayitlar, kayitEkle, kayitDurumDegistir, kayitSil, goruntulemeBasligi } from './db'
 import { kayitSiniflandir } from './classify'
 import { onayGecerliMi } from '../shared/epostaOnayi'
@@ -416,10 +417,11 @@ function TekEkran({ children }: { children: React.ReactNode }) {
 }
 
 function MarkaPaneli() {
-  const maddeler: { ikon: 'Share2' | 'Users' | 'ShieldCheck'; metin: string }[] = [
-    { ikon: 'Share2', metin: 'Paylaştığın linkler ve ekran görüntüleri kendiliğinden plana dönüşür.' },
-    { ikon: 'Users', metin: 'Arkadaşlarınla herkesin boş olduğu saati tek dokunuşla bul.' },
-    { ikon: 'ShieldCheck', metin: 'Planların telefonunda kalır, arkadaşlarınla paylaştıkların şifrelenir.' },
+  const maddeler: { ikon: IconName; metin: string }[] = [
+    { ikon: 'Sparkles', metin: 'Bir link, ekran görüntüsü ya da not paylaş; saatiyle, yeriyle hazır bir plana dönüşsün.' },
+    { ikon: 'CalendarClock', metin: 'Arkadaşlarının boş saatlerini gör, herkese uyan zamanı tek dokunuşla bul.' },
+    { ikon: 'MapPin', metin: "Arkadaşlarının gittiği yerleri Keşfet'te gör, sıradaki buluşmanı oradan seç." },
+    { ikon: 'Wand2', metin: 'Asistana "Cumartesi Ayşe\'yle kahvaltı" yaz; saati bulsun, davetleri hazırlasın.' },
   ]
   return (
     <div className="hidden lg:flex flex-col justify-between bg-gradient-orchid-deep text-white p-12 relative overflow-hidden">
@@ -431,7 +433,8 @@ function MarkaPaneli() {
         <span className="font-display text-2xl font-bold">SharOS</span>
       </div>
       <div className="relative max-w-md">
-        <h2 className="font-display text-4xl font-bold leading-tight mb-8">Kaydettiğin şey nihayet işe yarasın.</h2>
+        <h2 className="font-display text-4xl font-bold leading-tight text-balance mb-3">{SLOGAN}</h2>
+        <p className="text-white/80 leading-relaxed mb-8">Arkadaş grubunun ortak planlama alanı: kim ne zaman boş, nereye gidiliyor, ne kaydedildi; hepsi tek yerde.</p>
         <ul className="space-y-5">
           {maddeler.map((m) => (
             <li key={m.ikon} className="flex items-start gap-3">
@@ -443,7 +446,7 @@ function MarkaPaneli() {
           ))}
         </ul>
       </div>
-      <p className="relative text-sm text-white/70">Ücretsiz. Reklamsız. Planların sende kalır.</p>
+      <p className="relative text-sm text-white/70">Ücretsiz. Reklamsız. Paylaştıkların uçtan uca şifreli.</p>
     </div>
   )
 }

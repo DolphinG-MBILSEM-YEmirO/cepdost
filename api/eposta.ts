@@ -3,8 +3,9 @@
 // by a ticket only this server can make.
 //
 //   GET                                   → { imzaci }  the public key that
-//        signs attestations, or null while the deployment is not set up
-//        (the app then skips verification instead of locking everyone out)
+//        signs attestations, or null while the deployment is not set up or
+//        Gmail refuses our login (the app then skips verification instead
+//        of locking everyone out behind a code that can never arrive)
 //   POST { islem: 'kod', istek }          → { bilet, son }
 //        `istek` is a Nostr event the account signed: kind ISTEK_TURU, the
 //        address as content, proof of work on its id. The code goes out by
@@ -32,7 +33,7 @@ import {
   kodNormallestir,
 } from '../shared/epostaOnayi.js'
 import { jsonGovdeOku, kaynakReddi, metinAl, yanit } from './_lib/http.js'
-import { postaAyarliMi, postaci } from './_lib/postaci.js'
+import { girisReddiMi, girisSonucunuKaydet, postaAyarliMi, postaCalisiyorMu, postaci } from './_lib/postaci.js'
 
 export const config = { maxDuration: 30 }
 
@@ -97,9 +98,10 @@ function kodPostasi(alici: string, kod: string) {
   }
 }
 
-export function GET(): Response {
+export async function GET(): Promise<Response> {
   const g = ayarliMi()
-  return yanit({ imzaci: g ? getPublicKey(imzaAnahtari(g)) : null })
+  const acik = g !== null && (await postaCalisiyorMu())
+  return yanit({ imzaci: acik ? getPublicKey(imzaAnahtari(g)) : null })
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -143,9 +145,15 @@ async function kodGonder(g: string, istek: unknown): Promise<Response> {
   const son = Date.now() + KOD_GECERLILIK_MS
   try {
     await postaci.gonder(kodPostasi(eposta, kod))
+    girisSonucunuKaydet(true)
   } catch (err) {
     // The address stays out of the log; the reason is enough to debug.
     console.error('[eposta] gönderilemedi:', err instanceof Error ? err.message : err)
+    if (girisReddiMi(err)) {
+      // GET now reports verification as off, so a reload lets people in.
+      girisSonucunuKaydet(false)
+      return yanit({ error: 'E-posta gönderimi şu an çalışmıyor. Sayfayı yenileyip doğrulamadan devam edebilirsin.' }, 503)
+    }
     return yanit({ error: 'Kod gönderilemedi. Adresi kontrol edip tekrar dene.' }, 502)
   }
   const imza = biletImzasi(g, olay.pubkey, eposta, kod, son).toString('base64url')
