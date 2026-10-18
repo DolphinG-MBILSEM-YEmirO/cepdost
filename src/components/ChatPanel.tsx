@@ -10,6 +10,7 @@ import { useAuth } from '../sosyal/auth'
 import { asistanBaglamiHazirla, type AsistanBaglami } from '../sosyal/asistanBaglami'
 import type { Profil } from '../sosyal/api'
 import type { Grup } from '../sosyal/gruplar'
+import { UYGULAMA_ADI } from '../../shared/marka'
 
 interface ChatPanelProps {
   kayitlar: Kayit[]
@@ -187,7 +188,7 @@ export function ChatPanel({ kayitlar, onClose }: ChatPanelProps) {
             <Icon name="MessageCircle" className="w-5 h-5 text-sky-600" />
           </div>
           <div>
-            <h2 className="font-display text-base font-bold text-ink-700 leading-tight">SharOS Asistanı</h2>
+            <h2 className="font-display text-base font-bold text-ink-700 leading-tight">{UYGULAMA_ADI} Asistanı</h2>
             <p className="text-xs text-ink-400">Sor ya da tek mesajla plan kurdur</p>
           </div>
         </div>

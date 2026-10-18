@@ -1,20 +1,25 @@
-# SharOS
+# Sharloop
 
-SharOS is a mobile-first PWA (also packaged for Android as a TWA) for turning
+Sharloop is a mobile-first PWA (also packaged for Android as a TWA) for turning
 things you save into plans and making plans with friends.
 
-Live: https://sharos.vercel.app (also https://cepdost.vercel.app)
+Live: https://sharloop.vercel.app (the older addresses
+https://cepdost.vercel.app and https://sharos.vercel.app still work)
 
-The app was called CepDost until 2026-10-18. Internal names still say
-cepdost on purpose: the local database and storage keys (renaming them would
-lose people's data), the Android package id and its host (the Play listing is
-tied to them), the Vercel project and this repository. Each web address keeps
-its own device data, so someone who opens the other address signs in once
-with their username and password.
+The app was called CepDost, then briefly SharOS, until 2026-10-18. Its name
+and line live in `shared/marka.ts`; a rename is that file plus
+`twa-manifest.json` and this README. Turkish text uses the name without
+suffixes so it reads right whatever the name is.
+
+Internal names still say cepdost on purpose: the local database and storage
+keys (renaming them would lose people's data), the Android package id and its
+host (the Play listing is tied to them), the Vercel project and this
+repository. Each web address keeps its own device data, so someone who opens
+another address signs in once with their username and password.
 
 ## Features
 
-- **Share to SharOS**: links, text and images shared from other apps land in
+- **Share to Sharloop**: links, text and images shared from other apps land in
   the archive and are classified into plans in the background
   (`api/classify.ts`, Gemini + Foursquare).
 - **Plans and reminders**: local-first, stored on the device with Dexie

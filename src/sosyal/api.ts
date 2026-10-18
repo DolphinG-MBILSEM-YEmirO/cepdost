@@ -36,6 +36,7 @@ import { dizinKanali, gelenKutusuKonusu } from './nostr/kanal'
 import { rastgeleId } from './nostr/kodlama'
 import type { SosyalKayit } from './nostr/motor'
 import { localDateString } from '../lib/format'
+import { UYGULAMA_ADI } from '../../shared/marka'
 
 // Profiles, friendships, availability and plan invites, on top of the
 // encrypted record store (see cekirdek.ts). Who can read what is decided
@@ -132,7 +133,7 @@ function profilKur(id: string, veri: Partial<BenimProfilVerim> & { ad: string })
 }
 
 export function ozettenProfil(id: string, ozet: ProfilOzeti | null): Profil {
-  return profilKur(id, ozet ?? { ad: 'SharOS kullanıcısı' })
+  return profilKur(id, ozet ?? { ad: `${UYGULAMA_ADI} kullanıcısı` })
 }
 
 export async function profilimiGetir(): Promise<Profil | null> {

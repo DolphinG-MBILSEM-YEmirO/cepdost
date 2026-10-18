@@ -41,6 +41,7 @@ import { formatDate, formatMessageTime, formatPlanTime, toDateString } from '../
 import { useSosyalSurum } from '../sosyal/cekirdek'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 import { ETKINLIK_EMOJILERI, renkAl } from '../lib/kisisellestirme'
+import { UYGULAMA_ADI } from '../../shared/marka'
 
 type Sekme = 'planlar' | 'sohbet' | 'anilar' | 'uyeler'
 
@@ -91,7 +92,7 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
 
   const adHaritasi = useMemo(() => {
     const m = new Map<string, string>()
-    for (const u of uyeler) m.set(u.kullanici_id, u.profil?.ad ?? 'SharOS kullanıcısı')
+    for (const u of uyeler) m.set(u.kullanici_id, u.profil?.ad ?? `${UYGULAMA_ADI} kullanıcısı`)
     return m
   }, [uyeler])
 
@@ -658,7 +659,7 @@ function SohbetSekmesi({
                 key={m.id}
                 benim={m.gonderen_id === benimId}
                 yeni={yeniMi(m.olusturulma)}
-                gonderenAd={adHaritasi.get(m.gonderen_id) ?? 'SharOS kullanıcısı'}
+                gonderenAd={adHaritasi.get(m.gonderen_id) ?? `${UYGULAMA_ADI} kullanıcısı`}
                 zaman={formatMessageTime(m.olusturulma) ?? undefined}
                 ek={
                   plan && (
@@ -779,7 +780,7 @@ function UyelerSekmesi({
             <Avatar ad={u.profil?.ad ?? '?'} foto={u.profil?.avatar} emoji={u.profil?.emoji} renk={u.profil?.renk} boyut="sm" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-ink-700 truncate">
-                {u.profil?.ad ?? 'SharOS kullanıcısı'}
+                {u.profil?.ad ?? `${UYGULAMA_ADI} kullanıcısı`}
                 {u.kullanici_id === benimId && <span className="text-ink-300 font-normal"> (sen)</span>}
               </p>
               <p className="text-xs text-ink-400">{u.rol === 'yonetici' ? 'Yönetici' : 'Üye'}</p>

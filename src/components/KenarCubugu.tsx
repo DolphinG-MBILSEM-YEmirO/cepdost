@@ -2,6 +2,7 @@ import { Icon } from './Icon'
 import { Avatar } from './Avatar'
 import { TABLAR, type Tab } from './sekmeler'
 import type { Profil } from '../sosyal/api'
+import { UYGULAMA_ADI } from '../../shared/marka'
 
 // Desktop navigation (lg and up): the bottom bar and the floating
 // assistant button become a fixed sidebar with the same tabs and actions.
@@ -30,7 +31,7 @@ export function KenarCubugu({
     <aside className="hidden lg:flex fixed inset-y-0 left-0 z-30 w-64 flex-col border-r border-ink-100/70 bg-white/80 backdrop-blur-xl px-4 py-6">
       <div className="flex items-center gap-2.5 px-2 mb-7">
         <img src="/icons/icon-192.png" alt="" className="w-9 h-9 rounded-xl" />
-        <span className="font-display text-xl font-bold text-gradient-orchid">SharOS</span>
+        <span className="font-display text-xl font-bold text-gradient-orchid">{UYGULAMA_ADI}</span>
       </div>
 
       <button onClick={onAddClick} className="btn-primary w-full flex items-center justify-center gap-2 mb-6">

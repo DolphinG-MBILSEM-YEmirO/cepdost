@@ -1,4 +1,5 @@
 import { db, type Kayit, type TakvimEtkinligi } from './db'
+import { UYGULAMA_ADI } from '../shared/marka'
 
 // F15 — telefon takvimi entegrasyonu.
 //
@@ -6,7 +7,7 @@ import { db, type Kayit, type TakvimEtkinligi } from './db'
 // YOK (iOS'ta da Android'de de). Bu yüzden erişim, kullanıcının kendi
 // takviminden aldığı iCalendar (.ics) bağlantısıyla veya dosyayla oluyor —
 // izni kullanıcı bilerek ve açıkça veriyor, istediğinde tek dokunuşla geri
-// alıyor. Tersi yön (SharOS planını telefona ekleme) .ics indirmesiyle
+// alıyor. Tersi yön (uygulamadaki planı telefona ekleme) .ics indirmesiyle
 // çalışıyor; bu her platformda destekleniyor.
 
 const AYAR_ANAHTARI = 'cepdost_takvim'
@@ -334,7 +335,7 @@ export function icsiEtkinliklereCevir(ics: string, bugun = new Date()): TakvimEt
 }
 
 // Dosyadan ya da URL'den gelen ICS metnini yerel tabloya yazar. Tam
-// değiştirme: takvimden silinen bir etkinlik SharOS'ta da kalmamalı.
+// değiştirme: takvimden silinen bir etkinlik uygulamada da kalmamalı.
 export async function icsiIceAktar(ics: string): Promise<number> {
   const etkinlikler = icsiEtkinliklereCevir(ics)
   await db.transaction('rw', db.takvimEtkinlikleri, async () => {
@@ -416,7 +417,7 @@ export function planIcsOlustur(plan: {
   const satirlar = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//SharOS//TR',
+    `PRODID:-//${UYGULAMA_ADI}//TR`,
     'CALSCALE:GREGORIAN',
     'BEGIN:VEVENT',
     `UID:${crypto.randomUUID()}@cepdost`,
@@ -452,7 +453,7 @@ export function planiTakvimeIndir(plan: Parameters<typeof planIcsOlustur>[0]): v
 export function kayittanIcsIndir(kayit: Kayit): void {
   planiTakvimeIndir({
     // hamBaslik is '' (not null) for shared items, so ?? would keep it.
-    baslik: kayit.baslik || kayit.hamBaslik || 'SharOS planı',
+    baslik: kayit.baslik || kayit.hamBaslik || `${UYGULAMA_ADI} planı`,
     tarih: kayit.tarih!,
     saat: kayit.tumGun ? null : kayit.saat,
     sure: kayit.sure,

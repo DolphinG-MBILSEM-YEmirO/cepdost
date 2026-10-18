@@ -1,4 +1,4 @@
-// The SharOS assistant: chats about the user's saved plans and, from a
+// The app's assistant: chats about the user's saved plans and, from a
 // single message, prepares a whole plan: what, when, where and with whom.
 // Uses the same Gemini provider as classify (see api/_lib/gemini.ts).
 //
@@ -28,6 +28,7 @@ import {
   type AsistanPlani,
   type Zaman,
 } from './_lib/asistanPlani.js'
+import { UYGULAMA_ADI } from '../shared/marka.js'
 
 // Up to three model calls in a row (look up free slots, maybe again, then
 // the plan), each with its own timeout.
@@ -48,7 +49,7 @@ interface SohbetMesaji {
 }
 
 function sistemPrompt(planOzeti: string, z: Zaman, b: AsistanBaglami): string {
-  return `Sen SharOS uygulamasının içinde yaşayan, dostane ve kısa konuşan planlama asistanısın. Kullanıcı (${b.benimAdim}) Türkiye'de yaşayan genç bir yetişkin.
+  return `Sen ${UYGULAMA_ADI} uygulamasının içinde yaşayan, dostane ve kısa konuşan planlama asistanısın. Kullanıcı (${b.benimAdim}) Türkiye'de yaşayan genç bir yetişkin.
 
 Bugün: ${z.bugun} ${gunAdi(z.bugun)}${z.simdiSaat ? `, saat ${z.simdiSaat}` : ''}
 Önümüzdeki günler (göreli tarihleri SADECE bu tablodan çöz):

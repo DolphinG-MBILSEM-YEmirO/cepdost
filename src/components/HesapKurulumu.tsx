@@ -4,6 +4,7 @@ import { DogrulanmisEposta, EpostaDogrulama } from './EpostaDogrulama'
 import type { Gizlilik, Profil } from '../sosyal/api'
 import { epostaDogrulamasiGerekli, type EpostaOnayi } from '../sosyal/epostaImzacisi'
 import { hesabiKur, kullaniciAdiHatasi } from '../sosyal/hesap'
+import { UYGULAMA_ADI } from '../../shared/marka'
 
 // First step of a new account: name, username, a verified email (keeps
 // bots out) and who can see the profile. Shown while the account has no
@@ -149,7 +150,7 @@ export function HesapKurulumu({ profil, onTamamlandi }: Props) {
               secili={gizlilik === 'herkes'}
               onSec={() => setGizlilik('herkes')}
               baslik="Herkes"
-              aciklama="Profilin SharOS'taki diğer kullanıcılara açık olur; istersen fotoğraflarını Keşfet'te paylaşabilirsin."
+              aciklama={`Profilin diğer ${UYGULAMA_ADI} kullanıcılarına açık olur; istersen fotoğraflarını Keşfet'te paylaşabilirsin.`}
               ikon="Users"
             />
           </div>

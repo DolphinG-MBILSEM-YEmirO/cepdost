@@ -6,6 +6,7 @@ import { useSosyalSurum } from '../sosyal/cekirdek'
 import { akisAnilariGetir, profilleriGetir, type AkisKapsami, type Ani } from '../sosyal/gruplar'
 import { ozettenProfil, type Profil } from '../sosyal/api'
 import { formatDate } from '../lib/format'
+import { UYGULAMA_ADI } from '../../shared/marka'
 
 // "İnsanların ve arkadaşların paylaştıkları" — tek akış, iki kapsam:
 // Arkadaşlar (bana/gruplarıma özel paylaşılanlar) ve Herkes (Keşfet).
@@ -108,7 +109,7 @@ export function AkisView() {
 function AkisKarti({ ani, sahip }: { ani: Ani; sahip: Profil | null }) {
   // Fotoğrafını herkese açmış ama profili kapalı biri olabilir — o zaman
   // profili okuyamayız, isim yerine nötr bir etiket gösteriyoruz.
-  const ad = sahip?.ad ?? 'SharOS kullanıcısı'
+  const ad = sahip?.ad ?? `${UYGULAMA_ADI} kullanıcısı`
 
   return (
     <div className="card overflow-hidden">

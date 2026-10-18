@@ -26,10 +26,10 @@ import { okunmamisMesajSayisi } from './sosyal/mesajlar'
 import { musaitligiSenkronla } from './sosyal/musaitlikSenkron'
 import { planlariArkadaEsitle } from './sosyal/planEsitleme'
 import { usePlanAyarlari } from './lib/planAyarlari'
-import { SLOGAN } from './lib/marka'
 import { type Kayit, db, tumKayitlar, kayitEkle, kayitDurumDegistir, kayitSil, goruntulemeBasligi } from './db'
 import { kayitSiniflandir } from './classify'
 import { onayGecerliMi } from '../shared/epostaOnayi'
+import { SLOGAN, UYGULAMA_ADI } from '../shared/marka'
 
 const ONBOARDED_KEY = 'cepdost_onboarded'
 
@@ -430,7 +430,7 @@ function MarkaPaneli() {
       <div aria-hidden className="absolute -bottom-36 -left-24 w-[28rem] h-[28rem] rounded-full bg-sky-400/20 blur-3xl" />
       <div className="relative flex items-center gap-3">
         <img src="/icons/icon-192.png" alt="" className="w-11 h-11 rounded-2xl ring-2 ring-white/30" />
-        <span className="font-display text-2xl font-bold">SharOS</span>
+        <span className="font-display text-2xl font-bold">{UYGULAMA_ADI}</span>
       </div>
       <div className="relative max-w-md">
         <h2 className="font-display text-4xl font-bold leading-tight text-balance mb-3">{SLOGAN}</h2>

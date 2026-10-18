@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Icon } from './Icon'
 import { useAuth } from '../sosyal/auth'
-import { SLOGAN } from '../lib/marka'
+import { SLOGAN, UYGULAMA_ADI } from '../../shared/marka'
 
 // The gate before the app. A new account is created on the spot (no email,
 // no waiting for a code); returning users sign in with username + password,
@@ -17,8 +17,8 @@ interface Props {
 }
 
 export function GirisEkrani({
-  baslik = "SharOS'a hoş geldin",
-  altBaslik = 'Başlamak için bir hesap aç ya da giriş yap',
+  baslik = 'Aramıza hoş geldin',
+  altBaslik = `${UYGULAMA_ADI} için bir hesap aç ya da giriş yap`,
   tanitimBaslik = SLOGAN,
   tanitimMetin = 'Paylaştığın linkleri ve görselleri plana çevirir, arkadaşlarınla herkese uyan zamanı bulmanı sağlar.',
   altNot = 'Hesabın plan detaylarını telefonundan çıkarmaz. Arkadaşlarınla paylaştıkların uçtan uca şifrelenir.',
@@ -196,7 +196,7 @@ export function GirisEkrani({
           <div className="flex items-start gap-2.5">
             <Icon name="Info" className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-800 leading-relaxed">
-              SharOS hesapları yenilendi: sosyal veriler artık şifreli saklanıyor ve giriş
+              {UYGULAMA_ADI} hesapları yenilendi: sosyal veriler artık şifreli saklanıyor ve giriş
               kullanıcı adı ile şifreyle yapılıyor. Planların ve arşivin bu telefonda duruyor; arkadaşlarını yeni hesabınla
               tekrar eklemen yeterli.
             </p>

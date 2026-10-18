@@ -8,6 +8,7 @@
 //                          own password
 
 import nodemailer from 'nodemailer'
+import { UYGULAMA_ADI } from '../../shared/marka.js'
 
 export interface Posta {
   alici: string
@@ -42,7 +43,7 @@ async function gmailIleGonder(posta: Posta): Promise<void> {
   const a = ayarlar()
   if (!a) throw new Error('GMAIL_ADRESI / GMAIL_UYGULAMA_SIFRESI tanımlı değil')
   await tasiyiciKur(a).sendMail({
-    from: { name: 'SharOS', address: a.adres },
+    from: { name: UYGULAMA_ADI, address: a.adres },
     to: posta.alici,
     subject: posta.konu,
     text: posta.metin,

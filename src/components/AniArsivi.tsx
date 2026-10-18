@@ -5,6 +5,7 @@ import { useSosyalSurum } from '../sosyal/cekirdek'
 import { aniEkle, aniSil, anilariGetir, type Ani } from '../sosyal/gruplar'
 import type { Gizlilik } from '../sosyal/api'
 import { formatDate, toDateString } from '../lib/format'
+import { UYGULAMA_ADI } from '../../shared/marka'
 
 // "Gidilen mekana özel foto yükleyip gidilen kişi veya grubun arşivine
 // ekleme" — ortak hafıza. Bir grubun ya da bir arkadaşın arşivine bağlanır.
@@ -274,7 +275,7 @@ export function AniEkleModal({
         </div>
         {gorunurluk === 'herkes' && (
           <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 mb-4">
-            Bu fotoğraf Keşfet'te tüm SharOS kullanıcılarına görünecek. Mekan adı da paylaşılıyor.
+            Bu fotoğraf Keşfet'te tüm {UYGULAMA_ADI} kullanıcılarına görünecek. Mekan adı da paylaşılıyor.
           </p>
         )}
 

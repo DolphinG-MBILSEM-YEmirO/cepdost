@@ -4,6 +4,7 @@ import path from 'node:path'
 import { defineConfig, loadEnv, type Plugin, type ViteDevServer } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { SLOGAN, UYGULAMA_ADI } from './shared/marka.ts'
 
 // Server-only settings the api/ handlers read from process.env. On Vercel
 // they come from the project's environment variables; in dev from .env.
@@ -80,6 +81,14 @@ async function apiIstegiYanitla(
   }
 }
 
+// Fills %UYGULAMA_ADI% and %SLOGAN% in index.html from shared/marka.ts.
+function markaHtml(): Plugin {
+  return {
+    name: 'marka-html',
+    transformIndexHtml: (html) => html.replaceAll('%UYGULAMA_ADI%', UYGULAMA_ADI).replaceAll('%SLOGAN%', SLOGAN),
+  }
+}
+
 // Dev-only stand-in for Vercel's api/ routing, so `npm run dev` exercises the
 // same handlers that run in production: /api/<name> calls the export named
 // after the HTTP method in api/<name>.ts. Files under api/_lib are not
@@ -123,6 +132,7 @@ export default defineConfig({
   },
   plugins: [
     apiDevSunucusu(),
+    markaHtml(),
     react(),
     VitePWA({
       strategies: 'injectManifest',
@@ -133,9 +143,9 @@ export default defineConfig({
       // Spike A: served over HTTPS + installed, this is what proves (or
       // disproves) that Android's share sheet can hand data to the app.
       manifest: {
-        name: 'SharOS',
-        short_name: 'SharOS',
-        description: 'Paylaş. Planla. Birlikte yaşa.',
+        name: UYGULAMA_ADI,
+        short_name: UYGULAMA_ADI,
+        description: SLOGAN,
         start_url: '/',
         scope: '/',
         display: 'standalone',

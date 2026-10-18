@@ -11,6 +11,7 @@ import {
   type TakvimAyari,
 } from '../takvim'
 import { formatRelativeTime } from '../lib/format'
+import { UYGULAMA_ADI } from '../../shared/marka'
 
 // F15 — takvim erişimi. İzin açıkça kullanıcıdan alınıyor: anahtar kapalıyken
 // hiçbir adres saklanmıyor, hiçbir etkinlik içe aktarılmıyor, kapatıldığında
@@ -82,7 +83,7 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
       </div>
 
       <p className="text-sm text-ink-400 mb-4">
-        Takvimini bağlarsan SharOS dolu saatlerini bilir: arkadaşların müsaitliğine
+        Takvimini bağlarsan {UYGULAMA_ADI} dolu saatlerini bilir: arkadaşların müsaitliğine
         doğru görünürsün ve yapay zekâ ortak plan yaparken derse/işe denk gelen
         saatleri önermez.
       </p>
@@ -208,7 +209,7 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
 
       <p className="text-[11px] text-ink-300 mt-4 leading-relaxed">
         Etkinlikler yalnızca telefonunda saklanır. Arkadaşlarına giden tek şey, tıpkı
-        SharOS planlarında olduğu gibi, dolu saat aralıkları — etkinliğin adı ya da
+        {UYGULAMA_ADI} planlarında olduğu gibi, dolu saat aralıkları — etkinliğin adı ya da
         yeri asla gönderilmez.
       </p>
     </div>

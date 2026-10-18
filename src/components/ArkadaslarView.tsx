@@ -29,6 +29,7 @@ import { formatDate, formatPlanTime } from '../lib/format'
 import { GRUP_ACIKLAMA_MAKS, GRUP_EMOJILERI, renkAl } from '../lib/kisisellestirme'
 import { EmojiSecici, RenkSecici } from './Seciciler'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
+import { UYGULAMA_ADI } from '../../shared/marka'
 
 interface Props {
   // Set when the app was opened from an invite link (?ekle=CODE): the
@@ -466,10 +467,10 @@ function KimlikKarti({ profil, onDegisti }: { profil: Profil; onDegisti: () => P
   }
 
   async function paylas() {
-    const metin = `SharOS'ta arkadaşım ol! Kodum: ${kodGosterim}`
+    const metin = `${UYGULAMA_ADI} uygulamasında arkadaşım ol! Kodum: ${kodGosterim}`
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'SharOS', text: metin, url: davetLinki })
+        await navigator.share({ title: UYGULAMA_ADI, text: metin, url: davetLinki })
         return
       } catch {
         // Kullanıcı paylaşımı iptal etti — sessizce geç.
@@ -636,7 +637,7 @@ function KimlikKarti({ profil, onDegisti }: { profil: Profil; onDegisti: () => P
           baslik="Hesabım herkese açık"
           aciklama={
             profil.gizlilik === 'herkes'
-              ? 'Profilini tüm SharOS kullanıcıları görebilir'
+              ? `Profilini tüm ${UYGULAMA_ADI} kullanıcıları görebilir`
               : 'Profilini yalnızca arkadaşların görebilir'
           }
         />

@@ -25,6 +25,7 @@ import {
 } from '../shared/bosluklar.js'
 import { anahtarEksikYaniti, geminiAnahtari, geminiCagir, geminiParcalari } from './_lib/gemini.js'
 import { jsonGovdeOku, kaynakReddi, metinAl, yanit } from './_lib/http.js'
+import { UYGULAMA_ADI } from '../shared/marka.js'
 
 export const config = { maxDuration: 30 }
 
@@ -80,7 +81,7 @@ function sistemPrompt(istek: string, katilimcilar: Katilimci[], bosluklar: Arali
 
   const aralikMetni = bosluklar.map((b) => `- ${b.tarih} ${saate(b.baslangic)}–${saate(b.bitis)}`).join('\n')
 
-  return `Sen SharOS'un ortak plan asistanısın. Türkiye'de yaşayan genç bir arkadaş grubuna, HERKESİN müsait olduğu bir saatte buluşma planı öneriyorsun.
+  return `Sen ${UYGULAMA_ADI} uygulamasının ortak plan asistanısın. Türkiye'de yaşayan genç bir arkadaş grubuna, HERKESİN müsait olduğu bir saatte buluşma planı öneriyorsun.
 
 Katılımcılar: ${isimler}
 ${paylasmayanlar.length > 0 ? `Not: ${paylasmayanlar.join(', ')} takvimini paylaşmıyor, onların uygunluğu bilinmiyor.` : ''}

@@ -10,6 +10,7 @@
 import { anahtarEksikYaniti, geminiAnahtari, geminiCagir, geminiParcalari } from './_lib/gemini.js'
 import { GuvenliOlmayanAdresHatasi, guvenliFetch } from './_lib/guvenliFetch.js'
 import { akisiOku, jsonGovdeOku, kaynakReddi, metinAl, sayiAl, yanit } from './_lib/http.js'
+import { UYGULAMA_ADI } from '../shared/marka.js'
 
 // Link unfurl (8 s) + the main Gemini call (25 s) + the place-info call
 // (8 s) can add up past 30 s in the worst case.
@@ -126,7 +127,7 @@ async function instagramUnfurl(url: string): Promise<string | null> {
 async function genelUnfurl(url: string): Promise<string | null> {
   try {
     const res = await guvenliFetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SharOSBot/1.0)' },
+      headers: { 'User-Agent': `Mozilla/5.0 (compatible; ${UYGULAMA_ADI}Bot/1.0)` },
       zamanAsimiMs: UNFURL_ZAMAN_ASIMI_MS,
     })
     if (!res.ok) return null
