@@ -1,34 +1,27 @@
 import { useState } from 'react'
 import { Icon } from './Icon'
-import { profilGuncelle, type Gizlilik, type Profil } from '../sosyal/api'
+import type { Gizlilik, Profil } from '../sosyal/api'
+import { hesabiKur, kullaniciAdiHatasi } from '../sosyal/hesap'
 
-// Giriş yaptıktan sonraki ilk adım: isim + kullanıcı adı + hesap gizliliği.
-// Kullanıcı adı boşsa bu ekran gösterilir, yani kurulumu tamamlamadan
-// sosyal katmana geçilemiyor (Instagram/TikTok akışı).
-//
-// E-posta doğrulaması ayrıca istenmiyor: sihirli linke tıklamadan ya da
-// Google ile giriş yapmadan buraya gelinemiyor — hesap zaten doğrulanmış
-// oluyor.
+// First step of a new account: name, username and who can see the profile.
+// Shown while the account has no username, so the social features can't
+// be used before setup is done (Instagram/TikTok style).
 interface Props {
-  profil: Profil
+  profil: Profil | null
   onTamamlandi: () => Promise<void>
 }
 
 export function HesapKurulumu({ profil, onTamamlandi }: Props) {
-  const [ad, setAd] = useState(profil.ad)
+  const [ad, setAd] = useState(profil?.ad ?? '')
   const [kullaniciAdi, setKullaniciAdi] = useState('')
   const [gizlilik, setGizlilik] = useState<Gizlilik>('arkadaslar')
   const [kaydediliyor, setKaydediliyor] = useState(false)
   const [hata, setHata] = useState<string | null>(null)
 
-  // Sunucudaki CHECK ile aynı kural — kullanıcıyı sunucuya gidip hata
-  // almadan önce uyaralım. Nokta serbest ama başta/sonda ve arka arkaya
-  // olamaz (taklit edilebilir adları önlemek için).
+  // Dots are allowed but not at the ends or twice in a row, so names can't
+  // easily imitate each other.
   const temizKullaniciAdi = kullaniciAdi.trim().toLocaleLowerCase('tr-TR').replace(/^@/, '')
-  const kullaniciAdiGecerli =
-    /^[a-z0-9_](\.?[a-z0-9_])*$/.test(temizKullaniciAdi) &&
-    temizKullaniciAdi.length >= 3 &&
-    temizKullaniciAdi.length <= 20
+  const kullaniciAdiGecerli = kullaniciAdiHatasi(temizKullaniciAdi) === null
 
   async function kaydet() {
     if (!ad.trim()) {
@@ -42,7 +35,7 @@ export function HesapKurulumu({ profil, onTamamlandi }: Props) {
     setKaydediliyor(true)
     setHata(null)
     try {
-      await profilGuncelle({ ad: ad.trim(), kullanici_adi: temizKullaniciAdi, gizlilik })
+      await hesabiKur({ ad: ad.trim(), kullanici_adi: temizKullaniciAdi, gizlilik })
       await onTamamlandi()
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Kaydedilemedi')
@@ -117,7 +110,7 @@ export function HesapKurulumu({ profil, onTamamlandi }: Props) {
             />
           </div>
           <p className="text-xs text-ink-300 mt-3">
-            Bunu daha sonra Arkadaşlar sekmesinden değiştirebilirsin.
+            Bunu daha sonra Hesabım sekmesinden değiştirebilirsin.
           </p>
         </div>
 

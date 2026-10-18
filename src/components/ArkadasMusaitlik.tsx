@@ -64,7 +64,7 @@ export function ArkadasMusaitlik({ arkadas, benimId, onClose }: Props) {
     <div className="fixed inset-0 z-[55] flex flex-col bg-cream-100/95 backdrop-blur-md animate-slide-up">
       <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-4 border-b border-ink-100/40 shrink-0">
         <div className="flex items-center gap-3 min-w-0">
-          <Avatar ad={arkadas.ad} avatarYol={arkadas.avatar_yol} />
+          <Avatar ad={arkadas.ad} foto={arkadas.avatar} emoji={arkadas.emoji} renk={arkadas.renk} />
           <div className="min-w-0">
             <h2 className="font-display text-base font-bold text-ink-700 leading-tight truncate">
               {arkadas.ad}

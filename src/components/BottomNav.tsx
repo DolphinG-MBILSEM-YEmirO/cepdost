@@ -89,6 +89,8 @@ function NavButton({
   return (
     <button
       onClick={onClick}
+      aria-label={rozet > 0 ? `${tab.label}, ${rozet} yeni` : tab.label}
+      aria-current={active ? 'page' : undefined}
       className="flex flex-col items-center gap-1 py-1 active:scale-95 transition-transform"
     >
       <div className="relative">

@@ -53,6 +53,10 @@ import {
   CalendarPlus,
   RefreshCw,
   Palette,
+  WifiOff,
+  KeyRound,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 
 const iconMap = {
@@ -110,6 +114,10 @@ const iconMap = {
   CalendarPlus,
   RefreshCw,
   Palette,
+  WifiOff,
+  KeyRound,
+  Eye,
+  EyeOff,
 }
 
 export type IconName = keyof typeof iconMap

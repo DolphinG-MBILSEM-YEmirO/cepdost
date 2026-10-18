@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
 import { Avatar } from './Avatar'
 import {
@@ -10,10 +10,10 @@ import {
 } from './SohbetGovde'
 import { TemaSheet } from './SohbetTemaSecici'
 import { useSohbetTemasi } from '../sohbetTema'
-import { formatTime } from '../lib/format'
+import { formatMessageTime } from '../lib/format'
+import { useSosyalSurum } from '../sosyal/cekirdek'
 import {
   direktMesajGonder,
-  direktMesajlariDinle,
   direktMesajlariGetir,
   okunduIsaretle,
   type DirektMesaj,
@@ -27,8 +27,8 @@ import {
 import { kayitOlustur } from '../db'
 import { formatDate } from '../lib/format'
 
-// Bir arkadaşla birebir yazışma. Grup sohbetiyle aynı desen: ilk yükleme
-// + realtime abonelik, kendi mesajını yerelde hemen göster.
+// One-to-one chat with a friend. Messages are read from the local copy and
+// reloaded whenever social data changes (live events, sync, own sends).
 interface Props {
   arkadas: Profil
   benimId: string
@@ -48,44 +48,33 @@ export function DirektSohbet({ arkadas, benimId, onClose }: Props) {
   // baloncuk animasyonuyla girsin.
   const yeniMi = useYeniMesajEsigi(mesajlar, !yukleniyor)
   const [davetler, setDavetler] = useState<Map<string, PlanDaveti>>(new Map())
-
-  // Sohbetteki davet kartları için davetleri çek.
-  const davetleriYukle = useCallback(async (liste: DirektMesaj[]) => {
-    const idler = liste.map((m) => m.davet_id).filter((x): x is string => !!x)
-    if (idler.length === 0) return
-    setDavetler(await davetleriIdyeGoreGetir(idler))
-  }, [])
+  const sosyalSurum = useSosyalSurum()
 
   useEffect(() => {
     let iptal = false
-    direktMesajlariGetir(arkadas.id)
-      .then(async (m) => {
+    void (async () => {
+      try {
+        const liste = await direktMesajlariGetir(arkadas.id)
         if (iptal) return
-        setMesajlar(m)
-        void okunduIsaretle(arkadas.id)
-        await davetleriYukle(m)
-      })
-      .catch((err) => {
+        setMesajlar(liste)
+        if (liste.some((m) => m.gonderen_id === arkadas.id && !m.okundu)) {
+          void okunduIsaretle(arkadas.id).catch(() => {})
+        }
+        // Invite cards: always fetched for the whole list, so a reload
+        // never drops cards that were already showing.
+        const idler = liste.map((m) => m.davet_id).filter((x): x is string => !!x)
+        const harita = idler.length ? await davetleriIdyeGoreGetir(idler) : new Map<string, PlanDaveti>()
+        if (!iptal) setDavetler(harita)
+      } catch (err) {
         if (!iptal) setHata(err instanceof Error ? err.message : 'Mesajlar alınamadı')
-      })
-      .finally(() => {
+      } finally {
         if (!iptal) setYukleniyor(false)
-      })
-
-    // Sadece bu kişiden gelenleri ekle — abonelik bana gelen TÜM
-    // mesajları dinliyor, başka sohbetin mesajı buraya düşmemeli.
-    const durdur = direktMesajlariDinle(benimId, (m) => {
-      if (m.gonderen_id !== arkadas.id) return
-      setMesajlar((eski) => (eski.some((x) => x.id === m.id) ? eski : [...eski, m]))
-      void okunduIsaretle(arkadas.id)
-      if (m.davet_id) void davetleriYukle([m])
-    })
-
+      }
+    })()
     return () => {
       iptal = true
-      durdur()
     }
-  }, [arkadas.id, benimId, davetleriYukle])
+  }, [arkadas.id, sosyalSurum])
 
   // Karttan kabul/red. Kabulde plan kendi takvimime de düşüyor — davetler
   // sekmesindeki akışla aynı davranış.
@@ -127,7 +116,6 @@ export function DirektSohbet({ arkadas, benimId, onClose }: Props) {
     setHata(null)
     try {
       await direktMesajGonder(arkadas.id, metin)
-      setMesajlar(await direktMesajlariGetir(arkadas.id))
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Mesaj gönderilemedi')
       setGirdi(metin)
@@ -140,7 +128,7 @@ export function DirektSohbet({ arkadas, benimId, onClose }: Props) {
     <div className="fixed inset-0 z-[55] flex flex-col bg-cream-100/95 backdrop-blur-md animate-slide-up">
       <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-4 border-b border-ink-100/40 shrink-0">
         <div className="flex items-center gap-3 min-w-0">
-          <Avatar ad={arkadas.ad} avatarYol={arkadas.avatar_yol} boyut="sm" />
+          <Avatar ad={arkadas.ad} foto={arkadas.avatar} emoji={arkadas.emoji} renk={arkadas.renk} boyut="sm" />
           <div className="min-w-0">
             <h2 className="font-display text-base font-bold text-ink-700 leading-tight truncate">
               {arkadas.ad}
@@ -160,6 +148,7 @@ export function DirektSohbet({ arkadas, benimId, onClose }: Props) {
           </button>
           <button
             onClick={onClose}
+            aria-label="Kapat"
             className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform"
           >
             <Icon name="X" className="w-5 h-5 text-ink-500" />
@@ -187,7 +176,7 @@ export function DirektSohbet({ arkadas, benimId, onClose }: Props) {
                   key={m.id}
                   benim={m.gonderen_id === benimId}
                   yeni={yeniMi(m.olusturulma)}
-                  zaman={formatTime(m.olusturulma) ?? undefined}
+                  zaman={formatMessageTime(m.olusturulma) ?? undefined}
                 >
                   {m.metin}
                   {davet && (

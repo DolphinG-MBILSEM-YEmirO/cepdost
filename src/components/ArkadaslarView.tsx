@@ -2,10 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Icon } from './Icon'
 import { Avatar } from './Avatar'
 import { ArkadasMusaitlik } from './ArkadasMusaitlik'
-import { GirisEkrani } from './GirisEkrani'
+import { ProfilDuzenle } from './ProfilDuzenle'
 import { useAuth } from '../sosyal/auth'
-import { avatarOnbelleginiBosalt, avatarSil, avatarYukle } from '../sosyal/avatar'
-import { musaitligiSenkronla } from '../sosyal/musaitlikSenkron'
+import { useSosyalSurum } from '../sosyal/cekirdek'
+import { avatarSil, avatarYukle } from '../sosyal/avatar'
 import {
   arkadaslariGetir,
   arkadaslikIsteGonder,
@@ -23,53 +23,31 @@ import {
 } from '../sosyal/api'
 import { GrupDetay } from './GrupDetay'
 import { OrtakPlanSihirbazi } from './OrtakPlanSihirbazi'
-import { HesapKurulumu } from './HesapKurulumu'
 import { grupOlustur, gruplarimiGetir, type Grup } from '../sosyal/gruplar'
-import { useLiveQuery } from 'dexie-react-hooks'
-import { db, kayitOlustur, type Kayit } from '../db'
+import { kayitOlustur } from '../db'
 import { formatDate, formatTime } from '../lib/format'
+import { GRUP_EMOJILERI, renkAl } from '../lib/kisisellestirme'
 
 interface Props {
-  kayitlar: Kayit[]
-  // Davet linkiyle (?ekle=KOD) gelindiyse arama kutusuna hazır yazılır.
+  // Set when the app was opened from an invite link (?ekle=CODE): the
+  // search box starts filled in.
   baslangicKodu?: string | null
   onDegisti?: () => void
 }
 
-export function ArkadaslarView({ kayitlar, baslangicKodu, onDegisti }: Props) {
-  const { kullanici, yukleniyor: authYukleniyor, cikis } = useAuth()
-
-  if (authYukleniyor) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Icon name="Loader2" className="w-6 h-6 animate-spin text-ink-300" />
-      </div>
-    )
-  }
-
-  if (!kullanici) return <GirisEkrani />
-
-  return (
-    <ArkadaslarIcerik
-      kullaniciId={kullanici.id}
-      kayitlar={kayitlar}
-      onCikis={cikis}
-      baslangicKodu={baslangicKodu}
-      onDegisti={onDegisti}
-    />
-  )
+// The sign-in gate in App guarantees an account here.
+export function ArkadaslarView({ baslangicKodu, onDegisti }: Props) {
+  const { kullanici } = useAuth()
+  if (!kullanici) return null
+  return <ArkadaslarIcerik kullaniciId={kullanici.id} baslangicKodu={baslangicKodu} onDegisti={onDegisti} />
 }
 
 function ArkadaslarIcerik({
   kullaniciId,
-  kayitlar,
-  onCikis,
   baslangicKodu,
   onDegisti,
 }: {
   kullaniciId: string
-  kayitlar: Kayit[]
-  onCikis: () => Promise<void>
   baslangicKodu?: string | null
   onDegisti?: () => void
 }) {
@@ -105,22 +83,11 @@ function ArkadaslarIcerik({
     }
   }, [onDegisti])
 
+  // Reload whenever social data changes (a sync, a message, a reply).
+  const surum = useSosyalSurum()
   useEffect(() => {
     void tazele()
-  }, [tazele])
-
-  // Yerel planlar değiştikçe müsaitliği sunucuya yansıt. Sessizce çalışır —
-  // senkron hatası kullanıcıyı bloklamamalı, arkadaşlık ekranı yine açılır.
-  // Takvimden içe aktarılanlar da müsaitliğe giriyor (bkz. bloklariCikar),
-  // o yüzden sayıları değişince yeniden senkronlanmalı.
-  const takvimSayisi = useLiveQuery(() => db.takvimEtkinlikleri.count(), [], 0)
-
-  useEffect(() => {
-    if (!profil) return
-    musaitligiSenkronla(kullaniciId, profil.musaitlik_paylas).catch((err) => {
-      console.warn('müsaitlik senkronu başarısız', err)
-    })
-  }, [kullaniciId, profil, kayitlar, takvimSayisi])
+  }, [tazele, surum])
 
   async function davetiKabulEt(davet: PlanDaveti) {
     // Önce yerel kayıt: sunucu güncellemesi başarısız olsa bile kullanıcı
@@ -158,12 +125,6 @@ function ArkadaslarIcerik({
   const gelenIstekler = arkadaslar.filter((a) => a.durum === 'bekliyor' && a.yon === 'gelen')
   const gidenIstekler = arkadaslar.filter((a) => a.durum === 'bekliyor' && a.yon === 'giden')
 
-  // Kullanıcı adı yoksa kurulum tamamlanmamış demektir — sosyal katmana
-  // geçmeden önce isim/kullanıcı adı/gizlilik belirlenmeli.
-  if (!yukleniyor && profil && !profil.kullanici_adi) {
-    return <HesapKurulumu profil={profil} onTamamlandi={tazele} />
-  }
-
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-start justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-3">
@@ -173,13 +134,6 @@ function ArkadaslarIcerik({
             {kabulEdilmis.length > 0 ? `${kabulEdilmis.length} arkadaş` : 'Birlikte plan yap'}
           </p>
         </div>
-        <button
-          onClick={() => void onCikis()}
-          className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform"
-          aria-label="Çıkış yap"
-        >
-          <Icon name="LogOut" className="w-5 h-5 text-ink-400" />
-        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 pb-24 space-y-6">
@@ -256,10 +210,15 @@ function ArkadaslarIcerik({
                     onClick={() => setSeciliGrup(g)}
                     className="card p-4 w-full flex items-center gap-3 text-left active:scale-[0.98] transition-transform"
                   >
-                    <div className="w-9 h-9 rounded-2xl bg-sky-100 flex items-center justify-center shrink-0">
-                      <Icon name="Users" className="w-4.5 h-4.5 text-sky-600" />
+                    <div
+                      className={`w-9 h-9 rounded-2xl ${renkAl(g.renk ?? 'gok').yumusak} flex items-center justify-center shrink-0`}
+                    >
+                      {g.emoji ? <span className="text-lg">{g.emoji}</span> : <Icon name="Users" className="w-4.5 h-4.5" />}
                     </div>
-                    <p className="flex-1 min-w-0 text-sm font-medium text-ink-700 truncate">{g.ad}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-ink-700 truncate">{g.ad}</p>
+                      {g.aciklama && <p className="text-xs text-ink-400 truncate">{g.aciklama}</p>}
+                    </div>
                     <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />
                   </button>
                 ))}
@@ -300,7 +259,7 @@ function ArkadaslarIcerik({
                 <div className="space-y-3">
                   {gidenIstekler.map((a) => (
                     <div key={a.arkadaslikId} className="card p-4 flex items-center gap-3">
-                      <Avatar ad={a.profil.ad} avatarYol={a.profil.avatar_yol} boyut="sm" />
+                      <Avatar ad={a.profil.ad} foto={a.profil.avatar} emoji={a.profil.emoji} renk={a.profil.renk} boyut="sm" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-ink-600 truncate">{a.profil.ad}</p>
                         <p className="text-xs text-ink-300">Onay bekleniyor</p>
@@ -373,6 +332,7 @@ function GrupKurModal({
   onKuruldu: () => Promise<void>
 }) {
   const [ad, setAd] = useState('')
+  const [emoji, setEmoji] = useState<string | null>(null)
   const [secilenler, setSecilenler] = useState<Set<string>>(new Set())
   const [kuruluyor, setKuruluyor] = useState(false)
   const [hata, setHata] = useState<string | null>(null)
@@ -394,7 +354,7 @@ function GrupKurModal({
     setKuruluyor(true)
     setHata(null)
     try {
-      await grupOlustur(ad.trim(), Array.from(secilenler))
+      await grupOlustur(ad.trim(), Array.from(secilenler), { emoji })
       await onKuruldu()
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Grup kurulamadı')
@@ -426,6 +386,26 @@ function GrupKurModal({
         />
 
         <label className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
+          Simge
+        </label>
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {GRUP_EMOJILERI.map((e) => (
+            <button
+              key={e}
+              type="button"
+              onClick={() => setEmoji(emoji === e ? null : e)}
+              aria-label={`Simge ${e}`}
+              aria-pressed={emoji === e}
+              className={`w-9 h-9 rounded-xl text-lg flex items-center justify-center transition-all active:scale-90 ${
+                emoji === e ? 'bg-coral-100 ring-2 ring-coral-300' : 'bg-cream-100'
+              }`}
+            >
+              {e}
+            </button>
+          ))}
+        </div>
+
+        <label className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
           Kimler olsun
         </label>
         <div className="space-y-2 mb-4">
@@ -439,7 +419,7 @@ function GrupKurModal({
                   secili ? 'bg-coral-50 border-coral-200' : 'bg-cream-100 border-ink-100/40'
                 }`}
               >
-                <Avatar ad={a.profil.ad} avatarYol={a.profil.avatar_yol} boyut="sm" />
+                <Avatar ad={a.profil.ad} foto={a.profil.avatar} emoji={a.profil.emoji} renk={a.profil.renk} boyut="sm" />
                 <span className="flex-1 min-w-0 text-sm font-medium text-ink-700 truncate text-left">
                   {a.profil.ad}
                 </span>
@@ -478,6 +458,7 @@ function GrupKurModal({
 function KimlikKarti({ profil, onDegisti }: { profil: Profil; onDegisti: () => Promise<void> }) {
   const [kopyalandi, setKopyalandi] = useState(false)
   const [duzenle, setDuzenle] = useState(false)
+  const [profilDuzenle, setProfilDuzenle] = useState(false)
   const [kullaniciAdi, setKullaniciAdi] = useState(profil.kullanici_adi ?? '')
   const [hata, setHata] = useState<string | null>(null)
   const [kaydediliyor, setKaydediliyor] = useState(false)
@@ -558,6 +539,7 @@ function KimlikKarti({ profil, onDegisti }: { profil: Profil; onDegisti: () => P
         <AvatarSecici profil={profil} onDegisti={onDegisti} onHata={setHata} />
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-ink-700 truncate">{profil.ad}</p>
+          {profil.biyografi && <p className="text-xs text-ink-400 line-clamp-2">{profil.biyografi}</p>}
           {duzenle ? null : (
             <button
               onClick={() => setDuzenle(true)}
@@ -567,7 +549,25 @@ function KimlikKarti({ profil, onDegisti }: { profil: Profil; onDegisti: () => P
             </button>
           )}
         </div>
+        <button
+          onClick={() => setProfilDuzenle(true)}
+          aria-label="Profili düzenle"
+          className="w-9 h-9 rounded-xl bg-cream-100 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+        >
+          <Icon name="Pencil" className="w-4 h-4 text-ink-400" />
+        </button>
       </div>
+
+      {profilDuzenle && (
+        <ProfilDuzenle
+          profil={profil}
+          onKapat={() => setProfilDuzenle(false)}
+          onKaydedildi={async () => {
+            setProfilDuzenle(false)
+            await onDegisti()
+          }}
+        />
+      )}
 
       {duzenle && (
         <div className="mb-4">
@@ -637,7 +637,7 @@ function KimlikKarti({ profil, onDegisti }: { profil: Profil; onDegisti: () => P
           aciklama={
             profil.musaitlik_paylas
               ? 'Sadece dolu saat aralıkların görünüyor'
-              : 'Kapalı — sunucudaki saat bilgilerin de silindi'
+              : 'Kapalı — paylaşılan saat bilgilerin de silindi'
           }
         />
         <Anahtar
@@ -677,7 +677,6 @@ function AvatarSecici({
     onHata(null)
     try {
       await avatarYukle(dosya)
-      avatarOnbelleginiBosalt()
       await onDegisti()
     } catch (err) {
       onHata(err instanceof Error ? err.message : 'Fotoğraf yüklenemedi')
@@ -693,7 +692,6 @@ function AvatarSecici({
     onHata(null)
     try {
       await avatarSil()
-      avatarOnbelleginiBosalt()
       await onDegisti()
     } catch (err) {
       onHata(err instanceof Error ? err.message : 'Fotoğraf kaldırılamadı')
@@ -710,13 +708,13 @@ function AvatarSecici({
         aria-label="Profil fotoğrafını değiştir"
         className="block active:scale-95 transition-transform disabled:opacity-60"
       >
-        <Avatar ad={profil.ad} avatarYol={profil.avatar_yol} />
+        <Avatar ad={profil.ad} foto={profil.avatar} emoji={profil.emoji} renk={profil.renk} />
         <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-coral-500 text-white flex items-center justify-center shadow-soft ring-2 ring-cream-50">
           <Icon name={calisiyor ? 'Loader2' : 'Camera'} className={`w-3.5 h-3.5 ${calisiyor ? 'animate-spin' : ''}`} />
         </span>
       </button>
 
-      {profil.avatar_yol && !calisiyor && (
+      {profil.avatar && !calisiyor && (
         <button
           onClick={() => void kaldir()}
           aria-label="Profil fotoğrafını kaldır"
@@ -810,7 +808,7 @@ function ArkadasEkle({
     setEkleniyor(true)
     setHata(null)
     try {
-      await arkadaslikIsteGonder(sonuc.id)
+      await arkadaslikIsteGonder(sonuc.id, sonuc)
       setSonuc(null)
       setGirdi('')
       await onEklendi()
@@ -852,7 +850,7 @@ function ArkadasEkle({
 
       {sonuc && (
         <div className="mt-3 flex items-center gap-3 bg-cream-100 rounded-2xl p-3">
-          <Avatar ad={sonuc.ad} avatarYol={sonuc.avatar_yol} boyut="sm" />
+          <Avatar ad={sonuc.ad} foto={sonuc.avatar} boyut="sm" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-ink-700 truncate">{sonuc.ad}</p>
             {sonuc.kullanici_adi && <p className="text-xs text-ink-400">@{sonuc.kullanici_adi}</p>}
@@ -874,12 +872,16 @@ function ArkadasEkle({
 
 function IstekKarti({ arkadas, onYanit }: { arkadas: Arkadas; onYanit: () => Promise<void> }) {
   const [isleniyor, setIsleniyor] = useState(false)
+  const [hata, setHata] = useState<string | null>(null)
 
   async function yanitla(kabul: boolean) {
     setIsleniyor(true)
+    setHata(null)
     try {
       await arkadaslikYanitla(arkadas.arkadaslikId, kabul)
       await onYanit()
+    } catch (err) {
+      setHata(err instanceof Error ? err.message : 'Yanıt gönderilemedi')
     } finally {
       setIsleniyor(false)
     }
@@ -888,7 +890,7 @@ function IstekKarti({ arkadas, onYanit }: { arkadas: Arkadas; onYanit: () => Pro
   return (
     <div className="card p-4">
       <div className="flex items-center gap-3 mb-3">
-        <Avatar ad={arkadas.profil.ad} avatarYol={arkadas.profil.avatar_yol} boyut="sm" />
+        <Avatar ad={arkadas.profil.ad} foto={arkadas.profil.avatar} emoji={arkadas.profil.emoji} renk={arkadas.profil.renk} boyut="sm" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-ink-700 truncate">{arkadas.profil.ad}</p>
           <p className="text-xs text-ink-400">Seni arkadaş olarak eklemek istiyor</p>
@@ -910,6 +912,7 @@ function IstekKarti({ arkadas, onYanit }: { arkadas: Arkadas; onYanit: () => Pro
           Kabul et
         </button>
       </div>
+      {hata && <p className="text-xs text-rose-600 mt-2">{hata}</p>}
     </div>
   )
 }
@@ -928,7 +931,7 @@ function ArkadasKarti({
   return (
     <div className="card p-4 flex items-center gap-3">
       <button onClick={onAc} className="flex items-center gap-3 flex-1 min-w-0 text-left active:scale-[0.98] transition-transform">
-        <Avatar ad={arkadas.profil.ad} avatarYol={arkadas.profil.avatar_yol} boyut="sm" />
+        <Avatar ad={arkadas.profil.ad} foto={arkadas.profil.avatar} emoji={arkadas.profil.emoji} renk={arkadas.profil.renk} boyut="sm" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-ink-700 truncate">{arkadas.profil.ad}</p>
           <p className="text-xs text-ink-400 truncate">

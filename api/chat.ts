@@ -1,44 +1,31 @@
-// F8 — CepDost Asistanı: kullanıcının kayıtlı planları hakkında sohbet
-// (2026-08-06), + F9: sohbet sırasında yeni plan ÖNERME (2026-08-06).
-// Aynı Gemini sağlayıcısını kullanır (bkz. classify/index.ts üstündeki
-// not) — GEMINI_API_KEY yalnızca bu sunucu-taraflı secret'ta, istemci
-// hiçbir zaman görmüyor. Kayıtların TAMAMI değil, istemcinin ürettiği
-// kompakt bir metin özeti (planOzeti) gönderiliyor — hem token hem de
-// gizlilik açısından daha ölçülü (bkz. src/chat.ts planOzetiOlustur).
+// F8 — CepDost assistant: chat about the user's saved plans, + F9: SUGGEST a
+// new plan during the chat. Uses the same Gemini provider as classify (see
+// api/_lib/gemini.ts). Instead of ALL records the client sends a compact text
+// summary it builds itself (planOzeti), which is lighter on both tokens and
+// privacy (see src/chat.ts planOzetiOlustur).
 //
-// F9: Gemini'nin resmi "function calling" (tools/functionDeclarations)
-// mekanizması kullanılıyor — kullanıcı açıkça yeni bir plan eklemek
-// istediğini belirtirse model plan_oner fonksiyonunu çağırır, biz de
-// argümanlarını yapılandırılmış "planOnerisi" olarak istemciye döneriz.
-// Fonksiyon çağrısı SADECE bir ÖNERİ — Dexie'ye hiçbir şey burada
-// yazılmıyor, kullanıcı istemcide "Plana ekle"ye basmadan hiçbir kayıt
-// oluşmuyor (bkz. src/components/ChatPanel.tsx).
+// F9 uses Gemini's function calling (tools/functionDeclarations): when the
+// user clearly asks to add a new plan, the model calls plan_oner and we hand
+// its arguments to the client as a structured "planOnerisi". The call is
+// ONLY a suggestion: nothing is written to Dexie here, and no record exists
+// until the user taps "Plana ekle" on the client (see ChatPanel).
 
-import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
+import { anahtarEksikYaniti, geminiAnahtari, geminiCagir, geminiParcalari } from './_lib/gemini.js'
+import { jsonGovdeOku, kaynakReddi, metinAl, yanit } from './_lib/http.js'
 
-const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
-const MODEL = 'gemini-3.5-flash-lite'
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`
+export const config = { maxDuration: 30 }
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+// The server uses at most 20 messages of 2,000 characters plus a 6,000
+// character summary; this leaves room for UTF-8 Turkish text and JSON.
+const AZAMI_ISTEK = 128 * 1024
 
 interface SohbetMesaji {
   rol: 'kullanici' | 'asistan'
   metin: string
 }
 
-interface Girdi {
-  mesajlar: SohbetMesaji[]
-  planOzeti?: string
-  bugun?: string
-}
-
-// classify/index.ts'teki KAYIT_SCHEMA ile aynı alan sözleşmesi — istemci
-// tarafında aynı Kayit/PlanOnerisi şekline map'lenebilsin diye bilerek
-// aynı tutuldu.
+// Same field contract as KAYIT_SCHEMA in classify, kept identical on purpose
+// so the client can map both onto the same Kayit/PlanOnerisi shape.
 const PLAN_ONERISI_SCHEMA = {
   type: 'OBJECT',
   properties: {
@@ -98,7 +85,7 @@ function planOnerisiDogrula(args: Record<string, unknown>): GecerliPlanOnerisi |
   }
 
   const baslik = bosYoksaNull(args.baslik)
-  if (!baslik) return null // başlıksız bir öneri kullanışsız — gösterme
+  if (!baslik) return null // a suggestion without a title is useless; don't show it
 
   let sure: number | null = null
   const sureSayi = Number(args.sure)
@@ -116,45 +103,37 @@ function planOnerisiDogrula(args: Record<string, unknown>): GecerliPlanOnerisi |
   }
 }
 
-Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
-  if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405, headers: corsHeaders })
-  }
-  if (!GEMINI_API_KEY) {
-    return new Response(JSON.stringify({ error: 'GEMINI_API_KEY tanımlı değil' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
-  }
+// Caps a long history and abuse: the last 20 messages, each of a sane length.
+// Entries that are not objects are dropped rather than crashing the route.
+function mesajlariSinirla(ham: unknown): SohbetMesaji[] {
+  const mesajlar = Array.isArray(ham) ? ham : []
+  return mesajlar
+    .slice(-20)
+    .filter((m): m is Record<string, unknown> => typeof m === 'object' && m !== null)
+    .map((m) => ({
+      rol: m.rol === 'kullanici' ? ('kullanici' as const) : ('asistan' as const),
+      metin: String(m.metin ?? '').slice(0, 2000),
+    }))
+}
 
-  let girdi: Girdi
-  try {
-    girdi = await req.json()
-  } catch {
-    return new Response(JSON.stringify({ error: 'geçersiz JSON gövdesi' }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
-  }
+export async function POST(request: Request): Promise<Response> {
+  const red = kaynakReddi(request)
+  if (red) return red
 
-  const mesajlar = Array.isArray(girdi.mesajlar) ? girdi.mesajlar : []
-  if (mesajlar.length === 0) {
-    return new Response(JSON.stringify({ error: 'boş mesaj listesi' }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
-  }
+  const anahtar = geminiAnahtari()
+  if (!anahtar) return anahtarEksikYaniti()
 
-  // Aşırı uzun geçmişi/istismarı sınırla — son 20 mesaj + makul uzunluk.
-  const sinirliMesajlar = mesajlar.slice(-20).map((m) => ({
-    rol: m.rol === 'kullanici' ? ('kullanici' as const) : ('asistan' as const),
-    metin: String(m.metin ?? '').slice(0, 2000),
-  }))
+  const govde = await jsonGovdeOku(request, AZAMI_ISTEK)
+  if (!govde.ok) return govde.yanit
+  const girdi = govde.girdi
 
-  const bugun = girdi.bugun || new Date().toISOString().slice(0, 10)
+  const sinirliMesajlar = mesajlariSinirla(girdi.mesajlar)
+  if (sinirliMesajlar.length === 0) return yanit({ error: 'boş mesaj listesi' }, 400)
+
+  // The client's local date: the function runs in UTC, which lags Turkey by
+  // three hours around midnight.
+  const bugunHam = metinAl(girdi.bugun)
+  const bugun = /^\d{4}-\d{2}-\d{2}$/.test(bugunHam) ? bugunHam : new Date().toISOString().slice(0, 10)
   const planOzeti = String(girdi.planOzeti ?? '').slice(0, 6000)
 
   const contents = sinirliMesajlar.map((m) => ({
@@ -162,46 +141,26 @@ Deno.serve(async (req: Request) => {
     parts: [{ text: m.metin }],
   }))
 
-  const geminiRes = await fetch(GEMINI_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-goog-api-key': GEMINI_API_KEY,
-    },
-    body: JSON.stringify({
+  const veri = await geminiCagir(
+    anahtar,
+    {
       systemInstruction: { parts: [{ text: sistemPrompt(planOzeti, bugun) }] },
       contents,
       tools: [{ functionDeclarations: [PLAN_ONER_FONKSIYONU] }],
       toolConfig: { functionCallingConfig: { mode: 'AUTO' } },
       generationConfig: { maxOutputTokens: 500 },
-    }),
-  })
+    },
+    { etiket: 'chat' },
+  )
+  if (!veri) return yanit({ error: 'sohbet başarısız' }, 502)
 
-  if (!geminiRes.ok) {
-    console.error('Gemini API hatası (chat)', geminiRes.status, await geminiRes.text())
-    return new Response(JSON.stringify({ error: 'sohbet başarısız' }), {
-      status: 502,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
-  }
-
-  const geminiData = await geminiRes.json()
-  const parts: Array<{ text?: string; functionCall?: { name: string; args: Record<string, unknown> } }> =
-    geminiData.candidates?.[0]?.content?.parts ?? []
-
-  const metinParcasi = parts.find((p) => typeof p.text === 'string' && p.text.trim())?.text ?? null
-  const fonksiyonCagrisi = parts.find((p) => p.functionCall?.name === 'plan_oner')?.functionCall ?? null
+  const parcalar = geminiParcalari(veri)
+  const metinParcasi = parcalar.find((p) => typeof p.text === 'string' && p.text.trim())?.text ?? null
+  const fonksiyonCagrisi = parcalar.find((p) => p.functionCall?.name === 'plan_oner')?.functionCall ?? null
 
   const planOnerisi = fonksiyonCagrisi ? planOnerisiDogrula(fonksiyonCagrisi.args ?? {}) : null
 
-  if (!metinParcasi && !planOnerisi) {
-    return new Response(JSON.stringify({ error: 'yanıt üretilemedi' }), {
-      status: 502,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
-  }
+  if (!metinParcasi && !planOnerisi) return yanit({ error: 'yanıt üretilemedi' }, 502)
 
-  return new Response(JSON.stringify({ yanit: metinParcasi?.trim() ?? null, planOnerisi }), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  })
-})
+  return yanit({ yanit: metinParcasi?.trim() ?? null, planOnerisi })
+}

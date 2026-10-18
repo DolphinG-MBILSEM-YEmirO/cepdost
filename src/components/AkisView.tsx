@@ -1,23 +1,25 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Icon } from './Icon'
 import { Avatar } from './Avatar'
-import { GirisEkrani } from './GirisEkrani'
-import { useAuth } from '../sosyal/auth'
-import { akisAnilariGetir, aniGorselUrl, profilleriGetir, type AkisKapsami, type Ani } from '../sosyal/gruplar'
-import type { Profil } from '../sosyal/api'
+import { AniGorseli } from './AniGorseli'
+import { useSosyalSurum } from '../sosyal/cekirdek'
+import { akisAnilariGetir, profilleriGetir, type AkisKapsami, type Ani } from '../sosyal/gruplar'
+import { ozettenProfil, type Profil } from '../sosyal/api'
 import { formatDate } from '../lib/format'
 
 // "İnsanların ve arkadaşların paylaştıkları" — tek akış, iki kapsam:
 // Arkadaşlar (bana/gruplarıma özel paylaşılanlar) ve Herkes (Keşfet).
 export function AkisView() {
-  const { kullanici, yukleniyor } = useAuth()
   const [kapsam, setKapsam] = useState<AkisKapsami>('arkadaslar')
   const [anilar, setAnilar] = useState<Ani[] | null>(null)
   const [profiller, setProfiller] = useState<Map<string, Profil>>(new Map())
   const [hata, setHata] = useState<string | null>(null)
+  const sosyalSurum = useSosyalSurum()
+  // The friends feed is read from the local copy, so it follows every sync;
+  // Keşfet asks the relays, so it only reloads when opened.
+  const surumBagimliligi = kapsam === 'arkadaslar' ? sosyalSurum : 0
 
   const tazele = useCallback(async () => {
-    setAnilar(null)
     setHata(null)
     try {
       const liste = await akisAnilariGetir(kapsam)
@@ -26,29 +28,17 @@ export function AkisView() {
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Akış yüklenemedi')
     }
-  }, [kapsam])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kapsam, surumBagimliligi])
 
   useEffect(() => {
-    if (kullanici) void tazele()
-  }, [kullanici, tazele])
+    void tazele()
+  }, [tazele])
 
-  if (yukleniyor) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Icon name="Loader2" className="w-6 h-6 animate-spin text-ink-300" />
-      </div>
-    )
-  }
-
-  if (!kullanici) {
-    return (
-      <GirisEkrani
-        baslik="Akış"
-        altBaslik="Paylaşılan mekanlar"
-        tanitimBaslik="Nereye gidilmiş, gör"
-        tanitimMetin="Arkadaşlarının seninle paylaştığı mekan fotoğraflarını ve herkese açık paylaşımları burada görürsün."
-      />
-    )
+  function kapsamSec(yeni: AkisKapsami) {
+    if (yeni === kapsam) return
+    setAnilar(null)
+    setKapsam(yeni)
   }
 
   return (
@@ -65,7 +55,7 @@ export function AkisView() {
         ]).map((s) => (
           <button
             key={s.id}
-            onClick={() => setKapsam(s.id)}
+            onClick={() => kapsamSec(s.id)}
             className={`chip ${
               kapsam === s.id ? 'bg-coral-500 text-white' : 'bg-cream-50 text-ink-400 border border-ink-100/40'
             }`}
@@ -103,7 +93,11 @@ export function AkisView() {
           </div>
         ) : (
           anilar?.map((a) => (
-            <AkisKarti key={a.id} ani={a} sahip={profiller.get(a.sahip_id) ?? null} />
+            <AkisKarti
+              key={a.id}
+              ani={a}
+              sahip={profiller.get(a.sahip_id) ?? (a.sahip ? ozettenProfil(a.sahip_id, a.sahip) : null)}
+            />
           ))
         )}
       </div>
@@ -112,19 +106,6 @@ export function AkisView() {
 }
 
 function AkisKarti({ ani, sahip }: { ani: Ani; sahip: Profil | null }) {
-  const [url, setUrl] = useState<string | null>(null)
-
-  useEffect(() => {
-    let iptal = false
-    if (!ani.dosya_yolu) return
-    aniGorselUrl(ani.dosya_yolu).then((u) => {
-      if (!iptal) setUrl(u)
-    })
-    return () => {
-      iptal = true
-    }
-  }, [ani.dosya_yolu])
-
   // Fotoğrafını herkese açmış ama profili kapalı biri olabilir — o zaman
   // profili okuyamayız, isim yerine nötr bir etiket gösteriyoruz.
   const ad = sahip?.ad ?? 'CepDost kullanıcısı'
@@ -132,7 +113,7 @@ function AkisKarti({ ani, sahip }: { ani: Ani; sahip: Profil | null }) {
   return (
     <div className="card overflow-hidden">
       <div className="flex items-center gap-2.5 p-3">
-        <Avatar ad={ad} avatarYol={sahip?.avatar_yol} boyut="sm" />
+        <Avatar ad={ad} foto={sahip?.avatar} emoji={sahip?.emoji} renk={sahip?.renk} boyut="sm" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-ink-700 truncate">{ad}</p>
           {sahip?.kullanici_adi && <p className="text-xs text-ink-400 truncate">@{sahip.kullanici_adi}</p>}
@@ -140,11 +121,7 @@ function AkisKarti({ ani, sahip }: { ani: Ani; sahip: Profil | null }) {
       </div>
 
       <div className="aspect-square bg-cream-100">
-        {url ? (
-          <img src={url} alt={ani.mekan_adi} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full skeleton" />
-        )}
+        <AniGorseli ani={ani} />
       </div>
 
       <div className="p-4">

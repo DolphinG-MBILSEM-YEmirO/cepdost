@@ -1,11 +1,43 @@
-import { sb } from './supabase'
+import {
+  TUR,
+  arkadasKodu,
+  benimProfilVerim,
+  ciftKanaliAl,
+  isoZaman,
+  kanalBilgisi,
+  kanalDurumu,
+  kayitZamani,
+  koduNormallestir,
+  metinAl,
+  motor,
+  nesneMi,
+  profilOzetiAl,
+  profilVerisiAl,
+  sayiAl,
+  simdiMs,
+  yayinKanaliAl,
+  yayinProfili,
+  yeniAnahtar,
+  type ArkadaslikDurumu,
+  type BenimProfilVerim,
+  type Gizlilik,
+  type IliskiDurumu,
+  type KanalDurumu,
+  type MusaitlikVerisi,
+  type ProfilOzeti,
+} from './cekirdek'
+import { kullaniciAdiAlinmisMi, kullaniciAdiHatasi, kullaniciAdiniTasi } from './hesap'
+import { davetAnahtarindanKimlik } from './kimlik'
+import { dizinKanali, gelenKutusuKonusu } from './nostr/kanal'
+import { rastgeleId } from './nostr/kodlama'
+import type { SosyalKayit } from './nostr/motor'
+import { localDateString } from '../lib/format'
 
-// F10 sosyal katman API'si. Yetkilendirmenin tamamı veritabanındaki RLS
-// politikalarında — buradaki hiçbir fonksiyon "kim neyi görebilir"e karar
-// vermiyor, sadece sorguyu atıyor. Yani bu dosyadaki bir hata gizlilik
-// açığına dönüşemez; sunucu zaten reddeder.
+// Profiles, friendships, availability and plan invites, on top of the
+// encrypted record store (see cekirdek.ts). Who can read what is decided
+// by who holds which channel key, not by checks in this file.
 
-export type Gizlilik = 'arkadaslar' | 'herkes'
+export type { ArkadaslikDurumu, Gizlilik }
 
 export interface Profil {
   id: string
@@ -13,47 +45,34 @@ export interface Profil {
   kullanici_adi: string | null
   arkadas_kodu: string
   musaitlik_paylas: boolean
-  // 'arkadaslar': profili yalnızca arkadaşlar ve istek gönderilen kişiler
-  // görür. 'herkes': giriş yapmış tüm CepDost kullanıcıları görür
-  // (çıkış yapmış/anonim ziyaretçi DEĞİL — bkz. F12 migration notu).
+  // 'arkadaslar': name and photo only for friends and people I send a
+  // request to. 'herkes': also in search results and Keşfet.
   gizlilik: Gizlilik
-  // Kod ile doğrulama sonrası şifre belirlendi mi. Şifrenin varlığı
-  // istemciden okunamadığı için ayrı bayrak tutuluyor.
+  // Whether the password backup exists (sign-in from other devices).
   sifre_belirlendi: boolean
-  // `avatarlar` kovasındaki dosya yolu (<id>/<zaman>.jpg). Kova özel —
-  // göstermek için imzalı URL gerekir, bkz. sosyal/avatar.ts.
-  avatar_yol: string | null
+  // Small JPEG data URL.
+  avatar: string | null
+  biyografi: string | null
+  // Accent colour key (see lib/kisisellestirme.ts) and a profile emoji.
+  renk: string | null
+  emoji: string | null
 }
-
-// Tek yerde tutuluyor: yeni bir profil alanı eklendiğinde tüm sorguların
-// güncellenmesi unutulmasın.
-export const PROFIL_ALANLARI =
-  'id, ad, kullanici_adi, arkadas_kodu, musaitlik_paylas, gizlilik, sifre_belirlendi, avatar_yol'
 
 export interface AramaSonucu {
   id: string
   ad: string
   kullanici_adi: string | null
   arkadas_kodu: string
-  avatar_yol: string | null
+  avatar: string | null
 }
 
-export type ArkadaslikDurumu = 'bekliyor' | 'kabul' | 'red' | 'engel'
-
-export interface Arkadaslik {
-  id: string
-  isteyen_id: string
-  istenen_id: string
-  durum: ArkadaslikDurumu
-  olusturulma: string
-}
-
-// Arkadaş listesi görünümü: karşı tarafın profili + ilişkinin yönü.
+// Friend list entry: the other person's profile and the direction of a
+// pending request. arkadaslikId is the other person's id.
 export interface Arkadas {
   arkadaslikId: string
   profil: Profil
   durum: ArkadaslikDurumu
-  // 'giden': ben istedim, karşı taraf onaylamadı. 'gelen': bana istek geldi.
+  // 'giden': I asked, they haven't answered. 'gelen': they asked me.
   yon: 'giden' | 'gelen'
 }
 
@@ -77,158 +96,306 @@ export interface PlanDaveti {
   sure: number | null
   konum: string | null
   mesaj: string | null
+  emoji: string | null
   durum: DavetDurumu
   olusturulma: string
 }
 
-// ---------- profil ----------
+// ---------- profiles ----------
+
+function profilKur(id: string, veri: Partial<BenimProfilVerim> & { ad: string }): Profil {
+  return {
+    id,
+    ad: veri.ad,
+    kullanici_adi: veri.kullanici_adi ?? null,
+    arkadas_kodu: arkadasKodu(id),
+    musaitlik_paylas: veri.musaitlik_paylas ?? false,
+    gizlilik: veri.gizlilik ?? 'arkadaslar',
+    sifre_belirlendi: veri.sifre_belirlendi ?? true,
+    avatar: veri.avatar ?? null,
+    biyografi: veri.biyografi ?? null,
+    renk: veri.renk ?? null,
+    emoji: veri.emoji ?? null,
+  }
+}
+
+export function ozettenProfil(id: string, ozet: ProfilOzeti | null): Profil {
+  return profilKur(id, ozet ?? { ad: 'CepDost kullanıcısı' })
+}
 
 export async function profilimiGetir(): Promise<Profil | null> {
-  const { data: oturum } = await sb().auth.getUser()
-  const id = oturum.user?.id
-  if (!id) return null
-
-  // Filtre şart: RLS artık ilişkili kişilerin profillerini de döndürüyor
-  // (bekleyen istekte adın görünmesi için), yani filtresiz sorgu birden
-  // fazla satır getirir.
-  const { data, error } = await sb()
-    .from('profiller')
-    .select(PROFIL_ALANLARI)
-    .eq('id', id)
-    .maybeSingle()
-  if (error) throw new Error(error.message)
-  return data as Profil | null
+  const veri = await benimProfilVerim()
+  return veri ? profilKur(motor().benimId, veri) : null
 }
 
-export async function profilGuncelle(
-  degisiklik: Partial<
-    Pick<Profil, 'ad' | 'kullanici_adi' | 'musaitlik_paylas' | 'gizlilik' | 'sifre_belirlendi'>
-  >,
-): Promise<void> {
-  const { data: oturum } = await sb().auth.getUser()
-  const id = oturum.user?.id
-  if (!id) throw new Error('Oturum bulunamadı')
-
-  const { error } = await sb().from('profiller').update(degisiklik).eq('id', id)
-  if (error) {
-    // Kullanıcı adı benzersizlik ihlali en olası hata — anlaşılır çevir.
-    if (error.code === '23505') throw new Error('Bu kullanıcı adı zaten alınmış.')
-    if (error.code === '23514') throw new Error('Kullanıcı adı 3-20 karakter olmalı; küçük harf, rakam, _ ve nokta kullanabilirsin.')
-    throw new Error(error.message)
+// A friend's full profile, read from their broadcast channel.
+async function arkadasProfili(durum: KanalDurumu, iliski: IliskiDurumu): Promise<Profil> {
+  const kanal = durum.arkadasYayin.get(iliski.pk)
+  if (kanal) {
+    const kayit = await motor().kayit(kanal, iliski.pk, 'profil')
+    const veri = profilVerisiAl(kayit?.veri)
+    if (veri) return profilKur(iliski.pk, veri)
   }
+  return ozettenProfil(iliski.pk, iliski.ozet)
 }
 
-// Tam eşleşme arama (kod veya @kullanıcı adı). Kısmi arama bilinçli olarak
-// yok — bkz. public.profil_ara() fonksiyonundaki not.
+export type ProfilDegisikligi = Partial<
+  Pick<
+    Profil,
+    'ad' | 'kullanici_adi' | 'musaitlik_paylas' | 'gizlilik' | 'sifre_belirlendi' | 'avatar' | 'biyografi' | 'renk' | 'emoji'
+  >
+>
+
+export async function profilGuncelle(degisiklik: ProfilDegisikligi): Promise<void> {
+  const m = motor()
+  const mevcut = await benimProfilVerim()
+  if (!mevcut) throw new Error('Oturum bulunamadı')
+
+  const yeni: BenimProfilVerim = { ...mevcut, ...degisiklik }
+  yeni.ad = yeni.ad.trim().slice(0, 80) || mevcut.ad
+  yeni.biyografi = yeni.biyografi?.trim().slice(0, 160) || null
+
+  if (degisiklik.kullanici_adi !== undefined && degisiklik.kullanici_adi !== mevcut.kullanici_adi) {
+    const ad = degisiklik.kullanici_adi
+    if (!ad) throw new Error('Kullanıcı adı boş olamaz.')
+    const hata = kullaniciAdiHatasi(ad)
+    if (hata) throw new Error(hata)
+    if (await kullaniciAdiAlinmisMi(ad)) throw new Error('Bu kullanıcı adı zaten alınmış.')
+    await kullaniciAdiniTasi(mevcut.kullanici_adi, ad)
+  }
+
+  await m.yayinla(await m.ben(), TUR.profil, 'profil', yeni)
+  // Friends see the change right away; directory entries, group cards and
+  // availability follow in the sync that this triggers.
+  const durum = await kanalDurumu()
+  if (durum.yayin) await m.yayinla(durum.yayin, TUR.profil, 'profil', yayinProfili(yeni)).catch(() => {})
+  void m.esitle().catch(() => {})
+}
+
+// Exact lookup by friend code, @username or invite key. There's no partial
+// search on purpose: finding someone needs something they gave you.
 export async function profilAra(aranan: string): Promise<AramaSonucu | null> {
-  const { data, error } = await sb().rpc('profil_ara', { aranan })
-  if (error) throw new Error(error.message)
-  const liste = (data ?? []) as AramaSonucu[]
-  return liste[0] ?? null
-}
+  const m = motor()
+  const girdi = aranan.trim()
+  if (!girdi) return null
 
-// ---------- arkadaşlık ----------
-
-export async function arkadaslikIsteGonder(hedefId: string): Promise<void> {
-  const { data: oturum } = await sb().auth.getUser()
-  const benimId = oturum.user?.id
-  if (!benimId) throw new Error('Oturum bulunamadı')
-
-  const { error } = await sb()
-    .from('arkadasliklar')
-    .insert({ isteyen_id: benimId, istenen_id: hedefId, durum: 'bekliyor' })
-
-  if (error) {
-    if (error.code === '23505') throw new Error('Bu kişiyle zaten bir isteğin var.')
-    throw new Error(error.message)
+  const pk = davetAnahtarindanKimlik(girdi)
+  const kod = pk ? arkadasKodu(pk) : koduNormallestir(girdi)
+  if (kod) {
+    const kayitlar = await m.kanalSorgula(await dizinKanali('kod', kod))
+    const bulunan = dizinSonuclari(kayitlar).find(
+      (s) => arkadasKodu(s.id) === kod && (!pk || s.id === pk),
+    )
+    if (bulunan) return bulunan
+    if (pk) return null
   }
+
+  const kullaniciAdi = girdi.replace(/^@/, '').toLowerCase()
+  if (kullaniciAdiHatasi(kullaniciAdi)) return null
+  const kayitlar = await m.kanalSorgula(await dizinKanali('kullanici', kullaniciAdi))
+  // Several accounts could claim a name; the earliest claim wins.
+  return (
+    dizinSonuclari(kayitlar)
+      .filter((s) => s.kullanici_adi === kullaniciAdi)
+      .sort((a, b) => a.alindi - b.alindi)[0] ?? null
+  )
 }
 
-export async function arkadaslikYanitla(arkadaslikId: string, kabul: boolean): Promise<void> {
-  const { error } = await sb()
-    .from('arkadasliklar')
-    .update({ durum: kabul ? 'kabul' : 'red', guncelleme: new Date().toISOString() })
-    .eq('id', arkadaslikId)
-  if (error) throw new Error(error.message)
-}
-
-export async function arkadasliktanCik(arkadaslikId: string): Promise<void> {
-  const { error } = await sb().from('arkadasliklar').delete().eq('id', arkadaslikId)
-  if (error) throw new Error(error.message)
-}
-
-// Tüm arkadaşlıklar + karşı tarafın profili. RLS sayesinde sadece kendi
-// ilişkilerim dönüyor; profiller de yalnızca kabul edilmiş arkadaşlar için
-// okunabildiğinden, bekleyen isteklerde profil null gelebilir — o yüzden
-// arama sonucundaki adı da ayrıca saklamak yerine burada zarifçe düşüyoruz.
-export async function arkadaslariGetir(): Promise<Arkadas[]> {
-  const { data: oturum } = await sb().auth.getUser()
-  const benimId = oturum.user?.id
-  if (!benimId) return []
-
-  const { data, error } = await sb()
-    .from('arkadasliklar')
-    .select('id, isteyen_id, istenen_id, durum, olusturulma')
-    .order('olusturulma', { ascending: false })
-  if (error) throw new Error(error.message)
-
-  const iliskiler = (data ?? []) as Arkadaslik[]
-  const karsiIdler = iliskiler.map((i) => (i.isteyen_id === benimId ? i.istenen_id : i.isteyen_id))
-  if (karsiIdler.length === 0) return []
-
-  const { data: profiller, error: profilHata } = await sb()
-    .from('profiller')
-    .select(PROFIL_ALANLARI)
-    .in('id', karsiIdler)
-  if (profilHata) throw new Error(profilHata.message)
-
-  const profilHaritasi = new Map<string, Profil>()
-  for (const p of (profiller ?? []) as Profil[]) profilHaritasi.set(p.id, p)
-
-  return iliskiler.map((i) => {
-    const karsiId = i.isteyen_id === benimId ? i.istenen_id : i.isteyen_id
-    const profil = profilHaritasi.get(karsiId) ?? {
-      id: karsiId,
-      // Henüz kabul edilmemiş isteklerde karşı profili okuma yetkimiz yok.
-      ad: 'CepDost kullanıcısı',
-      kullanici_adi: null,
-      arkadas_kodu: '',
-      musaitlik_paylas: false,
-      gizlilik: 'arkadaslar' as const,
-      sifre_belirlendi: false,
-      avatar_yol: null,
-    }
-    return {
-      arkadaslikId: i.id,
-      profil,
-      durum: i.durum,
-      yon: i.isteyen_id === benimId ? ('giden' as const) : ('gelen' as const),
-    }
+function dizinSonuclari(kayitlar: SosyalKayit[]): Array<AramaSonucu & { alindi: number }> {
+  return kayitlar.flatMap((k) => {
+    if (k.tur !== TUR.dizin || !nesneMi(k.veri) || k.veri.pk !== k.yazar) return []
+    const ozet = profilOzetiAl(k.veri)
+    if (!ozet) return []
+    return [
+      {
+        id: k.yazar,
+        ad: ozet.ad,
+        kullanici_adi: ozet.kullanici_adi,
+        arkadas_kodu: arkadasKodu(k.yazar),
+        avatar: ozet.avatar,
+        alindi: sayiAl(k.veri.alindi) ?? Number.MAX_SAFE_INTEGER,
+      },
+    ]
   })
 }
 
-// ---------- müsaitlik ----------
+// ---------- friendships ----------
 
-// Bir arkadaşın belirli tarih aralığındaki DOLU saatleri. Ne yaptığı değil,
-// sadece ne zaman meşgul olduğu.
+async function benimOzetim(): Promise<ProfilOzeti> {
+  const profil = await benimProfilVerim()
+  if (!profil) throw new Error('Oturum bulunamadı')
+  return { ad: profil.ad, kullanici_adi: profil.kullanici_adi, avatar: profil.avatar }
+}
+
+// `kim` is the search result the request starts from; it's kept so the
+// pending request shows a name before the other side answers.
+export async function arkadaslikIsteGonder(hedefId: string, kim?: AramaSonucu | null): Promise<void> {
+  const m = motor()
+  if (hedefId === m.benimId) throw new Error('Kendine istek gönderemezsin.')
+  const durum = await kanalDurumu()
+  const mevcut = durum.iliskiler.get(hedefId)
+  if (mevcut?.durum === 'kabul') throw new Error('Zaten arkadaşsınız.')
+  if (mevcut?.durum === 'bekliyor' && mevcut.yon === 'giden') throw new Error('Bu kişiye zaten istek gönderdin.')
+  // They already asked me: sending a request back is accepting.
+  if (mevcut?.durum === 'bekliyor' && mevcut.yon === 'gelen') return arkadaslikYanitla(hedefId, true)
+
+  const kanal = await ciftKanaliAl(hedefId)
+  const zaman = simdiMs()
+  const ozet = kim ? { ad: kim.ad, kullanici_adi: kim.kullanici_adi, avatar: kim.avatar } : null
+  await m.yayinla(await m.ben(), TUR.kisi, `kisi:${hedefId}`, { eklenme: zaman, profil: ozet })
+  await m.yayinla(kanal, TUR.iliski, 'iliski', { durum: 'istek', zaman })
+  // The request also goes to their inbox, which is how they find out.
+  await m.yayinla(kanal, TUR.istek, 'istek', { profil: await benimOzetim(), zaman }, { konu: await gelenKutusuKonusu(hedefId) })
+  void m.esitle().catch(() => {})
+}
+
+export async function arkadaslikYanitla(arkadaslikId: string, kabul: boolean): Promise<void> {
+  const m = motor()
+  const durum = await kanalDurumu()
+  const kanal = await ciftKanaliAl(arkadaslikId)
+  const zaman = simdiMs()
+  // Remember them either way, so a later change from their side is seen.
+  if (!(await m.kayit(durum.ben, m.benimId, `kisi:${arkadaslikId}`))) {
+    const ozet = durum.iliskiler.get(arkadaslikId)?.ozet ?? null
+    await m.yayinla(durum.ben, TUR.kisi, `kisi:${arkadaslikId}`, { eklenme: zaman, profil: ozet })
+  }
+  await m.yayinla(
+    kanal,
+    TUR.iliski,
+    'iliski',
+    kabul ? { durum: 'kabul', yayinAnahtari: durum.yayinAnahtari, zaman } : { durum: 'red', zaman },
+  )
+  void m.esitle().catch(() => {})
+}
+
+// Ending a friendship (or withdrawing a request). The other person still
+// holds my broadcast key, so it's replaced and handed to everyone else.
+export async function arkadasliktanCik(arkadaslikId: string): Promise<void> {
+  const m = motor()
+  const durum = await kanalDurumu()
+  const iliski = durum.iliskiler.get(arkadaslikId)
+  const kanal = await ciftKanaliAl(arkadaslikId)
+  await m.yayinla(kanal, TUR.iliski, 'iliski', { durum: 'silindi', zaman: simdiMs() })
+  if (iliski?.yon === 'giden' && iliski.durum === 'bekliyor') {
+    await m.yayinla(kanal, TUR.istek, 'istek', null, { konu: await gelenKutusuKonusu(arkadaslikId) }).catch(() => {})
+  }
+  if (iliski?.durum === 'kabul') await yayinAnahtariniYenile(durum)
+  void m.esitle().catch(() => {})
+}
+
+async function yayinAnahtariniYenile(durum: KanalDurumu): Promise<void> {
+  const m = motor()
+  const eskiKanal = durum.yayin
+  const anahtar = yeniAnahtar()
+  const yeniKanal = await yayinKanaliAl(anahtar, m.benimId)
+  m.kanalKaydet(yeniKanal)
+
+  // New channel first, so friends never find an empty one.
+  const eskiler = eskiKanal ? await m.kayitlar(eskiKanal.konu) : []
+  for (const k of eskiler) {
+    if (k.yazar === m.benimId) await m.yayinla(yeniKanal, k.tur, k.anahtar, k.veri)
+  }
+  await m.yayinla(durum.ben, TUR.yayin, 'yayin', { anahtar })
+  // The reconcile step sends every remaining friend a 'kabul' with the new
+  // key; the old channel is emptied once that's done.
+  await m.esitle().catch(() => {})
+  if (eskiKanal) {
+    for (const k of eskiler) {
+      if (k.yazar === m.benimId) await m.yayinla(eskiKanal, k.tur, k.anahtar, null).catch(() => {})
+    }
+  }
+}
+
+export async function arkadaslariGetir(): Promise<Arkadas[]> {
+  const durum = await kanalDurumu()
+  const liste: Array<Arkadas & { zaman: number }> = []
+  for (const iliski of durum.iliskiler.values()) {
+    if (iliski.durum !== 'kabul' && iliski.durum !== 'bekliyor') continue
+    liste.push({
+      arkadaslikId: iliski.pk,
+      profil: await arkadasProfili(durum, iliski),
+      durum: iliski.durum,
+      yon: iliski.yon,
+      zaman: iliski.zaman,
+    })
+  }
+  return liste.sort((a, b) => b.zaman - a.zaman).map(({ zaman: _z, ...a }) => a)
+}
+
+// Everyone I can see a profile of: friends (full profile) and fellow group
+// members (the card they keep in the group).
+export async function bilinenProfiller(): Promise<Map<string, Profil>> {
+  const m = motor()
+  const durum = await kanalDurumu()
+  const harita = new Map<string, Profil>()
+  for (const g of durum.gruplar.values()) {
+    for (const k of await m.kayitlar(g.kanal.konu, TUR.uye)) {
+      const pk = k.anahtar.slice(4)
+      const veri = nesneMi(k.veri) ? k.veri : {}
+      const ozet = profilOzetiAl(veri.profil)
+      if (ozet && !harita.has(pk)) harita.set(pk, ozettenProfil(pk, ozet))
+    }
+  }
+  for (const iliski of durum.iliskiler.values()) {
+    if (iliski.durum === 'kabul') harita.set(iliski.pk, await arkadasProfili(durum, iliski))
+  }
+  const ben = await profilimiGetir()
+  if (ben) harita.set(ben.id, ben)
+  return harita
+}
+
+// ---------- availability ----------
+
+function musaitlikVerisiAl(deger: unknown): MusaitlikVerisi | null {
+  if (!nesneMi(deger) || !Array.isArray(deger.bloklar)) return null
+  const SAAT = /^\d{2}:\d{2}$/
+  const TARIH = /^\d{4}-\d{2}-\d{2}$/
+  const bloklar = deger.bloklar.flatMap((b: unknown) => {
+    if (!nesneMi(b)) return []
+    const { tarih, baslangic, bitis } = b
+    if (typeof tarih !== 'string' || !TARIH.test(tarih)) return []
+    if (typeof baslangic !== 'string' || !SAAT.test(baslangic)) return []
+    if (typeof bitis !== 'string' || !SAAT.test(bitis) || bitis <= baslangic) return []
+    return [{ tarih, baslangic, bitis }]
+  })
+  return { bloklar, guncelleme: sayiAl(deger.guncelleme) ?? 0 }
+}
+
+// The newest availability someone shares with me: on their broadcast
+// channel if we're friends, or in a group we're both in.
+export async function musaitlikKaydi(kisiId: string): Promise<MusaitlikVerisi | null> {
+  const m = motor()
+  const durum = await kanalDurumu()
+  const adaylar: SosyalKayit[] = []
+  const yayin = durum.arkadasYayin.get(kisiId)
+  if (yayin) {
+    const k = await m.kayit(yayin, kisiId, 'musaitlik')
+    if (k) adaylar.push(k)
+  }
+  for (const g of durum.gruplar.values()) {
+    const k = await m.kayit(g.kanal, kisiId, 'musaitlik')
+    if (k) adaylar.push(k)
+  }
+  const enYeni = adaylar.sort((a, b) => b.zaman - a.zaman)[0]
+  return enYeni ? musaitlikVerisiAl(enYeni.veri) : null
+}
+
+// Someone's BUSY time ranges between two dates. Only when they are busy,
+// never what they're doing.
 export async function arkadasMusaitligi(
   arkadasId: string,
   baslangicTarih: string,
   bitisTarih: string,
 ): Promise<MusaitlikBlogu[]> {
-  const { data, error } = await sb()
-    .from('musaitlik_bloklari')
-    .select('id, kullanici_id, tarih, baslangic, bitis')
-    .eq('kullanici_id', arkadasId)
-    .gte('tarih', baslangicTarih)
-    .lte('tarih', bitisTarih)
-    .order('tarih')
-    .order('baslangic')
-  if (error) throw new Error(error.message)
-  return (data ?? []) as MusaitlikBlogu[]
+  const veri = await musaitlikKaydi(arkadasId)
+  if (!veri) return []
+  return veri.bloklar
+    .filter((b) => b.tarih >= baslangicTarih && b.tarih <= bitisTarih)
+    .sort((a, b) => (a.tarih + a.baslangic).localeCompare(b.tarih + b.baslangic))
+    .map((b, i) => ({ id: `${arkadasId}:${i}`, kullanici_id: arkadasId, ...b }))
 }
 
-// ---------- plan daveti ----------
+// ---------- plan invites ----------
 
 export interface YeniDavet {
   alanId: string
@@ -238,97 +405,113 @@ export interface YeniDavet {
   sure?: number | null
   konum?: string | null
   mesaj?: string | null
+  emoji?: string | null
 }
 
-// Davetin id'sini döner — çağıran taraf bunu sohbete plan kartı olarak
-// düşürebilsin diye (bkz. sosyal/mesajlar.ts direktMesajGonder).
+async function arkadasKanali(pk: string, hata: string) {
+  const durum = await kanalDurumu()
+  if (durum.iliskiler.get(pk)?.durum !== 'kabul') throw new Error(hata)
+  return durum.cift.get(pk)!
+}
+
+// Returns the invite id, so the caller can drop it into the chat as a card.
 export async function davetGonder(davet: YeniDavet): Promise<string> {
-  const { data: oturum } = await sb().auth.getUser()
-  const benimId = oturum.user?.id
-  if (!benimId) throw new Error('Oturum bulunamadı')
-
-  const { data, error } = await sb()
-    .from('plan_davetleri')
-    .insert({
-      gonderen_id: benimId,
-      alan_id: davet.alanId,
-      baslik: davet.baslik,
-      tarih: davet.tarih,
-      saat: davet.saat || null,
-      sure: davet.sure ?? null,
-      konum: davet.konum || null,
-      mesaj: davet.mesaj || null,
-      durum: 'bekliyor',
-    })
-    .select('id')
-    .single()
-  if (error) {
-    if (error.code === '42501') throw new Error('Bu kişiye davet gönderemezsin — önce arkadaş olmanız gerekiyor.')
-    throw new Error(error.message)
-  }
-  return (data as { id: string }).id
+  const kanal = await arkadasKanali(davet.alanId, 'Bu kişiye davet gönderemezsin — önce arkadaş olmanız gerekiyor.')
+  const id = rastgeleId()
+  await motor().yayinla(kanal, TUR.davet, `davet:${id}`, {
+    baslik: davet.baslik.trim().slice(0, 120),
+    tarih: davet.tarih,
+    saat: davet.saat || null,
+    sure: davet.sure ?? null,
+    konum: davet.konum?.trim() || null,
+    mesaj: davet.mesaj?.trim() || null,
+    emoji: davet.emoji || null,
+    zaman: simdiMs(),
+  })
+  return id
 }
 
-// Sohbetteki davet kartlarını çizmek için: id → davet.
-export async function davetleriIdyeGoreGetir(idler: string[]): Promise<Map<string, PlanDaveti>> {
-  const harita = new Map<string, PlanDaveti>()
-  const tekil = Array.from(new Set(idler.filter(Boolean)))
-  if (tekil.length === 0) return harita
+async function davetKur(k: SosyalKayit): Promise<PlanDaveti | null> {
+  const m = motor()
+  const kanal = kanalBilgisi(k.konu)
+  if (!kanal?.karsi || !nesneMi(k.veri)) return null
+  const baslik = metinAl(k.veri.baslik, 120)
+  const tarih = metinAl(k.veri.tarih, 10)
+  if (!baslik || !tarih) return null
 
-  const { data } = await sb()
-    .from('plan_davetleri')
-    .select('id, gonderen_id, alan_id, baslik, tarih, saat, sure, konum, mesaj, durum, olusturulma')
-    .in('id', tekil)
-  for (const d of (data ?? []) as PlanDaveti[]) harita.set(d.id, d)
+  const id = k.anahtar.slice('davet:'.length)
+  const gonderen = k.yazar
+  const alan = gonderen === m.benimId ? kanal.karsi : m.benimId
+  const yanit = await m.kayit(kanal, alan, `davet-yanit:${id}`)
+  const yanitDurumu = nesneMi(yanit?.veri) ? yanit.veri.durum : null
+  const durum: DavetDurumu =
+    k.veri.iptal === true ? 'iptal' : yanitDurumu === 'kabul' ? 'kabul' : yanitDurumu === 'red' ? 'red' : 'bekliyor'
+
+  return {
+    id,
+    gonderen_id: gonderen,
+    alan_id: alan,
+    baslik,
+    tarih,
+    saat: metinAl(k.veri.saat, 5),
+    sure: sayiAl(k.veri.sure),
+    konum: metinAl(k.veri.konum, 200),
+    mesaj: metinAl(k.veri.mesaj, 500),
+    emoji: metinAl(k.veri.emoji, 16),
+    durum,
+    olusturulma: isoZaman(kayitZamani(k)),
+  }
+}
+
+async function tumDavetler(): Promise<PlanDaveti[]> {
+  const m = motor()
+  const durum = await kanalDurumu()
+  const liste: PlanDaveti[] = []
+  for (const kanal of durum.cift.values()) {
+    for (const k of await m.kayitlar(kanal.konu, TUR.davet)) {
+      const d = await davetKur(k)
+      if (d) liste.push(d)
+    }
+  }
+  return liste.sort((a, b) => b.olusturulma.localeCompare(a.olusturulma))
+}
+
+// For drawing invite cards in a chat: id → invite.
+export async function davetleriIdyeGoreGetir(idler: string[]): Promise<Map<string, PlanDaveti>> {
+  await kanalDurumu()
+  const harita = new Map<string, PlanDaveti>()
+  const kayitlar = await motor().anahtarIle([...new Set(idler.filter(Boolean))].map((id) => `davet:${id}`))
+  for (const k of kayitlar) {
+    if (k.tur !== TUR.davet) continue
+    const d = await davetKur(k)
+    if (d) harita.set(d.id, d)
+  }
   return harita
 }
 
 export async function davetleriGetir(): Promise<{ gelen: PlanDaveti[]; giden: PlanDaveti[] }> {
-  const { data: oturum } = await sb().auth.getUser()
-  const benimId = oturum.user?.id
-  if (!benimId) return { gelen: [], giden: [] }
-
-  const { data, error } = await sb()
-    .from('plan_davetleri')
-    .select('id, gonderen_id, alan_id, baslik, tarih, saat, sure, konum, mesaj, durum, olusturulma')
-    .order('olusturulma', { ascending: false })
-  if (error) throw new Error(error.message)
-
-  const hepsi = (data ?? []) as PlanDaveti[]
+  const benimId = motor().benimId
+  const hepsi = await tumDavetler()
   return {
     gelen: hepsi.filter((d) => d.alan_id === benimId),
     giden: hepsi.filter((d) => d.gonderen_id === benimId),
   }
 }
 
-// Alt navigasyondaki rozet için: bana gelen bekleyen arkadaşlık isteği +
-// plan daveti sayısı. Sekmeye girmeden haberdar olunsun diye ayrı ve ucuz
-// bir sorgu (sadece sayım, satır çekmiyor).
+// Badge on the profile tab: friend requests and invites waiting for me.
 export async function bekleyenSayisi(): Promise<number> {
-  const { data: oturum } = await sb().auth.getUser()
-  const benimId = oturum.user?.id
-  if (!benimId) return 0
-
-  const [istekler, davetler] = await Promise.all([
-    sb()
-      .from('arkadasliklar')
-      .select('id', { count: 'exact', head: true })
-      .eq('istenen_id', benimId)
-      .eq('durum', 'bekliyor'),
-    sb()
-      .from('plan_davetleri')
-      .select('id', { count: 'exact', head: true })
-      .eq('alan_id', benimId)
-      .eq('durum', 'bekliyor'),
-  ])
-
-  return (istekler.count ?? 0) + (davetler.count ?? 0)
+  const durum = await kanalDurumu()
+  const istekler = [...durum.iliskiler.values()].filter((i) => i.durum === 'bekliyor' && i.yon === 'gelen').length
+  const { gelen } = await davetleriGetir()
+  const bugun = localDateString()
+  return istekler + gelen.filter((d) => d.durum === 'bekliyor' && d.tarih >= bugun).length
 }
 
 export async function davetYanitla(davetId: string, kabul: boolean): Promise<void> {
-  const { error } = await sb()
-    .from('plan_davetleri')
-    .update({ durum: kabul ? 'kabul' : 'red', guncelleme: new Date().toISOString() })
-    .eq('id', davetId)
-  if (error) throw new Error(error.message)
+  const m = motor()
+  const [k] = (await m.anahtarIle([`davet:${davetId}`])).filter((x) => x.tur === TUR.davet)
+  await kanalDurumu()
+  const kanal = k ? kanalBilgisi(k.konu) : undefined
+  if (!k || !kanal) throw new Error('Davet bulunamadı.')
+  await m.yayinla(kanal, TUR.davetYanit, `davet-yanit:${davetId}`, { durum: kabul ? 'kabul' : 'red', zaman: simdiMs() })
 }

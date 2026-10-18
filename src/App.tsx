@@ -17,10 +17,11 @@ import { SifreBelirle } from './components/SifreBelirle'
 import { Icon } from './components/Icon'
 import { useTakvimOtomatikYenile } from './components/TakvimAyarlari'
 import { useAuth } from './sosyal/auth'
-import { sosyalAktif } from './sosyal/supabase'
+import { motor, useSosyalSurum } from './sosyal/cekirdek'
 import { bekleyenSayisi, profilimiGetir, type Profil } from './sosyal/api'
 import { okunmamisMesajSayisi } from './sosyal/mesajlar'
-import { type Kayit, tumKayitlar, kayitEkle, kayitDurumDegistir, kayitSil, goruntulemeBasligi } from './db'
+import { musaitligiSenkronla } from './sosyal/musaitlikSenkron'
+import { type Kayit, db, tumKayitlar, kayitEkle, kayitDurumDegistir, kayitSil, goruntulemeBasligi } from './db'
 import { kayitSiniflandir } from './classify'
 
 const ONBOARDED_KEY = 'cepdost_onboarded'
@@ -72,9 +73,18 @@ export default function App() {
   const [rozet, setRozet] = useState(0)
   const [mesajRozeti, setMesajRozeti] = useState(0)
 
-  const { kullanici, yukleniyor: authYukleniyor } = useAuth()
+  const { kullanici, yukleniyor: authYukleniyor, yeniHesap, cikis } = useAuth()
+  // Bumps whenever social data changes (sync, live events, own writes), so
+  // the profile and badges below reload from the local store.
+  const sosyalSurum = useSosyalSurum()
   const [profil, setProfil] = useState<Profil | null>(null)
-  const [profilYuklendi, setProfilYuklendi] = useState(false)
+  // Whose profile `profil` is; until it matches the signed-in user the
+  // gate waits instead of flashing the setup screen.
+  const [profilSahibi, setProfilSahibi] = useState<string | null>(null)
+  // A returning user's profile may only exist on the relays: before
+  // deciding they need setup, the first sync has to finish.
+  const [ilkEsitleme, setIlkEsitleme] = useState<'bekliyor' | 'bitti' | 'hata'>('bekliyor')
+  const [esitlemeDenemesi, setEsitlemeDenemesi] = useState(0)
 
   const kayitlarSonucu = useLiveQuery(() => tumKayitlar(), [])
   // Keep a stable empty array while Dexie is loading; a fresh `[]` on every
@@ -94,10 +104,10 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Bekleyen istek/davet rozeti. Sekme değiştikçe tazelenir — gerçek zamanlı
-  // abonelik yerine bu yeterli, hem daha az bağlantı tüketiyor.
+  // Pending requests/invites and unread messages, read from the local
+  // store whenever social data changes.
   const rozetiTazele = useCallback(() => {
-    if (!sosyalAktif || !kullanici) {
+    if (!kullanici) {
       setRozet(0)
       setMesajRozeti(0)
       return
@@ -112,35 +122,66 @@ export default function App() {
 
   useEffect(() => {
     rozetiTazele()
-  }, [rozetiTazele, activeTab])
+  }, [rozetiTazele, activeTab, sosyalSurum])
 
   // Takvim bağlıysa açılışta sessizce tazele — kullanıcı elle "içe aktar"a
   // basmak zorunda kalmasın.
   useTakvimOtomatikYenile()
 
-  // Giriş kapısı, kullanıcı adının belirlenip belirlenmediğine bakıyor —
-  // o yüzden profil App seviyesinde yükleniyor.
+  // The gate looks at the username and password flags, so the profile is
+  // loaded at App level.
   const profiliYukle = useCallback(async () => {
-    if (!sosyalAktif || !kullanici) {
+    if (!kullanici) {
       setProfil(null)
-      setProfilYuklendi(true)
+      setProfilSahibi(null)
       return
     }
     try {
       setProfil(await profilimiGetir())
     } catch {
-      // Ağ hatasında kullanıcıyı kapıda kilitli bırakmamak için null
-      // bırakıp devam ediyoruz; kurulum ekranı bir sonraki açılışta çıkar.
       setProfil(null)
-    } finally {
-      setProfilYuklendi(true)
     }
+    setProfilSahibi(kullanici.id)
   }, [kullanici])
 
   useEffect(() => {
-    setProfilYuklendi(false)
     void profiliYukle()
-  }, [profiliYukle])
+  }, [profiliYukle, sosyalSurum])
+
+  useEffect(() => {
+    if (!kullanici) return
+    let iptal = false
+    setIlkEsitleme('bekliyor')
+    void (async () => {
+      // Nothing to download for an account created a moment ago, and a
+      // profile already on this device means the app can open right away
+      // (the background sync keeps it fresh).
+      if (yeniHesap || (await profilimiGetir().catch(() => null))) {
+        if (!iptal) setIlkEsitleme('bitti')
+        return
+      }
+      try {
+        await motor().esitle()
+        if (!iptal) setIlkEsitleme('bitti')
+      } catch {
+        if (!iptal) setIlkEsitleme('hata')
+      }
+    })()
+    return () => {
+      iptal = true
+    }
+  }, [kullanici, yeniHesap, esitlemeDenemesi])
+
+  // Local plans (and imported calendar events) turn into busy ranges for
+  // friends. Runs quietly: a failed sync must not block the app.
+  const takvimSayisi = useLiveQuery(() => db.takvimEtkinlikleri.count(), [], 0)
+  const musaitlikPaylas = profil?.kullanici_adi ? profil.musaitlik_paylas : null
+  useEffect(() => {
+    if (!kullanici || musaitlikPaylas === null) return
+    musaitligiSenkronla(kullanici.id, musaitlikPaylas).catch((err) => {
+      console.warn('müsaitlik senkronu başarısız', err)
+    })
+  }, [kullanici, musaitlikPaylas, kayitlar, takvimSayisi])
 
   // Detay ekranı açıkken arka planda kayıt güncellenirse (F2 sınıflandırma
   // biterse) gösterilen kopyayı da tazele.
@@ -178,47 +219,45 @@ export default function App() {
     )
   }
 
-  if (sosyalAktif) {
-    if (authYukleniyor || !profilYuklendi) {
-      return (
-        <div className="min-h-screen bg-cream-100 max-w-md mx-auto flex items-center justify-center">
-          <Icon name="Loader2" className="w-6 h-6 animate-spin text-ink-300" />
-        </div>
-      )
-    }
+  if (authYukleniyor) return <Bekleme />
 
-    if (!kullanici) {
-      return (
-        <div className="min-h-screen bg-cream-100 max-w-md mx-auto relative">
-          <GirisEkrani
-            baslik="CepDost'a hoş geldin"
-            altBaslik="Başlamak için giriş yap"
-            tanitimBaslik="Kaydettiğin şey işe yarasın"
-            tanitimMetin="Paylaştığın linkleri ve görselleri otomatik planlara çevirir, arkadaşlarınla birlikte plan yapmanı sağlar."
-            altNot="Hesabın plan detaylarını sunucuya taşımaz — planların telefonunda kalmaya devam eder."
-          />
-        </div>
-      )
-    }
+  if (!kullanici) {
+    return (
+      <TekEkran>
+        <GirisEkrani />
+      </TekEkran>
+    )
+  }
 
-    // Sıra önemli: önce şifre, sonra profil. Şifre adımı yarıda kalırsa
-    // kullanıcı bir sonraki açılışta yine burada karşılanır (bayrak
-    // veritabanında tutuluyor, yerel state'te değil).
-    if (profil && !profil.sifre_belirlendi) {
-      return (
-        <div className="min-h-screen bg-cream-100 max-w-md mx-auto relative">
-          <SifreBelirle onTamamlandi={profiliYukle} />
-        </div>
-      )
-    }
+  if (profilSahibi !== kullanici.id || (!profil && ilkEsitleme === 'bekliyor')) {
+    return <Bekleme metin={profilSahibi === kullanici.id ? 'Hesabın getiriliyor...' : undefined} />
+  }
 
-    if (profil && !profil.kullanici_adi) {
-      return (
-        <div className="min-h-screen bg-cream-100 max-w-md mx-auto relative">
-          <HesapKurulumu profil={profil} onTamamlandi={profiliYukle} />
-        </div>
-      )
-    }
+  if (!profil && ilkEsitleme === 'hata') {
+    return (
+      <TekEkran>
+        <BaglantiHatasi onTekrar={() => setEsitlemeDenemesi((n) => n + 1)} onCikis={() => void cikis()} />
+      </TekEkran>
+    )
+  }
+
+  // Order matters: the password backup is filed under the username, so the
+  // username comes first. Both flags live in the profile record, so a step
+  // left half-way shows up again on the next launch.
+  if (!profil || !profil.kullanici_adi) {
+    return (
+      <TekEkran>
+        <HesapKurulumu profil={profil} onTamamlandi={profiliYukle} />
+      </TekEkran>
+    )
+  }
+
+  if (!profil.sifre_belirlendi) {
+    return (
+      <TekEkran>
+        <SifreBelirle onTamamlandi={profiliYukle} />
+      </TekEkran>
+    )
   }
 
   return (
@@ -311,6 +350,41 @@ export default function App() {
           onCancel={() => setDeleteTarget(null)}
         />
       )}
+    </div>
+  )
+}
+
+function TekEkran({ children }: { children: React.ReactNode }) {
+  return <div className="min-h-screen bg-cream-100 max-w-md mx-auto relative">{children}</div>
+}
+
+function Bekleme({ metin }: { metin?: string }) {
+  return (
+    <div className="min-h-screen bg-cream-100 max-w-md mx-auto flex flex-col items-center justify-center gap-3">
+      <Icon name="Loader2" className="w-6 h-6 animate-spin text-ink-300" />
+      {metin && <p className="text-sm text-ink-400">{metin}</p>}
+    </div>
+  )
+}
+
+// Shown when a returning user's profile couldn't be downloaded: opening the
+// setup screen instead would make them pick a new username for nothing.
+function BaglantiHatasi({ onTekrar, onCikis }: { onTekrar: () => void; onCikis: () => void }) {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-8 text-center">
+      <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center mb-4">
+        <Icon name="WifiOff" className="w-7 h-7 text-amber-600" />
+      </div>
+      <h1 className="font-display text-xl font-bold text-ink-700 mb-2">Hesabın getirilemedi</h1>
+      <p className="text-sm text-ink-400 leading-relaxed mb-6">
+        Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene; planların ve arşivin bu telefonda duruyor.
+      </p>
+      <button onClick={onTekrar} className="btn-primary w-full max-w-xs">
+        Tekrar dene
+      </button>
+      <button onClick={onCikis} className="btn-ghost w-full max-w-xs mt-3 text-sm">
+        Başka bir hesapla gir
+      </button>
     </div>
   )
 }

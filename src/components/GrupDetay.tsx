@@ -8,8 +8,8 @@ import {
   grupPlanlariGetir,
   grupUyeleriGetir,
   gruptanAyril,
+  grupOkunduIsaretle,
   mesajGonder,
-  mesajlariDinle,
   mesajlariGetir,
   planaYanitVer,
   planlariIdyeGoreGetir,
@@ -33,7 +33,8 @@ import {
 import { TemaSheet } from './SohbetTemaSecici'
 import { useSohbetTemasi } from '../sohbetTema'
 import { db, kayitOlustur, kayitSil } from '../db'
-import { formatDate, formatTime, toDateString } from '../lib/format'
+import { formatDate, formatMessageTime, formatTime, toDateString } from '../lib/format'
+import { useSosyalSurum } from '../sosyal/cekirdek'
 
 type Sekme = 'planlar' | 'sohbet' | 'anilar' | 'uyeler'
 
@@ -48,10 +49,14 @@ interface Props {
 export function GrupDetay({ grup, benimId, arkadaslar, onClose, onAyrildi }: Props) {
   const [sekme, setSekme] = useState<Sekme>('planlar')
   const [uyeler, setUyeler] = useState<GrupUyesi[]>([])
+  // Everything in the group (members, plans, answers, messages) is read
+  // from the local copy and reloads when social data changes.
+  const sosyalSurum = useSosyalSurum()
 
   const uyeleriTazele = useCallback(async () => {
     setUyeler(await grupUyeleriGetir(grup.id))
-  }, [grup.id])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [grup.id, sosyalSurum])
 
   useEffect(() => {
     void uyeleriTazele()
@@ -75,6 +80,7 @@ export function GrupDetay({ grup, benimId, arkadaslar, onClose, onAyrildi }: Pro
       <div className="flex items-center gap-3 px-5 pt-[calc(1rem+var(--safe-top))] pb-3 shrink-0">
         <button
           onClick={onClose}
+          aria-label="Geri"
           className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
         >
           <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />
@@ -106,8 +112,8 @@ export function GrupDetay({ grup, benimId, arkadaslar, onClose, onAyrildi }: Pro
           benimId={benimId}
           adHaritasi={adHaritasi}
           benimAdim={adHaritasi.get(benimId) ?? 'Ben'}
-          // Profili okunamayan üyeler (arkadaşım olmayanlar) listeye
-          // giremiyor — müsaitliklerini zaten RLS döndürmezdi.
+          // Every member publishes a card with their name to the group, so
+          // a missing profile only means the card hasn't synced yet.
           digerUyeler={uyeler
             .filter((u) => u.kullanici_id !== benimId && u.profil)
             .map((u) => u.profil!)}
@@ -208,6 +214,7 @@ function PlanlarSekmesi({
   const [ekleAcik, setEkleAcik] = useState(false)
   const [sihirbazAcik, setSihirbazAcik] = useState(false)
   const [hata, setHata] = useState<string | null>(null)
+  const sosyalSurum = useSosyalSurum()
 
   const tazele = useCallback(async () => {
     setHata(null)
@@ -218,7 +225,8 @@ function PlanlarSekmesi({
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Planlar alınamadı')
     }
-  }, [grup.id])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [grup.id, sosyalSurum])
 
   useEffect(() => {
     void tazele()
@@ -516,29 +524,27 @@ function SohbetSekmesi({
   const sonRef = useSonaKaydir([mesajlar.length])
   const yeniMi = useYeniMesajEsigi(mesajlar, !yukleniyor)
 
-  // Sohbette plan kartı olan mesajlar için planları ve yanıtları çek —
-  // kart doğrudan sohbetten yanıtlanabiliyor, "kim geliyor" da orada.
-  const planlariYukle = useCallback(async (liste: GrupMesaji[]) => {
+  const sosyalSurum = useSosyalSurum()
+
+  // Messages plus the plans and answers behind plan cards, so a card can be
+  // answered right in the chat. Plans are always fetched for the whole list
+  // so a reload never drops cards that were already showing.
+  const tazele = useCallback(async () => {
+    const liste = await mesajlariGetir(grup.id)
     const idler = liste.map((m) => m.plan_id).filter((x): x is string => !!x)
-    if (idler.length === 0) return
-    const [haritalar, yanitlar] = await Promise.all([
-      planlariIdyeGoreGetir(idler),
-      planYanitlariGetir(idler),
-    ])
+    const [haritalar, yanitlar] = idler.length
+      ? await Promise.all([planlariIdyeGoreGetir(idler), planYanitlariGetir(idler)])
+      : [new Map<string, GrupPlani>(), [] as PlanYaniti[]]
+    setMesajlar(liste)
     setPlanlar(haritalar)
     setPlanYanitlari(yanitlar)
-  }, [])
+    if (liste.some((m) => m.gonderen_id !== benimId)) void grupOkunduIsaretle(grup.id).catch(() => {})
+  }, [grup.id, benimId])
 
   async function planaYanit(plan: GrupPlani, durum: YanitDurumu) {
     await grupPlaniYanitla(plan, durum, grup)
-    await planlariYukle(mesajlar)
+    await tazele()
   }
-
-  const tazele = useCallback(async () => {
-    const m = await mesajlariGetir(grup.id)
-    setMesajlar(m)
-    await planlariYukle(m)
-  }, [grup.id, planlariYukle])
 
   useEffect(() => {
     let iptal = false
@@ -549,20 +555,10 @@ function SohbetSekmesi({
       .finally(() => {
         if (!iptal) setYukleniyor(false)
       })
-
-    // Realtime: başkasının mesajı anında düşsün. Kendi mesajımı zaten
-    // gönderdikten sonra listeye ekliyorum, çift göstermemek için filtre.
-    const durdur = mesajlariDinle(grup.id, (m) => {
-      if (m.gonderen_id === benimId) return
-      setMesajlar((eski) => (eski.some((x) => x.id === m.id) ? eski : [...eski, m]))
-      if (m.plan_id) void planlariYukle([m])
-    })
-
     return () => {
       iptal = true
-      durdur()
     }
-  }, [grup.id, benimId, tazele, planlariYukle])
+  }, [tazele, sosyalSurum])
 
   async function gonder() {
     const metin = girdi.trim()
@@ -572,7 +568,6 @@ function SohbetSekmesi({
     setHata(null)
     try {
       await mesajGonder(grup.id, metin)
-      await tazele()
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Gönderilemedi')
       setGirdi(metin)
@@ -606,7 +601,7 @@ function SohbetSekmesi({
                 benim={m.gonderen_id === benimId}
                 yeni={yeniMi(m.olusturulma)}
                 gonderenAd={adHaritasi.get(m.gonderen_id) ?? 'CepDost kullanıcısı'}
-                zaman={formatTime(m.olusturulma) ?? undefined}
+                zaman={formatMessageTime(m.olusturulma) ?? undefined}
               >
                 {m.metin}
                 {plan && (
@@ -790,7 +785,7 @@ function UyelerSekmesi({
       <div className="space-y-3">
         {uyeler.map((u) => (
           <div key={u.kullanici_id} className="card p-4 flex items-center gap-3">
-            <Avatar ad={u.profil?.ad ?? '?'} avatarYol={u.profil?.avatar_yol} boyut="sm" />
+            <Avatar ad={u.profil?.ad ?? '?'} foto={u.profil?.avatar} emoji={u.profil?.emoji} renk={u.profil?.renk} boyut="sm" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-ink-700 truncate">
                 {u.profil?.ad ?? 'CepDost kullanıcısı'}
@@ -808,7 +803,7 @@ function UyelerSekmesi({
           <div className="space-y-3">
             {eklenebilir.map((a) => (
               <div key={a.profil.id} className="card p-4 flex items-center gap-3">
-                <Avatar ad={a.profil.ad} avatarYol={a.profil.avatar_yol} boyut="sm" />
+                <Avatar ad={a.profil.ad} foto={a.profil.avatar} emoji={a.profil.emoji} renk={a.profil.renk} boyut="sm" />
                 <p className="flex-1 min-w-0 text-sm font-medium text-ink-700 truncate">{a.profil.ad}</p>
                 <button
                   onClick={async () => {

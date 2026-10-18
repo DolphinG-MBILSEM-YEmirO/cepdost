@@ -577,7 +577,7 @@ function KiminleAdimi({
                       secili ? 'bg-coral-50 border-coral-200' : 'bg-cream-50 border-ink-100/40'
                     }`}
                   >
-                    <Avatar ad={a.profil.ad} avatarYol={a.profil.avatar_yol} boyut="sm" />
+                    <Avatar ad={a.profil.ad} foto={a.profil.avatar} emoji={a.profil.emoji} renk={a.profil.renk} boyut="sm" />
                     <div className="flex-1 min-w-0 text-left">
                       <p className="text-sm font-medium text-ink-700 truncate">{a.profil.ad}</p>
                       {!a.profil.musaitlik_paylas && (
@@ -842,7 +842,7 @@ function DetayAdimi(p: {
                       cakisiyor ? 'bg-amber-50 border-amber-200' : 'bg-cream-50 border-ink-100/40'
                     }`}
                   >
-                    <Avatar ad={k.ad} avatarYol={k.avatar_yol} boyut="sm" />
+                    <Avatar ad={k.ad} foto={k.avatar} emoji={k.emoji} renk={k.renk} boyut="sm" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-ink-700 truncate">{k.ad}</p>
                       <p

@@ -1,9 +1,6 @@
 import { db, type Kayit, type Kategori, type Oncelik, type YakinOneri } from './db'
 import { localDateString } from './lib/format'
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
-
 export interface SiniflandirmaSonucu {
   kategori: Kategori
   baslik: string | null
@@ -29,6 +26,40 @@ async function blobToBase64(blob: Blob): Promise<string> {
   })
 }
 
+// Vercel refuses request bodies over 4.5 MB and base64 adds a third on top of
+// the image, so a phone photo can easily be too big to classify. Large images
+// are scaled down first; the model reads a 1600 px image just as well. Runs
+// in the service worker too (share target), hence OffscreenCanvas. Where the
+// APIs are missing or decoding fails, the original goes as before.
+const KUCULTME_ESIGI_BAYT = 1024 * 1024
+const AZAMI_KENAR_PX = 1600
+
+async function gorseliHazirla(blob: Blob): Promise<Blob> {
+  if (blob.size <= KUCULTME_ESIGI_BAYT) return blob
+  if (typeof createImageBitmap !== 'function' || typeof OffscreenCanvas !== 'function') return blob
+  try {
+    const bitmap = await createImageBitmap(blob)
+    const oran = Math.min(1, AZAMI_KENAR_PX / Math.max(bitmap.width, bitmap.height))
+    const genislik = Math.max(1, Math.round(bitmap.width * oran))
+    const yukseklik = Math.max(1, Math.round(bitmap.height * oran))
+    const tuval = new OffscreenCanvas(genislik, yukseklik)
+    const ctx = tuval.getContext('2d')
+    if (!ctx) {
+      bitmap.close()
+      return blob
+    }
+    // JPEG has no alpha; without a fill transparent areas turn black.
+    ctx.fillStyle = '#fff'
+    ctx.fillRect(0, 0, genislik, yukseklik)
+    ctx.drawImage(bitmap, 0, 0, genislik, yukseklik)
+    bitmap.close()
+    const kucuk = await tuval.convertToBlob({ type: 'image/jpeg', quality: 0.85 })
+    return kucuk.size < blob.size ? kucuk : blob
+  } catch {
+    return blob
+  }
+}
+
 interface SiniflandirGirdi {
   hamBaslik?: string
   hamMetin?: string
@@ -44,14 +75,10 @@ interface SiniflandirGirdi {
   boylam?: number
 }
 
-// Edge Function'ı çağırıp ham sonucu döner — Dexie'ye yazmaz. Hem arka
-// plan otomatik akış (kayitSiniflandir) hem de manuel yakalama modalının
-// önizleme adımı (CaptureModal) bunu kullanır.
+// Calls /api/classify and returns the raw result without writing to Dexie.
+// Used by both the automatic background flow (kayitSiniflandir) and the
+// preview step of the manual capture modal (CaptureModal).
 export async function siniflandirOnizleme(girdi: SiniflandirGirdi): Promise<SiniflandirmaSonucu> {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    throw new Error('Supabase env değişkenleri eksik')
-  }
-
   const body: Record<string, unknown> = {
     hamBaslik: girdi.hamBaslik,
     hamMetin: girdi.hamMetin,
@@ -62,17 +89,15 @@ export async function siniflandirOnizleme(girdi: SiniflandirGirdi): Promise<Sini
     bugun: localDateString(),
   }
   if (girdi.gorselBlob) {
-    body.gorselBase64 = await blobToBase64(girdi.gorselBlob)
-    body.gorselMime = girdi.gorselMime || girdi.gorselBlob.type || 'image/jpeg'
+    const gorsel = await gorseliHazirla(girdi.gorselBlob)
+    body.gorselBase64 = await blobToBase64(gorsel)
+    body.gorselMime =
+      gorsel === girdi.gorselBlob ? girdi.gorselMime || girdi.gorselBlob.type || 'image/jpeg' : gorsel.type
   }
 
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/classify`, {
+  const res = await fetch('/api/classify', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      apikey: SUPABASE_ANON_KEY,
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
 

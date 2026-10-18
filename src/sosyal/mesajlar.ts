@@ -1,120 +1,131 @@
-import { sb } from './supabase'
+import {
+  TUR,
+  isoZaman,
+  kanalBilgisi,
+  kanalDurumu,
+  kayitlariDinle,
+  kayitZamani,
+  metinAl,
+  motor,
+  nesneMi,
+  sayiAl,
+  simdiMs,
+} from './cekirdek'
 import { arkadaslariGetir, type Profil } from './api'
-import { gruplarimiGetir, mesajlariGetir, type Grup } from './gruplar'
+import { grupOkunmamisSayisi, gruplarimiGetir, mesajlariGetir, type Grup } from './gruplar'
+import { rastgeleId } from './nostr/kodlama'
+import type { SosyalKayit } from './nostr/motor'
 
-// F13: arkadaşlarla birebir mesajlaşma + Sohbet sekmesinin birleşik
-// listesi. Yetkilendirme yine tamamen RLS'te (bkz. direkt_mesajlar
-// politikaları) — buradaki bir hata yetki açığına dönüşemez.
+// One-to-one chat with friends, and the combined chat list. Messages live
+// on the pair channel only the two people can read.
 
 export interface DirektMesaj {
   id: string
   gonderen_id: string
   alan_id: string
   metin: string
-  // Doluysa mesaj sohbette plan daveti kartı olarak gösterilir. RLS davetin
-  // aynı iki kişi arasında olmasını şart koşuyor
-  // (bkz. private.davet_bu_sohbette_mi).
+  // When set, the message shows as a card for this plan invite.
   davet_id: string | null
+  // For messages I received: whether I've read them. For messages I sent:
+  // whether the other person has.
   okundu: boolean
   olusturulma: string
 }
 
-const DM_ALANLARI = 'id, gonderen_id, alan_id, metin, davet_id, okundu, olusturulma'
-
-// Bir arkadaşla olan yazışma. RLS zaten sadece taraf olduğum satırları
-// döndürüyor; buradaki filtre "bu kişiyle olanlar" demek.
-export async function direktMesajlariGetir(arkadasId: string, limit = 100): Promise<DirektMesaj[]> {
-  const { data: oturum } = await sb().auth.getUser()
-  const benimId = oturum.user?.id
-  if (!benimId) return []
-
-  const { data, error } = await sb()
-    .from('direkt_mesajlar')
-    .select(DM_ALANLARI)
-    .or(
-      `and(gonderen_id.eq.${benimId},alan_id.eq.${arkadasId}),` +
-        `and(gonderen_id.eq.${arkadasId},alan_id.eq.${benimId})`,
-    )
-    .order('olusturulma', { ascending: false })
-    .limit(limit)
-  if (error) throw new Error(error.message)
-  // En yeniden çekip ters çeviriyoruz: limit son mesajlara uygulanmalı
-  // ama ekranda eskiden yeniye sıralı görünmeli.
-  return ((data ?? []) as DirektMesaj[]).reverse()
+async function arkadasKanali(arkadasId: string) {
+  const durum = await kanalDurumu()
+  const kanal = durum.cift.get(arkadasId)
+  if (!kanal || durum.iliskiler.get(arkadasId)?.durum !== 'kabul') {
+    throw new Error('Bu kişiye mesaj gönderemezsin — önce arkadaş olmanız gerekiyor.')
+  }
+  return kanal
 }
 
-// davetId verilirse mesaj sohbette plan kartı olarak görünür.
-export async function direktMesajGonder(
-  arkadasId: string,
-  metin: string,
-  davetId?: string | null,
-): Promise<void> {
-  const { data: oturum } = await sb().auth.getUser()
-  const benimId = oturum.user?.id
-  if (!benimId) throw new Error('Oturum bulunamadı')
+async function okunduSiniri(konu: string, kim: string): Promise<number> {
+  const m = motor()
+  const kanal = kanalBilgisi(konu)
+  if (!kanal) return 0
+  const k = await m.kayit(kanal, kim, 'okundu')
+  return nesneMi(k?.veri) ? (sayiAl(k.veri.zaman) ?? 0) : 0
+}
 
-  const { error } = await sb()
-    .from('direkt_mesajlar')
-    .insert({
-      gonderen_id: benimId,
-      alan_id: arkadasId,
-      metin: metin.trim(),
-      davet_id: davetId ?? null,
-    })
-  if (error) {
-    if (error.code === '42501') {
-      throw new Error('Bu kişiye mesaj gönderemezsin — önce arkadaş olmanız gerekiyor.')
-    }
-    throw new Error(error.message)
+function mesajKur(k: SosyalKayit, benimId: string, karsi: string, sinirlar: { ben: number; o: number }): DirektMesaj | null {
+  if (!nesneMi(k.veri)) return null
+  const metin = metinAl(k.veri.metin, 4000) ?? ''
+  const davetId = metinAl(k.veri.davetId, 40)
+  if (!metin && !davetId) return null
+  const zaman = kayitZamani(k)
+  const benden = k.yazar === benimId
+  return {
+    id: k.anahtar.slice('dm:'.length),
+    gonderen_id: k.yazar,
+    alan_id: benden ? karsi : benimId,
+    metin,
+    davet_id: davetId,
+    okundu: benden ? zaman <= sinirlar.o : zaman <= sinirlar.ben,
+    olusturulma: isoZaman(zaman),
   }
+}
+
+export async function direktMesajlariGetir(arkadasId: string, limit = 100): Promise<DirektMesaj[]> {
+  const m = motor()
+  const durum = await kanalDurumu()
+  const kanal = durum.cift.get(arkadasId)
+  if (!kanal) return []
+  const sinirlar = {
+    ben: await okunduSiniri(kanal.konu, m.benimId),
+    o: await okunduSiniri(kanal.konu, arkadasId),
+  }
+  const kayitlar = await m.kayitlar(kanal.konu, TUR.dm)
+  return kayitlar
+    .flatMap((k) => mesajKur(k, m.benimId, arkadasId, sinirlar) ?? [])
+    .sort((a, b) => a.olusturulma.localeCompare(b.olusturulma))
+    .slice(-limit)
+}
+
+// With davetId the message shows as a card for that plan invite.
+export async function direktMesajGonder(arkadasId: string, metin: string, davetId?: string | null): Promise<void> {
+  const kanal = await arkadasKanali(arkadasId)
+  await motor().yayinla(kanal, TUR.dm, `dm:${rastgeleId()}`, {
+    metin: metin.trim().slice(0, 4000),
+    davetId: davetId ?? null,
+    zaman: simdiMs(),
+  })
 }
 
 export async function okunduIsaretle(arkadasId: string): Promise<void> {
-  const { data: oturum } = await sb().auth.getUser()
-  const benimId = oturum.user?.id
-  if (!benimId) return
-
-  await sb()
-    .from('direkt_mesajlar')
-    .update({ okundu: true })
-    .eq('alan_id', benimId)
-    .eq('gonderen_id', arkadasId)
-    .eq('okundu', false)
+  const m = motor()
+  const durum = await kanalDurumu()
+  const kanal = durum.cift.get(arkadasId)
+  if (!kanal) return
+  const sinir = await okunduSiniri(kanal.konu, m.benimId)
+  const kayitlar = await m.kayitlar(kanal.konu, TUR.dm)
+  const gelenler = kayitlar.filter((k) => k.yazar === arkadasId).map(kayitZamani)
+  if (!gelenler.some((z) => z > sinir)) return
+  // Message times come from the sender's clock; covering the newest one
+  // keeps a friend whose clock runs ahead from staying "unread" forever.
+  await m.yayinla(kanal, TUR.okundu, 'okundu', { zaman: Math.max(simdiMs(), ...gelenler) })
 }
 
-// Realtime: karşı taraftan gelen yeni mesaj. Filtre "bana gelenler" —
-// kendi gönderdiğimi zaten yerelde ekliyoruz.
-export function direktMesajlariDinle(
-  benimId: string,
-  geldi: (m: DirektMesaj) => void,
-): () => void {
-  const kanal = sb()
-    .channel(`dm-${benimId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'direkt_mesajlar',
-        filter: `alan_id=eq.${benimId}`,
-      },
-      (yuk) => geldi(yuk.new as DirektMesaj),
-    )
-    .subscribe()
-
-  return () => {
-    void sb().removeChannel(kanal)
-  }
+// New messages from friends as they arrive.
+export function direktMesajlariDinle(benimId: string, geldi: (m: DirektMesaj) => void): () => void {
+  return kayitlariDinle((k) => {
+    if (k.tur !== TUR.dm || k.yazar === benimId) return
+    const kanal = kanalBilgisi(k.konu)
+    if (kanal?.tur !== 'cift' || !kanal.karsi) return
+    const mesaj = mesajKur(k, benimId, kanal.karsi, { ben: 0, o: 0 })
+    if (mesaj) geldi(mesaj)
+  })
 }
 
-// ---------- birleşik sohbet listesi ----------
+// ---------- combined chat list ----------
 
 export interface Sohbet {
   tur: 'arkadas' | 'grup'
   id: string
   ad: string
   kullaniciAdi: string | null
-  avatarYol: string | null
+  avatar: string | null
   sonMesaj: string | null
   sonZaman: string | null
   okunmamis: number
@@ -122,84 +133,51 @@ export interface Sohbet {
   grup?: Grup
 }
 
-// Arkadaşları ve grupları tek listede, son mesaja göre sıralı döner.
-// Hiç yazışılmamış arkadaş/grup da listede kalır (boş sohbet olarak) —
-// yoksa yeni bir sohbet başlatmanın yolu olmazdı.
+// Friends and groups in one list, latest conversation first. Friends and
+// groups without messages stay in the list, so a chat can be started.
 export async function sohbetleriGetir(): Promise<Sohbet[]> {
-  const { data: oturum } = await sb().auth.getUser()
-  const benimId = oturum.user?.id
-  if (!benimId) return []
-
   const [arkadaslar, gruplar] = await Promise.all([arkadaslariGetir(), gruplarimiGetir()])
-  const kabulEdilmis = arkadaslar.filter((a) => a.durum === 'kabul')
 
-  // Tüm DM'leri tek sorguda çekip istemcide grupluyoruz — arkadaş başına
-  // ayrı sorgu atmak, arkadaş sayısı arttıkça gereksiz yük olurdu.
-  const { data: dmSatirlar } = await sb()
-    .from('direkt_mesajlar')
-    .select(DM_ALANLARI)
-    .order('olusturulma', { ascending: false })
-    .limit(500)
+  const arkadasSohbetleri: Sohbet[] = await Promise.all(
+    arkadaslar
+      .filter((a) => a.durum === 'kabul')
+      .map(async (a) => {
+        const mesajlar = await direktMesajlariGetir(a.profil.id)
+        const son = mesajlar[mesajlar.length - 1]
+        return {
+          tur: 'arkadas' as const,
+          id: a.profil.id,
+          ad: a.profil.ad,
+          kullaniciAdi: a.profil.kullanici_adi,
+          avatar: a.profil.avatar,
+          sonMesaj: son ? son.metin || 'Plan daveti' : null,
+          sonZaman: son?.olusturulma ?? null,
+          okunmamis: mesajlar.filter((m) => m.gonderen_id === a.profil.id && !m.okundu).length,
+          profil: a.profil,
+        }
+      }),
+  )
 
-  const dmler = (dmSatirlar ?? []) as DirektMesaj[]
-  const sonDm = new Map<string, DirektMesaj>()
-  const okunmamisSayi = new Map<string, number>()
-
-  for (const m of dmler) {
-    const karsi = m.gonderen_id === benimId ? m.alan_id : m.gonderen_id
-    if (!sonDm.has(karsi)) sonDm.set(karsi, m)
-    if (m.alan_id === benimId && !m.okundu) {
-      okunmamisSayi.set(karsi, (okunmamisSayi.get(karsi) ?? 0) + 1)
-    }
-  }
-
-  const arkadasSohbetleri: Sohbet[] = kabulEdilmis.map((a) => {
-    const son = sonDm.get(a.profil.id)
-    return {
-      tur: 'arkadas',
-      id: a.profil.id,
-      ad: a.profil.ad,
-      kullaniciAdi: a.profil.kullanici_adi,
-      avatarYol: a.profil.avatar_yol,
-      sonMesaj: son ? son.metin : null,
-      sonZaman: son ? son.olusturulma : null,
-      okunmamis: okunmamisSayi.get(a.profil.id) ?? 0,
-      profil: a.profil,
-    }
-  })
-
-  // Grup son mesajları: grup başına küçük bir sorgu. Grup sayısı tipik
-  // olarak az olduğu için kabul edilebilir.
   const grupSohbetleri: Sohbet[] = await Promise.all(
     gruplar.map(async (g) => {
-      let sonMesaj: string | null = null
-      let sonZaman: string | null = null
-      try {
-        const mesajlar = await mesajlariGetir(g.id, 1)
-        const son = mesajlar[mesajlar.length - 1]
-        if (son) {
-          sonMesaj = son.metin
-          sonZaman = son.olusturulma
-        }
-      } catch {
-        // Sohbet okunamadıysa grup listede yine görünsün.
-      }
+      const mesajlar = await mesajlariGetir(g.id, 1)
+      const son = mesajlar[mesajlar.length - 1]
       return {
         tur: 'grup' as const,
         id: g.id,
         ad: g.ad,
         kullaniciAdi: null,
-        avatarYol: null,
-        sonMesaj,
-        sonZaman,
-        okunmamis: 0,
+        avatar: null,
+        sonMesaj: son ? son.metin || 'Grup planı' : null,
+        sonZaman: son?.olusturulma ?? null,
+        okunmamis: await grupOkunmamisSayisi(g.id),
         grup: g,
       }
     }),
   )
 
   return [...arkadasSohbetleri, ...grupSohbetleri].sort((a, b) => {
-    // Yazışılmış olanlar üstte, kendi aralarında en yeni önce.
+    // Chats with messages first, newest on top; the rest by name.
     if (a.sonZaman && b.sonZaman) return b.sonZaman.localeCompare(a.sonZaman)
     if (a.sonZaman) return -1
     if (b.sonZaman) return 1
@@ -207,16 +185,8 @@ export async function sohbetleriGetir(): Promise<Sohbet[]> {
   })
 }
 
-// Alt navigasyondaki rozet: okunmamış DM sayısı.
+// Badge on the chat tab.
 export async function okunmamisMesajSayisi(): Promise<number> {
-  const { data: oturum } = await sb().auth.getUser()
-  const benimId = oturum.user?.id
-  if (!benimId) return 0
-
-  const { count } = await sb()
-    .from('direkt_mesajlar')
-    .select('id', { count: 'exact', head: true })
-    .eq('alan_id', benimId)
-    .eq('okundu', false)
-  return count ?? 0
+  const sohbetler = await sohbetleriGetir()
+  return sohbetler.reduce((t, s) => t + s.okunmamis, 0)
 }

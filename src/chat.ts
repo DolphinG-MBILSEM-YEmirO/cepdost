@@ -1,8 +1,10 @@
 import { goruntulemeBasligi, type Kayit, type Kategori, type Oncelik } from './db'
 import { CATEGORY_LABELS, localDateString } from './lib/format'
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
+// The server reads only the last 20 messages (see api/chat.ts); sending the
+// rest of a long conversation would only grow the request towards its size
+// limit.
+const GONDERILEN_MESAJ_SAYISI = 20
 
 export type SohbetRolu = 'kullanici' | 'asistan'
 
@@ -12,7 +14,7 @@ export interface SohbetMesaji {
 }
 
 // F9: sohbet sırasında Gemini'nin (function calling ile) önerdiği yeni
-// plan — bkz. supabase/functions/chat/index.ts plan_oner. Bu sadece bir
+// plan — bkz. api/chat.ts plan_oner. Bu sadece bir
 // ÖNERİ, ChatPanel kullanıcı "Plana ekle"ye basmadan Dexie'ye yazmaz.
 export interface PlanOnerisi {
   kategori: Kategori
@@ -68,24 +70,16 @@ export function planOzetiOlustur(kayitlar: Kayit[], bugun = localDateString()): 
     .join('\n')
 }
 
-// Sohbet geçmişini + kompakt plan özetini Edge Function'a gönderip
-// asistanın yanıtını döner. Dexie'ye hiçbir şey yazmaz — mesaj geçmişi
-// yalnızca ChatPanel'in React state'inde yaşar (kalıcı sohbet geçmişi
-// bilinçli olarak yok, bkz. proje notları: basitlik).
+// Sends the chat history and the compact plan summary to /api/chat and
+// returns the assistant's answer. Writes nothing to Dexie: the message
+// history lives only in ChatPanel's React state (no persistent chat history,
+// on purpose: simplicity).
 export async function sohbetGonder(mesajlar: SohbetMesaji[], kayitlar: Kayit[]): Promise<SohbetYaniti> {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    throw new Error('Supabase env değişkenleri eksik')
-  }
-
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/chat`, {
+  const res = await fetch('/api/chat', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      apikey: SUPABASE_ANON_KEY,
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      mesajlar,
+      mesajlar: mesajlar.slice(-GONDERILEN_MESAJ_SAYISI),
       planOzeti: planOzetiOlustur(kayitlar),
       bugun: localDateString(),
     }),

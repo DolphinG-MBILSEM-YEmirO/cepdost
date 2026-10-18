@@ -252,7 +252,7 @@ export function OrtakPlanSihirbazi({
                         isaretli ? 'bg-coral-50 border-coral-200' : 'bg-cream-100 border-ink-100/40'
                       }`}
                     >
-                      <Avatar ad={p.ad} avatarYol={p.avatar_yol} boyut="sm" />
+                      <Avatar ad={p.ad} foto={p.avatar} emoji={p.emoji} renk={p.renk} boyut="sm" />
                       <div className="flex-1 min-w-0 text-left">
                         <p className="text-sm font-medium text-ink-700 truncate">{p.ad}</p>
                         {!p.musaitlik_paylas && (

@@ -1,11 +1,12 @@
 import { Icon } from './Icon'
 import { TakvimAyarlari } from './TakvimAyarlari'
 import { SohbetTemaSecici } from './SohbetTemaSecici'
+import { HesapGuvenligi } from './HesapGuvenligi'
 
 // Not: Hallet referansındaki "Gemini API Anahtarı" kartı buraya bilerek
 // taşınmadı. Sınıflandırma sunucu-taraflı bir secret ile çalışıyor
-// (bkz. supabase/functions/classify) — kullanıcı hiçbir zaman bir API
-// anahtarı görmüyor/girmiyor, bu CepDost'un "sıfır kurulum" ilkesi.
+// (bkz. api/classify.ts) — kullanıcı hiçbir zaman bir API anahtarı
+// görmüyor/girmiyor, bu CepDost'un "sıfır kurulum" ilkesi.
 
 export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
   return (
@@ -37,6 +38,8 @@ export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
             </div>
           </div>
         </div>
+
+        <HesapGuvenligi />
 
         <SohbetTemaSecici />
 

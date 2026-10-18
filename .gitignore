@@ -16,7 +16,7 @@ dist-ssr
 /tools/
 *.traineddata
 
-# env values (Supabase URL/anon key) — not secret, but project-specific
+# env values (server-side API keys for api/) — never commit
 .env
 !.env.example
 

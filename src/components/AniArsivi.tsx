@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Icon } from './Icon'
-import { aniEkle, aniGorselUrl, aniSil, anilariGetir, type Ani } from '../sosyal/gruplar'
+import { AniGorseli } from './AniGorseli'
+import { useSosyalSurum } from '../sosyal/cekirdek'
+import { aniEkle, aniSil, anilariGetir, type Ani } from '../sosyal/gruplar'
 import type { Gizlilik } from '../sosyal/api'
 import { formatDate, toDateString } from '../lib/format'
 
@@ -17,6 +19,8 @@ export function AniArsivi({ grupId, arkadasId, benimId, baslik }: Props) {
   const [anilar, setAnilar] = useState<Ani[] | null>(null)
   const [hata, setHata] = useState<string | null>(null)
   const [ekleAcik, setEkleAcik] = useState(false)
+  // Memories friends add show up after the next sync without reopening.
+  const sosyalSurum = useSosyalSurum()
 
   const tazele = useCallback(async () => {
     setHata(null)
@@ -25,7 +29,8 @@ export function AniArsivi({ grupId, arkadasId, benimId, baslik }: Props) {
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Anılar alınamadı')
     }
-  }, [grupId, arkadasId])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [grupId, arkadasId, sosyalSurum])
 
   useEffect(() => {
     void tazele()
@@ -90,28 +95,12 @@ export function AniArsivi({ grupId, arkadasId, benimId, baslik }: Props) {
 }
 
 function AniKarti({ ani, benimId, onSilindi }: { ani: Ani; benimId: string; onSilindi: () => Promise<void> }) {
-  const [url, setUrl] = useState<string | null>(null)
   const [onay, setOnay] = useState(false)
-
-  useEffect(() => {
-    let iptal = false
-    if (!ani.dosya_yolu) return
-    aniGorselUrl(ani.dosya_yolu).then((u) => {
-      if (!iptal) setUrl(u)
-    })
-    return () => {
-      iptal = true
-    }
-  }, [ani.dosya_yolu])
 
   return (
     <div className="card overflow-hidden">
       <div className="aspect-square bg-cream-100 relative">
-        {url ? (
-          <img src={url} alt={ani.mekan_adi} className="w-full h-full object-cover" loading="lazy" />
-        ) : (
-          <div className="w-full h-full skeleton" />
-        )}
+        <AniGorseli ani={ani} />
         {ani.sahip_id === benimId && (
           <button
             onClick={async () => {

@@ -1,13 +1,12 @@
 import { db, type Kayit, type TakvimEtkinligi } from '../db'
-import { sb } from './supabase'
+import { TUR, kanalDurumu, motor, simdiMs, type MusaitlikVerisi } from './cekirdek'
 
-// F10: yerel planlardan SADECE zaman bilgisini sunucuya taşır.
+// Shares ONLY time ranges from local plans with friends and groups.
 //
-// Buradan çıkan nesnede başlık, konum, kategori, not YOKTUR ve olmamalıdır —
-// arkadaşın göreceği tek şey "bu aralık dolu". Sunucudaki tabloda zaten bu
-// alanlar tanımlı değil (bkz. musaitlik_bloklari migration'ı), yani bir
-// hata yapılsa bile detay sızamaz. Bu, tek katmana güvenmemek için bilinçli
-// bir çift savunma.
+// The published blocks have no title, place, category or notes, and must
+// never get them: all a friend sees is "this range is busy". The record is
+// built from these blocks alone (see musaitligiSenkronla), so a slip
+// elsewhere can't leak plan details.
 
 const VARSAYILAN_SURE_DK = 60
 
@@ -92,81 +91,29 @@ export function bloklariCikar(
   return bloklar
 }
 
-// Yerel durumu sunucuya yansıtır: eklenenleri yazar, silinen/artık uygun
-// olmayanları sunucudan kaldırır. Tekilleştirme yerel_kayit_id üzerinden,
-// böylece aynı plan iki kez blok oluşturmaz.
+// Publishes my busy ranges on my broadcast channel (friends); the sync
+// copies them into each group. Only re-published when something changed.
 //
-// paylasimAcik=false ise sunucudaki TÜM bloklar silinir — "paylaşmayı
-// kapattım" demek "verim orada durmasın" demek olmalı, sadece gizlenmesi
-// değil.
-export async function musaitligiSenkronla(kullaniciId: string, paylasimAcik: boolean): Promise<void> {
-  const istemci = sb()
-
-  const { data: mevcutSatirlar, error: okumaHata } = await istemci
-    .from('musaitlik_bloklari')
-    .select('id, yerel_kayit_id, tarih, baslangic, bitis')
-    .eq('kullanici_id', kullaniciId)
-  if (okumaHata) throw new Error(okumaHata.message)
-
-  const mevcut = (mevcutSatirlar ?? []) as Array<{
-    id: string
-    yerel_kayit_id: string | null
-    tarih: string
-    baslangic: string
-    bitis: string
-  }>
+// paylasimAcik=false deletes the shared copy: turning sharing off should
+// mean the data is gone, not just hidden.
+export async function musaitligiSenkronla(_kullaniciId: string, paylasimAcik: boolean): Promise<void> {
+  const m = motor()
+  const durum = await kanalDurumu()
+  if (!durum.yayin) return
+  const mevcut = await m.kayit(durum.yayin, m.benimId, 'musaitlik')
 
   if (!paylasimAcik) {
-    if (mevcut.length > 0) {
-      const { error } = await istemci
-        .from('musaitlik_bloklari')
-        .delete()
-        .eq('kullanici_id', kullaniciId)
-      if (error) throw new Error(error.message)
-    }
+    if (mevcut && mevcut.veri !== null) await m.yayinla(durum.yayin, TUR.musaitlik, 'musaitlik', null)
     return
   }
 
-  const [kayitlar, takvim] = await Promise.all([
-    db.kayitlar.toArray(),
-    db.takvimEtkinlikleri.toArray(),
-  ])
-  const istenen = bloklariCikar(kayitlar, new Date(), takvim)
-  const istenenHarita = new Map(istenen.map((b) => [b.yerel_kayit_id, b]))
+  const [kayitlar, takvim] = await Promise.all([db.kayitlar.toArray(), db.takvimEtkinlikleri.toArray()])
+  const bloklar = bloklariCikar(kayitlar, new Date(), takvim)
+    .map(({ tarih, baslangic, bitis }) => ({ tarih, baslangic, bitis }))
+    .sort((a, b) => (a.tarih + a.baslangic).localeCompare(b.tarih + b.baslangic))
 
-  const silinecekIdler: string[] = []
-  const mevcutHarita = new Map<string, (typeof mevcut)[number]>()
-
-  for (const satir of mevcut) {
-    if (!satir.yerel_kayit_id || !istenenHarita.has(satir.yerel_kayit_id)) {
-      silinecekIdler.push(satir.id)
-    } else {
-      mevcutHarita.set(satir.yerel_kayit_id, satir)
-    }
-  }
-
-  if (silinecekIdler.length > 0) {
-    const { error } = await istemci.from('musaitlik_bloklari').delete().in('id', silinecekIdler)
-    if (error) throw new Error(error.message)
-  }
-
-  // Yalnızca gerçekten değişmiş/yeni olanları yaz — her açılışta tüm
-  // tabloyu yeniden yazmak gereksiz yazma trafiği demek.
-  const yazilacak = istenen.filter((b) => {
-    const eski = mevcutHarita.get(b.yerel_kayit_id)
-    if (!eski) return true
-    return (
-      eski.tarih !== b.tarih ||
-      eski.baslangic.slice(0, 5) !== b.baslangic ||
-      eski.bitis.slice(0, 5) !== b.bitis
-    )
-  })
-
-  if (yazilacak.length > 0) {
-    const { error } = await istemci.from('musaitlik_bloklari').upsert(
-      yazilacak.map((b) => ({ ...b, kullanici_id: kullaniciId })),
-      { onConflict: 'kullanici_id,yerel_kayit_id' },
-    )
-    if (error) throw new Error(error.message)
-  }
+  const onceki = (mevcut?.veri as MusaitlikVerisi | null | undefined)?.bloklar
+  if (onceki && JSON.stringify(onceki) === JSON.stringify(bloklar)) return
+  await m.yayinla(durum.yayin, TUR.musaitlik, 'musaitlik', { bloklar, guncelleme: simdiMs() } satisfies MusaitlikVerisi)
+  void m.esitle().catch(() => {})
 }

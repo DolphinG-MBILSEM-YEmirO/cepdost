@@ -41,6 +41,15 @@ export function formatTime(timeStr: string | null): string | null {
   return date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
 }
 
+// Clock time of a message timestamp (ISO), with the day when it isn't today.
+export function formatMessageTime(iso: string): string | null {
+  const date = new Date(iso)
+  if (isNaN(date.getTime())) return null
+  const saat = date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+  if (isSameDay(iso, new Date())) return saat
+  return `${date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })} ${saat}`
+}
+
 export function formatDuration(min: number | null): string | null {
   if (!min || min <= 0) return null
   if (min < 60) return `${min} dk`

@@ -344,15 +344,27 @@ export async function icsiIceAktar(ics: string): Promise<number> {
   return etkinlikler.length
 }
 
-// Tarayıcı, başka bir sitedeki .ics dosyasını CORS yüzünden okuyamaz — bu
-// yüzden çekme işi edge function'a yaptırılıyor (bkz. supabase/functions/takvim).
+// The browser cannot read an .ics file on another site because of CORS, so
+// the server fetches it (see api/takvim.ts). The server's errors are
+// user-facing Turkish (e.g. "not a calendar file") and never contain the
+// secret URL, so they are shown as they are.
 export async function icsUrldenIceAktar(url: string): Promise<number> {
-  const { sb, sosyalAktif } = await import('./sosyal/supabase')
-  if (!sosyalAktif) throw new Error('Sunucu bağlantısı yapılandırılmamış.')
+  const genelHata = 'Takvim alınamadı — bağlantıyı kontrol et.'
 
-  const { data, error } = await sb().functions.invoke('takvim', { body: { url } })
-  if (error) throw new Error('Takvim alınamadı — bağlantıyı kontrol et.')
-  const ics = (data as { ics?: string })?.ics
+  let res: Response
+  try {
+    res = await fetch('/api/takvim', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    })
+  } catch {
+    throw new Error(genelHata)
+  }
+
+  const data = (await res.json().catch(() => null)) as { ics?: string; error?: string } | null
+  if (!res.ok) throw new Error(data?.error || genelHata)
+  const ics = data?.ics
   if (!ics) throw new Error('Bu bağlantıdan takvim verisi gelmedi.')
   return icsiIceAktar(ics)
 }

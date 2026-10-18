@@ -3,8 +3,8 @@ import { Icon } from './Icon'
 import { Avatar } from './Avatar'
 import { DirektSohbet } from './DirektSohbet'
 import { GrupDetay } from './GrupDetay'
-import { GirisEkrani } from './GirisEkrani'
 import { useAuth } from '../sosyal/auth'
+import { useSosyalSurum } from '../sosyal/cekirdek'
 import { sohbetleriGetir, type Sohbet } from '../sosyal/mesajlar'
 import { arkadaslariGetir, type Arkadas, type Profil } from '../sosyal/api'
 import type { Grup } from '../sosyal/gruplar'
@@ -14,7 +14,8 @@ import { formatRelativeTime } from '../lib/format'
 // Henüz yazışılmamış arkadaş/grup da listede kalıyor — yoksa yeni bir
 // sohbet başlatmanın yolu olmazdı.
 export function SohbetlerView({ onDegisti }: { onDegisti?: () => void }) {
-  const { kullanici, yukleniyor: authYukleniyor } = useAuth()
+  const { kullanici } = useAuth()
+  const sosyalSurum = useSosyalSurum()
   const [sohbetler, setSohbetler] = useState<Sohbet[] | null>(null)
   const [arkadaslar, setArkadaslar] = useState<Arkadas[]>([])
   const [hata, setHata] = useState<string | null>(null)
@@ -30,32 +31,17 @@ export function SohbetlerView({ onDegisti }: { onDegisti?: () => void }) {
       onDegisti?.()
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Sohbetler alınamadı')
-      setSohbetler([])
+      setSohbetler((eski) => eski ?? [])
     }
-  }, [onDegisti])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onDegisti, sosyalSurum])
 
   useEffect(() => {
-    if (kullanici) void tazele()
-  }, [kullanici, tazele])
+    void tazele()
+  }, [tazele])
 
-  if (authYukleniyor) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Icon name="Loader2" className="w-6 h-6 animate-spin text-ink-300" />
-      </div>
-    )
-  }
-
-  if (!kullanici) {
-    return (
-      <GirisEkrani
-        baslik="Sohbet"
-        altBaslik="Arkadaşların ve grupların"
-        tanitimBaslik="Konuşmaya devam et"
-        tanitimMetin="Arkadaşlarınla birebir yazış, gruplarında planı konuş — hepsi tek yerde."
-      />
-    )
-  }
+  // The app gate only renders this screen after sign-in.
+  if (!kullanici) return null
 
   const yazisilmis = sohbetler?.filter((s) => s.sonZaman) ?? []
   const bos = sohbetler?.filter((s) => !s.sonZaman) ?? []
@@ -162,7 +148,7 @@ function SohbetSatiri({ sohbet, onAc }: { sohbet: Sohbet; onAc: () => void }) {
           <Icon name="Users" className="w-5 h-5 text-sky-600" />
         </div>
       ) : (
-        <Avatar ad={sohbet.ad} avatarYol={sohbet.avatarYol} />
+        <Avatar ad={sohbet.ad} foto={sohbet.avatar} emoji={sohbet.profil?.emoji ?? sohbet.grup?.emoji} renk={sohbet.profil?.renk ?? sohbet.grup?.renk} />
       )}
 
       <div className="flex-1 min-w-0">
