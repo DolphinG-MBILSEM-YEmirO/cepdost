@@ -1,4 +1,5 @@
 import { getPublicKey, verifyEvent } from 'nostr-tools/pure'
+import { onayGecerliMi, type EpostaOnayi } from '../../shared/epostaOnayi'
 import {
   TUR,
   benimProfilVerim,
@@ -13,6 +14,7 @@ import {
   type BenimProfilVerim,
   type Gizlilik,
 } from './cekirdek'
+import { epostaImzacisi } from './epostaImzacisi'
 import { dEtiketi, dizinKanali, yedekKanali, type Kanal } from './nostr/kanal'
 import { sifreyleCoz, sifreyleSifrele, type SifreliYedek } from './nostr/kodlama'
 import { BAGLANTI_YOK, OLAY_TURU } from './nostr/motor'
@@ -50,6 +52,10 @@ export interface HesapBilgisi {
   ad: string
   kullanici_adi: string
   gizlilik: Gizlilik
+  // The verified address and the server's attestation for it (see
+  // eposta.ts). Required whenever this deployment verifies emails.
+  eposta?: string | null
+  onay?: EpostaOnayi | null
 }
 
 // Publishes the new account: private profile, broadcast channel, public
@@ -59,9 +65,11 @@ export async function hesabiKur(bilgi: HesapBilgisi): Promise<void> {
   if (!ad) throw new Error('Adını yaz.')
   const hata = kullaniciAdiHatasi(bilgi.kullanici_adi)
   if (hata) throw new Error(hata)
+  const m = motor()
+  const imzaci = await epostaImzacisi()
+  if (imzaci && !onayGecerliMi(bilgi.onay, m.benimId, imzaci)) throw new Error('Önce e-posta adresini doğrula.')
   if (await kullaniciAdiAlinmisMi(bilgi.kullanici_adi)) throw new Error('Bu kullanıcı adı zaten alınmış.')
 
-  const m = motor()
   const ben = await m.ben()
   const mevcut = await benimProfilVerim()
   const profil: BenimProfilVerim = {
@@ -75,6 +83,8 @@ export async function hesabiKur(bilgi: HesapBilgisi): Promise<void> {
     biyografi: mevcut?.biyografi ?? null,
     renk: mevcut?.renk ?? null,
     emoji: mevcut?.emoji ?? null,
+    eposta: bilgi.eposta ?? mevcut?.eposta ?? null,
+    onay: bilgi.onay ?? mevcut?.onay ?? null,
   }
 
   let yayinKaydi = await m.kayit(ben, m.benimId, 'yayin')

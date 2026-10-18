@@ -4,6 +4,8 @@ import { test, beforeEach } from 'node:test'
 import assert from 'node:assert/strict'
 import dnsPromises from 'node:dns/promises'
 import { syncBuiltinESMExports } from 'node:module'
+import { getPow } from 'nostr-tools/nip13'
+import { finalizeEvent, generateSecretKey, getEventHash, getPublicKey, type Event } from 'nostr-tools/pure'
 
 
 // ---------- DNS mock (must be installed before modules import lookup) ----------
@@ -38,6 +40,9 @@ const { POST: takvimPOST } = await import('../api/takvim.ts')
 const guvenli = await import('../api/_lib/guvenliFetch.ts')
 const gemini = await import('../api/_lib/gemini.ts')
 const bos = await import('../shared/bosluklar.ts')
+const { GET: epostaGET, POST: epostaPOST } = await import('../api/eposta.ts')
+const { postaci } = await import('../api/_lib/postaci.ts')
+const onayi = await import('../shared/epostaOnayi.ts')
 
 // ---------- fetch mock ----------
 type Isleyici = (url: URL, init: RequestInit | undefined) => Response | Promise<Response>
@@ -843,4 +848,162 @@ test('asistan: availability is never claimed past the shared range', async () =>
   assert.deepEqual(kamp?.uygunluk, { mesgul: ['Sen', 'Ayşe'], bilinmiyor: [] })
   // Without a day the flag is dropped.
   assert.equal(a.planiDogrula({ baslik: 'Kamp', tarih: '', tum_gun: true }, b, z)?.tumGun, false)
+})
+
+// ======================= eposta: email verification =======================
+
+const EPOSTA_AYARLARI = {
+  EPOSTA_GIZLI: 'test-gizli-'.padEnd(48, 'x'),
+  GMAIL_ADRESI: 'cepdost@example.com',
+  GMAIL_UYGULAMA_SIFRESI: 'abcd efgh ijkl mnop',
+}
+const gercekGonder = postaci.gonder
+const gidenPostalar: Array<{ alici: string; konu: string; metin: string; html: string }> = []
+
+function epostaAyarla(acik: boolean) {
+  for (const [anahtar, deger] of Object.entries(EPOSTA_AYARLARI)) {
+    if (acik) process.env[anahtar] = deger
+    else delete process.env[anahtar]
+  }
+  gidenPostalar.length = 0
+  postaci.gonder = async (posta) => {
+    gidenPostalar.push(posta)
+  }
+}
+
+// A code request as the app makes it: signed, with proof of work. (Not
+// nostr-tools' minePow: it moves created_at to the current second.)
+function kodIstegi(sk: Uint8Array, eposta: string, zaman = Math.floor(Date.now() / 1000)): Event {
+  const sablon = { kind: onayi.ISTEK_TURU, created_at: zaman, tags: [['nonce', '0']], content: eposta, pubkey: getPublicKey(sk) }
+  for (let sayac = 0; getPow(getEventHash(sablon)) < onayi.ISTEK_ZORLUGU; sayac++) sablon.tags[0][1] = String(sayac)
+  return finalizeEvent(sablon, sk)
+}
+
+function isKanitsizIstek(sk: Uint8Array, eposta: string): Event {
+  for (let zaman = Math.floor(Date.now() / 1000); ; zaman--) {
+    const olay = finalizeEvent({ kind: onayi.ISTEK_TURU, created_at: zaman, tags: [], content: eposta }, sk)
+    if (getPow(olay.id) < onayi.ISTEK_ZORLUGU) return olay
+  }
+}
+
+function postadakiKod(): string {
+  const eslesme = /\b([A-Z2-9]{4})-([A-Z2-9]{4})\b/.exec(gidenPostalar.at(-1)?.metin ?? '')
+  assert.ok(eslesme, 'mail has a code')
+  return eslesme[1] + eslesme[2]
+}
+
+async function epostaIstek(govde: unknown): Promise<Response> {
+  return epostaPOST(istek('/api/eposta', govde))
+}
+
+test('eposta: off until the secret and Gmail are set; short secrets do not count', async () => {
+  epostaAyarla(false)
+  assert.deepEqual(await json(epostaGET()), { imzaci: null })
+  assert.equal((await epostaIstek({ islem: 'kod' })).status, 503)
+
+  epostaAyarla(true)
+  process.env.EPOSTA_GIZLI = 'kisa'
+  assert.deepEqual(await json(epostaGET()), { imzaci: null })
+  epostaAyarla(true)
+  delete process.env.GMAIL_UYGULAMA_SIFRESI
+  assert.deepEqual(await json(epostaGET()), { imzaci: null })
+
+  epostaAyarla(true)
+  const { imzaci } = await json(epostaGET())
+  assert.match(imzaci, /^[0-9a-f]{64}$/)
+  // The key comes from the secret alone, so attestations survive redeploys.
+  assert.equal((await json(epostaGET())).imzaci, imzaci)
+})
+
+test('eposta: the mailed code comes back as an attestation for that account', async () => {
+  epostaAyarla(true)
+  const { imzaci } = await json(epostaGET())
+  const sk = generateSecretKey()
+  const pk = getPublicKey(sk)
+
+  const res = await epostaIstek({ islem: 'kod', istek: kodIstegi(sk, '  Deniz@Example.com ') })
+  assert.equal(res.status, 200)
+  const { bilet, son } = await json(res)
+  assert.ok(son > Date.now())
+  assert.equal(gidenPostalar.length, 1)
+  assert.equal(gidenPostalar[0].alici, 'deniz@example.com')
+  const kod = postadakiKod()
+  assert.match(gidenPostalar[0].html, new RegExp(onayi.kodGoster(kod)))
+  assert.ok(!bilet.includes(kod), 'the ticket does not carry the code')
+
+  const dogrula = (ek: Record<string, unknown>) =>
+    epostaIstek({ islem: 'dogrula', pk, eposta: 'deniz@example.com', kod, bilet, ...ek })
+  for (const ek of [{ kod: 'AAAAAAAA' }, { pk: getPublicKey(generateSecretKey()) }, { eposta: 'baska@example.com' }]) {
+    const yanlis = await dogrula(ek)
+    assert.equal(yanlis.status, 400, JSON.stringify(ek))
+    assert.equal((await json(yanlis)).onay, undefined)
+  }
+
+  // Typed the way it reads in the mail, in lower case.
+  const dogru = await dogrula({ kod: onayi.kodGoster(kod).toLowerCase() })
+  assert.equal(dogru.status, 200)
+  const { onay } = await json(dogru)
+  assert.ok(onayi.onayGecerliMi(onay, pk, imzaci))
+  assert.equal(onayi.onayGecerliMi(onay, getPublicKey(generateSecretKey()), imzaci), false)
+  assert.equal(onayi.onayGecerliMi(onay, pk, getPublicKey(generateSecretKey())), false)
+  assert.equal(onayi.onayGecerliMi({ ...onay, tags: [['p', pk], ['ozet', 'baska']] }, pk, imzaci), false)
+  assert.ok(!JSON.stringify(onay).includes('deniz'), 'the attestation never names the address')
+
+  // Another account on the same address gets the same keyed hash.
+  const sk2 = generateSecretKey()
+  const { bilet: bilet2 } = await json(await epostaIstek({ islem: 'kod', istek: kodIstegi(sk2, 'deniz@example.com') }))
+  const ikinci = await json(
+    await epostaIstek({ islem: 'dogrula', pk: getPublicKey(sk2), eposta: 'deniz@example.com', kod: postadakiKod(), bilet: bilet2 }),
+  )
+  assert.equal(onayi.onayOzeti(ikinci.onay), onayi.onayOzeti(onay))
+})
+
+test('eposta: unsigned, stale or effortless requests are refused; codes expire; mail failures report', async () => {
+  epostaAyarla(true)
+  const sk = generateSecretKey()
+  const simdi = Math.floor(Date.now() / 1000)
+  const degistirilmis = { ...kodIstegi(sk, 'a@example.com'), content: 'b@example.com' }
+  for (const [ad, govde] of [
+    ['no proof of work', { islem: 'kod', istek: isKanitsizIstek(sk, 'a@example.com') }],
+    ['an hour old', { islem: 'kod', istek: kodIstegi(sk, 'a@example.com', simdi - 3600) }],
+    ['changed after signing', { islem: 'kod', istek: degistirilmis }],
+    ['not an address', { islem: 'kod', istek: kodIstegi(sk, 'adres-degil') }],
+    ['not an event', { islem: 'kod', istek: 'x' }],
+    ['unknown action', { islem: 'baska' }],
+    ['bad ticket', { islem: 'dogrula', pk: getPublicKey(sk), eposta: 'a@example.com', kod: 'ABCDEFGH', bilet: 'x' }],
+  ] as const) {
+    assert.equal((await epostaIstek(govde)).status, 400, ad)
+  }
+  assert.equal(gidenPostalar.length, 0)
+
+  const { bilet } = await json(await epostaIstek({ islem: 'kod', istek: kodIstegi(sk, 'a@example.com') }))
+  const kod = postadakiKod()
+  const gercekSimdi = Date.now
+  Date.now = () => gercekSimdi() + onayi.KOD_GECERLILIK_MS + 1000
+  try {
+    const gec = await epostaIstek({ islem: 'dogrula', pk: getPublicKey(sk), eposta: 'a@example.com', kod, bilet })
+    assert.equal(gec.status, 410)
+  } finally {
+    Date.now = gercekSimdi
+  }
+
+  postaci.gonder = async () => {
+    throw new Error('smtp kapalı')
+  }
+  const hatali = await epostaIstek({ islem: 'kod', istek: kodIstegi(sk, 'a@example.com') })
+  assert.equal(hatali.status, 502)
+  assert.equal((await json(hatali)).bilet, undefined)
+  postaci.gonder = gercekGonder
+})
+
+test('eposta: address and code helpers', () => {
+  assert.equal(onayi.epostaNormallestir(' Ali.Veli@Gmail.COM '), 'ali.veli@gmail.com')
+  for (const kotu of ['', 'ali', 'ali@', '@gmail.com', 'ali@gmail', 'a b@gmail.com', `${'a'.repeat(250)}@x.com`]) {
+    assert.equal(onayi.epostaNormallestir(kotu), null, kotu)
+  }
+  assert.equal(onayi.kodNormallestir('abcd-efgh'), 'ABCDEFGH')
+  assert.equal(onayi.kodNormallestir(' AbCd EfGh '), 'ABCDEFGH')
+  assert.equal(onayi.kodGoster('ABCDEFGH'), 'ABCD-EFGH')
+  assert.equal(onayi.onayGecerliMi(null, 'a', 'b'), false)
+  assert.equal(onayi.onayGecerliMi({ kind: onayi.ONAY_TURU, tags: 'x' }, 'a', 'b'), false)
 })

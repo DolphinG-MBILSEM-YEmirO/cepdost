@@ -1,12 +1,17 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
 import { ConfirmDialog } from './ConfirmDialog'
+import { DogrulanmisEposta, EpostaDogrulama } from './EpostaDogrulama'
 import { SifreBelirle } from './SifreBelirle'
+import { profilimiGetir } from '../sosyal/api'
 import { useAuth } from '../sosyal/auth'
+import { useSosyalSurum } from '../sosyal/cekirdek'
+import { epostayiKaydet } from '../sosyal/eposta'
+import { epostaDogrulamasiGerekli } from '../sosyal/epostaImzacisi'
 
-// Settings card for the account itself: the recovery code (the account's
-// key, the last resort if the password is forgotten), changing the
-// password, and signing out of this device.
+// Settings card for the account itself: the verified email, the recovery
+// code (the account's key, the last resort if the password is forgotten),
+// changing the password, and signing out of this device.
 export function HesapGuvenligi() {
   const { kurtarmaKodunuGetir, cikis } = useAuth()
   const [kodGorunur, setKodGorunur] = useState(false)
@@ -42,6 +47,8 @@ export function HesapGuvenligi() {
         Planların hesabınla eşitlenir: aynı hesapla girdiğin her cihazda görünür. Yalnızca senin cihazların
         okuyabilir; plana eklediğin fotoğraflar eklendiği cihazda kalır.
       </p>
+
+      <EpostaBolumu />
 
       <p className="text-sm text-ink-500 mb-1 font-medium">Kurtarma kodu</p>
       <p className="text-xs text-ink-400 leading-relaxed mb-3">
@@ -131,6 +138,54 @@ export function HesapGuvenligi() {
           }}
           onCancel={() => setCikisOnay(false)}
         />
+      )}
+    </div>
+  )
+}
+
+// The verified address and a way to change it. Hidden where the server
+// doesn't verify emails.
+function EpostaBolumu() {
+  const [acik, setAcik] = useState(false)
+  const [eposta, setEposta] = useState<string | null>(null)
+  const [degisiyor, setDegisiyor] = useState(false)
+  const sosyalSurum = useSosyalSurum()
+
+  useEffect(() => {
+    void epostaDogrulamasiGerekli().then(setAcik)
+  }, [])
+
+  useEffect(() => {
+    void profilimiGetir()
+      .then((p) => setEposta(p?.eposta ?? null))
+      .catch(() => {})
+  }, [sosyalSurum])
+
+  if (!acik) return null
+
+  return (
+    <div className="mb-5">
+      <p className="text-sm text-ink-500 mb-1 font-medium">E-posta</p>
+      <p className="text-xs text-ink-400 leading-relaxed mb-3">
+        Hesabının gerçek bir kişiye ait olduğunu gösterir. Profilinde görünmez, kimseyle paylaşılmaz.
+      </p>
+      {eposta && !degisiyor ? (
+        <DogrulanmisEposta eposta={eposta} onDegistir={() => setDegisiyor(true)} />
+      ) : (
+        <>
+          <EpostaDogrulama
+            onDogrulandi={async (adres, onay) => {
+              await epostayiKaydet(adres, onay)
+              setEposta(adres)
+              setDegisiyor(false)
+            }}
+          />
+          {degisiyor && (
+            <button onClick={() => setDegisiyor(false)} className="w-full text-xs font-semibold text-ink-400 mt-3">
+              Vazgeç
+            </button>
+          )}
+        </>
       )}
     </div>
   )

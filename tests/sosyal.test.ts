@@ -1,16 +1,20 @@
 // End-to-end test of the social layer against a local relay: accounts,
 // friend requests, profiles, availability, chat, invites, groups, unfriend
-// with key rotation, password sign-in and restoring on a new device.
+// with key rotation, password sign-in, restoring on a new device and email
+// verification.
 //
 //   npm test
 
 import 'fake-indexeddb/auto'
 import assert from 'node:assert/strict'
 import { after, before, test } from 'node:test'
-import { generateSecretKey } from 'nostr-tools/pure'
+import { finalizeEvent, generateSecretKey, getPublicKey } from 'nostr-tools/pure'
 // @ts-expect-error plain JS dev tool without types
 import { startRelay } from '../scripts/relay.mjs'
 import { SosyalMotor } from '../src/sosyal/nostr/motor'
+import { ONAY_TURU } from '../shared/epostaOnayi'
+import { epostayiKaydet } from '../src/sosyal/eposta'
+import { epostaImzacisiniAyarla } from '../src/sosyal/epostaImzacisi'
 import {
   arkadasKodu,
   benimYayinAnahtarim,
@@ -90,6 +94,8 @@ let ayse: Kisi
 let can: Kisi
 
 before(async () => {
+  // Email verification is off until its own test turns it on.
+  epostaImzacisiniAyarla(null)
   relay = startRelay(17000 + Math.floor(Math.random() * 1000))
   ali = kisiOlustur('ali')
   ayse = kisiOlustur('ayse')
@@ -481,4 +487,56 @@ test('a shared plan added on two devices before they synced keeps one copy', asy
   // Settled: nothing left to send either way.
   assert.equal((await esitlePlanlar(saat)).gonderilen, 0)
   assert.equal((await esitlePlanlar(tablet)).gonderilen, 0)
+})
+
+test('email verification: strangers only see and hear from verified accounts', async () => {
+  const sunucu = generateSecretKey()
+  const onayVer = (pk: string) =>
+    finalizeEvent(
+      { kind: ONAY_TURU, created_at: Math.floor(Date.now() / 1000), tags: [['p', pk], ['ozet', pk.slice(0, 22)]], content: '' },
+      sunucu,
+    )
+  epostaImzacisiniAyarla(getPublicKey(sunucu))
+  try {
+    const deniz = kisiOlustur('deniz')
+    const ece = kisiOlustur('ece')
+    const kur = (k: Kisi, onay?: ReturnType<typeof onayVer>) =>
+      olarak(k, () => hesabiKur({ ad: k.ad, kullanici_adi: k.ad, gizlilik: 'herkes', eposta: `${k.ad}@example.com`, onay }))
+
+    // Setup needs an attestation for this very account.
+    await assert.rejects(kur(deniz), /e-posta/)
+    await assert.rejects(kur(deniz, onayVer(ece.motor.benimId)), /e-posta/)
+    await kur(deniz, onayVer(deniz.motor.benimId))
+
+    // The address stays on my devices; friends get the attestation only.
+    assert.equal((await olarak(deniz, () => profilimiGetir()))?.eposta, 'deniz@example.com')
+    const yayin = await yayinKanaliAl((await olarak(deniz, () => benimYayinAnahtarim()))!, deniz.motor.benimId)
+    const yayinKopyasi = (await deniz.motor.kayit(yayin, deniz.motor.benimId, 'profil'))?.veri as Record<string, unknown>
+    assert.equal('eposta' in yayinKopyasi, false)
+    assert.ok(yayinKopyasi.onay)
+
+    // Search finds verified accounts only (ali, ayşe and can predate it).
+    assert.equal((await olarak(ali, () => profilAra('@deniz')))?.id, deniz.motor.benimId)
+    assert.equal(await olarak(deniz, () => profilAra('@ayse')), null)
+
+    // A stranger's request waits until they verify; their next sync then
+    // brings the attestation to it without sending it again.
+    await olarak(can, () => arkadaslikIsteGonder(deniz.motor.benimId, null))
+    await esitle(deniz)
+    assert.equal(await olarak(deniz, () => bekleyenSayisi()), 0)
+    await olarak(can, () => epostayiKaydet('can@example.com', onayVer(can.motor.benimId)))
+    await esitle(can, deniz)
+    assert.equal(await olarak(deniz, () => bekleyenSayisi()), 1)
+    assert.equal((await olarak(deniz, () => profilAra('@can')))?.id, can.motor.benimId)
+
+    // Someone I asked myself is never filtered.
+    await olarak(deniz, () => arkadaslikIsteGonder(ali.motor.benimId, null))
+    await esitle(ali)
+    await olarak(ali, () => arkadaslikYanitla(deniz.motor.benimId, true))
+    await esitle(deniz, ali)
+    const denizIcin = await olarak(deniz, () => arkadaslariGetir())
+    assert.equal(denizIcin.find((a) => a.profil.id === ali.motor.benimId)?.durum, 'kabul')
+  } finally {
+    epostaImzacisiniAyarla(null)
+  }
 })

@@ -57,6 +57,7 @@ import {
   KeyRound,
   Eye,
   EyeOff,
+  MailCheck,
 } from 'lucide-react'
 
 const iconMap = {
@@ -118,6 +119,7 @@ const iconMap = {
   KeyRound,
   Eye,
   EyeOff,
+  MailCheck,
 }
 
 export type IconName = keyof typeof iconMap

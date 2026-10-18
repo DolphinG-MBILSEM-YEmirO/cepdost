@@ -28,6 +28,8 @@ import {
   type ProfilOzeti,
   type SaatPenceresi,
 } from './cekirdek'
+import type { EpostaOnayi } from './epostaImzacisi'
+import { onaylilariSec } from './epostaImzacisi'
 import { kullaniciAdiAlinmisMi, kullaniciAdiHatasi, kullaniciAdiniTasi } from './hesap'
 import { davetAnahtarindanKimlik } from './kimlik'
 import { dizinKanali, gelenKutusuKonusu } from './nostr/kanal'
@@ -58,6 +60,10 @@ export interface Profil {
   // Accent colour key (see lib/kisisellestirme.ts) and a profile emoji.
   renk: string | null
   emoji: string | null
+  // My verified address (null on other people's profiles) and the server's
+  // attestation for it.
+  eposta: string | null
+  onay: EpostaOnayi | null
 }
 
 export interface AramaSonucu {
@@ -120,6 +126,8 @@ function profilKur(id: string, veri: Partial<BenimProfilVerim> & { ad: string })
     biyografi: veri.biyografi ?? null,
     renk: veri.renk ?? null,
     emoji: veri.emoji ?? null,
+    eposta: veri.eposta ?? null,
+    onay: veri.onay ?? null,
   }
 }
 
@@ -146,7 +154,17 @@ async function arkadasProfili(durum: KanalDurumu, iliski: IliskiDurumu): Promise
 export type ProfilDegisikligi = Partial<
   Pick<
     Profil,
-    'ad' | 'kullanici_adi' | 'musaitlik_paylas' | 'gizlilik' | 'sifre_belirlendi' | 'avatar' | 'biyografi' | 'renk' | 'emoji'
+    | 'ad'
+    | 'kullanici_adi'
+    | 'musaitlik_paylas'
+    | 'gizlilik'
+    | 'sifre_belirlendi'
+    | 'avatar'
+    | 'biyografi'
+    | 'renk'
+    | 'emoji'
+    | 'eposta'
+    | 'onay'
   >
 >
 
@@ -187,7 +205,7 @@ export async function profilAra(aranan: string): Promise<AramaSonucu | null> {
   const kod = pk ? arkadasKodu(pk) : koduNormallestir(girdi)
   if (kod) {
     const kayitlar = await m.kanalSorgula(await dizinKanali('kod', kod))
-    const bulunan = dizinSonuclari(kayitlar).find(
+    const bulunan = (await dizinSonuclari(kayitlar)).find(
       (s) => arkadasKodu(s.id) === kod && (!pk || s.id === pk),
     )
     if (bulunan) return bulunan
@@ -199,14 +217,16 @@ export async function profilAra(aranan: string): Promise<AramaSonucu | null> {
   const kayitlar = await m.kanalSorgula(await dizinKanali('kullanici', kullaniciAdi))
   // Several accounts could claim a name; the earliest claim wins.
   return (
-    dizinSonuclari(kayitlar)
+    (await dizinSonuclari(kayitlar))
       .filter((s) => s.kullanici_adi === kullaniciAdi)
       .sort((a, b) => a.alindi - b.alindi)[0] ?? null
   )
 }
 
-function dizinSonuclari(kayitlar: SosyalKayit[]): Array<AramaSonucu & { alindi: number }> {
-  return kayitlar.flatMap((k) => {
+// Directory entries as search results. Accounts without a verified email
+// don't come up (see epostaImzacisi.ts), so bots can't be found and added.
+async function dizinSonuclari(kayitlar: SosyalKayit[]): Promise<Array<AramaSonucu & { alindi: number }>> {
+  const sonuclar = kayitlar.flatMap((k) => {
     if (k.tur !== TUR.dizin || !nesneMi(k.veri) || k.veri.pk !== k.yazar) return []
     const ozet = profilOzetiAl(k.veri)
     if (!ozet) return []
@@ -218,9 +238,11 @@ function dizinSonuclari(kayitlar: SosyalKayit[]): Array<AramaSonucu & { alindi: 
         arkadas_kodu: arkadasKodu(k.yazar),
         avatar: ozet.avatar,
         alindi: sayiAl(k.veri.alindi) ?? Number.MAX_SAFE_INTEGER,
+        onay: ozet.onay ?? null,
       },
     ]
   })
+  return (await onaylilariSec(sonuclar, (s) => ({ pk: s.id, onay: s.onay }))).map(({ onay: _o, ...s }) => s)
 }
 
 // ---------- friendships ----------
@@ -228,7 +250,7 @@ function dizinSonuclari(kayitlar: SosyalKayit[]): Array<AramaSonucu & { alindi: 
 async function benimOzetim(): Promise<ProfilOzeti> {
   const profil = await benimProfilVerim()
   if (!profil) throw new Error('Oturum bulunamadı')
-  return { ad: profil.ad, kullanici_adi: profil.kullanici_adi, avatar: profil.avatar }
+  return { ad: profil.ad, kullanici_adi: profil.kullanici_adi, avatar: profil.avatar, onay: profil.onay ?? null }
 }
 
 // `kim` is the search result the request starts from; it's kept so the

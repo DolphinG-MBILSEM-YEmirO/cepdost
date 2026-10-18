@@ -15,17 +15,20 @@ import { ChatPanel } from './components/ChatPanel'
 import { GirisEkrani } from './components/GirisEkrani'
 import { HesapKurulumu } from './components/HesapKurulumu'
 import { SifreBelirle } from './components/SifreBelirle'
+import { EpostaDogrulamaEkrani } from './components/EpostaDogrulama'
 import { Icon } from './components/Icon'
 import { useTakvimOtomatikYenile } from './components/TakvimAyarlari'
 import { useAuth } from './sosyal/auth'
 import { motor, useSosyalSurum } from './sosyal/cekirdek'
 import { bekleyenSayisi, profilimiGetir, type Profil } from './sosyal/api'
+import { epostaImzacisi } from './sosyal/epostaImzacisi'
 import { okunmamisMesajSayisi } from './sosyal/mesajlar'
 import { musaitligiSenkronla } from './sosyal/musaitlikSenkron'
 import { planlariArkadaEsitle } from './sosyal/planEsitleme'
 import { usePlanAyarlari } from './lib/planAyarlari'
 import { type Kayit, db, tumKayitlar, kayitEkle, kayitDurumDegistir, kayitSil, goruntulemeBasligi } from './db'
 import { kayitSiniflandir } from './classify'
+import { onayGecerliMi } from '../shared/epostaOnayi'
 
 const ONBOARDED_KEY = 'cepdost_onboarded'
 
@@ -88,6 +91,9 @@ export default function App() {
   // deciding they need setup, the first sync has to finish.
   const [ilkEsitleme, setIlkEsitleme] = useState<'bekliyor' | 'bitti' | 'hata'>('bekliyor')
   const [esitlemeDenemesi, setEsitlemeDenemesi] = useState(0)
+  // The key email attestations are signed with; null when this deployment
+  // doesn't verify emails, undefined until known (the app doesn't wait).
+  const [epostaImzaci, setEpostaImzaci] = useState<string | null>()
 
   const kayitlarSonucu = useLiveQuery(() => tumKayitlar(), [])
   // Keep a stable empty array while Dexie is loading; a fresh `[]` on every
@@ -150,6 +156,10 @@ export default function App() {
   useEffect(() => {
     void profiliYukle()
   }, [profiliYukle, sosyalSurum])
+
+  useEffect(() => {
+    if (kullanici) void epostaImzacisi().then(setEpostaImzaci)
+  }, [kullanici])
 
   useEffect(() => {
     if (!kullanici) return
@@ -269,6 +279,15 @@ export default function App() {
     return (
       <TekEkran>
         <SifreBelirle onTamamlandi={profiliYukle} />
+      </TekEkran>
+    )
+  }
+
+  // Accounts made before emails were required verify once, too.
+  if (epostaImzaci && !onayGecerliMi(profil.onay, profil.id, epostaImzaci)) {
+    return (
+      <TekEkran>
+        <EpostaDogrulamaEkrani onTamamlandi={profiliYukle} onCikis={() => void cikis()} />
       </TekEkran>
     )
   }
@@ -421,7 +440,7 @@ function MarkaPaneli() {
           ))}
         </ul>
       </div>
-      <p className="text-sm text-white/70">Ücretsiz. Reklamsız. E-posta istemez.</p>
+      <p className="text-sm text-white/70">Ücretsiz. Reklamsız. Planların sende kalır.</p>
     </div>
   )
 }

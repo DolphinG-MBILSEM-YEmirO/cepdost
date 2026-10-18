@@ -1,11 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
+import { DogrulanmisEposta, EpostaDogrulama } from './EpostaDogrulama'
 import type { Gizlilik, Profil } from '../sosyal/api'
+import { epostaDogrulamasiGerekli, type EpostaOnayi } from '../sosyal/epostaImzacisi'
 import { hesabiKur, kullaniciAdiHatasi } from '../sosyal/hesap'
 
-// First step of a new account: name, username and who can see the profile.
-// Shown while the account has no username, so the social features can't
-// be used before setup is done (Instagram/TikTok style).
+// First step of a new account: name, username, a verified email (keeps
+// bots out) and who can see the profile. Shown while the account has no
+// username, so the social features can't be used before setup is done
+// (Instagram/TikTok style).
 interface Props {
   profil: Profil | null
   onTamamlandi: () => Promise<void>
@@ -17,6 +20,14 @@ export function HesapKurulumu({ profil, onTamamlandi }: Props) {
   const [gizlilik, setGizlilik] = useState<Gizlilik>('arkadaslar')
   const [kaydediliyor, setKaydediliyor] = useState(false)
   const [hata, setHata] = useState<string | null>(null)
+  // undefined while asking the server whether emails are verified here.
+  const [epostaGerekli, setEpostaGerekli] = useState<boolean>()
+  const [eposta, setEposta] = useState<{ adres: string; onay: EpostaOnayi } | null>(null)
+  const [epostaDegisiyor, setEpostaDegisiyor] = useState(false)
+
+  useEffect(() => {
+    void epostaDogrulamasiGerekli().then(setEpostaGerekli)
+  }, [])
 
   // Dots are allowed but not at the ends or twice in a row, so names can't
   // easily imitate each other.
@@ -32,10 +43,20 @@ export function HesapKurulumu({ profil, onTamamlandi }: Props) {
       setHata('Kullanıcı adı 3-20 karakter olmalı; küçük harf, rakam, _ ve nokta kullanabilirsin.')
       return
     }
+    if (epostaGerekli && !eposta) {
+      setHata('E-posta adresini doğrula; gelen kodu yazman yeterli.')
+      return
+    }
     setKaydediliyor(true)
     setHata(null)
     try {
-      await hesabiKur({ ad: ad.trim(), kullanici_adi: temizKullaniciAdi, gizlilik })
+      await hesabiKur({
+        ad: ad.trim(),
+        kullanici_adi: temizKullaniciAdi,
+        gizlilik,
+        eposta: eposta?.adres ?? null,
+        onay: eposta?.onay ?? null,
+      })
       await onTamamlandi()
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Kaydedilemedi')
@@ -89,6 +110,29 @@ export function HesapKurulumu({ profil, onTamamlandi }: Props) {
           </p>
         </div>
 
+        {epostaGerekli && (
+          <div className="card p-5 mb-4">
+            <label className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
+              E-posta adresin
+            </label>
+            {eposta && !epostaDegisiyor ? (
+              <DogrulanmisEposta eposta={eposta.adres} onDegistir={() => setEpostaDegisiyor(true)} />
+            ) : (
+              <EpostaDogrulama
+                baslangic={eposta?.adres}
+                onDogrulandi={(adres, onay) => {
+                  setEposta({ adres, onay })
+                  setEpostaDegisiyor(false)
+                  setHata(null)
+                }}
+              />
+            )}
+            <p className="text-xs text-ink-400 mt-3">
+              Botları uzak tutmak için gerekli. Adresin profilinde görünmez, kimseyle paylaşılmaz.
+            </p>
+          </div>
+        )}
+
         <div className="card p-5 mb-4">
           <label className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-3">
             Hesabın kime görünsün?
@@ -123,7 +167,7 @@ export function HesapKurulumu({ profil, onTamamlandi }: Props) {
 
         <button
           onClick={() => void kaydet()}
-          disabled={kaydediliyor}
+          disabled={kaydediliyor || epostaGerekli === undefined}
           className="w-full btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
         >
           {kaydediliyor ? (

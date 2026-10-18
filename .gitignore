@@ -34,6 +34,8 @@ desktop.ini
 
 .vercel
 .env*
+# The template has no values and documents the settings.
+!.env.example
 
 # --- Android / TWA (Bubblewrap) ---
 # İMZALAMA ANAHTARI ASLA DEPOYA GİRMEMELİ. Bu dosya + şifresi kaybolursa

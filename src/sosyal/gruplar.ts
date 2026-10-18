@@ -22,6 +22,7 @@ import {
   type UyeVerisi,
 } from './cekirdek'
 import { bilinenProfiller, musaitlikKaydi, ozettenProfil, type Profil } from './api'
+import { onaylilariSec } from './epostaImzacisi'
 import { fotoBilgisiAl, fotoHazirla, fotoSil, fotoUrl, fotoYayinla, type FotoBilgisi } from './foto'
 import { kesfetKanali, type Kanal } from './nostr/kanal'
 import { rastgeleId } from './nostr/kodlama'
@@ -111,7 +112,7 @@ export interface GrupGorunumu {
 async function benimOzetim(): Promise<ProfilOzeti> {
   const p = await benimProfilVerim()
   if (!p) throw new Error('Oturum bulunamadı')
-  return { ad: p.ad, kullanici_adi: p.kullanici_adi, avatar: p.avatar }
+  return { ad: p.ad, kullanici_adi: p.kullanici_adi, avatar: p.avatar, onay: p.onay ?? null }
 }
 
 async function arkadasKanali(pk: string) {
@@ -529,6 +530,20 @@ export async function anilariGetir(secim: { grupId?: string | null; arkadasId?: 
   return kayitlar.flatMap((k) => aniKur(k) ?? []).sort(tarihSirasi)
 }
 
+// Puts my current summary (name, photo, email attestation) on my Keşfet
+// posts, so posts made before I verified my email show up again.
+export async function kesfetSahibimiTazele(): Promise<void> {
+  const m = motor()
+  const kanal = await kesfetKanaliAl()
+  const sahip = await benimOzetim()
+  const kayitlar = await m.kanalSorgula(kanal, { authors: [m.benimId] })
+  for (const k of kayitlar) {
+    if (k.yazar !== m.benimId || k.tur !== TUR.ani || !nesneMi(k.veri)) continue
+    if (JSON.stringify(k.veri.sahip ?? null) === JSON.stringify(sahip)) continue
+    await m.yayinla(kanal, TUR.ani, k.anahtar, { ...k.veri, sahip })
+  }
+}
+
 // Feed scope: 'arkadaslar' = memories shared with me or my groups,
 // 'herkes' = the public Keşfet feed.
 export type AkisKapsami = 'arkadaslar' | 'herkes'
@@ -539,10 +554,15 @@ export async function akisAnilariGetir(kapsam: AkisKapsami, limit = 60): Promise
   const m = motor()
   if (kapsam === 'herkes') {
     const kayitlar = await m.kanalSorgula(await kesfetKanaliAl(), { limit: limit * 3 })
-    const anilar = kayitlar
-      .filter((k) => k.tur === TUR.ani)
-      .flatMap((k) => aniKur(k) ?? [])
-      .filter((a) => a.foto)
+    // Public posts count only from accounts with a verified email, so bots
+    // can't flood Keşfet.
+    const anilar = await onaylilariSec(
+      kayitlar
+        .filter((k) => k.tur === TUR.ani)
+        .flatMap((k) => aniKur(k) ?? [])
+        .filter((a) => a.foto),
+      (a) => ({ pk: a.sahip_id, onay: a.sahip?.onay }),
+    )
     for (const a of anilar) if (a.sahip) kesfetSahipleri.set(a.sahip_id, a.sahip)
     return anilar.sort((a, b) => b.olusturulma.localeCompare(a.olusturulma)).slice(0, limit)
   }

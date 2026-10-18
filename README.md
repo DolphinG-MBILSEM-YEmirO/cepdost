@@ -41,6 +41,14 @@ few free public relays (`src/sosyal/nostr/role.ts`).
 - Username + password sign-in: the key is encrypted with the password
   (PBKDF2 600k + AES-GCM) and published under the username. Old Supabase
   accounts were not migrated.
+- Email verification keeps bots out of the public places (search, Keşfet,
+  friend requests from strangers). `api/eposta.ts` mails a code (Gmail SMTP);
+  when it comes back, the server signs a small attestation for the account
+  (`shared/epostaOnayi.ts`). The attestation carries a keyed hash of the
+  address, never the address itself, and the app checks it against the
+  server's public key. The code request needs proof of work (NIP-13), so
+  mass requests cost real CPU time. There is no database: a signed ticket ties
+  the two steps together.
 
 ## Tech stack
 
@@ -61,8 +69,8 @@ src/
   components/        screens and UI pieces
   sosyal/            accounts, friends, groups, messages (nostr/ is the engine)
   lib/               date/text helpers, personalization options
-api/                 Vercel Functions (chat, classify, ortak-plan, takvim)
-shared/              code used by both the app and api/ (free-slot search)
+api/                 Vercel Functions (chat, classify, eposta, ortak-plan, takvim)
+shared/              code used by both the app and api/ (free slots, email attestations)
 tests/               node:test suites (social layer, api)
 public/              icons, assetlinks.json for the Android app
 scripts/             icon generation, local test relay
@@ -91,7 +99,10 @@ Other scripts: `npm test`, `npm run build`, `npm run lint`, `npm run preview`.
 
 - Web: Vercel (`vercel.json`). Environment variables (Project → Settings →
   Environment Variables): `GEMINI_API_KEY` (required for the AI features),
-  `FOURSQUARE_API_KEY` (optional), `GEMINI_MODEL` (optional).
+  `FOURSQUARE_API_KEY` (optional), `GEMINI_MODEL` (optional), and for email
+  verification `EPOSTA_GIZLI` (a random secret of 32+ characters),
+  `GMAIL_ADRESI` and `GMAIL_UYGULAMA_SIFRESI` (a Google app password). Until
+  all three are set, verification stays off and nobody is asked for an email.
 - Android: Bubblewrap TWA (`twa-manifest.json`). The signing key
   (`android.keystore`) is intentionally not in the repository. Keep it backed
   up somewhere safe: without it the Play Store app can never be updated.
@@ -104,3 +115,6 @@ Other scripts: `npm test`, `npm run build`, `npm run lint`, `npm run preview`.
   offline. The minimum is 8 characters; the recovery code is the safer key.
 - Leaving a group does not rotate the group key; someone who left could still
   read new group messages if they kept a copy of the key.
+- Email codes are limited by proof of work and Gmail's daily sending limit
+  (about 500), not by a per-address counter. Several accounts can share one
+  address; the attestation's hash makes that visible without revealing it.

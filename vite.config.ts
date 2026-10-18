@@ -7,7 +7,14 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // Server-only settings the api/ handlers read from process.env. On Vercel
 // they come from the project's environment variables; in dev from .env.
-const API_ENV_ANAHTARLARI = ['GEMINI_API_KEY', 'FOURSQUARE_API_KEY', 'GEMINI_MODEL']
+const API_ENV_ANAHTARLARI = [
+  'GEMINI_API_KEY',
+  'FOURSQUARE_API_KEY',
+  'GEMINI_MODEL',
+  'EPOSTA_GIZLI',
+  'GMAIL_ADRESI',
+  'GMAIL_UYGULAMA_SIFRESI',
+]
 
 function jsonYaz(res: ServerResponse, durum: number, govde: unknown): void {
   res.statusCode = durum

@@ -1,8 +1,10 @@
 import { useSyncExternalStore } from 'react'
 import { SosyalMotor, type SosyalKayit } from './nostr/motor'
-import { dizinKanali, grupKanali, yayinKanali, yedekKanali, type Kanal } from './nostr/kanal'
+import { dizinKanali, gelenKutusuKonusu, grupKanali, yayinKanali, yedekKanali, type Kanal } from './nostr/kanal'
 import { hexe, hextenBayt, rastgeleBaytlar, type SifreliYedek } from './nostr/kodlama'
 import type { SaatPenceresi } from '../../shared/bosluklar'
+import { onayGecerliMi, type EpostaOnayi } from '../../shared/epostaOnayi'
+import { epostaImzacisi } from './epostaImzacisi'
 
 export type { SaatPenceresi }
 
@@ -77,6 +79,9 @@ export interface ProfilOzeti {
   ad: string
   kullanici_adi: string | null
   avatar: string | null
+  // The server's word that the account has a verified email (see
+  // shared/epostaOnayi.ts); public places only show accounts that have it.
+  onay?: EpostaOnayi | null
 }
 
 export interface BenimProfilVerim {
@@ -91,13 +96,16 @@ export interface BenimProfilVerim {
   biyografi: string | null
   renk: string | null
   emoji: string | null
+  // The verified address. Private: only the attestation in `onay` is shared.
+  eposta?: string | null
+  onay?: EpostaOnayi | null
 }
 
 // The broadcast copy: everything but the private settings.
-export type YayinProfilVerisi = Omit<BenimProfilVerim, 'sifre_belirlendi' | 'olusturulma'>
+export type YayinProfilVerisi = Omit<BenimProfilVerim, 'sifre_belirlendi' | 'olusturulma' | 'eposta'>
 
 export function yayinProfili(profil: BenimProfilVerim): YayinProfilVerisi {
-  const { sifre_belirlendi: _s, olusturulma: _o, ...yayin } = profil
+  const { sifre_belirlendi: _s, olusturulma: _o, eposta: _e, ...yayin } = profil
   return yayin
 }
 
@@ -110,6 +118,8 @@ export interface DizinVerisi {
   // Only for public profiles.
   avatar: string | null
   alindi: number
+  // Search only shows accounts with a verified email.
+  onay: EpostaOnayi | null
 }
 
 export interface KisiVerisi {
@@ -295,6 +305,9 @@ export function profilOzetiAl(deger: unknown): ProfilOzeti | null {
     ad,
     kullanici_adi: metinAl(deger.kullanici_adi, 40),
     avatar: avatar?.startsWith('data:image/') ? avatar : null,
+    // Kept as it came; whoever shows it checks the signature. Left out when
+    // missing, so summaries written before verification compare equal.
+    ...(nesneMi(deger.onay) ? { onay: deger.onay as unknown as EpostaOnayi } : {}),
   }
 }
 
@@ -355,6 +368,7 @@ export function profilVerisiAl(deger: unknown): BenimProfilVerim | null {
     biyografi: metinAl(deger.biyografi, 160),
     renk: metinAl(deger.renk, 20),
     emoji: metinAl(deger.emoji, 16),
+    eposta: metinAl(deger.eposta, 254),
   }
 }
 
@@ -506,6 +520,15 @@ export async function kanalDurumuHesapla(m: SosyalMotor): Promise<KanalDurumu> {
   for (const k of await m.kayitlar(await m.gelenKutusu(), TUR.istek)) {
     if (k.yazar !== benimId) gelenIstekler.set(k.yazar, k)
   }
+  // A request from a stranger counts only with a verified email, so bots
+  // can't fill the inbox. People I added myself are never filtered.
+  const imzaci = await epostaImzacisi()
+  if (imzaci) {
+    for (const [pk, k] of gelenIstekler) {
+      const onay = nesneMi(k.veri) && nesneMi(k.veri.profil) ? k.veri.profil.onay : null
+      if (!kisiler.has(pk) && !onayGecerliMi(onay, pk, imzaci)) gelenIstekler.delete(pk)
+    }
+  }
 
   const iliskiler = new Map<string, IliskiDurumu>()
   const cift = new Map<string, Kanal>()
@@ -608,6 +631,8 @@ function ayniMi(a: unknown, b: unknown): boolean {
 // to press a button:
 //   - a friendship both sides asked for (or one accepted) gets my 'kabul',
 //     carrying my current broadcast key
+//   - a request I'm still waiting on carries my email attestation once I
+//     have one (strangers' requests without it are not shown)
 //   - group keys friends handed me become memberships
 //   - my membership card in each group stays current
 //   - my availability copy in each group follows my broadcast one
@@ -640,6 +665,14 @@ async function uzlastir(m: SosyalMotor): Promise<void> {
   for (const iliski of durum.iliskiler.values()) {
     const kanal = durum.cift.get(iliski.pk)!
     const benim = await m.kayit(kanal, m.benimId, 'iliski')
+    if (iliski.durum === 'bekliyor' && iliski.yon === 'giden' && profil.onay) {
+      const istek = await m.kayit(kanal, m.benimId, 'istek')
+      if (nesneMi(istek?.veri) && nesneMi(istek.veri.profil) && !ayniMi(istek.veri.profil.onay, profil.onay)) {
+        const veri = { ...istek.veri, profil: { ...istek.veri.profil, onay: profil.onay } }
+        const konu = await gelenKutusuKonusu(iliski.pk)
+        isler.push(() => m.yayinla(kanal, TUR.istek, 'istek', veri, { konu }))
+      }
+    }
     if (iliski.durum !== 'kabul') continue
     if (iliski.benimKaydim?.durum !== 'kabul' || iliski.benimKaydim.yayinAnahtari !== durum.yayinAnahtari || eskiMi(benim)) {
       yayinla(kanal, TUR.iliski, 'iliski', { durum: 'kabul', yayinAnahtari: durum.yayinAnahtari, zaman: simdiMs() })
@@ -729,6 +762,7 @@ export function dizinVerisi(pk: string, profil: BenimProfilVerim): DizinVerisi {
     arkadas_kodu: arkadasKodu(pk),
     avatar: profil.gizlilik === 'herkes' ? profil.avatar : null,
     alindi: profil.olusturulma,
+    onay: profil.onay ?? null,
   }
 }
 

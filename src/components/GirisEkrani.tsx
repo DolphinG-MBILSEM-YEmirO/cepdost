@@ -195,8 +195,8 @@ export function GirisEkrani({
           <div className="flex items-start gap-2.5">
             <Icon name="Info" className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-800 leading-relaxed">
-              CepDost hesapları yenilendi: artık e-posta gerekmiyor ve sosyal veriler şifreli
-              saklanıyor. Planların ve arşivin bu telefonda duruyor; arkadaşlarını yeni hesabınla
+              CepDost hesapları yenilendi: sosyal veriler artık şifreli saklanıyor ve giriş
+              kullanıcı adı ile şifreyle yapılıyor. Planların ve arşivin bu telefonda duruyor; arkadaşlarını yeni hesabınla
               tekrar eklemen yeterli.
             </p>
           </div>
