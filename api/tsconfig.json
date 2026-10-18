@@ -1,0 +1,15 @@
+{
+  // Vercel compiles each function with the tsconfig.json nearest to it
+  // (@vercel/node). Without this file it would use the root one, which only
+  // lists project references, and check the functions with loose defaults
+  // and no Node types. Same settings as the local `tsc -b`.
+  "extends": "../tsconfig.api.json",
+  "compilerOptions": {
+    // Set here, not only in the base: Vercel turns `strict` off when this
+    // file itself names no module setting.
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    // The functions import from ../shared.
+    "rootDir": ".."
+  }
+}
