@@ -187,7 +187,11 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
         ) : (
           <div className="space-y-6 mt-2">
             {scheduled.length > 0 && (
-              <Section title="Saatli planlar" icon="Clock" count={scheduled.length}>
+              <Section
+                title={scheduled.some((k) => k.tumGun) ? 'Saatli ve tüm gün' : 'Saatli planlar'}
+                icon="Clock"
+                count={scheduled.length}
+              >
                 <div className="relative space-y-2">
                   <div className="absolute left-[52px] top-2 bottom-2 w-px bg-ink-100" />
                   {scheduled.map((kayit) => (

@@ -378,24 +378,35 @@ test('password sign-in and restoring an account on a new device', async () => {
   assert.equal((await olarak(yeniCihaz, () => gruplarimiGetir()))[0]?.ad, 'Ekip')
 })
 
-test('plans follow the account to another device', async () => {
-  const bellek = () => {
-    let deger: string | null = null
-    return { oku: () => deger, yaz: (d: string) => void (deger = d) }
-  }
-  const plan = (baslik: string, ek: Partial<Kayit> = {}) =>
-    ({
-      id: `${baslik}-${Math.random()}`, kategori: 'etkinlik', baslik, tarih: '2099-04-01', saat: '19:00', konum: null,
-      oncelik: 'orta', sure: 60, ozetNot: null, mekanOnerisi: null, yakinOneriler: null, kaynakTipi: 'metin',
-      hamBaslik: '', hamMetin: '', hamLink: '', gorseller: [], durum: 'bekliyor', olusturulmaTarihi: Date.now(), ...ek,
-    }) as Kayit
+// ---------- plan sync between one account's devices ----------
 
-  const bilgisayar = { kisi: ali, db: new CepDostDB(`plan-pc-${Math.random()}`), depo: bellek() }
-  const telefon = { kisi: kisiOlustur('ali-tel', ali.sk), db: new CepDostDB(`plan-tel-${Math.random()}`), depo: bellek() }
-  const esitlePlanlar = async (c: typeof bilgisayar) => {
-    await c.kisi.motor.esitle()
-    return planlariEsitle(c.kisi.motor, c.db.kayitlar, c.depo)
+interface Cihaz {
+  kisi: Kisi
+  db: CepDostDB
+  depo: { oku(): string | null; yaz(d: string): void }
+}
+
+function cihaz(kisi: Kisi, ad: string): Cihaz {
+  let deger: string | null = null
+  return { kisi, db: new CepDostDB(`plan-${ad}-${Math.random()}`), depo: { oku: () => deger, yaz: (d) => void (deger = d) } }
+}
+
+async function esitlePlanlar(c: Cihaz) {
+  await c.kisi.motor.esitle()
+  return planlariEsitle(c.kisi.motor, c.db.kayitlar, c.depo)
+}
+
+function plan(baslik: string, ek: Partial<Kayit> = {}): Kayit {
+  return {
+    id: `${baslik}-${Math.random()}`, kategori: 'etkinlik', baslik, tarih: '2099-04-01', saat: '19:00', konum: null,
+    oncelik: 'orta', sure: 60, ozetNot: null, mekanOnerisi: null, yakinOneriler: null, kaynakTipi: 'metin',
+    hamBaslik: '', hamMetin: '', hamLink: '', gorseller: [], durum: 'bekliyor', olusturulmaTarihi: Date.now(), ...ek,
   }
+}
+
+test('plans follow the account to another device', async () => {
+  const bilgisayar = cihaz(ali, 'pc')
+  const telefon = cihaz(kisiOlustur('ali-tel', ali.sk), 'tel')
 
   // Writes are stamped, and an update always moves the stamp forward.
   const sinema = plan('Sinema', { gorseller: [{ name: 'bilet.png', type: 'image/png', blob: new Blob(['x']) }] })
@@ -431,7 +442,7 @@ test('plans follow the account to another device', async () => {
 
   // After switching accounts, the plans already on a device stay out of
   // the new account until they change.
-  const baskaHesap = { kisi: ali, db: new CepDostDB(`plan-baska-${Math.random()}`), depo: bellek() }
+  const baskaHesap = cihaz(ali, 'baska')
   baskaHesap.depo.yaz(JSON.stringify({ hesap: 'baska-hesap', esik: 0, surumler: {} }))
   const eski = plan('Eski hesabın planı', { guncellenme: Date.now() - 60_000 })
   await baskaHesap.db.kayitlar.add(eski)
@@ -448,4 +459,26 @@ test('plans follow the account to another device', async () => {
   const sonra = () => Date.now() + 22 * 24 * 60 * 60 * 1000
   assert.equal((await planlariEsitle(telefon.kisi.motor, telefon.db.kayitlar, telefon.depo, sonra)).gonderilen, 2)
   assert.equal((await esitlePlanlar(telefon)).gonderilen, 0)
+})
+
+test('a shared plan added on two devices before they synced keeps one copy', async () => {
+  const tablet = cihaz(kisiOlustur('ali-tablet', ali.sk), 'tablet')
+  const saat = cihaz(kisiOlustur('ali-saat', ali.sk), 'saat')
+  // Both accepted the same invite while apart.
+  await tablet.db.kayitlar.add(plan('Konser', { id: 'konser-b', davetId: 'davet-konser' }))
+  await saat.db.kayitlar.add(plan('Konser', { id: 'konser-a', davetId: 'davet-konser' }))
+  await tablet.db.kayitlar.add(plan('Piknik', { id: 'piknik-b', grupPlanId: 'grup-piknik' }))
+  await saat.db.kayitlar.add(plan('Piknik', { id: 'piknik-a', grupPlanId: 'grup-piknik' }))
+
+  await esitlePlanlar(tablet)
+  await esitlePlanlar(saat)
+  await esitlePlanlar(tablet)
+
+  for (const c of [tablet, saat]) {
+    const kopyalar = (await c.db.kayitlar.toArray()).filter((k) => k.davetId === 'davet-konser' || k.grupPlanId === 'grup-piknik')
+    assert.deepEqual(kopyalar.map((k) => k.id).sort(), ['konser-a', 'piknik-a'])
+  }
+  // Settled: nothing left to send either way.
+  assert.equal((await esitlePlanlar(saat)).gonderilen, 0)
+  assert.equal((await esitlePlanlar(tablet)).gonderilen, 0)
 })

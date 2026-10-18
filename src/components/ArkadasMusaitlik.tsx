@@ -7,7 +7,7 @@ import { addDays, toDateString, formatDate, formatRelativeTime } from '../lib/fo
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 import { ETKINLIK_EMOJILERI, renkAl } from '../lib/kisisellestirme'
 import { planiKur } from '../lib/planPaylasimi'
-import { EmojiSecici } from './Seciciler'
+import { EmojiSecici, TumGunAnahtari } from './Seciciler'
 
 // Kaç günlük müsaitlik gösterilsin. Bir haftalık pencere, "bu hafta ne
 // zaman buluşabiliriz" sorusunun doğal kapsamı.
@@ -278,6 +278,7 @@ function DavetModal({
   const [baslik, setBaslik] = useState('')
   const [saat, setSaat] = useState('')
   const [sure, setSure] = useState('')
+  const [tumGun, setTumGun] = useState(false)
   const [konum, setKonum] = useState('')
   const [mesaj, setMesaj] = useState('')
   const [emoji, setEmoji] = useState<string | null>(null)
@@ -299,6 +300,7 @@ function DavetModal({
           tarih,
           saat: saat || null,
           sure: sure ? Number(sure) : null,
+          tumGun,
           konum: konum.trim() || null,
           not: mesaj.trim() || null,
           emoji,
@@ -365,22 +367,27 @@ function DavetModal({
           <EmojiSecici secenekler={ETKINLIK_EMOJILERI} secili={emoji} onSec={setEmoji} />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div>
-            <FieldLabel>Saat</FieldLabel>
-            <input type="time" value={saat} onChange={(e) => setSaat(e.target.value)} className="input-field" />
+        {!tumGun && (
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <FieldLabel>Saat</FieldLabel>
+              <input type="time" value={saat} onChange={(e) => setSaat(e.target.value)} className="input-field" />
+            </div>
+            <div>
+              <FieldLabel>Süre (dk)</FieldLabel>
+              <input
+                type="number"
+                value={sure}
+                onChange={(e) => setSure(e.target.value)}
+                placeholder="90"
+                min="0"
+                className="input-field"
+              />
+            </div>
           </div>
-          <div>
-            <FieldLabel>Süre (dk)</FieldLabel>
-            <input
-              type="number"
-              value={sure}
-              onChange={(e) => setSure(e.target.value)}
-              placeholder="90"
-              min="0"
-              className="input-field"
-            />
-          </div>
+        )}
+        <div className="mb-4">
+          <TumGunAnahtari acik={tumGun} onDegistir={setTumGun} />
         </div>
 
         <FieldLabel>Nerede</FieldLabel>

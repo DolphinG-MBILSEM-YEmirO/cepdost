@@ -126,6 +126,23 @@ function kayitAl(id: string, v: Record<string, unknown>): Kayit | null {
   }
 }
 
+// Two devices can each add their own copy of the same shared plan (the
+// invite accepted on both before they synced). Every device keeps the copy
+// with the smallest id, so they all pick the same one without asking each
+// other. Returns the ids of the other copies.
+function ciftKopyalar(kayitlar: Iterable<Kayit>): string[] {
+  const tutulan = new Map<string, string>()
+  const fazla = new Set<string>()
+  for (const k of [...kayitlar].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))) {
+    for (const bag of [k.davetId && `davet:${k.davetId}`, k.grupPlanId && `grup:${k.grupPlanId}`]) {
+      if (!bag) continue
+      if (tutulan.has(bag)) fazla.add(k.id)
+      else tutulan.set(bag, k.id)
+    }
+  }
+  return [...fazla]
+}
+
 // Whether a record is still worth keeping on the relays.
 function onemliMi(veri: unknown, simdi: number): boolean {
   const sinir = simdi - ONEMLI_MS
@@ -182,17 +199,21 @@ export async function planlariEsitle(
     )
   }
 
-  try {
-    const yerel = new Map((await tablo.toArray()).map((k) => [k.id, k]))
+  const yerel = new Map((await tablo.toArray()).map((k) => [k.id, k]))
 
-    // 1. Plans deleted here since the last agreement: tell my other devices.
-    let uzak = await uzaktakiler()
+  // Plans deleted here since the last agreement: tell my other devices.
+  async function silinenleriDuyur(uzak: Map<string, SosyalKayit>): Promise<void> {
     for (const [id, surum] of Object.entries(durum.surumler)) {
       if (yerel.has(id) || mezarMi(uzak.get(id)?.veri)) continue
       const mezar: Mezar = { silindi: true, guncellenme: Math.max(simdi(), surum + 1) }
       if (await yayinla(id, mezar)) durum.surumler[id] = mezar.guncellenme
     }
-    uzak = await uzaktakiler()
+  }
+
+  try {
+    // 1. Deletions made here.
+    await silinenleriDuyur(await uzaktakiler())
+    const uzak = await uzaktakiler()
 
     // 2. Newer versions from my other devices.
     for (const [id, r] of uzak) {
@@ -232,6 +253,15 @@ export async function planlariEsitle(
         continue
       }
       durum.surumler[id] = surum
+    }
+
+    // One copy of each shared plan; the others are deleted everywhere.
+    const fazla = ciftKopyalar(yerel.values())
+    if (fazla.length > 0) {
+      await tablo.bulkDelete(fazla)
+      for (const id of fazla) yerel.delete(id)
+      sonuc.alinan += fazla.length
+      await silinenleriDuyur(uzak)
     }
 
     // 3. Plans written here since the last agreement: send them.
