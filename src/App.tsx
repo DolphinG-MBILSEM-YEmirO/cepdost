@@ -22,6 +22,7 @@ import { motor, useSosyalSurum } from './sosyal/cekirdek'
 import { bekleyenSayisi, profilimiGetir, type Profil } from './sosyal/api'
 import { okunmamisMesajSayisi } from './sosyal/mesajlar'
 import { musaitligiSenkronla } from './sosyal/musaitlikSenkron'
+import { planlariArkadaEsitle } from './sosyal/planEsitleme'
 import { usePlanAyarlari } from './lib/planAyarlari'
 import { type Kayit, db, tumKayitlar, kayitEkle, kayitDurumDegistir, kayitSil, goruntulemeBasligi } from './db'
 import { kayitSiniflandir } from './classify'
@@ -190,6 +191,16 @@ export default function App() {
     const zamanlayici = setInterval(() => void senkronla(), 60 * 60 * 1000)
     return () => clearInterval(zamanlayici)
   }, [kullanici, musaitlikPaylas, kayitlar, takvimSayisi, planAyarim])
+
+  // My plans follow me to my other devices: a change here goes out, and
+  // one that arrives from another device lands in the local table. Waits a
+  // moment so a burst of edits or incoming records costs one round.
+  const hesapHazir = Boolean(profil?.kullanici_adi)
+  useEffect(() => {
+    if (!kullanici || !hesapHazir) return
+    const zamanlayici = setTimeout(() => void planlariArkadaEsitle(), 1500)
+    return () => clearTimeout(zamanlayici)
+  }, [kullanici, hesapHazir, kayitlar, sosyalSurum])
 
   // Detay ekranı açıkken arka planda kayıt güncellenirse (F2 sınıflandırma
   // biterse) gösterilen kopyayı da tazele.

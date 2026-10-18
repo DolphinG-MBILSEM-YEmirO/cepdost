@@ -37,6 +37,12 @@ export function HesapGuvenligi() {
         <h2 className="font-semibold text-ink-700">Hesap güvenliği</h2>
       </div>
 
+      <p className="flex items-start gap-2 text-xs text-ink-400 leading-relaxed mb-4">
+        <Icon name="RefreshCw" className="w-4 h-4 text-teal-500 shrink-0 mt-px" />
+        Planların hesabınla eşitlenir: aynı hesapla girdiğin her cihazda görünür. Yalnızca senin cihazların
+        okuyabilir; plana eklediğin fotoğraflar eklendiği cihazda kalır.
+      </p>
+
       <p className="text-sm text-ink-500 mb-1 font-medium">Kurtarma kodu</p>
       <p className="text-xs text-ink-400 leading-relaxed mb-3">
         Şifreni unutursan hesabına bu kodla girersin. Kimseyle paylaşma: kodu bilen hesabına girebilir.

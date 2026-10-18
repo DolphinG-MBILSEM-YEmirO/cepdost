@@ -50,6 +50,8 @@ export const TUR = {
   kisi: 'kisi',
   grupum: 'grupum',
   yedek: 'yedek',
+  // My own plans, so my other devices have them too (planEsitleme.ts).
+  kayit: 'kayit',
   musaitlik: 'musaitlik',
   iliski: 'iliski',
   istek: 'istek',

@@ -54,7 +54,8 @@ import {
   planYanitlariGetir,
 } from '../src/sosyal/gruplar'
 import { bloklariCikar, musaitligiSenkronla } from '../src/sosyal/musaitlikSenkron'
-import { kayitOlustur, type Kayit } from '../src/db'
+import { CepDostDB, kayitOlustur, type Kayit } from '../src/db'
+import { planlariEsitle } from '../src/sosyal/planEsitleme'
 
 let relay: { url: string; close: () => Promise<void> }
 const motorlar: SosyalMotor[] = []
@@ -375,4 +376,76 @@ test('password sign-in and restoring an account on a new device', async () => {
   const arkadaslar = await olarak(yeniCihaz, () => arkadaslariGetir())
   assert.deepEqual(arkadaslar.map((a) => [a.profil.ad, a.durum]), [['Can', 'kabul']])
   assert.equal((await olarak(yeniCihaz, () => gruplarimiGetir()))[0]?.ad, 'Ekip')
+})
+
+test('plans follow the account to another device', async () => {
+  const bellek = () => {
+    let deger: string | null = null
+    return { oku: () => deger, yaz: (d: string) => void (deger = d) }
+  }
+  const plan = (baslik: string, ek: Partial<Kayit> = {}) =>
+    ({
+      id: `${baslik}-${Math.random()}`, kategori: 'etkinlik', baslik, tarih: '2099-04-01', saat: '19:00', konum: null,
+      oncelik: 'orta', sure: 60, ozetNot: null, mekanOnerisi: null, yakinOneriler: null, kaynakTipi: 'metin',
+      hamBaslik: '', hamMetin: '', hamLink: '', gorseller: [], durum: 'bekliyor', olusturulmaTarihi: Date.now(), ...ek,
+    }) as Kayit
+
+  const bilgisayar = { kisi: ali, db: new CepDostDB(`plan-pc-${Math.random()}`), depo: bellek() }
+  const telefon = { kisi: kisiOlustur('ali-tel', ali.sk), db: new CepDostDB(`plan-tel-${Math.random()}`), depo: bellek() }
+  const esitlePlanlar = async (c: typeof bilgisayar) => {
+    await c.kisi.motor.esitle()
+    return planlariEsitle(c.kisi.motor, c.db.kayitlar, c.depo)
+  }
+
+  // Writes are stamped, and an update always moves the stamp forward.
+  const sinema = plan('Sinema', { gorseller: [{ name: 'bilet.png', type: 'image/png', blob: new Blob(['x']) }] })
+  await bilgisayar.db.kayitlar.add(sinema)
+  const ilk = (await bilgisayar.db.kayitlar.get(sinema.id))!.guncellenme!
+  await bilgisayar.db.kayitlar.update(sinema.id, { guncellenme: ilk + 10_000 })
+  await bilgisayar.db.kayitlar.update(sinema.id, { saat: '20:00' })
+  assert.ok((await bilgisayar.db.kayitlar.get(sinema.id))!.guncellenme! > ilk + 10_000)
+
+  // A device that never synced brings all of its plans to the account.
+  assert.equal((await esitlePlanlar(bilgisayar)).gonderilen, 1)
+  assert.equal((await esitlePlanlar(bilgisayar)).gonderilen, 0)
+  assert.equal((await esitlePlanlar(telefon)).alinan, 1)
+  const telefondaki = await telefon.db.kayitlar.get(sinema.id)
+  assert.deepEqual([telefondaki?.baslik, telefondaki?.saat, telefondaki?.gorseller], ['Sinema', '20:00', []])
+
+  // An edit on the phone reaches the computer; the photo stays there.
+  await telefon.db.kayitlar.update(sinema.id, { baslik: 'Sinema (IMAX)', tumGun: false })
+  assert.equal((await esitlePlanlar(telefon)).gonderilen, 1)
+  assert.equal((await esitlePlanlar(bilgisayar)).alinan, 1)
+  const bilgisayardaki = await bilgisayar.db.kayitlar.get(sinema.id)
+  assert.equal(bilgisayardaki?.baslik, 'Sinema (IMAX)')
+  assert.equal(bilgisayardaki?.gorseller.length, 1)
+  // Applying it did not count as a new change on the computer.
+  assert.equal((await esitlePlanlar(bilgisayar)).gonderilen, 0)
+
+  // A deletion on the computer removes it from the phone.
+  await bilgisayar.db.kayitlar.delete(sinema.id)
+  assert.equal((await esitlePlanlar(bilgisayar)).gonderilen, 1)
+  await esitlePlanlar(telefon)
+  assert.equal(await telefon.db.kayitlar.get(sinema.id), undefined)
+  assert.equal((await esitlePlanlar(bilgisayar)).gonderilen, 0)
+
+  // After switching accounts, the plans already on a device stay out of
+  // the new account until they change.
+  const baskaHesap = { kisi: ali, db: new CepDostDB(`plan-baska-${Math.random()}`), depo: bellek() }
+  baskaHesap.depo.yaz(JSON.stringify({ hesap: 'baska-hesap', esik: 0, surumler: {} }))
+  const eski = plan('Eski hesabın planı', { guncellenme: Date.now() - 60_000 })
+  await baskaHesap.db.kayitlar.add(eski)
+  const sonuc = await esitlePlanlar(baskaHesap)
+  assert.equal(sonuc.gonderilen, 0)
+  assert.equal(sonuc.alinan, 0)
+  await baskaHesap.db.kayitlar.update(eski.id, { durum: 'yapildi' })
+  assert.equal((await esitlePlanlar(baskaHesap)).gonderilen, 1)
+  await esitlePlanlar(telefon)
+  assert.equal((await telefon.db.kayitlar.get(eski.id))?.durum, 'yapildi')
+
+  // Three weeks on, records that still matter are published again before
+  // relays forget them: the plan and the recent deletion.
+  const sonra = () => Date.now() + 22 * 24 * 60 * 60 * 1000
+  assert.equal((await planlariEsitle(telefon.kisi.motor, telefon.db.kayitlar, telefon.depo, sonra)).gonderilen, 2)
+  assert.equal((await esitlePlanlar(telefon)).gonderilen, 0)
 })

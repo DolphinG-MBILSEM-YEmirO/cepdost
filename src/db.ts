@@ -58,6 +58,11 @@ export interface Kayit {
 
   durum: Durum
   olusturulmaTarihi: number
+  // When this copy was last written (ms). Set by the database on every add
+  // and update (see CepDostDB), so devices can tell which version of a plan
+  // is newer (see sosyal/planEsitleme.ts). Missing on records from before
+  // plan sync; kayitSurumu() falls back to the creation time.
+  guncellenme?: number
 
   // F20: bu plan kiminle yapıldı. Tarihi geçince "anı ekle" çağrısını doğru
   // arşive (gruba ya da arkadaşa) yönlendirmek için tutuluyor. Opsiyonel —
@@ -97,12 +102,12 @@ export interface TakvimEtkinligi {
   iceAktarma: number
 }
 
-class CepDostDB extends Dexie {
+export class CepDostDB extends Dexie {
   kayitlar!: Table<Kayit, string>
   takvimEtkinlikleri!: Table<TakvimEtkinligi, string>
 
-  constructor() {
-    super('cepdost')
+  constructor(ad = 'cepdost') {
+    super(ad)
     // Sadece sorgulanacak/filtrelenecek alanlar indekslenir; id primary key.
     this.version(1).stores({
       kayitlar: 'id, olusturulmaTarihi, kategori, durum, tarih',
@@ -110,6 +115,18 @@ class CepDostDB extends Dexie {
     this.version(2).stores({
       kayitlar: 'id, olusturulmaTarihi, kategori, durum, tarih',
       takvimEtkinlikleri: 'id, tarih',
+    })
+
+    // Every write stamps the record with a version, whichever screen made
+    // it. A write that brings its own stamp (a newer copy from another
+    // device) keeps it. A new stamp is always above the old one, even when
+    // this device's clock is behind the device that wrote the old one.
+    this.kayitlar.hook('creating', (_id, kayit) => {
+      if (kayit.guncellenme === undefined) kayit.guncellenme = Date.now()
+    })
+    this.kayitlar.hook('updating', (degisiklik, _id, kayit) => {
+      if ('guncellenme' in degisiklik) return undefined
+      return { guncellenme: Math.max(Date.now(), kayitSurumu(kayit) + 1) }
     })
   }
 }
@@ -177,6 +194,12 @@ export async function kayitOlustur(girdi: YeniTamKayit): Promise<Kayit> {
   }
   await db.kayitlar.add(kayit)
   return kayit
+}
+
+// The version of a record: its last write, or for records from before plan
+// sync, its creation.
+export function kayitSurumu(kayit: Kayit): number {
+  return kayit.guncellenme ?? kayit.olusturulmaTarihi
 }
 
 export async function tumKayitlar(): Promise<Kayit[]> {
