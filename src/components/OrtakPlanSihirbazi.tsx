@@ -36,6 +36,14 @@ const GUN_SECENEKLERI = [
 
 const SURE_SECENEKLERI = [60, 90, 120, 180]
 
+function dakikaFarki(baslangic: string, bitis: string): number {
+  const dakika = (s: string) => {
+    const [h, m] = s.split(':').map(Number)
+    return h * 60 + m
+  }
+  return Math.max(0, dakika(bitis) - dakika(baslangic))
+}
+
 export function OrtakPlanSihirbazi({
   benimAdim,
   grup,
@@ -442,7 +450,13 @@ export function OrtakPlanSihirbazi({
                         <button
                           key={i}
                           onClick={() =>
-                            setPlan({ ...plan, tarih: b.tarih, saat: b.baslangic })
+                            // Keep the plan inside the slot it was moved to.
+                            setPlan({
+                              ...plan,
+                              tarih: b.tarih,
+                              saat: b.baslangic,
+                              sure: Math.min(plan.sure, dakikaFarki(b.baslangic, b.bitis)),
+                            })
                           }
                           className="chip bg-cream-100 text-ink-500 border border-ink-100/40 text-xs active:scale-95"
                         >

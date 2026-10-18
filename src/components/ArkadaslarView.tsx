@@ -230,8 +230,8 @@ function ArkadaslarIcerik({
                       gonderenAd={
                         arkadaslar.find((a) => a.profil.id === d.gonderen_id)?.profil.ad ?? 'Bir arkadaşın'
                       }
-                      onKabul={() => void davetiKabulEt(d)}
-                      onRed={() => void davetiReddet(d)}
+                      onKabul={() => davetiKabulEt(d)}
+                      onRed={() => davetiReddet(d)}
                     />
                   ))}
                 </div>
@@ -976,10 +976,22 @@ function DavetKarti({
 }: {
   davet: PlanDaveti
   gonderenAd: string
-  onKabul: () => void
-  onRed: () => void
+  onKabul: () => Promise<void>
+  onRed: () => Promise<void>
 }) {
   const [isleniyor, setIsleniyor] = useState(false)
+  const [hata, setHata] = useState<string | null>(null)
+
+  async function yanitla(islem: () => Promise<void>) {
+    setIsleniyor(true)
+    setHata(null)
+    try {
+      await islem()
+    } catch (err) {
+      setHata(err instanceof Error ? err.message : 'Yanıt gönderilemedi')
+      setIsleniyor(false)
+    }
+  }
   const detay = [formatDate(davet.tarih), davet.saat ? formatTime(davet.saat.slice(0, 5)) : null, davet.konum]
     .filter(Boolean)
     .join(' · ')
@@ -997,26 +1009,21 @@ function DavetKarti({
       {davet.mesaj && <p className="text-xs text-ink-400 italic mb-3">“{davet.mesaj}”</p>}
       <div className="flex gap-2 mt-3">
         <button
-          onClick={() => {
-            setIsleniyor(true)
-            onRed()
-          }}
+          onClick={() => void yanitla(onRed)}
           disabled={isleniyor}
           className="btn-ghost flex-1 border border-ink-100/40 text-sm py-2.5 disabled:opacity-50"
         >
           Uygun değilim
         </button>
         <button
-          onClick={() => {
-            setIsleniyor(true)
-            onKabul()
-          }}
+          onClick={() => void yanitla(onKabul)}
           disabled={isleniyor}
           className="btn-primary flex-1 text-sm py-2.5 disabled:opacity-50"
         >
           Kabul et
         </button>
       </div>
+      {hata && <p className="text-xs text-rose-500 mt-2">{hata}</p>}
     </div>
   )
 }

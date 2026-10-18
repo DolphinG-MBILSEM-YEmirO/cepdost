@@ -122,6 +122,7 @@ export function ChatPanel({ kayitlar, onClose }: ChatPanelProps) {
         </div>
         <button
           onClick={onClose}
+          aria-label="Kapat"
           className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform"
         >
           <Icon name="X" className="w-5 h-5 text-ink-500" />
@@ -192,6 +193,7 @@ export function ChatPanel({ kayitlar, onClose }: ChatPanelProps) {
           <button
             onClick={gonder}
             disabled={loading || !girdi.trim()}
+            aria-label="Gönder"
             className="w-11 h-11 rounded-full bg-sky-500 text-white flex items-center justify-center active:scale-90 transition-transform disabled:opacity-40 shrink-0"
           >
             <Icon name="Send" className="w-5 h-5" />

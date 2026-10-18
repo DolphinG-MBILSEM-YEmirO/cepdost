@@ -76,8 +76,13 @@ export function LinkEkleModal({ onClose, onEklendi }: Props) {
         mekanOnerisi: null,
         yakinOneriler: null,
       })
+      // Clear everything a previous link may have filled in, or its date and
+      // place would be saved with this one.
       setBaslik('')
       setKategori('not')
+      setTarih('')
+      setSaat('')
+      setKonum('')
     } finally {
       setYukleniyor(false)
     }

@@ -12,6 +12,7 @@ import {
   isPast,
   mapUrl,
 } from '../lib/format'
+import { tiklanabilir } from '../lib/a11y'
 
 interface KayitCardProps {
   kayit: Kayit
@@ -32,12 +33,13 @@ export function KayitCard({ kayit, onToggleStatus, onDelete, onClick }: KayitCar
 
   return (
     <div
-      className={`card p-4 transition-all duration-200 active:scale-[0.98] ${done ? 'opacity-60' : ''}`}
-      onClick={onClick}
+      {...(onClick ? tiklanabilir(onClick) : {})}
+      className={`card p-4 ${onClick ? 'cursor-pointer' : ''} transition-all duration-200 active:scale-[0.98] ${done ? 'opacity-60' : ''}`}
     >
       <div className="flex items-start gap-3">
         <button
           onClick={(e) => { e.stopPropagation(); onToggleStatus() }}
+          aria-label={done ? 'Bekliyor olarak işaretle' : 'Yapıldı olarak işaretle'}
           className={`shrink-0 mt-0.5 transition-transform active:scale-90 ${done ? 'text-teal-500' : 'text-ink-200'}`}
         >
           <Icon name={done ? 'CheckCircle2' : 'Circle'} className="w-6 h-6" />
@@ -95,6 +97,7 @@ export function KayitCard({ kayit, onToggleStatus, onDelete, onClick }: KayitCar
             </div>
             <button
               onClick={(e) => { e.stopPropagation(); onDelete() }}
+              aria-label="Kaydı sil"
               className="w-8 h-8 rounded-full flex items-center justify-center text-ink-200 hover:text-rose-500 hover:bg-rose-50 transition-all active:scale-90"
             >
               <Icon name="Trash2" className="w-4 h-4" />

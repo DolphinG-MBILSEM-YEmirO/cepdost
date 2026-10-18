@@ -16,6 +16,17 @@
     text-size-adjust: 100%;
   }
 
+  /* iOS Safari zooms into any focused field smaller than 16px. Pinch zoom
+     stays allowed (no maximum-scale in the viewport tag), so fields are kept
+     at 16px on iOS instead. */
+  @supports (-webkit-touch-callout: none) {
+    input,
+    textarea,
+    select {
+      font-size: max(16px, 1em);
+    }
+  }
+
   body {
     @apply bg-cream-100 text-ink-700 font-sans antialiased;
     margin: 0;

@@ -27,7 +27,12 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
   const [showDelete, setShowDelete] = useState(false)
   const [aniAcik, setAniAcik] = useState(false)
 
+  // Refresh the form from the record, but never while the user is editing:
+  // any write to the table hands us a new copy of the record (a status
+  // toggle, a background classification finishing) and would wipe their
+  // unsaved changes.
   useEffect(() => {
+    if (editing) return
     setTitle(goruntulemeBasligi(kayit))
     setCategory(kayit.kategori ?? 'not')
     setEventDate(kayit.tarih ?? '')
@@ -36,7 +41,16 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
     setPriority(kayit.oncelik)
     setDuration(kayit.sure ? String(kayit.sure) : '')
     setNotes(kayit.ozetNot ?? '')
-  }, [kayit])
+  }, [kayit, editing])
+
+  // One object URL per image, revoked when the images change or the screen
+  // closes; creating them during render leaked one per keystroke.
+  const [gorselUrlleri, setGorselUrlleri] = useState<string[]>([])
+  useEffect(() => {
+    const urller = kayit.gorseller.map((g) => URL.createObjectURL(g.blob))
+    setGorselUrlleri(urller)
+    return () => urller.forEach((u) => URL.revokeObjectURL(u))
+  }, [kayit.gorseller])
 
   const colors = CATEGORY_COLORS[kayit.kategori ?? 'not']
   const dateLabel = formatDate(kayit.tarih)
@@ -92,7 +106,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-cream-100 animate-slide-up">
       <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-3">
-        <button onClick={onClose} className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform">
+        <button onClick={onClose} aria-label="Geri" className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform">
           <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />
         </button>
         <div className="flex items-center gap-2">
@@ -108,12 +122,13 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
             <button
               onClick={handleSave}
               disabled={saving}
+              aria-label="Kaydet"
               className="w-10 h-10 rounded-full bg-coral-500 text-white flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
             >
               <Icon name={saving ? 'Loader2' : 'Save'} className={`w-5 h-5 ${saving ? 'animate-spin' : ''}`} />
             </button>
           ) : (
-            <button onClick={() => setEditing(true)} className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform">
+            <button onClick={() => setEditing(true)} aria-label="Düzenle" className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform">
               <Icon name="Pencil" className="w-5 h-5 text-ink-500" />
             </button>
           )}
@@ -286,7 +301,9 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
             <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-3">Görsel</p>
             <div className="flex flex-wrap gap-2">
               {kayit.gorseller.map((g, i) => (
-                <img key={i} src={URL.createObjectURL(g.blob)} alt={g.name} className="w-24 h-24 rounded-xl object-cover" />
+                gorselUrlleri[i] && (
+                  <img key={i} src={gorselUrlleri[i]} alt={g.name} className="w-24 h-24 rounded-xl object-cover" />
+                )
               ))}
             </div>
           </div>

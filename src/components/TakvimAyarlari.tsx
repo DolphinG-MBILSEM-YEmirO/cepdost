@@ -54,7 +54,9 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
     setBilgi(null)
     try {
       const sayi = await kaynak()
-      kaydet({ ...ayar, izin: true, sonSenkron: Date.now(), sonHata: null })
+      // Re-read the stored settings: the caller may have just saved a new
+      // calendar URL, and the `ayar` captured by this closure predates it.
+      kaydet({ ...takvimAyariOku(), izin: true, sonSenkron: Date.now(), sonHata: null })
       setBilgi(
         sayi === 0
           ? 'Takvim okundu ama önümüzdeki 90 günde etkinlik yok.'
@@ -64,7 +66,7 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
     } catch (err) {
       const mesaj = err instanceof Error ? err.message : 'Takvim alınamadı'
       setHata(mesaj)
-      kaydet({ ...ayar, sonHata: mesaj })
+      kaydet({ ...takvimAyariOku(), sonHata: mesaj })
     } finally {
       setCalisiyor(false)
     }

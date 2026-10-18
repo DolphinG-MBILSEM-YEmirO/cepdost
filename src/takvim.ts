@@ -251,6 +251,8 @@ function tekrarlariUret(etkinlik: HamEtkinlik, pencereSonu: Date, windowStart: D
 // Geçmişi almanın faydası yok; çok uzak gelecek de gereksiz veri.
 const GECMIS_GUN = 1
 const GELECEK_GUN = 90
+// Upper bound for how many days one timed event may cover.
+const AZAMI_GUN_SAYISI = 31
 
 function tarihStr(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -285,21 +287,46 @@ export function icsiEtkinliklereCevir(ics: string, bugun = new Date()): TakvimEt
       if (baslangic < alt || baslangic > ust) continue
 
       const bitis = new Date(baslangic.getTime() + sureMs)
-      // Gece yarısını aşanları güne sabitliyoruz — müsaitlik göstermek için
-      // yeterli, veri modelini bölmeye değmez (musaitlikSenkron ile aynı yaklaşım).
-      const ayniGun = tarihStr(bitis) === tarihStr(baslangic)
-
       const anahtar = `takvim:${ham.uid || ham.ozet}:${baslangic.getTime()}`
-      sonuc.set(anahtar, {
-        id: anahtar,
-        baslik: ham.ozet || 'Takvim etkinliği',
-        tarih: tarihStr(baslangic),
-        baslangic: ham.tumGun ? '00:00' : saatStr(baslangic),
-        bitis: ham.tumGun ? '23:59' : ayniGun ? saatStr(bitis) : '23:59',
-        konum: ham.konum,
-        tumGun: ham.tumGun,
-        iceAktarma: simdi,
-      })
+
+      if (ham.tumGun) {
+        sonuc.set(anahtar, {
+          id: anahtar,
+          baslik: ham.ozet || 'Takvim etkinliği',
+          tarih: tarihStr(baslangic),
+          baslangic: '00:00',
+          bitis: '23:59',
+          konum: ham.konum,
+          tumGun: true,
+          iceAktarma: simdi,
+        })
+        continue
+      }
+
+      // A timed event that runs past midnight becomes one row per day, so
+      // every day it covers counts as busy (a weekend trip blocks Saturday
+      // too, not just Friday evening).
+      const gun = new Date(baslangic)
+      gun.setHours(0, 0, 0, 0)
+      for (let i = 0; i < AZAMI_GUN_SAYISI && gun <= bitis; i++, gun.setDate(gun.getDate() + 1)) {
+        const tarih = tarihStr(gun)
+        const ilkGun = tarih === tarihStr(baslangic)
+        const sonGun = tarih === tarihStr(bitis)
+        const bas = ilkGun ? saatStr(baslangic) : '00:00'
+        const bit = sonGun ? saatStr(bitis) : '23:59'
+        if (bit <= bas || gun < alt || gun > ust) continue
+        const id = ilkGun ? anahtar : `${anahtar}:${tarih}`
+        sonuc.set(id, {
+          id,
+          baslik: ham.ozet || 'Takvim etkinliği',
+          tarih,
+          baslangic: bas,
+          bitis: bit,
+          konum: ham.konum,
+          tumGun: false,
+          iceAktarma: simdi,
+        })
+      }
     }
   }
 
@@ -404,7 +431,9 @@ export function planiTakvimeIndir(plan: Parameters<typeof planIcsOlustur>[0]): v
   document.body.appendChild(a)
   a.click()
   a.remove()
-  URL.revokeObjectURL(url)
+  // Some browsers (iOS Safari, older Firefox) start the download after
+  // click() returns; revoking right away can cancel it.
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 // Kayıt tipinden .ics'e köprü — çağrı yerlerinde alan eşlemesi tekrarlanmasın.

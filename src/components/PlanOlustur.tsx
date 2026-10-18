@@ -259,6 +259,7 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
     setKaydediliyor(true)
     setHata(null)
     try {
+      let grupPlanId: string | null = null
       if (kapsam === 'grup' && seciliGrup) {
         const planId = await grupPlaniOlustur({
           grupId: seciliGrup.id,
@@ -269,6 +270,7 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
           konum: konum.trim() || null,
           notlar: null,
         })
+        grupPlanId = planId
         // Planı kuran zaten geliyor.
         await planaYanitVer(planId, 'geliyorum')
         try {
@@ -317,6 +319,9 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
         // Tarihi geçince "anı ekle" çağrısını doğru arşive yönlendirmek için.
         grupId: kapsam === 'grup' ? (seciliGrup?.id ?? null) : null,
         grupAdi: kapsam === 'grup' ? (seciliGrup?.ad ?? null) : null,
+        // Links the local copy to the group plan, so answering the plan
+        // later from the group screen doesn't add a second copy.
+        grupPlanId,
         // Tek kişilik planlarda anı doğrudan o arkadaşın arşivine gidebilir;
         // kalabalık planlarda hedef belirsiz olurdu, o yüzden boş bırakılıyor.
         arkadasId: kapsam === 'arkadas' && katilimcilar.length === 1 ? katilimcilar[0].id : null,

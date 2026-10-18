@@ -1,4 +1,4 @@
-import type { Kayit, Kategori, Oncelik } from './db'
+import { goruntulemeBasligi, type Kayit, type Kategori, type Oncelik } from './db'
 import { CATEGORY_LABELS, localDateString } from './lib/format'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined
@@ -30,28 +30,34 @@ export interface SohbetYaniti {
   planOnerisi: PlanOnerisi | null
 }
 
-// Gemini'ye gönderilecek kompakt plan özeti — tüm Kayit alanlarını değil,
-// sohbet için anlamlı olanları tek satırlık maddeler halinde derler.
-// Bekleyenler önce, en yakın tarihliler üstte; token/gizlilik için en
-// fazla ~25 kayıtla sınırlanır (bkz. supabase/functions/chat/index.ts).
-export function planOzetiOlustur(kayitlar: Kayit[]): string {
+// Compact plan summary sent to the assistant: one line per record with the
+// fields that matter in a conversation. Capped at 25 records for tokens and
+// privacy, picked so the ones the user is most likely to ask about survive:
+// pending upcoming plans (nearest first), then undated ones, then overdue
+// ones (most recent first), then done ones.
+export function planOzetiOlustur(kayitlar: Kayit[], bugun = localDateString()): string {
   if (kayitlar.length === 0) return '(Henüz kayıtlı planı yok.)'
 
-  const siraliVeSinirli = [...kayitlar]
-    .sort((a, b) => {
-      if (a.durum !== b.durum) return a.durum === 'bekliyor' ? -1 : 1
-      const at = a.tarih ?? '9999-99-99'
-      const bt = b.tarih ?? '9999-99-99'
-      return at.localeCompare(bt)
-    })
-    .slice(0, 25)
+  const bekleyen = kayitlar.filter((k) => k.durum === 'bekliyor')
+  const yaklasan = bekleyen
+    .filter((k) => k.tarih && k.tarih >= bugun)
+    .sort((a, b) => `${a.tarih} ${a.saat ?? ''}`.localeCompare(`${b.tarih} ${b.saat ?? ''}`))
+  const tarihsiz = bekleyen.filter((k) => !k.tarih)
+  const gecmis = bekleyen
+    .filter((k) => k.tarih && k.tarih < bugun)
+    .sort((a, b) => b.tarih!.localeCompare(a.tarih!))
+  const yapilan = kayitlar
+    .filter((k) => k.durum === 'yapildi')
+    .sort((a, b) => (b.tarih ?? '').localeCompare(a.tarih ?? ''))
+
+  const siraliVeSinirli = [...yaklasan, ...tarihsiz, ...gecmis, ...yapilan].slice(0, 25)
 
   return siraliVeSinirli
     .map((k) => {
       const parcalar = [
         `- [${k.durum === 'yapildi' ? '✓' : '•'}]`,
         k.kategori ? `(${CATEGORY_LABELS[k.kategori]})` : '',
-        k.baslik ?? '(başlıksız)',
+        goruntulemeBasligi(k),
         k.tarih ? `— ${k.tarih}` : '',
         k.saat ?? '',
         k.konum ? `— ${k.konum}` : '',

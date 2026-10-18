@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon, type IconName } from './Icon'
 import { type Kayit, goruntulemeBasligi, kayitGuncelle } from '../db'
 import {
@@ -17,6 +17,8 @@ import {
   isPast,
   formatDate,
 } from '../lib/format'
+import { useBugun } from '../hooks/useBugun'
+import { tiklanabilir } from '../lib/a11y'
 
 interface BugunViewProps {
   kayitlar: Kayit[]
@@ -29,6 +31,16 @@ interface BugunViewProps {
 export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onToggleStatus }: BugunViewProps) {
   const [selectedDate, setSelectedDate] = useState(() => new Date())
   const [rescheduling, setRescheduling] = useState<string | null>(null)
+  const bugun = useBugun()
+
+  // When the day rolls over while the app stays open, a view that was on
+  // "today" follows along instead of staying on yesterday.
+  const oncekiBugun = useRef(bugun)
+  useEffect(() => {
+    if (oncekiBugun.current === bugun) return
+    setSelectedDate((secili) => (toDateString(secili) === oncekiBugun.current ? new Date() : secili))
+    oncekiBugun.current = bugun
+  }, [bugun])
 
   const allDayRecords = useMemo(() => kayitlar.filter((k) => isSameDay(k.tarih, selectedDate)), [kayitlar, selectedDate])
 
@@ -54,7 +66,9 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
     const days: Date[] = []
     for (let i = -1; i <= 5; i++) days.push(addDays(today, i))
     return days
-  }, [])
+    // `bugun` is the trigger: the strip is rebuilt when the date changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bugun])
 
   const totalDuration = pending.reduce((sum, k) => sum + (k.sure ?? 0), 0)
   const highPriority = pending.filter((k) => k.oncelik === 'yuksek').length
@@ -83,6 +97,7 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
           </div>
           <button
             onClick={onAddClick}
+            aria-label="Yeni kayıt ekle"
             className="w-11 h-11 rounded-full bg-coral-500 text-white flex items-center justify-center shadow-soft active:scale-90 transition-transform"
           >
             <Icon name="Plus" className="w-5 h-5" />
@@ -103,6 +118,7 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
         <div className="flex items-center gap-1 mb-2">
           <button
             onClick={() => setSelectedDate((d) => addDays(d, -1))}
+            aria-label="Önceki gün"
             className="w-9 h-9 rounded-full bg-cream-50 border border-ink-100/40 flex items-center justify-center active:scale-90 transition-transform shrink-0"
           >
             <Icon name="ChevronRight" className="w-4 h-4 text-ink-400 rotate-180" />
@@ -132,6 +148,7 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
 
           <button
             onClick={() => setSelectedDate((d) => addDays(d, 1))}
+            aria-label="Sonraki gün"
             className="w-9 h-9 rounded-full bg-cream-50 border border-ink-100/40 flex items-center justify-center active:scale-90 transition-transform shrink-0"
           >
             <Icon name="ChevronRight" className="w-4 h-4 text-ink-400" />
@@ -271,9 +288,9 @@ function TimelineItem({ kayit, onClick, onToggle, onReschedule, rescheduling }: 
         <div className={`w-3 h-3 rounded-full ${kayit.oncelik === 'yuksek' ? 'bg-rose-400' : kayit.oncelik === 'orta' ? 'bg-amber-400' : 'bg-ink-200'} ring-4 ring-cream-100 mt-2`} />
       </div>
       <div className="flex-1 min-w-0">
-        <button onClick={onClick} className="card p-3.5 w-full text-left active:scale-[0.98] transition-transform">
+        <div {...tiklanabilir(onClick)} className="card p-3.5 w-full text-left cursor-pointer active:scale-[0.98] transition-transform">
           <div className="flex items-start gap-2">
-            <button onClick={(e) => { e.stopPropagation(); onToggle() }} className="shrink-0 mt-0.5 transition-transform active:scale-90 text-ink-200">
+            <button onClick={(e) => { e.stopPropagation(); onToggle() }} aria-label="Yapıldı olarak işaretle" className="shrink-0 mt-0.5 transition-transform active:scale-90 text-ink-200">
               <Icon name="Circle" className="w-5 h-5" />
             </button>
             <div className="flex-1 min-w-0">
@@ -297,7 +314,7 @@ function TimelineItem({ kayit, onClick, onToggle, onReschedule, rescheduling }: 
               )}
             </div>
           </div>
-        </button>
+        </div>
         <button onClick={() => setShowReschedule(!showReschedule)} className="mt-1 text-xs text-ink-300 font-medium flex items-center gap-1 active:scale-95 transition-transform">
           <Icon name="Calendar" className="w-3.5 h-3.5" />
           {showReschedule ? 'Vazgeç' : 'Ertele'}
@@ -315,9 +332,9 @@ function UnscheduledItem({ kayit, onClick, onToggle, onReschedule, rescheduling 
 
   return (
     <div>
-      <button onClick={onClick} className="card p-3.5 w-full text-left active:scale-[0.98] transition-transform">
+      <div {...tiklanabilir(onClick)} className="card p-3.5 w-full text-left cursor-pointer active:scale-[0.98] transition-transform">
         <div className="flex items-start gap-2">
-          <button onClick={(e) => { e.stopPropagation(); onToggle() }} className="shrink-0 mt-0.5 transition-transform active:scale-90 text-ink-200">
+          <button onClick={(e) => { e.stopPropagation(); onToggle() }} aria-label="Yapıldı olarak işaretle" className="shrink-0 mt-0.5 transition-transform active:scale-90 text-ink-200">
             <Icon name="Circle" className="w-5 h-5" />
           </button>
           <div className="flex-1 min-w-0">
@@ -336,7 +353,7 @@ function UnscheduledItem({ kayit, onClick, onToggle, onReschedule, rescheduling 
             )}
           </div>
         </div>
-      </button>
+      </div>
       <button onClick={() => setShowReschedule(!showReschedule)} className="mt-1 ml-12 text-xs text-ink-300 font-medium flex items-center gap-1 active:scale-95 transition-transform">
         <Icon name="Calendar" className="w-3.5 h-3.5" />
         {showReschedule ? 'Vazgeç' : 'Ertele'}
@@ -352,9 +369,9 @@ function DoneItem({ kayit, onClick, onToggle }: { kayit: Kayit; onClick: () => v
   const baslik = goruntulemeBasligi(kayit)
 
   return (
-    <button onClick={onClick} className="card p-3 w-full text-left active:scale-[0.98] transition-transform opacity-60">
+    <div {...tiklanabilir(onClick)} className="card p-3 w-full text-left cursor-pointer active:scale-[0.98] transition-transform opacity-60">
       <div className="flex items-center gap-2">
-        <button onClick={(e) => { e.stopPropagation(); onToggle() }} className="shrink-0 transition-transform active:scale-90 text-teal-500">
+        <button onClick={(e) => { e.stopPropagation(); onToggle() }} aria-label="Bekliyor olarak işaretle" className="shrink-0 transition-transform active:scale-90 text-teal-500">
           <Icon name="CheckCircle2" className="w-5 h-5" />
         </button>
         <span className={`chip ${colors.bg} ${colors.text} text-xs py-0.5`}>
@@ -363,7 +380,7 @@ function DoneItem({ kayit, onClick, onToggle }: { kayit: Kayit; onClick: () => v
         {timeLabel && <span className="text-xs text-ink-300">{timeLabel}</span>}
         <span className="text-sm text-ink-500 truncate flex-1 line-through">{baslik}</span>
       </div>
-    </button>
+    </div>
   )
 }
 

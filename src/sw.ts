@@ -1,5 +1,6 @@
 /// <reference lib="webworker" />
-import { precacheAndRoute } from 'workbox-precaching'
+import { createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching'
+import { NavigationRoute, registerRoute } from 'workbox-routing'
 import { clientsClaim } from 'workbox-core'
 import { kayitEkle } from './db'
 import { kayitSiniflandir } from './classify'
@@ -11,6 +12,12 @@ clientsClaim()
 
 // Required injection point for vite-plugin-pwa's injectManifest strategy.
 precacheAndRoute(self.__WB_MANIFEST)
+
+// Every page navigation is served by the cached app shell. Without this,
+// URLs with a query (/?shared=ok after an Android share, /share-target/?…
+// from the iOS shortcut) went to the network and failed while offline.
+// Only GET navigations match, so the POST share handler below is unaffected.
+registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html'), { denylist: [/^\/api\//] }))
 
 const SHARE_TARGET_PATH = '/share-target/'
 

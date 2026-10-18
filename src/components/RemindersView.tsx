@@ -3,6 +3,7 @@ import { Icon, type IconName } from './Icon'
 import { KayitCard } from './KayitCard'
 import { type Kayit } from '../db'
 import { isToday, isTomorrow, isPast, isUpcoming, sortByTime, sortByPriority, addDays } from '../lib/format'
+import { useBugun } from '../hooks/useBugun'
 
 interface RemindersViewProps {
   kayitlar: Kayit[]
@@ -13,6 +14,8 @@ interface RemindersViewProps {
 }
 
 export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, onRecordClick }: RemindersViewProps) {
+  // Regroup when the date changes, not only when records do.
+  const bugun = useBugun()
   const groups = useMemo(() => {
     const pending = kayitlar.filter((k) => k.durum === 'bekliyor')
 
@@ -55,7 +58,8 @@ export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, 
       later: sortFn(later),
       noDate: sortByPriority(noDate),
     }
-  }, [kayitlar])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kayitlar, bugun])
 
   const totalCount = groups.overdue.length + groups.today.length + groups.tomorrow.length + groups.thisWeek.length + groups.later.length + groups.noDate.length
   const hasAny = kayitlar.length > 0
