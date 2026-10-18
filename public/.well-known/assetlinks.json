@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.vercel.cepdost.twa",
+      "sha256_cert_fingerprints": [
+        "24:EF:A0:F5:12:B2:CC:18:DB:C1:4F:00:53:16:B6:DE:33:38:C1:D8:C1:A2:CF:3A:BB:B1:3B:0B:0A:65:9E:0D"
+      ]
+    }
+  }
+]

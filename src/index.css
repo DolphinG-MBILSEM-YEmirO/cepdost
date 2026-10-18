@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-cream-100 text-ink-700 font-sans antialiased;
+    margin: 0;
+    overscroll-behavior-y: none;
+  }
+
+  input,
+  textarea {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
+@layer components {
+  .safe-top {
+    padding-top: var(--safe-top);
+  }
+  .safe-bottom {
+    padding-bottom: var(--safe-bottom);
+  }
+  .safe-x {
+    padding-left: var(--safe-left);
+    padding-right: var(--safe-right);
+  }
+
+  .glass {
+    @apply bg-cream-50/80 backdrop-blur-xl border border-ink-100/50;
+  }
+
+  .card {
+    @apply bg-cream-50 rounded-3xl shadow-card border border-ink-100/40;
+  }
+
+  .btn-primary {
+    @apply bg-coral-500 text-white font-semibold rounded-2xl px-5 py-3.5
+           active:scale-[0.97] transition-all duration-150
+           shadow-soft hover:bg-coral-600;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent text-ink-500 font-medium rounded-2xl px-4 py-3
+           active:scale-[0.97] transition-all duration-150
+           hover:bg-ink-50;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1.5
+           text-sm font-medium transition-all duration-150
+           active:scale-95;
+  }
+
+  .input-field {
+    @apply w-full bg-cream-100 border border-ink-100/40 rounded-xl px-3 py-2.5
+           text-ink-700 font-medium placeholder:text-ink-300
+           focus:outline-none focus:ring-2 focus:ring-coral-200 transition-all;
+  }
+
+  .skeleton {
+    @apply bg-ink-100/60 rounded-xl;
+    background-image: linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0) 0%,
+      rgba(0, 0, 0, 0.04) 50%,
+      rgba(0, 0, 0, 0) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.8s linear infinite;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .tap-highlight-none {
+    -webkit-tap-highlight-color: transparent;
+  }
+}

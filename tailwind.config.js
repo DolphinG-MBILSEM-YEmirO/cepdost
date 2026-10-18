@@ -1,0 +1,155 @@
+/** @type {import('tailwindcss').Config} */
+// Renk paleti / gölgeler / animasyonlar "Hallet" bolt.new referansından
+// taşındı (2026-08-05) — CepDost'un kendi tasarım sistemi olarak
+// benimsendi, ürün adı/kimliği değişmedi.
+export default {
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        display: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+      },
+      colors: {
+        cream: {
+          50: '#FDFBF7',
+          100: '#FBF8F4',
+          200: '#F5F0E8',
+          300: '#EDE5D8',
+          400: '#E0D5C3',
+          500: '#C9B89E',
+        },
+        ink: {
+          50: '#F4F2EE',
+          100: '#E5E1D9',
+          200: '#C9C2B6',
+          300: '#A89F90',
+          400: '#7A7163',
+          500: '#524A3D',
+          600: '#3D362B',
+          700: '#2A241B',
+          800: '#1A1610',
+          900: '#0F0C08',
+        },
+        coral: {
+          50: '#FFF4F0',
+          100: '#FFE3D9',
+          200: '#FFC4B0',
+          300: '#FF9F82',
+          400: '#FF7A5C',
+          500: '#FF5A3C',
+          600: '#E83F22',
+          700: '#C5331A',
+          800: '#9E2A16',
+          900: '#7A2011',
+        },
+        teal: {
+          50: '#EEFBF6',
+          100: '#D2F4E8',
+          200: '#A6E8D2',
+          300: '#6FD6B6',
+          400: '#3FBF9A',
+          500: '#22A582',
+          600: '#168568',
+          700: '#136A54',
+          800: '#115544',
+          900: '#0E3D31',
+        },
+        amber: {
+          50: '#FFF9ED',
+          100: '#FFEFCC',
+          200: '#FFDC99',
+          300: '#FFC866',
+          400: '#FFB13D',
+          500: '#F59520',
+          600: '#D2760F',
+          700: '#A8590A',
+          800: '#7F4209',
+          900: '#5C2F06',
+        },
+        sky: {
+          50: '#EFF9FE',
+          100: '#DAF1FD',
+          200: '#BCE4FA',
+          300: '#8AD0F6',
+          400: '#54B5EF',
+          500: '#2D97DD',
+          600: '#1A78C4',
+          700: '#155F9C',
+          800: '#154E7E',
+          900: '#143F66',
+        },
+        rose: {
+          50: '#FFF1F2',
+          100: '#FFE0E3',
+          200: '#FFC7CC',
+          300: '#FF9DA6',
+          400: '#FF6B7A',
+          500: '#F23E52',
+          600: '#D61F36',
+          700: '#B3142A',
+          800: '#8E1222',
+          900: '#6F111D',
+        },
+      },
+      boxShadow: {
+        soft: '0 2px 12px -2px rgba(42, 36, 27, 0.08)',
+        card: '0 4px 24px -4px rgba(42, 36, 27, 0.10)',
+        float: '0 8px 32px -6px rgba(42, 36, 27, 0.16)',
+        glow: '0 0 0 4px rgba(255, 90, 60, 0.12)',
+      },
+      borderRadius: {
+        '2xl': '1.25rem',
+        '3xl': '1.75rem',
+        '4xl': '2.25rem',
+      },
+      animation: {
+        'fade-in': 'fadeIn 0.4s ease-out',
+        'slide-up': 'slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+        'slide-down': 'slideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+        'scale-in': 'scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+        shimmer: 'shimmer 1.8s linear infinite',
+        'bounce-soft': 'bounceSoft 0.6s ease-out',
+        // Sohbet: baloncuk gönderen tarafa göre hafifçe yandan gelsin.
+        'bubble-in-left': 'bubbleInLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+        'bubble-in-right': 'bubbleInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUp: {
+          '0%': { opacity: '0', transform: 'translateY(16px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        slideDown: {
+          '0%': { opacity: '0', transform: 'translateY(-16px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        scaleIn: {
+          '0%': { opacity: '0', transform: 'scale(0.95)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+        bounceSoft: {
+          '0%': { transform: 'scale(0.8)', opacity: '0' },
+          '60%': { transform: 'scale(1.05)', opacity: '1' },
+          '100%': { transform: 'scale(1)' },
+        },
+        bubbleInLeft: {
+          '0%': { opacity: '0', transform: 'translateY(8px) translateX(-10px) scale(0.96)' },
+          '100%': { opacity: '1', transform: 'translateY(0) translateX(0) scale(1)' },
+        },
+        bubbleInRight: {
+          '0%': { opacity: '0', transform: 'translateY(8px) translateX(10px) scale(0.96)' },
+          '100%': { opacity: '1', transform: 'translateY(0) translateX(0) scale(1)' },
+        },
+      },
+    },
+  },
+  plugins: [],
+}

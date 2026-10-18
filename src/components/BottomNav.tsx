@@ -1,0 +1,112 @@
+import { Icon, type IconName } from './Icon'
+
+// 4 sekme + tam ortada + butonu. Önceki 5 sekmeli düzende buton sola
+// kayıyordu (2 sol + 3 sağ) ve seçenek kalabalığı vardı; Hatırlatmalar
+// "Planlar" içine, Ayarlar "Profil" içine taşındı.
+// Arşiv alt bardan çıkıp Profil'in içine taşındı; yeri Sohbet'e verildi.
+export type Tab = 'planlar' | 'sohbet' | 'akis' | 'profil'
+
+interface BottomNavProps {
+  active: Tab
+  onChange: (tab: Tab) => void
+  onAddClick: () => void
+  // Bekleyen arkadaşlık isteği / plan daveti sayısı.
+  profilRozeti?: number
+  // Okunmamış mesaj sayısı.
+  sohbetRozeti?: number
+}
+
+const solTablar: { id: Tab; label: string; icon: IconName }[] = [
+  { id: 'planlar', label: 'Planlar', icon: 'CalendarDays' },
+  { id: 'sohbet', label: 'Sohbet', icon: 'MessagesSquare' },
+]
+
+const sagTablar: { id: Tab; label: string; icon: IconName }[] = [
+  { id: 'akis', label: 'Akış', icon: 'ImageIcon' },
+  // Klasik profil simgesi: yuvarlak baş + gövde.
+  { id: 'profil', label: 'Profil', icon: 'UserRound' },
+]
+
+export function BottomNav({
+  active,
+  onChange,
+  onAddClick,
+  profilRozeti = 0,
+  sohbetRozeti = 0,
+}: BottomNavProps) {
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-30">
+      <div className="glass safe-x">
+        {/* grid-cols-5 + ortadaki hücre: buton matematiksel olarak tam
+            merkezde kalıyor, sekme etiketlerinin uzunluğundan etkilenmiyor. */}
+        <div className="grid grid-cols-5 items-center px-2 py-2 pb-[calc(0.5rem+var(--safe-bottom))] max-w-md mx-auto">
+          {solTablar.map((t) => (
+            <NavButton
+              key={t.id}
+              tab={t}
+              active={active === t.id}
+              onClick={() => onChange(t.id)}
+              rozet={t.id === 'sohbet' ? sohbetRozeti : 0}
+            />
+          ))}
+
+          <div className="flex justify-center">
+            <button
+              onClick={onAddClick}
+              aria-label="Yeni plan ekle"
+              className="w-14 h-14 rounded-full bg-coral-500 text-white flex items-center justify-center shadow-float -mt-6 active:scale-90 transition-transform ring-4 ring-cream-50/80"
+            >
+              <Icon name="Plus" className="w-6 h-6" />
+            </button>
+          </div>
+
+          {sagTablar.map((t) => (
+            <NavButton
+              key={t.id}
+              tab={t}
+              active={active === t.id}
+              onClick={() => onChange(t.id)}
+              rozet={t.id === 'profil' ? profilRozeti : 0}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function NavButton({
+  tab,
+  active,
+  onClick,
+  rozet = 0,
+}: {
+  tab: { id: Tab; label: string; icon: IconName }
+  active: boolean
+  onClick: () => void
+  rozet?: number
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex flex-col items-center gap-1 py-1 active:scale-95 transition-transform"
+    >
+      <div className="relative">
+        <Icon
+          name={tab.icon}
+          className={`w-5 h-5 transition-colors ${active ? 'text-coral-500' : 'text-ink-300'}`}
+        />
+        {rozet > 0 && (
+          <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">
+            {rozet > 9 ? '9+' : rozet}
+          </span>
+        )}
+      </div>
+      <span
+        className={`text-[11px] font-medium transition-colors ${active ? 'text-coral-500' : 'text-ink-300'}`}
+      >
+        {tab.label}
+      </span>
+    </button>
+  )
+}

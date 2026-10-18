@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    width: 900px; height: 700px;
+    font-family: -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background:
+      radial-gradient(circle at 30% 20%, #3a2a55 0%, transparent 45%),
+      radial-gradient(circle at 75% 60%, #1a3a4a 0%, transparent 50%),
+      linear-gradient(160deg, #1c1c24 0%, #0c0c10 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .topbar {
+    position: absolute; top: 24px; left: 24px; right: 24px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: linear-gradient(135deg,#f58529,#dd2a7b,#8134af,#515bd4);
+  }
+  .handle { color: white; font-weight: 600; font-size: 20px; }
+  .bottom {
+    position: absolute; left: 24px; right: 100px; bottom: 40px;
+    color: white;
+  }
+  .caption {
+    font-size: 24px; line-height: 1.5; font-weight: 400;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+  }
+  .hashtags {
+    margin-top: 10px; font-size: 22px; color: #cfd3ff; font-weight: 500;
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="avatar"></div>
+    <div class="handle">kahvedunyasi</div>
+  </div>
+  <div class="bottom">
+    <div class="caption">Bakırköy sahilde muhteşem bir kahve mekânı bulduk, kesinlikle gidilmeli! Fiyatlar da gayet uygun ☕️😍</div>
+    <div class="hashtags">#istanbul #kahve #bakırköy</div>
+  </div>
+</body>
+</html>

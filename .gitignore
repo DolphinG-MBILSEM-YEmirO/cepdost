@@ -1,0 +1,60 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# local-only dev tooling (downloaded binaries, not project source)
+/tools/
+*.traineddata
+
+# env values (Supabase URL/anon key) — not secret, but project-specific
+.env
+!.env.example
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+desktop.ini
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+.vercel
+.env*
+
+# --- Android / TWA (Bubblewrap) ---
+# İMZALAMA ANAHTARI ASLA DEPOYA GİRMEMELİ. Bu dosya + şifresi kaybolursa
+# uygulama Play Store'da bir daha GÜNCELLENEMEZ; sızarsa başkası senin
+# uygulamanın adına imzalı sürüm üretebilir.
+android.keystore
+*.keystore
+*.jks
+
+# Derleme çıktıları — her build'de yeniden üretiliyor
+app-release-signed.apk
+app-release-signed.apk.idsig
+app-release-unsigned-aligned.apk
+app-release-bundle.aab
+manifest-checksum.txt
+/app/
+/build/
+/.gradle/
+/gradle/
+gradlew
+gradlew.bat
+build.gradle
+settings.gradle
+gradle.properties
