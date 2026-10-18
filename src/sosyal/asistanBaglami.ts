@@ -1,4 +1,6 @@
 import { arkadaslariGetir, musaitlikKaydi, profilimiGetir, type Profil } from './api'
+import type { SaatPenceresi } from './cekirdek'
+import { planAyarlari } from '../lib/planAyarlari'
 import { gruplarimiGetir, grupUyeleriGetir, type Grup } from './gruplar'
 import { gunleriUret, kendiBloklarim } from './ortakPlan'
 
@@ -22,6 +24,8 @@ export interface AsistanBaglami {
   istek: {
     benimAdim: string
     benimBloklarim: DoluBlok[]
+    benimPencerem: SaatPenceresi | null
+    yolPayiDk: number
     kisiler: Array<{
       ref: string
       ad: string
@@ -29,6 +33,7 @@ export interface AsistanBaglami {
       arkadas: boolean
       paylasiyor: boolean
       bloklar: DoluBlok[]
+      pencere: SaatPenceresi | null
     }>
     gruplar: Array<{ ref: string; ad: string; uyeler: string[] }>
     // The last date the busy ranges cover.
@@ -40,14 +45,21 @@ export interface AsistanBaglami {
 
 // null when nothing is known: sharing is off, or their ranges haven't
 // reached this device. Either way they must not look free all day.
-async function bloklari(p: Profil, ilk: string, son: string): Promise<DoluBlok[] | null> {
+async function takvimi(
+  p: Profil,
+  ilk: string,
+  son: string,
+): Promise<{ bloklar: DoluBlok[]; pencere: SaatPenceresi | null } | null> {
   if (!p.musaitlik_paylas) return null
   try {
     const veri = await musaitlikKaydi(p.id)
     if (!veri) return null
-    return veri.bloklar
-      .filter((b) => b.tarih >= ilk && b.tarih <= son)
-      .map((b) => ({ tarih: b.tarih, baslangic: b.baslangic.slice(0, 5), bitis: b.bitis.slice(0, 5) }))
+    return {
+      bloklar: veri.bloklar
+        .filter((b) => b.tarih >= ilk && b.tarih <= son)
+        .map((b) => ({ tarih: b.tarih, baslangic: b.baslangic.slice(0, 5), bitis: b.bitis.slice(0, 5) })),
+      pencere: veri.pencere ?? null,
+    }
   } catch {
     return null
   }
@@ -81,19 +93,23 @@ export async function asistanBaglamiHazirla(): Promise<AsistanBaglami> {
 
   const liste = [...kisiler.values()]
   const refler = new Map(liste.map((k, i) => [k.profil.id, `k${i + 1}`]))
-  const blokListesi = await Promise.all(liste.map((k) => bloklari(k.profil, ilk, son)))
+  const takvimler = await Promise.all(liste.map((k) => takvimi(k.profil, ilk, son)))
+  const ayar = planAyarlari()
 
   return {
     istek: {
       benimAdim: ben?.ad ?? 'Ben',
       benimBloklarim,
+      benimPencerem: ayar.pencere,
+      yolPayiDk: ayar.yolPayiDk,
       kisiler: liste.map((k, i) => ({
         ref: refler.get(k.profil.id)!,
         ad: k.profil.ad,
         kullaniciAdi: k.profil.kullanici_adi,
         arkadas: k.arkadas,
-        paylasiyor: blokListesi[i] !== null,
-        bloklar: blokListesi[i] ?? [],
+        paylasiyor: takvimler[i] !== null,
+        bloklar: takvimler[i]?.bloklar ?? [],
+        pencere: takvimler[i]?.pencere ?? null,
       })),
       gruplar: gruplar.map((g, i) => ({
         ref: `g${i + 1}`,

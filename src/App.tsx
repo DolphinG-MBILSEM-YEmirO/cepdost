@@ -22,6 +22,7 @@ import { motor, useSosyalSurum } from './sosyal/cekirdek'
 import { bekleyenSayisi, profilimiGetir, type Profil } from './sosyal/api'
 import { okunmamisMesajSayisi } from './sosyal/mesajlar'
 import { musaitligiSenkronla } from './sosyal/musaitlikSenkron'
+import { usePlanAyarlari } from './lib/planAyarlari'
 import { type Kayit, db, tumKayitlar, kayitEkle, kayitDurumDegistir, kayitSil, goruntulemeBasligi } from './db'
 import { kayitSiniflandir } from './classify'
 
@@ -177,12 +178,18 @@ export default function App() {
   // friends. Runs quietly: a failed sync must not block the app.
   const takvimSayisi = useLiveQuery(() => db.takvimEtkinlikleri.count(), [], 0)
   const musaitlikPaylas = profil?.kullanici_adi ? profil.musaitlik_paylas : null
+  const planAyarim = usePlanAyarlari()
   useEffect(() => {
     if (!kullanici || musaitlikPaylas === null) return
-    musaitligiSenkronla(kullanici.id, musaitlikPaylas).catch((err) => {
-      console.warn('müsaitlik senkronu başarısız', err)
-    })
-  }, [kullanici, musaitlikPaylas, kayitlar, takvimSayisi])
+    const senkronla = () =>
+      musaitligiSenkronla(kullanici.id, musaitlikPaylas).catch((err) => {
+        console.warn('müsaitlik senkronu başarısız', err)
+      })
+    void senkronla()
+    // An app left open still confirms now and then that its copy is current.
+    const zamanlayici = setInterval(() => void senkronla(), 60 * 60 * 1000)
+    return () => clearInterval(zamanlayici)
+  }, [kullanici, musaitlikPaylas, kayitlar, takvimSayisi, planAyarim])
 
   // Detay ekranı açıkken arka planda kayıt güncellenirse (F2 sınıflandırma
   // biterse) gösterilen kopyayı da tazele.

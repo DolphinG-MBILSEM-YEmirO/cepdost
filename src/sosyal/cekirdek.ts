@@ -2,6 +2,9 @@ import { useSyncExternalStore } from 'react'
 import { SosyalMotor, type SosyalKayit } from './nostr/motor'
 import { dizinKanali, grupKanali, yayinKanali, yedekKanali, type Kanal } from './nostr/kanal'
 import { hexe, hextenBayt, rastgeleBaytlar, type SifreliYedek } from './nostr/kodlama'
+import type { SaatPenceresi } from '../../shared/bosluklar'
+
+export type { SaatPenceresi }
 
 // The social core: what records mean, which channels to follow, and the
 // reactions that keep both sides of a relationship consistent.
@@ -155,7 +158,11 @@ export interface UyeVerisi {
 
 export interface MusaitlikVerisi {
   bloklar: Array<{ tarih: string; baslangic: string; bitis: string }>
+  // When the owner's device last confirmed these ranges (ms). Refreshed
+  // even when nothing changed, so friends can tell current from stale.
   guncelleme: number
+  // The hours they're usually free for plans, when they set them.
+  pencere?: SaatPenceresi | null
 }
 
 // ---------- engine registry ----------

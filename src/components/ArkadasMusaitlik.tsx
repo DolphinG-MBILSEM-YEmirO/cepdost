@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { Icon } from './Icon'
 import { Avatar } from './Avatar'
 import { AniArsivi } from './AniArsivi'
-import { arkadasMusaitligi, type MusaitlikBlogu, type Profil } from '../sosyal/api'
-import { addDays, toDateString, formatDate } from '../lib/format'
+import { arkadasTakvimi, type ArkadasTakvimi, type MusaitlikBlogu, type Profil } from '../sosyal/api'
+import { addDays, toDateString, formatDate, formatRelativeTime } from '../lib/format'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 import { ETKINLIK_EMOJILERI, renkAl } from '../lib/kisisellestirme'
 import { planiKur } from '../lib/planPaylasimi'
@@ -12,6 +12,9 @@ import { EmojiSecici } from './Seciciler'
 // Kaç günlük müsaitlik gösterilsin. Bir haftalık pencere, "bu hafta ne
 // zaman buluşabiliriz" sorusunun doğal kapsamı.
 const GUN_SAYISI = 7
+
+// Older than this, the screen says the calendar may have changed since.
+const ESKI_TAKVIM_MS = 3 * 24 * 60 * 60 * 1000
 
 interface Props {
   arkadas: Profil
@@ -24,7 +27,8 @@ type Sekme = 'musaitlik' | 'anilar'
 export function ArkadasMusaitlik({ arkadas, benimId, onClose }: Props) {
   useEscapeIleKapat(onClose)
   const [sekme, setSekme] = useState<Sekme>('musaitlik')
-  const [bloklar, setBloklar] = useState<MusaitlikBlogu[] | null>(null)
+  // null while loading.
+  const [takvim, setTakvim] = useState<ArkadasTakvimi | null>(null)
   const [hata, setHata] = useState<string | null>(null)
   const [davetGunu, setDavetGunu] = useState<string | null>(null)
 
@@ -35,12 +39,12 @@ export function ArkadasMusaitlik({ arkadas, benimId, onClose }: Props) {
 
   useEffect(() => {
     let iptal = false
-    setBloklar(null)
+    setTakvim(null)
     setHata(null)
 
-    arkadasMusaitligi(arkadas.id, gunler[0], gunler[gunler.length - 1])
+    arkadasTakvimi(arkadas.id, gunler[0], gunler[gunler.length - 1])
       .then((sonuc) => {
-        if (!iptal) setBloklar(sonuc)
+        if (!iptal) setTakvim(sonuc)
       })
       .catch((err) => {
         if (!iptal) setHata(err instanceof Error ? err.message : 'Müsaitlik alınamadı')
@@ -54,15 +58,17 @@ export function ArkadasMusaitlik({ arkadas, benimId, onClose }: Props) {
   const gunBazli = useMemo(() => {
     const harita = new Map<string, MusaitlikBlogu[]>()
     for (const g of gunler) harita.set(g, [])
-    for (const b of bloklar ?? []) {
+    for (const b of takvim?.bloklar ?? []) {
       harita.get(b.tarih)?.push(b)
     }
     return harita
-  }, [bloklar, gunler])
+  }, [takvim, gunler])
 
   // Paylaşımı kapatmış bir arkadaşta hiç blok gelmez — bunu "tamamen boş"
-  // gibi göstermek yanıltıcı olur, ayrıca belirtiyoruz.
+  // gibi göstermek yanıltıcı olur, ayrıca belirtiyoruz. Paylaşımı açık ama
+  // takvimi bu cihaza henüz ulaşmamış biri de aynı şekilde "bilinmiyor".
   const paylasimKapali = !arkadas.musaitlik_paylas
+  const henuzGelmedi = !paylasimKapali && takvim !== null && takvim.bloklar === null
 
   return (
     <div className="panel-tam z-[55]">
@@ -130,7 +136,18 @@ export function ArkadasMusaitlik({ arkadas, benimId, onClose }: Props) {
           </div>
         )}
 
-        {bloklar === null && !hata ? (
+        {henuzGelmedi && (
+          <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3">
+            <Icon name="Info" className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <p className="text-sm text-amber-800">
+              {arkadas.ad} takvimini paylaşıyor ama henüz bu cihaza ulaşmadı. Yine de plan daveti gönderebilirsin.
+            </p>
+          </div>
+        )}
+
+        {takvim?.bloklar && <TakvimDurumu takvim={takvim} />}
+
+        {takvim === null && !hata ? (
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="skeleton h-20 rounded-3xl" />
@@ -143,6 +160,7 @@ export function ArkadasMusaitlik({ arkadas, benimId, onClose }: Props) {
               tarih={gun}
               bloklar={gunBazli.get(gun) ?? []}
               paylasimKapali={paylasimKapali}
+              bilinmiyor={henuzGelmedi}
               onDavet={() => setDavetGunu(gun)}
             />
           ))
@@ -165,17 +183,38 @@ export function ArkadasMusaitlik({ arkadas, benimId, onClose }: Props) {
   )
 }
 
+// How current the shared calendar is, and the hours they're usually free.
+function TakvimDurumu({ takvim }: { takvim: ArkadasTakvimi }) {
+  const { guncelleme, pencere } = takvim
+  const eski = guncelleme !== null && Date.now() - guncelleme > ESKI_TAKVIM_MS
+  const ne = guncelleme === null ? null : formatRelativeTime(guncelleme)
+  const parcalar = [
+    ne && `Takvimi ${ne === 'şimdi' ? 'az önce' : ne} güncellendi${eski ? '; o zamandan beri değişmiş olabilir' : ''}`,
+    pencere && `genelde ${pencere.baslangic}–${pencere.bitis} arası müsait`,
+  ].filter(Boolean)
+  if (parcalar.length === 0) return null
+  return (
+    <p className={`flex items-center gap-1.5 text-xs ${eski ? 'text-amber-700' : 'text-ink-400'}`}>
+      <Icon name={eski ? 'AlertCircle' : 'RefreshCw'} className="w-3.5 h-3.5 shrink-0" />
+      {parcalar.join(' · ')}
+    </p>
+  )
+}
+
 function GunSatiri({
   tarih,
   bloklar,
   paylasimKapali,
+  bilinmiyor,
   onDavet,
 }: {
   tarih: string
   bloklar: MusaitlikBlogu[]
   paylasimKapali: boolean
+  bilinmiyor: boolean
   onDavet: () => void
 }) {
+  const bilgiYok = paylasimKapali || bilinmiyor
   const bos = bloklar.length === 0
   const etiket = formatDate(tarih) ?? tarih
 
@@ -184,7 +223,7 @@ function GunSatiri({
       <div className="flex items-center justify-between mb-2.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-ink-700">{etiket}</span>
-          {!paylasimKapali && (
+          {!bilgiYok && (
             <span
               className={`chip text-xs py-1 ${
                 bos ? 'bg-teal-100 text-teal-700' : 'bg-amber-100 text-amber-700'
@@ -202,8 +241,10 @@ function GunSatiri({
         </button>
       </div>
 
-      {paylasimKapali ? (
-        <p className="text-xs text-ink-300">Müsaitlik bilgisi paylaşılmıyor</p>
+      {bilgiYok ? (
+        <p className="text-xs text-ink-300">
+          {paylasimKapali ? 'Müsaitlik bilgisi paylaşılmıyor' : 'Müsaitlik bilgisi henüz yok'}
+        </p>
       ) : bos ? (
         <p className="text-xs text-ink-400">Bu gün için kayıtlı planı yok</p>
       ) : (

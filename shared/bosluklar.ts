@@ -18,10 +18,18 @@ export interface DoluBlok {
   bitis: string // HH:MM
 }
 
+// The hours someone is usually free for plans (their own setting).
+export interface SaatPenceresi {
+  baslangic: string // HH:MM
+  bitis: string // HH:MM
+}
+
 // Anything that carries busy blocks. gunBosluklari only needs this part, so
 // the browser can pass `[{ bloklar }]` for a single person.
 export interface BlokSahibi {
   bloklar: readonly DoluBlok[]
+  // Narrows the day window for everyone in the plan.
+  pencere?: SaatPenceresi | null
 }
 
 export interface Katilimci extends BlokSahibi {
@@ -52,6 +60,8 @@ export interface BoslukSecenekleri {
   enErken?: string // HH:MM, default VARSAYILAN_ERKEN
   enGec?: string // HH:MM, default VARSAYILAN_GEC
   enAzDakika?: number // default VARSAYILAN_EN_AZ, clamped by enAzDakikaSinirla
+  // Travel time kept free before and after every busy range.
+  yolPayiDk?: number // default 0, clamped by yolPayiSinirla
   // The client's local "now". The server runs in UTC, so this has to come
   // from the client; without it a past hour could be suggested for today.
   simdiTarih?: string // YYYY-MM-DD
@@ -69,6 +79,9 @@ export const VARSAYILAN_EN_AZ = 60
 // Bounds for the minimum slot length a caller may ask for.
 const EN_AZ_ALT_SINIR = 15
 const EN_AZ_UST_SINIR = 480
+const YOL_PAYI_UST_SINIR = 60
+
+const SAAT_KALIBI = /^([01]\d|2[0-3]):[0-5]\d$/
 
 export function dakikaya(saat: string): number {
   const [s, d] = saat.split(':').map(Number)
@@ -92,14 +105,35 @@ export function enAzDakikaSinirla(enAzDakika: unknown): number {
   return Math.max(EN_AZ_ALT_SINIR, Math.min(Number(enAzDakika) || VARSAYILAN_EN_AZ, EN_AZ_UST_SINIR))
 }
 
-// For one day: subtract every participant's busy blocks from the window and
-// return the remaining gaps that are long enough.
+// Anything else becomes 0; the rest is kept within 0 .. 60 minutes.
+export function yolPayiSinirla(yolPayiDk: unknown): number {
+  return Math.max(0, Math.min(Math.round(Number(yolPayiDk)) || 0, YOL_PAYI_UST_SINIR))
+}
+
+// The day window everyone in the plan shares: the caller's window cut down
+// to each participant's usual hours. Malformed windows are ignored.
+export function ortakPencere(erken: number, gec: number, katilimcilar: readonly BlokSahibi[]): [number, number] {
+  let bas = erken
+  let son = gec
+  for (const k of katilimcilar) {
+    const p = k.pencere
+    if (!p || !SAAT_KALIBI.test(p.baslangic) || !SAAT_KALIBI.test(p.bitis) || p.bitis <= p.baslangic) continue
+    bas = Math.max(bas, dakikaya(p.baslangic))
+    son = Math.min(son, dakikaya(p.bitis))
+  }
+  return [bas, son]
+}
+
+// For one day: subtract every participant's busy blocks (widened by the
+// travel buffer) from the window and return the remaining gaps that are
+// long enough.
 export function gunBosluklari(
   tarih: string,
   katilimcilar: readonly BlokSahibi[],
   erken: number,
   gec: number,
   enAz: number,
+  yolPayi = 0,
 ): Aralik[] {
   const dolu: Array<[number, number]> = []
   for (const k of katilimcilar) {
@@ -107,7 +141,7 @@ export function gunBosluklari(
       if (b.tarih !== tarih) continue
       const bas = dakikaya(b.baslangic)
       const bit = dakikaya(b.bitis)
-      if (bit > bas) dolu.push([bas, bit])
+      if (bit > bas) dolu.push([bas - yolPayi, bit + yolPayi])
     }
   }
 
@@ -150,9 +184,13 @@ export function mesgulMu(kisi: BlokSahibi, tarih: string, baslangic: number, bit
 // All free slots over the candidate days, in day order. For today the window
 // starts no earlier than "now + HAZIRLIK_DK", so past hours are never offered.
 export function bosluklariHesapla(secenekler: BoslukSecenekleri): Aralik[] {
-  const erken = dakikaya(secenekler.enErken || VARSAYILAN_ERKEN)
-  const gec = dakikaya(secenekler.enGec || VARSAYILAN_GEC)
+  const [erken, gec] = ortakPencere(
+    dakikaya(secenekler.enErken || VARSAYILAN_ERKEN),
+    dakikaya(secenekler.enGec || VARSAYILAN_GEC),
+    secenekler.katilimcilar,
+  )
   const enAz = enAzDakikaSinirla(secenekler.enAzDakika)
+  const yolPayi = yolPayiSinirla(secenekler.yolPayiDk)
 
   const simdiTarih = secenekler.simdiTarih ?? ''
   const simdiSaat = secenekler.simdiSaat ?? ''
@@ -164,7 +202,7 @@ export function bosluklariHesapla(secenekler: BoslukSecenekleri): Aralik[] {
         ? Math.max(erken, dakikaya(simdiSaat) + HAZIRLIK_DK)
         : erken
     if (gunErken >= gec) continue
-    bosluklar.push(...gunBosluklari(gun, secenekler.katilimcilar, gunErken, gec, enAz))
+    bosluklar.push(...gunBosluklari(gun, secenekler.katilimcilar, gunErken, gec, enAz, yolPayi))
   }
   return bosluklar
 }

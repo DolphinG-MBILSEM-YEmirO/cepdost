@@ -771,6 +771,23 @@ test('bosluklar: bosluklariHesapla handles today, defaults and custom window', (
   assert.deepEqual(s(bos.bosluklariHesapla({ gunler: ['2026-10-18'], katilimcilar: k, simdiTarih: '2026-10-18', simdiSaat: '08:00' })), ['2026-10-18 09:00-23:00'])
 })
 
+test('bosluklar: travel buffer and usual hours', () => {
+  const D = '2026-10-20'
+  const s = (a: { tarih: string; baslangic: number; bitis: number }[]) => a.map(bos.saatliAralik).map((x) => `${x.baslangic}-${x.bitis}`)
+  const pilates = { bloklar: [{ tarih: D, baslangic: '09:00', bitis: '10:30' }] }
+  assert.deepEqual(s(bos.bosluklariHesapla({ gunler: [D], katilimcilar: [pilates] })), ['10:30-23:00'])
+  assert.deepEqual(s(bos.bosluklariHesapla({ gunler: [D], katilimcilar: [pilates], yolPayiDk: 15 })), ['10:45-23:00'])
+  // Usual hours narrow everyone's window; the buffer does not move them.
+  const gececi = { bloklar: [], pencere: { baslangic: '12:00', bitis: '22:00' } }
+  assert.deepEqual(s(bos.bosluklariHesapla({ gunler: [D], katilimcilar: [pilates, gececi], yolPayiDk: 15 })), ['12:00-22:00'])
+  // A malformed window is ignored.
+  assert.deepEqual(s(bos.bosluklariHesapla({ gunler: [D], katilimcilar: [{ bloklar: [], pencere: { baslangic: '22:00', bitis: '08:00' } }] })), ['09:00-23:00'])
+  assert.equal(bos.yolPayiSinirla('15'), 15)
+  assert.equal(bos.yolPayiSinirla(-5), 0)
+  assert.equal(bos.yolPayiSinirla(500), 60)
+  assert.equal(bos.yolPayiSinirla('çöp'), 0)
+})
+
 test('bosluklar: mesgulMu overlaps only within the same day', () => {
   const kisi = { bloklar: [{ tarih: '2026-10-20', baslangic: '10:00', bitis: '12:00' }] }
   assert.equal(bos.mesgulMu(kisi, '2026-10-20', 11 * 60, 13 * 60), true)
@@ -783,7 +800,7 @@ test('asistan: date helpers and context parsing', async () => {
   assert.equal(a.tarihEkle('2026-12-30', 3), '2027-01-02')
   assert.equal(a.gunAdi('2026-10-18'), 'Pazar')
   assert.equal(a.takvimTablosu('2026-10-18', 2), '2026-10-18 Pazar (bugün)\n2026-10-19 Pazartesi (yarın)')
-  assert.deepEqual(a.baglamiOku('çöp'), { benimAdim: 'Kullanıcı', benimBloklarim: [], kisiler: [], gruplar: [], sonGun: null })
+  assert.deepEqual(a.baglamiOku('çöp'), { benimAdim: 'Kullanıcı', benimBloklarim: [], benimPencerem: null, yolPayiDk: 0, kisiler: [], gruplar: [], sonGun: null })
   const b = a.baglamiOku(BAGLAM)
   assert.deepEqual(b.kisiler.map((k) => k.ref), ['k1', 'k2', 'k3'])
   assert.deepEqual(b.kisiler[2].bloklar, [{ tarih: '2026-10-24', baslangic: '18:00', bitis: '19:00' }])
@@ -798,6 +815,15 @@ test('asistan: availability is never claimed past the shared range', async () =>
   // Without a date from the client: two weeks; never past one lookup's reach.
   assert.equal(a.musaitlikUfku(a.baglamiOku(BAGLAM), z), '2026-10-31')
   assert.equal(a.musaitlikUfku(a.baglamiOku({ ...BAGLAM, sonGun: '2027-01-01' }), z), '2026-11-07')
+
+  // The user's buffer and the friend's usual hours shape the lookup.
+  const ayarli = a.baglamiOku({
+    ...BAGLAM,
+    yolPayiDk: 30,
+    kisiler: [{ ...BAGLAM.kisiler[0], pencere: { baslangic: '11:00', bitis: '21:00' } }],
+  })
+  const ayarliSonuc = a.musaitlikBul({ kisiler: ['k1'], gunler: ['2026-10-24'], en_az_dakika: '60' }, ayarli, z) as { bosluklar: Array<{ baslangic: string; bitis: string }> }
+  assert.deepEqual(ayarliSonuc.bosluklar.map((x) => `${x.baslangic}-${x.bitis}`), ['12:30-13:30', '15:30-21:00'])
 
   const uzak = a.musaitlikBul({ kisiler: ['k1'], gunler: ['2026-11-20'], en_az_dakika: '60' }, b, z)
   assert.deepEqual(uzak.bosluklar, [])

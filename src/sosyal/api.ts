@@ -25,6 +25,7 @@ import {
   type KanalDurumu,
   type MusaitlikVerisi,
   type ProfilOzeti,
+  type SaatPenceresi,
 } from './cekirdek'
 import { kullaniciAdiAlinmisMi, kullaniciAdiHatasi, kullaniciAdiniTasi } from './hesap'
 import { davetAnahtarindanKimlik } from './kimlik'
@@ -358,7 +359,16 @@ function musaitlikVerisiAl(deger: unknown): MusaitlikVerisi | null {
     if (typeof bitis !== 'string' || !SAAT.test(bitis) || bitis <= baslangic) return []
     return [{ tarih, baslangic, bitis }]
   })
-  return { bloklar, guncelleme: sayiAl(deger.guncelleme) ?? 0 }
+  return { bloklar, guncelleme: sayiAl(deger.guncelleme) ?? 0, pencere: pencereAl(deger.pencere) }
+}
+
+export function pencereAl(deger: unknown): SaatPenceresi | null {
+  if (!nesneMi(deger)) return null
+  const SAAT = /^([01]\d|2[0-3]):[0-5]\d$/
+  const { baslangic, bitis } = deger
+  if (typeof baslangic !== 'string' || !SAAT.test(baslangic)) return null
+  if (typeof bitis !== 'string' || !SAAT.test(bitis) || bitis <= baslangic) return null
+  return { baslangic, bitis }
 }
 
 // The newest availability someone shares with me: on their broadcast
@@ -380,19 +390,41 @@ export async function musaitlikKaydi(kisiId: string): Promise<MusaitlikVerisi | 
   return enYeni ? musaitlikVerisiAl(enYeni.veri) : null
 }
 
+export interface ArkadasTakvimi {
+  // null when nothing is known: sharing is off, or their ranges haven't
+  // reached this device yet. Never the same as "free all day".
+  bloklar: MusaitlikBlogu[] | null
+  // When their device last confirmed the ranges (ms).
+  guncelleme: number | null
+  pencere: SaatPenceresi | null
+}
+
 // Someone's BUSY time ranges between two dates. Only when they are busy,
 // never what they're doing.
+export async function arkadasTakvimi(
+  arkadasId: string,
+  baslangicTarih: string,
+  bitisTarih: string,
+): Promise<ArkadasTakvimi> {
+  const veri = await musaitlikKaydi(arkadasId)
+  if (!veri) return { bloklar: null, guncelleme: null, pencere: null }
+  return {
+    bloklar: veri.bloklar
+      .filter((b) => b.tarih >= baslangicTarih && b.tarih <= bitisTarih)
+      .sort((a, b) => (a.tarih + a.baslangic).localeCompare(b.tarih + b.baslangic))
+      .map((b, i) => ({ id: `${arkadasId}:${i}`, kullanici_id: arkadasId, ...b })),
+    guncelleme: veri.guncelleme || null,
+    pencere: veri.pencere ?? null,
+  }
+}
+
+// The busy ranges alone, empty when unknown.
 export async function arkadasMusaitligi(
   arkadasId: string,
   baslangicTarih: string,
   bitisTarih: string,
 ): Promise<MusaitlikBlogu[]> {
-  const veri = await musaitlikKaydi(arkadasId)
-  if (!veri) return []
-  return veri.bloklar
-    .filter((b) => b.tarih >= baslangicTarih && b.tarih <= bitisTarih)
-    .sort((a, b) => (a.tarih + a.baslangic).localeCompare(b.tarih + b.baslangic))
-    .map((b, i) => ({ id: `${arkadasId}:${i}`, kullanici_id: arkadasId, ...b }))
+  return (await arkadasTakvimi(arkadasId, baslangicTarih, bitisTarih)).bloklar ?? []
 }
 
 // ---------- plan invites ----------

@@ -1,5 +1,6 @@
 import { db, type Kayit, type TakvimEtkinligi } from '../db'
 import { TUR, kanalDurumu, motor, simdiMs, type MusaitlikVerisi } from './cekirdek'
+import { planAyarlari } from '../lib/planAyarlari'
 
 // Shares ONLY time ranges from local plans with friends and groups.
 //
@@ -104,8 +105,13 @@ export function bloklariCikar(
   return bloklar
 }
 
-// Publishes my busy ranges on my broadcast channel (friends); the sync
-// copies them into each group. Only re-published when something changed.
+// How long an unchanged copy may go without a refresh. The refresh moves
+// `guncelleme`, which friends see as "updated N hours ago".
+const TAZELEME_MS = 12 * 60 * 60 * 1000
+
+// Publishes my busy ranges and usual hours on my broadcast channel
+// (friends); the sync copies them into each group. Re-published when
+// something changed, or to confirm an unchanged copy is still current.
 //
 // paylasimAcik=false deletes the shared copy: turning sharing off should
 // mean the data is gone, not just hidden.
@@ -125,8 +131,17 @@ export async function musaitligiSenkronla(_kullaniciId: string, paylasimAcik: bo
     .map(({ tarih, baslangic, bitis }) => ({ tarih, baslangic, bitis }))
     .sort((a, b) => (a.tarih + a.baslangic).localeCompare(b.tarih + b.baslangic))
 
-  const onceki = (mevcut?.veri as MusaitlikVerisi | null | undefined)?.bloklar
-  if (onceki && JSON.stringify(onceki) === JSON.stringify(bloklar)) return
-  await m.yayinla(durum.yayin, TUR.musaitlik, 'musaitlik', { bloklar, guncelleme: simdiMs() } satisfies MusaitlikVerisi)
+  const pencere = planAyarlari().pencere
+  const onceki = mevcut?.veri as MusaitlikVerisi | null | undefined
+  const ayni =
+    onceki &&
+    JSON.stringify(onceki.bloklar) === JSON.stringify(bloklar) &&
+    JSON.stringify(onceki.pencere ?? null) === JSON.stringify(pencere)
+  if (ayni && simdiMs() - (onceki.guncelleme ?? 0) < TAZELEME_MS) return
+  await m.yayinla(durum.yayin, TUR.musaitlik, 'musaitlik', {
+    bloklar,
+    guncelleme: simdiMs(),
+    pencere,
+  } satisfies MusaitlikVerisi)
   void m.esitle().catch(() => {})
 }

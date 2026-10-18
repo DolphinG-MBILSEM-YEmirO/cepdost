@@ -17,9 +17,11 @@ import {
   enAzDakikaSinirla,
   saate,
   saatliAralik,
+  yolPayiSinirla,
   type Aralik,
   type DoluBlok,
   type Katilimci,
+  type SaatPenceresi,
 } from '../shared/bosluklar.js'
 import { anahtarEksikYaniti, geminiAnahtari, geminiCagir, geminiParcalari } from './_lib/gemini.js'
 import { jsonGovdeOku, kaynakReddi, metinAl, yanit } from './_lib/http.js'
@@ -155,7 +157,14 @@ function katilimcilariOku(ham: unknown): Katilimci[] {
       // Someone who does not share availability arrives with an empty list;
       // that is "unknown", not "free all day", and the prompt says so.
       paylasiyor: Boolean(k.paylasiyor),
+      pencere: pencereOku(k.pencere),
     }))
+}
+
+function pencereOku(ham: unknown): SaatPenceresi | null {
+  if (typeof ham !== 'object' || ham === null) return null
+  const { baslangic, bitis } = ham as Record<string, unknown>
+  return typeof baslangic === 'string' && typeof bitis === 'string' ? { baslangic, bitis } : null
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -193,6 +202,7 @@ export async function POST(request: Request): Promise<Response> {
     enErken: metinAl(girdi.enErken) || undefined,
     enGec: metinAl(girdi.enGec) || undefined,
     enAzDakika: enAz,
+    yolPayiDk: yolPayiSinirla(girdi.yolPayiDk),
     simdiTarih,
     simdiSaat,
   })

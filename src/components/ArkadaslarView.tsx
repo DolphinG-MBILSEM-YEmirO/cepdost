@@ -3,6 +3,7 @@ import { Icon } from './Icon'
 import { Avatar, GrupAvatari } from './Avatar'
 import { ArkadasMusaitlik } from './ArkadasMusaitlik'
 import { ProfilDuzenle } from './ProfilDuzenle'
+import { PlanTercihleri } from './PlanTercihleri'
 import { useAuth } from '../sosyal/auth'
 import { useSosyalSurum } from '../sosyal/cekirdek'
 import { avatarSil, avatarYukle } from '../sosyal/avatar'
@@ -628,6 +629,7 @@ function KimlikKarti({ profil, onDegisti }: { profil: Profil; onDegisti: () => P
               : 'Kapalı — paylaşılan saat bilgilerin de silindi'
           }
         />
+        <PlanTercihleri paylasimAcik={profil.musaitlik_paylas} />
         <Anahtar
           acik={profil.gizlilik === 'herkes'}
           onDegistir={() => void gizlilikDegistir()}

@@ -6,9 +6,9 @@ import { siniflandirOnizleme } from '../classify'
 import { useAuth } from '../sosyal/auth'
 import {
   arkadaslariGetir,
-  arkadasMusaitligi,
+  arkadasTakvimi,
   type Arkadas,
-  type MusaitlikBlogu,
+  type ArkadasTakvimi,
   type Profil,
 } from '../sosyal/api'
 import { gruplarimiGetir, grupUyeleriGetir, type Grup } from '../sosyal/gruplar'
@@ -100,7 +100,7 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
   const [saat, setSaat] = useState('')
   const [sure, setSure] = useState(90)
 
-  const [musaitlik, setMusaitlik] = useState<Map<string, MusaitlikBlogu[]>>(new Map())
+  const [musaitlik, setMusaitlik] = useState<Map<string, ArkadasTakvimi>>(new Map())
   const [benimBloklarim, setBenimBloklarim] = useState<Array<{ baslangic: string; bitis: string }>>([])
   const [musaitlikYukleniyor, setMusaitlikYukleniyor] = useState(false)
   const [saatAraniyor, setSaatAraniyor] = useState(false)
@@ -164,12 +164,12 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
     }
     setMusaitlikYukleniyor(true)
     try {
-      const harita = new Map<string, MusaitlikBlogu[]>()
+      const harita = new Map<string, ArkadasTakvimi>()
       await Promise.all(
         katilimcilar.map(async (p) => {
           if (!p.musaitlik_paylas) return
           try {
-            harita.set(p.id, await arkadasMusaitligi(p.id, tarih, tarih))
+            harita.set(p.id, await arkadasTakvimi(p.id, tarih, tarih))
           } catch {
             /* tek kişinin müsaitliği alınamazsa diğerleri yine gösterilsin */
           }
@@ -206,7 +206,7 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
     const bas = dakikaya(saat)
     const bit = bas + sure
     return katilimcilar.filter((p) =>
-      (musaitlik.get(p.id) ?? []).some((b) => {
+      (musaitlik.get(p.id)?.bloklar ?? []).some((b) => {
         const bBas = dakikaya(b.baslangic.slice(0, 5))
         const bBit = dakikaya(b.bitis.slice(0, 5))
         return bas < bBit && bit > bBas
@@ -633,7 +633,7 @@ function DetayAdimi(p: {
   sure: number
   onSure: (v: number) => void
   katilimcilar: Profil[]
-  musaitlik: Map<string, MusaitlikBlogu[]>
+  musaitlik: Map<string, ArkadasTakvimi>
   musaitlikYukleniyor: boolean
   cakisanlar: Profil[]
   benimCakismam: boolean
@@ -811,7 +811,8 @@ function DetayAdimi(p: {
           ) : (
             <div className="space-y-2">
               {p.katilimcilar.map((k) => {
-                const bloklar = p.musaitlik.get(k.id) ?? []
+                const takvim = p.musaitlik.get(k.id)
+                const bloklar = takvim?.bloklar ?? []
                 const cakisiyor = p.cakisanlar.some((c) => c.id === k.id)
                 return (
                   <div
@@ -828,7 +829,9 @@ function DetayAdimi(p: {
                       >
                         {!k.musaitlik_paylas
                           ? 'Müsaitlik paylaşmıyor'
-                          : bloklar.length === 0
+                          : !takvim?.bloklar
+                            ? 'Takvimi henüz gelmedi'
+                            : bloklar.length === 0
                             ? 'Bu gün tamamen müsait'
                             : bloklar
                                 .map((b) => `${b.baslangic.slice(0, 5)}–${b.bitis.slice(0, 5)}`)

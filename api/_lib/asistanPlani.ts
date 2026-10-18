@@ -14,7 +14,9 @@ import {
   enAzDakikaSinirla,
   mesgulMu,
   saatliAralik,
+  yolPayiSinirla,
   type DoluBlok,
+  type SaatPenceresi,
 } from '../../shared/bosluklar.js'
 
 export interface AsistanKisisi {
@@ -28,6 +30,8 @@ export interface AsistanKisisi {
   // "unknown", not "free".
   paylasiyor: boolean
   bloklar: DoluBlok[]
+  // The hours they're usually free, when they set them.
+  pencere: SaatPenceresi | null
 }
 
 export interface AsistanGrubu {
@@ -39,6 +43,9 @@ export interface AsistanGrubu {
 export interface AsistanBaglami {
   benimAdim: string
   benimBloklarim: DoluBlok[]
+  benimPencerem: SaatPenceresi | null
+  // The user's travel buffer, kept free around busy ranges in suggestions.
+  yolPayiDk: number
   kisiler: AsistanKisisi[]
   gruplar: AsistanGrubu[]
   // The last date the busy ranges above cover; after it nobody's calendar
@@ -70,6 +77,14 @@ function metin(v: unknown, uzunluk = 120): string {
   return typeof v === 'string' ? v.trim().slice(0, uzunluk) : ''
 }
 
+function pencereOku(ham: unknown): SaatPenceresi | null {
+  if (typeof ham !== 'object' || ham === null) return null
+  const { baslangic, bitis } = ham as Record<string, unknown>
+  return SAAT.test(String(baslangic)) && SAAT.test(String(bitis)) && String(bitis) > String(baslangic)
+    ? { baslangic: String(baslangic), bitis: String(bitis) }
+    : null
+}
+
 function bloklariOku(ham: unknown): DoluBlok[] {
   if (!Array.isArray(ham)) return []
   return ham
@@ -99,6 +114,7 @@ export function baglamiOku(ham: unknown): AsistanBaglami {
       arkadas: k.arkadas === true,
       paylasiyor: k.paylasiyor === true,
       bloklar: bloklariOku(k.bloklar),
+      pencere: pencereOku(k.pencere),
     }))
     .filter((k) => REF.test(k.ref) && k.ref.startsWith('k') && k.ad)
 
@@ -117,6 +133,8 @@ export function baglamiOku(ham: unknown): AsistanBaglami {
   return {
     benimAdim: metin(g.benimAdim, 80) || 'Kullanıcı',
     benimBloklarim: bloklariOku(g.benimBloklarim),
+    benimPencerem: pencereOku(g.benimPencerem),
+    yolPayiDk: yolPayiSinirla(g.yolPayiDk),
     kisiler,
     gruplar,
     sonGun: TARIH.test(metin(g.sonGun, 10)) ? metin(g.sonGun, 10) : null,
@@ -265,10 +283,14 @@ export function musaitlikBul(args: Record<string, unknown>, b: AsistanBaglami, z
   }
   const bosluklar = bosluklariHesapla({
     gunler,
-    katilimcilar: [{ bloklar: b.benimBloklarim }, ...secim.kisiler.map((k) => ({ bloklar: k.bloklar }))],
+    katilimcilar: [
+      { bloklar: b.benimBloklarim, pencere: b.benimPencerem },
+      ...secim.kisiler.map((k) => ({ bloklar: k.bloklar, pencere: k.pencere })),
+    ],
     enErken: SAAT.test(metin(args.en_erken, 5)) ? metin(args.en_erken, 5) : undefined,
     enGec: SAAT.test(metin(args.en_gec, 5)) ? metin(args.en_gec, 5) : undefined,
     enAzDakika: enAzDakikaSinirla(args.en_az_dakika),
+    yolPayiDk: b.yolPayiDk,
     simdiTarih: z.bugun,
     simdiSaat: z.simdiSaat,
   })
