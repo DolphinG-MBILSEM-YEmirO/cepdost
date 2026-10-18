@@ -46,7 +46,7 @@ export function AniArsivi({ grupId, arkadasId, benimId, baslik }: Props) {
         </div>
         <button
           onClick={() => setEkleAcik(true)}
-          className="text-xs font-semibold text-coral-600 active:scale-95 transition-transform"
+          className="text-xs font-semibold text-orchid-600 active:scale-95 transition-transform"
         >
           Fotoğraf ekle
         </button>
@@ -99,7 +99,7 @@ function AniKarti({ ani, benimId, onSilindi }: { ani: Ani; benimId: string; onSi
 
   return (
     <div className="card overflow-hidden">
-      <div className="aspect-square bg-cream-100 relative">
+      <div className="aspect-square bg-mist-100 relative">
         <AniGorseli ani={ani} />
         {ani.sahip_id === benimId && (
           <button
@@ -215,14 +215,14 @@ export function AniEkleModal({
         <input ref={dosyaRef} type="file" accept="image/*" onChange={dosyaSecildi} className="hidden" />
         <button
           onClick={() => dosyaRef.current?.click()}
-          className="w-full aspect-[4/3] rounded-2xl border-2 border-dashed border-ink-200 bg-cream-100 flex flex-col items-center justify-center gap-2 active:scale-[0.98] transition-transform overflow-hidden mb-4"
+          className="w-full aspect-[4/3] rounded-2xl border-2 border-dashed border-ink-200 bg-mist-100 flex flex-col items-center justify-center gap-2 active:scale-[0.98] transition-transform overflow-hidden mb-4"
         >
           {onizleme ? (
             <img src={onizleme} alt="Seçilen" className="w-full h-full object-cover" />
           ) : (
             <>
-              <div className="w-12 h-12 rounded-full bg-coral-100 flex items-center justify-center">
-                <Icon name="ImageIcon" className="w-6 h-6 text-coral-500" />
+              <div className="w-12 h-12 rounded-full bg-orchid-100 flex items-center justify-center">
+                <Icon name="ImageIcon" className="w-6 h-6 text-orchid-500" />
               </div>
               <p className="text-sm font-medium text-ink-500">Fotoğraf seç</p>
             </>
@@ -255,8 +255,8 @@ export function AniEkleModal({
             onClick={() => setGorunurluk('arkadaslar')}
             className={`flex-1 rounded-xl py-2.5 text-xs font-semibold transition-all active:scale-95 ${
               gorunurluk === 'arkadaslar'
-                ? 'bg-coral-500 text-white'
-                : 'bg-cream-100 text-ink-400 border border-ink-100/40'
+                ? 'bg-gradient-orchid text-white'
+                : 'bg-mist-100 text-ink-400 border border-ink-100'
             }`}
           >
             {hedefAdi}
@@ -266,7 +266,7 @@ export function AniEkleModal({
             className={`flex-1 rounded-xl py-2.5 text-xs font-semibold transition-all active:scale-95 ${
               gorunurluk === 'herkes'
                 ? 'bg-sky-500 text-white'
-                : 'bg-cream-100 text-ink-400 border border-ink-100/40'
+                : 'bg-mist-100 text-ink-400 border border-ink-100'
             }`}
           >
             Herkes
@@ -286,7 +286,7 @@ export function AniEkleModal({
         )}
 
         <div className="flex gap-3">
-          <button onClick={onClose} disabled={yukleniyor} className="btn-ghost flex-1 border border-ink-100/40">
+          <button onClick={onClose} disabled={yukleniyor} className="btn-ghost flex-1 border border-ink-100">
             Vazgeç
           </button>
           <button

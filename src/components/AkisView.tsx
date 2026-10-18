@@ -57,7 +57,7 @@ export function AkisView() {
             key={s.id}
             onClick={() => kapsamSec(s.id)}
             className={`chip ${
-              kapsam === s.id ? 'bg-coral-500 text-white' : 'bg-cream-50 text-ink-400 border border-ink-100/40'
+              kapsam === s.id ? 'bg-gradient-orchid text-white' : 'bg-mist-50 text-ink-400 border border-ink-100'
             }`}
           >
             <Icon name={s.ikon} className="w-4 h-4" />
@@ -120,13 +120,13 @@ function AkisKarti({ ani, sahip }: { ani: Ani; sahip: Profil | null }) {
         </div>
       </div>
 
-      <div className="aspect-square bg-cream-100">
+      <div className="aspect-square bg-mist-100">
         <AniGorseli ani={ani} />
       </div>
 
       <div className="p-4">
         <div className="flex items-center gap-1.5">
-          <Icon name="MapPin" className="w-4 h-4 text-coral-500 shrink-0" />
+          <Icon name="MapPin" className="w-4 h-4 text-orchid-500 shrink-0" />
           <p className="text-sm font-semibold text-ink-700 truncate">{ani.mekan_adi}</p>
         </div>
         <p className="text-xs text-ink-400 mt-0.5">{formatDate(ani.tarih) ?? ani.tarih}</p>

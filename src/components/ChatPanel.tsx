@@ -181,7 +181,7 @@ export function ChatPanel({ kayitlar, onClose }: ChatPanelProps) {
 
   return (
     <div className="panel-tam z-50">
-      <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-4 border-b border-ink-100/40 shrink-0">
+      <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-4 border-b border-ink-100 shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-xl bg-sky-100 flex items-center justify-center">
             <Icon name="MessageCircle" className="w-5 h-5 text-sky-600" />
@@ -260,7 +260,7 @@ export function ChatPanel({ kayitlar, onClose }: ChatPanelProps) {
         <div ref={sonRef} />
       </div>
 
-      <div className="px-5 pb-[calc(1rem+var(--safe-bottom))] pt-3 border-t border-ink-100/40 safe-x shrink-0">
+      <div className="px-5 pb-[calc(1rem+var(--safe-bottom))] pt-3 border-t border-ink-100 safe-x shrink-0">
         <div className="flex items-end gap-2">
           <textarea
             ref={girdiRef}
@@ -274,7 +274,7 @@ export function ChatPanel({ kayitlar, onClose }: ChatPanelProps) {
             }}
             placeholder="Ör. Cumartesi Ayşe'yle kahvaltı ayarla"
             rows={1}
-            className="flex-1 bg-cream-50 border border-ink-100/40 rounded-2xl px-4 py-3 text-ink-700 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-sky-200 transition-all resize-none max-h-32"
+            className="flex-1 bg-mist-50 border border-ink-100 rounded-2xl px-4 py-3 text-ink-700 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-sky-200 transition-all resize-none max-h-32"
           />
           <button
             onClick={() => void gonder()}
@@ -406,14 +406,14 @@ function PlanKarti({
           <p className="text-xs text-ink-400">{zaman || 'Tarih belirtilmedi'}</p>
           {oneri.konum && (
             <p className="text-xs text-ink-500 flex items-center gap-1 mt-0.5">
-              <Icon name="MapPin" className="w-3 h-3 text-coral-500 shrink-0" />
+              <Icon name="MapPin" className="w-3 h-3 text-orchid-500 shrink-0" />
               {oneri.konum}
             </p>
           )}
         </div>
       </div>
 
-      <div className="flex items-center gap-2 bg-cream-100 rounded-xl px-3 py-2">
+      <div className="flex items-center gap-2 bg-mist-100 rounded-xl px-3 py-2">
         {grup ? (
           <>
             <GrupAvatari grup={grup} boyut="sm" />
@@ -447,7 +447,7 @@ function PlanKarti({
         <button
           onClick={onVazgec}
           disabled={kuruluyor}
-          className="btn-ghost flex-1 border border-ink-100/40 text-sm py-2.5 disabled:opacity-50"
+          className="btn-ghost flex-1 border border-ink-100 text-sm py-2.5 disabled:opacity-50"
         >
           Vazgeç
         </button>

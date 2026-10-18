@@ -418,12 +418,12 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
         )}
       </div>
 
-      <div className="px-5 pb-[calc(1rem+var(--safe-bottom))] pt-3 border-t border-ink-100/40 safe-x shrink-0 flex gap-3">
+      <div className="px-5 pb-[calc(1rem+var(--safe-bottom))] pt-3 border-t border-ink-100 safe-x shrink-0 flex gap-3">
         {adim !== 'kiminle' && (
           <button
             onClick={() => setAdim(adim === 'ozet' ? 'detay' : 'kiminle')}
             disabled={kaydediliyor}
-            className="btn-ghost border border-ink-100/40 px-6"
+            className="btn-ghost border border-ink-100 px-6"
           >
             Geri
           </button>
@@ -520,12 +520,12 @@ function KiminleAdimi({
               key={s.id}
               onClick={() => onKapsam(s.id)}
               className={`w-full flex items-center gap-3 rounded-2xl p-4 border text-left transition-all active:scale-[0.98] ${
-                aktif ? 'bg-coral-50 border-coral-200' : 'bg-cream-50 border-ink-100/40'
+                aktif ? 'bg-orchid-50 border-orchid-200' : 'bg-mist-50 border-ink-100'
               }`}
             >
               <div
                 className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${
-                  aktif ? 'bg-coral-500 text-white' : 'bg-cream-100 text-ink-400'
+                  aktif ? 'bg-gradient-orchid text-white' : 'bg-mist-100 text-ink-400'
                 }`}
               >
                 <Icon name={s.ikon} className="w-5 h-5" />
@@ -534,7 +534,7 @@ function KiminleAdimi({
                 <p className="text-sm font-semibold text-ink-700">{s.ad}</p>
                 <p className="text-xs text-ink-400">{s.aciklama}</p>
               </div>
-              {aktif && <Icon name="Check" className="w-5 h-5 text-coral-500 shrink-0" />}
+              {aktif && <Icon name="Check" className="w-5 h-5 text-orchid-500 shrink-0" />}
             </button>
           )
         })}
@@ -560,7 +560,7 @@ function KiminleAdimi({
                     key={a.profil.id}
                     onClick={() => onArkadasDegistir(a.profil.id)}
                     className={`w-full flex items-center gap-3 rounded-2xl p-3 border transition-all active:scale-[0.98] ${
-                      secili ? 'bg-coral-50 border-coral-200' : 'bg-cream-50 border-ink-100/40'
+                      secili ? 'bg-orchid-50 border-orchid-200' : 'bg-mist-50 border-ink-100'
                     }`}
                   >
                     <Avatar ad={a.profil.ad} foto={a.profil.avatar} emoji={a.profil.emoji} renk={a.profil.renk} boyut="sm" />
@@ -572,7 +572,7 @@ function KiminleAdimi({
                     </div>
                     <div
                       className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${
-                        secili ? 'bg-coral-500' : 'bg-cream-100 border border-ink-200'
+                        secili ? 'bg-orchid-500' : 'bg-mist-100 border border-ink-200'
                       }`}
                     >
                       {secili && <Icon name="Check" className="w-3.5 h-3.5 text-white" />}
@@ -605,7 +605,7 @@ function KiminleAdimi({
                     key={g.id}
                     onClick={() => onGrupSec(secili ? null : g)}
                     className={`w-full flex items-center gap-3 rounded-2xl p-3 border transition-all active:scale-[0.98] ${
-                      secili ? 'bg-coral-50 border-coral-200' : 'bg-cream-50 border-ink-100/40'
+                      secili ? 'bg-orchid-50 border-orchid-200' : 'bg-mist-50 border-ink-100'
                     }`}
                   >
                     <GrupAvatari grup={g} boyut="sm" />
@@ -614,7 +614,7 @@ function KiminleAdimi({
                     </p>
                     <div
                       className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
-                        secili ? 'bg-coral-500' : 'bg-cream-100 border border-ink-200'
+                        secili ? 'bg-orchid-500' : 'bg-mist-100 border border-ink-200'
                       }`}
                     >
                       {secili && <Icon name="Check" className="w-3.5 h-3.5 text-white" />}
@@ -680,8 +680,8 @@ function DetayAdimi(p: {
                 onClick={() => p.onEtkinlik(e)}
                 className={`chip ${
                   secili
-                    ? 'bg-coral-500 text-white'
-                    : 'bg-cream-100 text-ink-500 border border-ink-100/40'
+                    ? 'bg-gradient-orchid text-white'
+                    : 'bg-mist-100 text-ink-500 border border-ink-100'
                 }`}
               >
                 <span aria-hidden="true">{e.emoji}</span>
@@ -710,7 +710,7 @@ function DetayAdimi(p: {
         <button
           onClick={p.onYakindaAra}
           disabled={p.konumAraniyor}
-          className="btn-ghost w-full border border-ink-100/40 text-sm py-2.5 flex items-center justify-center gap-2 disabled:opacity-50"
+          className="btn-ghost w-full border border-ink-100 text-sm py-2.5 flex items-center justify-center gap-2 disabled:opacity-50"
         >
           <Icon
             name={p.konumAraniyor ? 'Loader2' : 'MapPin'}
@@ -726,7 +726,7 @@ function DetayAdimi(p: {
                 <button
                   key={i}
                   onClick={() => p.onKonum(o.isim)}
-                  className="shrink-0 text-left bg-cream-100 border border-ink-100/40 rounded-2xl px-3.5 py-2.5 active:scale-95 transition-transform min-w-[160px]"
+                  className="shrink-0 text-left bg-mist-100 border border-ink-100 rounded-2xl px-3.5 py-2.5 active:scale-95 transition-transform min-w-[160px]"
                 >
                   <p className="text-sm font-semibold text-ink-700 truncate">{o.isim}</p>
                   <p className="text-xs text-ink-400 mt-0.5">
@@ -754,8 +754,8 @@ function DetayAdimi(p: {
               onClick={() => p.onTarih(g.deger)}
               className={`chip flex-1 justify-center ${
                 p.tarih === g.deger
-                  ? 'bg-coral-500 text-white'
-                  : 'bg-cream-100 text-ink-500 border border-ink-100/40'
+                  ? 'bg-gradient-orchid text-white'
+                  : 'bg-mist-100 text-ink-500 border border-ink-100'
               }`}
             >
               {g.etiket}
@@ -800,8 +800,8 @@ function DetayAdimi(p: {
                   onClick={() => p.onSure(s)}
                   className={`chip flex-1 justify-center ${
                     p.sure === s
-                      ? 'bg-coral-500 text-white'
-                      : 'bg-cream-100 text-ink-500 border border-ink-100/40'
+                      ? 'bg-gradient-orchid text-white'
+                      : 'bg-mist-100 text-ink-500 border border-ink-100'
                   }`}
                 >
                   {s >= 60 ? `${s / 60} sa` : `${s} dk`}
@@ -825,7 +825,7 @@ function DetayAdimi(p: {
             <button
               onClick={p.onUygunSaatiBul}
               disabled={p.saatAraniyor}
-              className="btn-ghost w-full border border-ink-100/40 text-sm py-2.5 flex items-center justify-center gap-2 disabled:opacity-50 mb-3"
+              className="btn-ghost w-full border border-ink-100 text-sm py-2.5 flex items-center justify-center gap-2 disabled:opacity-50 mb-3"
             >
               <Icon
                 name={p.saatAraniyor ? 'Loader2' : 'Wand2'}
@@ -850,7 +850,7 @@ function DetayAdimi(p: {
                   <div
                     key={k.id}
                     className={`flex items-center gap-3 rounded-2xl p-3 border ${
-                      cakisiyor ? 'bg-amber-50 border-amber-200' : 'bg-cream-50 border-ink-100/40'
+                      cakisiyor ? 'bg-amber-50 border-amber-200' : 'bg-mist-50 border-ink-100'
                     }`}
                   >
                     <Avatar ad={k.ad} foto={k.avatar} emoji={k.emoji} renk={k.renk} boyut="sm" />
@@ -942,7 +942,7 @@ function OzetAdimi({
           </p>
           {konum.trim() && (
             <p className="flex items-center gap-2">
-              <Icon name="MapPin" className="w-4 h-4 text-coral-500 shrink-0" />
+              <Icon name="MapPin" className="w-4 h-4 text-orchid-500 shrink-0" />
               {konum.trim()}
             </p>
           )}
@@ -980,7 +980,7 @@ function OzetAdimi({
                   className={`chip text-xs ${
                     cakisanlar.some((c) => c.id === k.id)
                       ? 'bg-amber-100 text-amber-800'
-                      : 'bg-cream-100 text-ink-500 border border-ink-100/40'
+                      : 'bg-mist-100 text-ink-500 border border-ink-100'
                   }`}
                 >
                   {k.ad}
@@ -1019,7 +1019,7 @@ function Bolum({
   return (
     <div className="card p-5">
       <div className="flex items-center gap-2 mb-3">
-        <Icon name={ikon} className="w-4 h-4 text-coral-500" />
+        <Icon name={ikon} className="w-4 h-4 text-orchid-500" />
         <p className="text-sm font-semibold text-ink-700">{baslik}</p>
       </div>
       {children}

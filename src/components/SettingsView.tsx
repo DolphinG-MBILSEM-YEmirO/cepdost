@@ -25,15 +25,15 @@ export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
           </div>
           <div className="space-y-3 text-sm text-ink-500">
             <div className="flex gap-3">
-              <span className="w-6 h-6 rounded-full bg-coral-100 text-coral-600 font-bold text-xs flex items-center justify-center shrink-0">1</span>
+              <span className="w-6 h-6 rounded-full bg-orchid-100 text-orchid-600 font-bold text-xs flex items-center justify-center shrink-0">1</span>
               <p>Bir link, ekran görüntüsü veya not paylaş — uygulama içinden ya da telefonun paylaş menüsünden.</p>
             </div>
             <div className="flex gap-3">
-              <span className="w-6 h-6 rounded-full bg-coral-100 text-coral-600 font-bold text-xs flex items-center justify-center shrink-0">2</span>
+              <span className="w-6 h-6 rounded-full bg-orchid-100 text-orchid-600 font-bold text-xs flex items-center justify-center shrink-0">2</span>
               <p>İçeriği okuyup kategori, başlık, tarih, saat ve öncelik çıkarır — sen hiçbir şey yazmazsın, hiçbir API anahtarı girmezsin.</p>
             </div>
             <div className="flex gap-3">
-              <span className="w-6 h-6 rounded-full bg-coral-100 text-coral-600 font-bold text-xs flex items-center justify-center shrink-0">3</span>
+              <span className="w-6 h-6 rounded-full bg-orchid-100 text-orchid-600 font-bold text-xs flex items-center justify-center shrink-0">3</span>
               <p>Arşivde arar, hatırlatır, harita bağlantısı verir. Kaydettiğin şey nihayet işe yarasın.</p>
             </div>
           </div>

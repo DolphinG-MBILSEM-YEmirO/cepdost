@@ -36,8 +36,8 @@ export function HesapGuvenligi() {
   return (
     <div className="card p-5">
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 rounded-xl bg-coral-100 flex items-center justify-center">
-          <Icon name="KeyRound" className="w-5 h-5 text-coral-600" />
+        <div className="w-10 h-10 rounded-xl bg-orchid-100 flex items-center justify-center">
+          <Icon name="KeyRound" className="w-5 h-5 text-orchid-600" />
         </div>
         <h2 className="font-semibold text-ink-700">Hesap güvenliği</h2>
       </div>
@@ -56,7 +56,7 @@ export function HesapGuvenligi() {
       </p>
       {kod ? (
         <>
-          <div className="relative rounded-2xl bg-cream-100 border border-ink-100/40 px-3 py-2.5 mb-3">
+          <div className="relative rounded-2xl bg-mist-100 border border-ink-100 px-3 py-2.5 mb-3">
             <p
               className={`font-mono text-xs text-ink-600 break-all select-all transition-all ${
                 kodGorunur ? '' : 'blur-sm select-none'
@@ -78,7 +78,7 @@ export function HesapGuvenligi() {
           <div className="flex gap-2 mb-5">
             <button
               onClick={() => void kopyala()}
-              className="flex-1 chip justify-center bg-cream-50 border border-ink-100/40 text-ink-600"
+              className="flex-1 chip justify-center bg-mist-50 border border-ink-100 text-ink-600"
             >
               <Icon name={kopyalandi ? 'Check' : 'Copy'} className="w-4 h-4" />
               {kopyalandi ? 'Kopyalandı' : 'Kopyala'}
@@ -86,7 +86,7 @@ export function HesapGuvenligi() {
             {kodGorunur && (
               <button
                 onClick={() => setKodGorunur(false)}
-                className="flex-1 chip justify-center bg-cream-50 border border-ink-100/40 text-ink-600"
+                className="flex-1 chip justify-center bg-mist-50 border border-ink-100 text-ink-600"
               >
                 <Icon name="EyeOff" className="w-4 h-4" />
                 Gizle
@@ -101,14 +101,14 @@ export function HesapGuvenligi() {
       <div className="flex flex-col gap-2">
         <button
           onClick={() => setSifreAcik(true)}
-          className="w-full btn-ghost border border-ink-100/40 flex items-center justify-center gap-2 text-sm"
+          className="w-full btn-ghost border border-ink-100 flex items-center justify-center gap-2 text-sm"
         >
           <Icon name="ShieldCheck" className="w-4 h-4" />
           Şifreni değiştir
         </button>
         <button
           onClick={() => setCikisOnay(true)}
-          className="w-full rounded-2xl py-3 text-sm font-semibold bg-cream-50 text-rose-600 border border-rose-100 flex items-center justify-center gap-2 active:scale-[0.97] transition-all"
+          className="w-full rounded-2xl py-3 text-sm font-semibold bg-mist-50 text-rose-600 border border-rose-100 flex items-center justify-center gap-2 active:scale-[0.97] transition-all"
         >
           <Icon name="LogOut" className="w-4 h-4" />
           Çıkış yap

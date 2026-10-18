@@ -44,7 +44,7 @@ export function ProfilView({
             key={s.id}
             onClick={() => setSekme(s.id)}
             className={`chip ${
-              sekme === s.id ? 'bg-coral-500 text-white' : 'bg-cream-50 text-ink-400 border border-ink-100/40'
+              sekme === s.id ? 'bg-gradient-orchid text-white' : 'bg-mist-50 text-ink-400 border border-ink-100'
             }`}
           >
             <Icon name={s.ikon} className="w-4 h-4" />

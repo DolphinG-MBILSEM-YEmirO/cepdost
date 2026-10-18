@@ -64,7 +64,7 @@ function Satir({
     <button
       onClick={onClick}
       disabled={disabled}
-      className="w-full flex items-center gap-3 rounded-2xl p-2.5 text-left hover:bg-cream-100 active:scale-[0.98] transition-all disabled:opacity-50"
+      className="w-full flex items-center gap-3 rounded-2xl p-2.5 text-left hover:bg-mist-100 active:scale-[0.98] transition-all disabled:opacity-50"
     >
       {sol}
       <div className="flex-1 min-w-0">
@@ -114,8 +114,8 @@ export function PlanPaylasSheet({
         <Satir
           onClick={onUygunSaat}
           sol={
-            <span className="w-10 h-10 rounded-xl bg-coral-100 flex items-center justify-center shrink-0">
-              <Icon name="Wand2" className="w-5 h-5 text-coral-500" />
+            <span className="w-10 h-10 rounded-xl bg-orchid-100 flex items-center justify-center shrink-0">
+              <Icon name="Wand2" className="w-5 h-5 text-orchid-500" />
             </span>
           }
           baslik="Herkese uyan saati bul"
@@ -138,7 +138,7 @@ export function PlanPaylasSheet({
             onClick={() => void paylas(k)}
             disabled={gonderilen !== null}
             sol={
-              <span className="w-10 h-10 rounded-xl bg-cream-100 flex items-center justify-center shrink-0">
+              <span className="w-10 h-10 rounded-xl bg-mist-100 flex items-center justify-center shrink-0">
                 <Icon name="CalendarDays" className="w-5 h-5 text-ink-400" />
               </span>
             }
@@ -148,7 +148,7 @@ export function PlanPaylasSheet({
               gonderilen === k.id ? (
                 <Icon name="Loader2" className="w-4 h-4 animate-spin text-ink-300" />
               ) : (
-                <Icon name="Send" className="w-4 h-4 text-coral-500" />
+                <Icon name="Send" className="w-4 h-4 text-orchid-500" />
               )
             }
           />
@@ -222,7 +222,7 @@ export function PaylasimHedefiSheet({ kayit, onKapat }: { kayit: Kayit; onKapat:
     gonderilen === anahtar ? (
       <Icon name="Loader2" className="w-4 h-4 animate-spin text-ink-300" />
     ) : (
-      <Icon name="Send" className="w-4 h-4 text-coral-500" />
+      <Icon name="Send" className="w-4 h-4 text-orchid-500" />
     )
 
   return (

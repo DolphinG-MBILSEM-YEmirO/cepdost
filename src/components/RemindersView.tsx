@@ -67,8 +67,8 @@ export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, 
   if (!hasAny) {
     return (
       <div className="flex flex-col items-center justify-center h-full px-6 text-center">
-        <div className="w-20 h-20 rounded-full bg-coral-100 flex items-center justify-center mb-5">
-          <Icon name="BellRing" className="w-10 h-10 text-coral-500" />
+        <div className="w-20 h-20 rounded-full bg-orchid-100 flex items-center justify-center mb-5">
+          <Icon name="BellRing" className="w-10 h-10 text-orchid-500" />
         </div>
         <p className="font-display text-lg font-bold text-ink-600 mb-2">Henüz hatırlatma yok</p>
         <p className="text-sm text-ink-400 mb-6 max-w-xs">Tarihi olan kayıtların burada öne çıkar. Bir etkinlik veya randevu kaydet.</p>
@@ -105,7 +105,7 @@ export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, 
               <Section title="Kaçtı" icon="AlertCircle" count={groups.overdue.length} accent="rose" kayitlar={groups.overdue} onToggleStatus={onToggleStatus} onDelete={onDelete} onRecordClick={onRecordClick} />
             )}
             {groups.today.length > 0 && (
-              <Section title="Bugün" icon="CalendarDays" count={groups.today.length} accent="coral" kayitlar={groups.today} onToggleStatus={onToggleStatus} onDelete={onDelete} onRecordClick={onRecordClick} />
+              <Section title="Bugün" icon="CalendarDays" count={groups.today.length} accent="orchid" kayitlar={groups.today} onToggleStatus={onToggleStatus} onDelete={onDelete} onRecordClick={onRecordClick} />
             )}
             {groups.tomorrow.length > 0 && (
               <Section title="Yarın" icon="Clock" count={groups.tomorrow.length} kayitlar={groups.tomorrow} onToggleStatus={onToggleStatus} onDelete={onDelete} onRecordClick={onRecordClick} />
@@ -144,11 +144,11 @@ function Section({
   onToggleStatus: (id: string) => void
   onDelete: (id: string) => void
   onRecordClick: (kayit: Kayit) => void
-  accent?: 'rose' | 'coral'
+  accent?: 'rose' | 'orchid'
   muted?: boolean
 }) {
-  const color = accent === 'rose' ? 'text-rose-500' : accent === 'coral' ? 'text-coral-500' : muted ? 'text-ink-300' : 'text-ink-400'
-  const textColor = accent === 'rose' ? 'text-rose-600' : accent === 'coral' ? 'text-coral-600' : muted ? 'text-ink-300' : 'text-ink-500'
+  const color = accent === 'rose' ? 'text-rose-500' : accent === 'orchid' ? 'text-orchid-500' : muted ? 'text-ink-300' : 'text-ink-400'
+  const textColor = accent === 'rose' ? 'text-rose-600' : accent === 'orchid' ? 'text-orchid-600' : muted ? 'text-ink-300' : 'text-ink-500'
 
   return (
     <div>

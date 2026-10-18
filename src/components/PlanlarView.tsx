@@ -61,7 +61,7 @@ export function PlanlarView({
         <button
           onClick={() => setGorunum('bugun')}
           className={`chip ${
-            gorunum === 'bugun' ? 'bg-coral-500 text-white' : 'bg-cream-50 text-ink-400 border border-ink-100/40'
+            gorunum === 'bugun' ? 'bg-gradient-orchid text-white' : 'bg-mist-50 text-ink-400 border border-ink-100'
           }`}
         >
           <Icon name="CalendarDays" className="w-4 h-4" />
@@ -70,7 +70,7 @@ export function PlanlarView({
         <button
           onClick={() => setGorunum('hatirlat')}
           className={`chip ${
-            gorunum === 'hatirlat' ? 'bg-coral-500 text-white' : 'bg-cream-50 text-ink-400 border border-ink-100/40'
+            gorunum === 'hatirlat' ? 'bg-gradient-orchid text-white' : 'bg-mist-50 text-ink-400 border border-ink-100'
           }`}
         >
           <Icon name="Bell" className="w-4 h-4" />

@@ -27,10 +27,10 @@ export function KenarCubugu({
   const rozetler: Partial<Record<Tab, number>> = { sohbet: sohbetRozeti, profil: profilRozeti }
 
   return (
-    <aside className="hidden lg:flex fixed inset-y-0 left-0 z-30 w-64 flex-col border-r border-ink-100/50 bg-cream-50/80 px-4 py-6">
+    <aside className="hidden lg:flex fixed inset-y-0 left-0 z-30 w-64 flex-col border-r border-ink-100/70 bg-white/80 backdrop-blur-xl px-4 py-6">
       <div className="flex items-center gap-2.5 px-2 mb-7">
         <img src="/icons/icon-192.png" alt="" className="w-9 h-9 rounded-xl" />
-        <span className="font-display text-xl font-bold text-ink-700">CepDost</span>
+        <span className="font-display text-xl font-bold text-gradient-orchid">CepDost</span>
       </div>
 
       <button onClick={onAddClick} className="btn-primary w-full flex items-center justify-center gap-2 mb-6">
@@ -49,7 +49,7 @@ export function KenarCubugu({
               aria-label={rozet > 0 ? `${t.label}, ${rozet} yeni` : t.label}
               aria-current={secili ? 'page' : undefined}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-semibold transition-colors ${
-                secili ? 'bg-coral-50 text-coral-600' : 'text-ink-500 hover:bg-ink-50'
+                secili ? 'bg-gradient-orchid-soft text-orchid-700 ring-1 ring-orchid-100' : 'text-ink-500 hover:bg-ink-50'
               }`}
             >
               <Icon name={t.icon} className="w-5 h-5" />

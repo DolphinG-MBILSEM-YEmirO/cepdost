@@ -94,7 +94,7 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
       >
         <div
           className={`w-11 h-6 rounded-full transition-colors shrink-0 relative ${
-            ayar.izin ? 'bg-teal-500' : 'bg-ink-200'
+            ayar.izin ? 'bg-gradient-orchid' : 'bg-ink-200'
           }`}
         >
           <div
@@ -115,7 +115,7 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
 
       {ayar.izin && (
         <div className="space-y-3">
-          <div className="bg-cream-100 rounded-2xl p-4">
+          <div className="bg-mist-100 rounded-2xl p-4">
             {/* Etikette ".ics" yazmıyor: uppercase + Türkçe yerelde "i"
                 "İ"ye dönüşüp ".İCS" gibi görünüyordu. */}
             <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
@@ -163,7 +163,7 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
           <button
             onClick={() => dosyaRef.current?.click()}
             disabled={calisiyor}
-            className="btn-ghost w-full border border-ink-100/40 text-sm py-2.5 flex items-center justify-center gap-2 disabled:opacity-50"
+            className="btn-ghost w-full border border-ink-100 text-sm py-2.5 flex items-center justify-center gap-2 disabled:opacity-50"
           >
             <Icon name="Download" className="w-4 h-4" />
             .ics dosyası seç

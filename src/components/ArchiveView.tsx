@@ -83,7 +83,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
             <div className="relative">
               <button
                 onClick={() => setShowSortMenu(!showSortMenu)}
-                className="w-11 h-11 rounded-full bg-cream-50 border border-ink-100/40 flex items-center justify-center active:scale-90 transition-transform"
+                className="w-11 h-11 rounded-full bg-mist-50 border border-ink-100 flex items-center justify-center active:scale-90 transition-transform"
               >
                 <Icon name="Filter" className="w-5 h-5 text-ink-400" />
               </button>
@@ -96,7 +96,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
                         key={mode}
                         onClick={() => { setSortMode(mode); setShowSortMenu(false) }}
                         className={`w-full px-3 py-2.5 rounded-xl text-sm font-medium text-left flex items-center justify-between transition-colors
-                          ${sortMode === mode ? 'bg-coral-50 text-coral-600' : 'text-ink-500 hover:bg-ink-50'}`}
+                          ${sortMode === mode ? 'bg-orchid-50 text-orchid-600' : 'text-ink-500 hover:bg-ink-50'}`}
                       >
                         {sortLabels[mode]}
                         {sortMode === mode && <Icon name="Check" className="w-4 h-4" />}
@@ -111,7 +111,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
             <button
               onClick={() => setLinkEkleAcik(true)}
               aria-label="Arşive link ekle"
-              className="w-11 h-11 rounded-full bg-coral-500 text-white flex items-center justify-center shadow-soft active:scale-90 transition-transform"
+              className="w-11 h-11 rounded-full bg-gradient-orchid text-white flex items-center justify-center shadow-soft active:scale-90 transition-transform"
             >
               <Icon name="LinkIcon" className="w-5 h-5" />
             </button>
@@ -124,7 +124,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Ara..."
-            className="w-full bg-cream-50 border border-ink-100/40 rounded-2xl pl-11 pr-4 py-3 text-ink-700 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-coral-200 transition-all"
+            className="w-full bg-mist-50 border border-ink-100 rounded-2xl pl-11 pr-4 py-3 text-ink-700 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-orchid-200 transition-all"
           />
         </div>
 
@@ -187,11 +187,11 @@ function FilterChip({ label, count, active, onClick, icon }: { label: string; co
   return (
     <button
       onClick={onClick}
-      className={`chip shrink-0 ${active ? 'bg-ink-700 text-cream-50' : 'bg-cream-50 text-ink-400 border border-ink-100/40'}`}
+      className={`chip shrink-0 ${active ? 'bg-ink-700 text-mist-50' : 'bg-mist-50 text-ink-400 border border-ink-100'}`}
     >
       <Icon name={icon} className="w-4 h-4" />
       {label}
-      <span className={`text-xs ${active ? 'text-cream-200' : 'text-ink-300'}`}>{count}</span>
+      <span className={`text-xs ${active ? 'text-mist-200' : 'text-ink-300'}`}>{count}</span>
     </button>
   )
 }
@@ -222,8 +222,8 @@ function EmptyState({
 
   return (
     <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-fade-in">
-      <div className="w-20 h-20 rounded-full bg-coral-100 flex items-center justify-center mb-5">
-        <Icon name="Sparkles" className="w-10 h-10 text-coral-500" />
+      <div className="w-20 h-20 rounded-full bg-orchid-100 flex items-center justify-center mb-5">
+        <Icon name="Sparkles" className="w-10 h-10 text-orchid-500" />
       </div>
       <p className="font-display text-lg font-bold text-ink-600 mb-2">Kaydettiğin şey burada işe yarasın</p>
       <p className="text-sm text-ink-400 mb-6 max-w-xs">

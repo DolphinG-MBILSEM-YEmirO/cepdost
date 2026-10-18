@@ -35,7 +35,7 @@ export function PlanTercihleri({ paylasimAcik }: { paylasimAcik: boolean }) {
   }
 
   return (
-    <div className="bg-cream-100 rounded-2xl p-4 space-y-4">
+    <div className="bg-mist-100 rounded-2xl p-4 space-y-4">
       <div>
         <p className="text-sm font-medium text-ink-600 flex items-center gap-1.5">
           <Icon name="Clock" className="w-4 h-4 text-ink-400" />
@@ -66,7 +66,7 @@ export function PlanTercihleri({ paylasimAcik }: { paylasimAcik: boolean }) {
             <button
               onClick={() => saatleriKaydet('', '')}
               aria-label="Saat aralığını temizle"
-              className="w-9 h-9 rounded-xl bg-cream-50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+              className="w-9 h-9 rounded-xl bg-mist-50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
             >
               <Icon name="X" className="w-4 h-4 text-ink-400" />
             </button>
@@ -88,7 +88,7 @@ export function PlanTercihleri({ paylasimAcik }: { paylasimAcik: boolean }) {
               onClick={() => planAyarlariniKaydet({ ...ayar, yolPayiDk: dk })}
               aria-pressed={ayar.yolPayiDk === dk}
               className={`chip flex-1 justify-center ${
-                ayar.yolPayiDk === dk ? 'bg-coral-500 text-white' : 'bg-cream-50 text-ink-500 border border-ink-100/40'
+                ayar.yolPayiDk === dk ? 'bg-gradient-orchid text-white' : 'bg-mist-50 text-ink-500 border border-ink-100'
               }`}
             >
               {dk === 0 ? 'Yok' : `${dk} dk`}

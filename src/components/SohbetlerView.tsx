@@ -92,7 +92,7 @@ export function SohbetlerView({ onDegisti }: { onDegisti?: () => void }) {
 
   return (
     <div className="flex flex-col h-full lg:flex-row lg:h-screen">
-      <div className="flex flex-col h-full min-h-0 lg:w-[360px] lg:shrink-0 lg:border-r lg:border-ink-100/50">
+      <div className="flex flex-col h-full min-h-0 lg:w-[360px] lg:shrink-0 lg:border-r lg:border-ink-100">
         <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3 lg:pt-8">
           <h1 className="font-display text-2xl font-bold text-ink-700">Sohbet</h1>
           <p className="text-sm text-ink-400 mt-0.5">Arkadaşların ve grupların</p>
@@ -114,8 +114,8 @@ export function SohbetlerView({ onDegisti }: { onDegisti?: () => void }) {
             </div>
           ) : sohbetler.length === 0 ? (
             <div className="card p-6 text-center">
-              <div className="w-14 h-14 rounded-full bg-coral-100 flex items-center justify-center mx-auto mb-3">
-                <Icon name="MessagesSquare" className="w-7 h-7 text-coral-500" />
+              <div className="w-14 h-14 rounded-full bg-orchid-100 flex items-center justify-center mx-auto mb-3">
+                <Icon name="MessagesSquare" className="w-7 h-7 text-orchid-500" />
               </div>
               <p className="font-semibold text-ink-600 mb-1">Henüz sohbet yok</p>
               <p className="text-sm text-ink-400">
@@ -168,8 +168,8 @@ export function SohbetlerView({ onDegisti }: { onDegisti?: () => void }) {
 function SohbetSecilmedi() {
   return (
     <div className="flex-1 flex flex-col items-center justify-center text-center px-8">
-      <div className="w-16 h-16 rounded-3xl bg-coral-100 flex items-center justify-center mb-4">
-        <Icon name="MessagesSquare" className="w-8 h-8 text-coral-500" />
+      <div className="w-16 h-16 rounded-3xl bg-orchid-100 flex items-center justify-center mb-4">
+        <Icon name="MessagesSquare" className="w-8 h-8 text-orchid-500" />
       </div>
       <p className="font-semibold text-ink-600 mb-1">Bir sohbet seç</p>
       <p className="text-sm text-ink-400 max-w-xs">
@@ -184,8 +184,8 @@ function SohbetSatiri({ sohbet, secili = false, onAc }: { sohbet: Sohbet; secili
     <button
       onClick={onAc}
       aria-current={secili ? 'true' : undefined}
-      className={`w-full card p-3 flex items-center gap-3 text-left active:scale-[0.98] transition-all lg:hover:border-coral-200 ${
-        secili ? 'ring-2 ring-coral-300 border-transparent' : ''
+      className={`w-full card p-3 flex items-center gap-3 text-left active:scale-[0.98] transition-all lg:hover:border-orchid-200 ${
+        secili ? 'ring-2 ring-orchid-300 border-transparent' : ''
       }`}
     >
       {sohbet.tur === 'grup' && sohbet.grup ? (

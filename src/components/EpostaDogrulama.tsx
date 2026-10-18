@@ -164,7 +164,7 @@ export function EpostaDogrulama({
         <button
           onClick={() => void kodGonder()}
           disabled={bekleme > 0 || calisiyor !== null}
-          className="text-coral-600 disabled:text-ink-300"
+          className="text-orchid-600 disabled:text-ink-300"
         >
           {calisiyor === 'kod' ? 'Gönderiliyor...' : bekleme > 0 ? `Tekrar gönder (${bekleme})` : 'Kodu tekrar gönder'}
         </button>
@@ -184,7 +184,7 @@ export function DogrulanmisEposta({ eposta, onDegistir }: { eposta: string; onDe
         <p className="text-xs text-teal-700">Doğrulandı</p>
       </div>
       {onDegistir && (
-        <button onClick={onDegistir} className="text-xs font-semibold text-coral-600 shrink-0">
+        <button onClick={onDegistir} className="text-xs font-semibold text-orchid-600 shrink-0">
           Değiştir
         </button>
       )}

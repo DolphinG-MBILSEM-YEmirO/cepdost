@@ -99,7 +99,7 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
           <button
             onClick={onAddClick}
             aria-label="Yeni kayıt ekle"
-            className="w-11 h-11 rounded-full bg-coral-500 text-white flex items-center justify-center shadow-soft active:scale-90 transition-transform"
+            className="w-11 h-11 rounded-full bg-gradient-orchid text-white flex items-center justify-center shadow-soft active:scale-90 transition-transform"
           >
             <Icon name="Plus" className="w-5 h-5" />
           </button>
@@ -120,7 +120,7 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
           <button
             onClick={() => setSelectedDate((d) => addDays(d, -1))}
             aria-label="Önceki gün"
-            className="w-9 h-9 rounded-full bg-cream-50 border border-ink-100/40 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+            className="w-9 h-9 rounded-full bg-mist-50 border border-ink-100 flex items-center justify-center active:scale-90 transition-transform shrink-0"
           >
             <Icon name="ChevronRight" className="w-4 h-4 text-ink-400 rotate-180" />
           </button>
@@ -135,13 +135,13 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
                   key={toDateString(d)}
                   onClick={() => setSelectedDate(d)}
                   className={`flex flex-col items-center gap-0.5 py-2 px-2.5 rounded-2xl transition-all active:scale-95 min-w-[52px]
-                    ${active ? 'bg-coral-500 text-white shadow-soft' : 'bg-cream-50 text-ink-400 border border-ink-100/40'}`}
+                    ${active ? 'bg-gradient-orchid text-white shadow-soft' : 'bg-mist-50 text-ink-400 border border-ink-100'}`}
                 >
-                  <span className={`text-[10px] font-medium uppercase ${active ? 'text-cream-100' : 'text-ink-300'}`}>
+                  <span className={`text-[10px] font-medium uppercase ${active ? 'text-mist-100' : 'text-ink-300'}`}>
                     {d.toLocaleDateString('tr-TR', { weekday: 'short' })}
                   </span>
-                  <span className={`text-lg font-bold font-display ${today && !active ? 'text-coral-500' : ''}`}>{d.getDate()}</span>
-                  {count > 0 && <span className={`text-[10px] ${active ? 'text-cream-100' : 'text-coral-400'}`}>{count}</span>}
+                  <span className={`text-lg font-bold font-display ${today && !active ? 'text-orchid-500' : ''}`}>{d.getDate()}</span>
+                  {count > 0 && <span className={`text-[10px] ${active ? 'text-mist-100' : 'text-orchid-400'}`}>{count}</span>}
                 </button>
               )
             })}
@@ -150,7 +150,7 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
           <button
             onClick={() => setSelectedDate((d) => addDays(d, 1))}
             aria-label="Sonraki gün"
-            className="w-9 h-9 rounded-full bg-cream-50 border border-ink-100/40 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+            className="w-9 h-9 rounded-full bg-mist-50 border border-ink-100 flex items-center justify-center active:scale-90 transition-transform shrink-0"
           >
             <Icon name="ChevronRight" className="w-4 h-4 text-ink-400" />
           </button>
@@ -159,7 +159,7 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
         {!isTodayView && (
           <button
             onClick={() => setSelectedDate(new Date())}
-            className="text-sm text-coral-600 font-medium flex items-center gap-1 active:scale-95 transition-transform"
+            className="text-sm text-orchid-600 font-medium flex items-center gap-1 active:scale-95 transition-transform"
           >
             <Icon name="Calendar" className="w-4 h-4" />
             Bugüne dön
@@ -245,7 +245,7 @@ function Section({ title, icon, count, children, muted }: { title: string; icon:
   return (
     <div>
       <div className="flex items-center gap-2 mb-3 px-1">
-        <Icon name={icon} className={`w-4 h-4 ${muted ? 'text-teal-500' : 'text-coral-500'}`} />
+        <Icon name={icon} className={`w-4 h-4 ${muted ? 'text-teal-500' : 'text-orchid-500'}`} />
         <h2 className={`text-sm font-semibold ${muted ? 'text-teal-600' : 'text-ink-500'}`}>{title}</h2>
         <span className="text-xs text-ink-300">{count}</span>
       </div>
@@ -260,15 +260,15 @@ function RescheduleBar({ onReschedule, busy }: { onReschedule: (d: Date) => void
   const nextWeek = addDays(new Date(), 7)
   return (
     <div className="flex gap-1.5 mt-2 animate-fade-in">
-      <button onClick={() => onReschedule(tomorrow)} disabled={busy} className="chip bg-cream-50 text-ink-500 border border-ink-100/40 active:scale-95 disabled:opacity-50">
+      <button onClick={() => onReschedule(tomorrow)} disabled={busy} className="chip bg-mist-50 text-ink-500 border border-ink-100 active:scale-95 disabled:opacity-50">
         <Icon name="Calendar" className="w-3.5 h-3.5" />
         Yarın
       </button>
-      <button onClick={() => onReschedule(weekend)} disabled={busy} className="chip bg-cream-50 text-ink-500 border border-ink-100/40 active:scale-95 disabled:opacity-50">
+      <button onClick={() => onReschedule(weekend)} disabled={busy} className="chip bg-mist-50 text-ink-500 border border-ink-100 active:scale-95 disabled:opacity-50">
         <Icon name="Calendar" className="w-3.5 h-3.5" />
         3 gün sonra
       </button>
-      <button onClick={() => onReschedule(nextWeek)} disabled={busy} className="chip bg-cream-50 text-ink-500 border border-ink-100/40 active:scale-95 disabled:opacity-50">
+      <button onClick={() => onReschedule(nextWeek)} disabled={busy} className="chip bg-mist-50 text-ink-500 border border-ink-100 active:scale-95 disabled:opacity-50">
         <Icon name="Calendar" className="w-3.5 h-3.5" />
         Haftaya
       </button>
@@ -286,13 +286,13 @@ function TimelineItem({ kayit, onClick, onToggle, onReschedule, rescheduling }: 
   return (
     <div className="flex items-start gap-3">
       <div className="flex flex-col items-center w-[52px] shrink-0 pt-1">
-        <span className={`font-bold font-display text-center ${kayit.tumGun ? 'text-xs text-coral-600 leading-tight' : 'text-sm text-ink-600'}`}>
+        <span className={`font-bold font-display text-center ${kayit.tumGun ? 'text-xs text-orchid-600 leading-tight' : 'text-sm text-ink-600'}`}>
           {timeLabel}
         </span>
         {durLabel && <span className="text-[10px] text-ink-300 mt-0.5">{durLabel}</span>}
       </div>
       <div className="relative">
-        <div className={`w-3 h-3 rounded-full ${kayit.oncelik === 'yuksek' ? 'bg-rose-400' : kayit.oncelik === 'orta' ? 'bg-amber-400' : 'bg-ink-200'} ring-4 ring-cream-100 mt-2`} />
+        <div className={`w-3 h-3 rounded-full ${kayit.oncelik === 'yuksek' ? 'bg-rose-400' : kayit.oncelik === 'orta' ? 'bg-amber-400' : 'bg-ink-200'} ring-4 ring-mist-100 mt-2`} />
       </div>
       <div className="flex-1 min-w-0">
         <div {...tiklanabilir(onClick)} className="card p-3.5 w-full text-left cursor-pointer active:scale-[0.98] transition-transform">
@@ -402,8 +402,8 @@ function EmptyDay({ date, isPastView, onAddClick }: { date: Date; isPastView: bo
 
   return (
     <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-fade-in">
-      <div className="w-20 h-20 rounded-full bg-coral-100 flex items-center justify-center mb-5">
-        <Icon name={isPastView ? 'CheckCheck' : 'CalendarDays'} className="w-10 h-10 text-coral-500" />
+      <div className="w-20 h-20 rounded-full bg-orchid-100 flex items-center justify-center mb-5">
+        <Icon name={isPastView ? 'CheckCheck' : 'CalendarDays'} className="w-10 h-10 text-orchid-500" />
       </div>
       <p className="font-display text-lg font-bold text-ink-600 mb-2">{isPastView ? `${label} için plan yok` : `${label} boş`}</p>
       <p className="text-sm text-ink-400 mb-6 max-w-xs">

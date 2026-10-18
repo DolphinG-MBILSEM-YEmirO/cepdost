@@ -96,7 +96,7 @@ export function GonderButonu({
       onClick={onClick}
       disabled={gonderiliyor || pasif}
       aria-label="Gönder"
-      className="w-11 h-11 rounded-full bg-coral-500 text-white flex items-center justify-center active:scale-90 transition-all disabled:opacity-40 shrink-0"
+      className="w-11 h-11 rounded-full bg-gradient-orchid text-white flex items-center justify-center active:scale-90 transition-all disabled:opacity-40 shrink-0"
     >
       <Icon
         name={gonderiliyor ? 'Loader2' : 'Send'}

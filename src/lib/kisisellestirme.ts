@@ -15,6 +15,7 @@ export interface RenkTanimi {
 }
 
 export const RENKLER = {
+  orkide: { ad: 'Orkide', yumusak: 'bg-orchid-100 text-orchid-700', dolu: 'bg-orchid-500', zemin: 'bg-orchid-50', yazi: 'text-orchid-600' },
   mercan: { ad: 'Mercan', yumusak: 'bg-coral-100 text-coral-700', dolu: 'bg-coral-500', zemin: 'bg-coral-50', yazi: 'text-coral-600' },
   turkuaz: { ad: 'Turkuaz', yumusak: 'bg-teal-100 text-teal-700', dolu: 'bg-teal-500', zemin: 'bg-teal-50', yazi: 'text-teal-600' },
   gok: { ad: 'Gök', yumusak: 'bg-sky-100 text-sky-700', dolu: 'bg-sky-500', zemin: 'bg-sky-50', yazi: 'text-sky-600' },
@@ -27,10 +28,14 @@ export type RenkAnahtari = keyof typeof RENKLER
 
 export const RENK_ANAHTARLARI = Object.keys(RENKLER) as RenkAnahtari[]
 
+// Colours given to people who haven't picked one. Mercan stays out: it's
+// the old warm look and stands out against the blue theme.
+const TURETILEN_RENKLER = RENK_ANAHTARLARI.filter((k) => k !== 'mercan')
+
 function adaGoreAnahtar(ad: string): RenkAnahtari {
   let toplam = 0
   for (let i = 0; i < ad.length; i++) toplam += ad.charCodeAt(i)
-  return RENK_ANAHTARLARI[toplam % RENK_ANAHTARLARI.length]
+  return TURETILEN_RENKLER[toplam % TURETILEN_RENKLER.length]
 }
 
 // The chosen colour, or a stable one derived from the name.

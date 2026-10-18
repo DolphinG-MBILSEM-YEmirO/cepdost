@@ -28,9 +28,13 @@
   }
 
   body {
-    @apply bg-cream-100 text-ink-700 font-sans antialiased;
+    @apply bg-mist-100 text-ink-700 font-sans antialiased;
     margin: 0;
     overscroll-behavior-y: none;
+  }
+
+  ::selection {
+    @apply bg-orchid-200 text-ink-800;
   }
 
   input,
@@ -52,18 +56,33 @@
     padding-right: var(--safe-right);
   }
 
+  /* The app's backdrop: cool mist with soft blue and violet light at the
+     top, so screens don't sit on a flat grey. */
+  .bg-uygulama {
+    @apply bg-mist-100;
+    background-image:
+      radial-gradient(56rem 28rem at 100% -6rem, rgba(123, 92, 245, 0.10), transparent 70%),
+      radial-gradient(48rem 26rem at -12% -4rem, rgba(47, 107, 255, 0.10), transparent 70%);
+    background-repeat: no-repeat;
+  }
+
   .glass {
-    @apply bg-cream-50/80 backdrop-blur-xl border border-ink-100/50;
+    @apply bg-white/75 backdrop-blur-xl border border-ink-100/70;
   }
 
   .card {
-    @apply bg-cream-50 rounded-3xl shadow-card border border-ink-100/40;
+    @apply bg-mist-50 rounded-3xl shadow-card border border-ink-100/70;
   }
 
   .btn-primary {
-    @apply bg-coral-500 text-white font-semibold rounded-2xl px-5 py-3.5
+    @apply bg-gradient-orchid text-white font-semibold rounded-2xl px-5 py-3.5
            active:scale-[0.97] transition-all duration-150
-           shadow-soft hover:bg-coral-600;
+           shadow-brand hover:brightness-110;
+  }
+
+  /* Brand-coloured text for titles and highlights. */
+  .text-gradient-orchid {
+    @apply bg-gradient-orchid bg-clip-text text-transparent;
   }
 
   .btn-ghost {
@@ -79,9 +98,10 @@
   }
 
   .input-field {
-    @apply w-full bg-cream-100 border border-ink-100/40 rounded-xl px-3 py-2.5
+    @apply w-full bg-mist-100 border border-ink-100 rounded-xl px-3 py-2.5
            text-ink-700 font-medium placeholder:text-ink-300
-           focus:outline-none focus:ring-2 focus:ring-coral-200 transition-all;
+           focus:outline-none focus:bg-white focus:border-orchid-300 focus:ring-4 focus:ring-orchid-100
+           transition-all;
   }
 
   .skeleton {
@@ -100,15 +120,15 @@
      over the dimmed page (the 100vmax shadow is the backdrop), so the
      sidebar and the page under it stay in place. */
   .panel-tam {
-    @apply fixed inset-0 flex flex-col bg-cream-100/95 backdrop-blur-md animate-slide-up;
+    @apply fixed inset-0 flex flex-col bg-mist-100/95 backdrop-blur-md animate-slide-up;
   }
   @media (min-width: 1024px) {
     .panel-tam {
       inset: max(1.5rem, calc(50% - 28rem)) max(1.5rem, calc(50% - 22.5rem));
-      @apply rounded-3xl overflow-hidden bg-cream-100;
+      @apply rounded-3xl overflow-hidden bg-mist-100;
       box-shadow:
-        0 0 0 100vmax rgba(15, 12, 8, 0.35),
-        0 24px 64px -12px rgba(15, 12, 8, 0.35);
+        0 0 0 100vmax rgba(11, 14, 29, 0.40),
+        0 24px 64px -12px rgba(11, 14, 29, 0.40);
     }
   }
 

@@ -129,7 +129,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
           <button
             onClick={handleToggleStatus}
             className={`px-4 py-2 rounded-full text-sm font-medium transition-all active:scale-95 flex items-center gap-1.5
-              ${done ? 'bg-teal-100 text-teal-700' : 'bg-cream-50 text-ink-400 border border-ink-100/40'}`}
+              ${done ? 'bg-teal-100 text-teal-700' : 'bg-mist-50 text-ink-400 border border-ink-100'}`}
           >
             <Icon name={done ? 'CheckCircle2' : 'Circle'} className="w-4 h-4" />
             {done ? 'Yapıldı' : 'Bekliyor'}
@@ -139,7 +139,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
               onClick={handleSave}
               disabled={saving}
               aria-label="Kaydet"
-              className="w-10 h-10 rounded-full bg-coral-500 text-white flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
+              className="w-10 h-10 rounded-full bg-gradient-orchid text-white flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
             >
               <Icon name={saving ? 'Loader2' : 'Save'} className={`w-5 h-5 ${saving ? 'animate-spin' : ''}`} />
             </button>
@@ -177,7 +177,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
                   <button
                     key={cat}
                     onClick={() => setCategory(cat)}
-                    className={`chip ${category === cat ? `${CATEGORY_COLORS[cat].bg} ${CATEGORY_COLORS[cat].text} ring-2 ${CATEGORY_COLORS[cat].ring}` : 'bg-cream-100 text-ink-400'}`}
+                    className={`chip ${category === cat ? `${CATEGORY_COLORS[cat].bg} ${CATEGORY_COLORS[cat].text} ring-2 ${CATEGORY_COLORS[cat].ring}` : 'bg-mist-100 text-ink-400'}`}
                   >
                     <Icon name={CATEGORY_ICON_NAME[cat]} className="w-4 h-4" />
                     {CATEGORY_LABELS[cat]}
@@ -215,7 +215,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
                   <button
                     key={p}
                     onClick={() => setPriority(p)}
-                    className={`chip flex-1 justify-center ${priority === p ? `${PRIORITY_COLORS[p].bg} ${PRIORITY_COLORS[p].text} ring-2 ring-ink-200` : 'bg-cream-100 text-ink-400'}`}
+                    className={`chip flex-1 justify-center ${priority === p ? `${PRIORITY_COLORS[p].bg} ${PRIORITY_COLORS[p].text} ring-2 ring-ink-200` : 'bg-mist-100 text-ink-400'}`}
                   >
                     <span className={`w-2 h-2 rounded-full ${PRIORITY_COLORS[p].dot}`} />
                     {PRIORITY_LABELS[p]}
@@ -238,11 +238,11 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
               <h2 className={`font-display text-xl font-bold text-ink-700 leading-snug ${done ? 'line-through opacity-60' : ''}`}>{baslik}</h2>
 
               {(dateLabel || timeLabel || durLabel || kayit.konum) && (
-                <div className="mt-4 pt-4 border-t border-ink-100/40 space-y-3">
+                <div className="mt-4 pt-4 border-t border-ink-100 space-y-3">
                   {(dateLabel || timeLabel) && (
                     <div className="flex items-center gap-2">
-                      <div className={`w-8 h-8 rounded-lg ${past && !done ? 'bg-rose-100' : 'bg-coral-100'} flex items-center justify-center`}>
-                        <Icon name="Clock" className={`w-4 h-4 ${past && !done ? 'text-rose-500' : 'text-coral-500'}`} />
+                      <div className={`w-8 h-8 rounded-lg ${past && !done ? 'bg-rose-100' : 'bg-orchid-100'} flex items-center justify-center`}>
+                        <Icon name="Clock" className={`w-4 h-4 ${past && !done ? 'text-rose-500' : 'text-orchid-500'}`} />
                       </div>
                       <div>
                         <p className="text-xs text-ink-400">Tarih & Saat</p>
@@ -320,7 +320,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
         {kayit.hamLink && (
           <div className="card p-5 mb-4">
             <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-3">Kaynak</p>
-            <a href={kayit.hamLink} target="_blank" rel="noopener noreferrer" className="text-sm text-coral-600 font-medium flex items-center gap-2 break-all active:scale-[0.98] transition-transform">
+            <a href={kayit.hamLink} target="_blank" rel="noopener noreferrer" className="text-sm text-orchid-600 font-medium flex items-center gap-2 break-all active:scale-[0.98] transition-transform">
               <Icon name="LinkIcon" className="w-4 h-4 shrink-0" />
               {kayit.hamLink}
               <Icon name="ExternalLink" className="w-3 h-3 shrink-0" />
@@ -345,15 +345,15 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
           <div className="mb-4">
             <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2 px-1">Hızlı ertele</p>
             <div className="flex gap-2">
-              <button onClick={() => handleReschedule(toDateString(addDays(new Date(), 1)))} className="chip bg-cream-50 text-ink-500 border border-ink-100/40 active:scale-95">
+              <button onClick={() => handleReschedule(toDateString(addDays(new Date(), 1)))} className="chip bg-mist-50 text-ink-500 border border-ink-100 active:scale-95">
                 <Icon name="Calendar" className="w-4 h-4" />
                 Yarın
               </button>
-              <button onClick={() => handleReschedule(toDateString(addDays(new Date(), 3)))} className="chip bg-cream-50 text-ink-500 border border-ink-100/40 active:scale-95">
+              <button onClick={() => handleReschedule(toDateString(addDays(new Date(), 3)))} className="chip bg-mist-50 text-ink-500 border border-ink-100 active:scale-95">
                 <Icon name="Calendar" className="w-4 h-4" />
                 3 gün
               </button>
-              <button onClick={() => handleReschedule(toDateString(addDays(new Date(), 7)))} className="chip bg-cream-50 text-ink-500 border border-ink-100/40 active:scale-95">
+              <button onClick={() => handleReschedule(toDateString(addDays(new Date(), 7)))} className="chip bg-mist-50 text-ink-500 border border-ink-100 active:scale-95">
                 <Icon name="Calendar" className="w-4 h-4" />
                 Haftaya
               </button>
@@ -371,10 +371,10 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
             da grubun arşivine düşer. Tek başına planlarda hedef yok, o yüzden
             yalnızca birlikte yapılan planlarda çıkıyor. */}
         {aniSorulabilir && (
-          <div className="card p-4 mb-3 bg-coral-50/70 border-coral-100">
+          <div className="card p-4 mb-3 bg-orchid-50/70 border-orchid-100">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-coral-100 flex items-center justify-center shrink-0">
-                <Icon name="Camera" className="w-5 h-5 text-coral-500" />
+              <div className="w-10 h-10 rounded-xl bg-orchid-100 flex items-center justify-center shrink-0">
+                <Icon name="Camera" className="w-5 h-5 text-orchid-500" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-ink-700">Nasıl geçti?</p>
@@ -383,7 +383,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
                 </p>
                 <button
                   onClick={() => setAniAcik(true)}
-                  className="mt-3 chip bg-coral-500 text-white"
+                  className="mt-3 chip bg-gradient-orchid text-white"
                 >
                   <Icon name="ImageIcon" className="w-4 h-4" />
                   Fotoğraf ekle
@@ -396,7 +396,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
         {paylasilabilir && !editing && (
           <button
             onClick={() => setPaylasAcik(true)}
-            className="w-full bg-coral-50 text-coral-700 font-medium rounded-2xl px-5 py-3.5 flex items-center justify-center gap-2 active:scale-[0.97] transition-all hover:bg-coral-100 mb-3"
+            className="w-full bg-orchid-50 text-orchid-700 font-medium rounded-2xl px-5 py-3.5 flex items-center justify-center gap-2 active:scale-[0.97] transition-all hover:bg-orchid-100 mb-3"
           >
             <Icon name="Send" className="w-5 h-5" />
             Arkadaşlarınla paylaş

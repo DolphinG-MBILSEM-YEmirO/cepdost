@@ -26,7 +26,7 @@ export function Avatar({ ad, foto, emoji, renk, boyut = 'md' }: Props) {
   const olcu = OLCULER[boyut]
 
   if (foto) {
-    return <img src={foto} alt={ad} className={`${olcu} rounded-2xl object-cover shrink-0 bg-cream-100`} />
+    return <img src={foto} alt={ad} className={`${olcu} rounded-2xl object-cover shrink-0 bg-mist-100`} />
   }
 
   const harf = (ad.trim()[0] ?? '?').toLocaleUpperCase('tr-TR')

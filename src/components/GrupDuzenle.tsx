@@ -93,7 +93,7 @@ export function GrupDuzenle({
         {hata && <p className="text-sm text-rose-600 mb-3">{hata}</p>}
 
         <div className="flex gap-3">
-          <button onClick={onKapat} disabled={kaydediliyor} className="btn-ghost flex-1 border border-ink-100/40">
+          <button onClick={onKapat} disabled={kaydediliyor} className="btn-ghost flex-1 border border-ink-100">
             Vazgeç
           </button>
           <button onClick={() => void kaydet()} disabled={kaydediliyor} className="btn-primary flex-1 disabled:opacity-50">

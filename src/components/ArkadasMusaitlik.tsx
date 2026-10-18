@@ -90,7 +90,7 @@ export function ArkadasMusaitlik({ arkadas, benimId, onClose }: Props) {
         <button
           onClick={onClose}
           aria-label="Kapat"
-          className="w-10 h-10 rounded-full bg-cream-50/80 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:scale-90 transition-transform shrink-0"
         >
           <Icon name="X" className="w-5 h-5 text-ink-500" />
         </button>
@@ -105,7 +105,7 @@ export function ArkadasMusaitlik({ arkadas, benimId, onClose }: Props) {
             key={s.id}
             onClick={() => setSekme(s.id)}
             className={`chip ${
-              sekme === s.id ? 'bg-coral-500 text-white' : 'bg-cream-50 text-ink-400 border border-ink-100/40'
+              sekme === s.id ? 'bg-gradient-orchid text-white' : 'bg-mist-50 text-ink-400 border border-ink-100'
             }`}
           >
             <Icon name={s.ikon} className="w-4 h-4" />
@@ -235,7 +235,7 @@ function GunSatiri({
         </div>
         <button
           onClick={onDavet}
-          className="text-xs font-semibold text-coral-600 active:scale-95 transition-transform shrink-0"
+          className="text-xs font-semibold text-orchid-600 active:scale-95 transition-transform shrink-0"
         >
           Davet et
         </button>
@@ -252,7 +252,7 @@ function GunSatiri({
           {bloklar.map((b) => (
             <span
               key={b.id}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-cream-100 border border-ink-100/40 px-2.5 py-1.5 text-xs font-medium text-ink-500"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-mist-100 border border-ink-100 px-2.5 py-1.5 text-xs font-medium text-ink-500"
             >
               <Icon name="Clock" className="w-3.5 h-3.5 text-ink-300" />
               {b.baslangic.slice(0, 5) === '00:00' && b.bitis.slice(0, 5) >= '23:59'
@@ -344,8 +344,8 @@ function DavetModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2.5 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-coral-100 flex items-center justify-center shrink-0">
-            <Icon name="CalendarClock" className="w-5 h-5 text-coral-500" />
+          <div className="w-10 h-10 rounded-xl bg-orchid-100 flex items-center justify-center shrink-0">
+            <Icon name="CalendarClock" className="w-5 h-5 text-orchid-500" />
           </div>
           <div className="min-w-0">
             <h3 className="font-semibold text-ink-700 truncate">{arkadas.ad} davet et</h3>
@@ -415,7 +415,7 @@ function DavetModal({
         )}
 
         <div className="flex gap-3">
-          <button onClick={onClose} className="btn-ghost flex-1 border border-ink-100/40" disabled={gonderiliyor}>
+          <button onClick={onClose} className="btn-ghost flex-1 border border-ink-100" disabled={gonderiliyor}>
             Vazgeç
           </button>
           <button

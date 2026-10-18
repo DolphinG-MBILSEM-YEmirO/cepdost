@@ -141,8 +141,8 @@ function ArkadaslarIcerik({
                   onClick={() => setSihirbazAcik(true)}
                   className="w-full card p-4 flex items-center gap-3 text-left active:scale-[0.98] transition-transform"
                 >
-                  <div className="w-10 h-10 rounded-2xl bg-coral-100 flex items-center justify-center shrink-0">
-                    <Icon name="Wand2" className="w-5 h-5 text-coral-500" />
+                  <div className="w-10 h-10 rounded-2xl bg-orchid-100 flex items-center justify-center shrink-0">
+                    <Icon name="Wand2" className="w-5 h-5 text-orchid-500" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-ink-700">Herkese uyan saati bul</p>
@@ -205,7 +205,7 @@ function ArkadaslarIcerik({
                   <button
                     onClick={() => setGrupKurAcik(true)}
                     disabled={kabulEdilmis.length === 0}
-                    className="w-full btn-ghost border border-ink-100/40 text-sm py-3 flex items-center justify-center gap-2 disabled:opacity-40"
+                    className="w-full btn-ghost border border-ink-100 text-sm py-3 flex items-center justify-center gap-2 disabled:opacity-40"
                   >
                     <Icon name="Plus" className="w-4 h-4" />
                     {kabulEdilmis.length === 0 ? 'Grup için önce arkadaş ekle' : 'Grup kur'}
@@ -405,7 +405,7 @@ function GrupKurModal({
                 key={a.profil.id}
                 onClick={() => degistir(a.profil.id)}
                 className={`w-full flex items-center gap-3 rounded-2xl p-3 border transition-all active:scale-[0.98] ${
-                  secili ? 'bg-coral-50 border-coral-200' : 'bg-cream-100 border-ink-100/40'
+                  secili ? 'bg-orchid-50 border-orchid-200' : 'bg-mist-100 border-ink-100'
                 }`}
               >
                 <Avatar ad={a.profil.ad} foto={a.profil.avatar} emoji={a.profil.emoji} renk={a.profil.renk} boyut="sm" />
@@ -414,7 +414,7 @@ function GrupKurModal({
                 </span>
                 <div
                   className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${
-                    secili ? 'bg-coral-500' : 'bg-cream-50 border border-ink-200'
+                    secili ? 'bg-orchid-500' : 'bg-mist-50 border border-ink-200'
                   }`}
                 >
                   {secili && <Icon name="Check" className="w-3.5 h-3.5 text-white" />}
@@ -432,7 +432,7 @@ function GrupKurModal({
         )}
 
         <div className="flex gap-3">
-          <button onClick={onClose} disabled={kuruluyor} className="btn-ghost flex-1 border border-ink-100/40">
+          <button onClick={onClose} disabled={kuruluyor} className="btn-ghost flex-1 border border-ink-100">
             Vazgeç
           </button>
           <button onClick={() => void kur()} disabled={kuruluyor} className="btn-primary flex-1 disabled:opacity-50">
@@ -532,7 +532,7 @@ function KimlikKarti({ profil, onDegisti }: { profil: Profil; onDegisti: () => P
           {duzenle ? null : (
             <button
               onClick={() => setDuzenle(true)}
-              className="text-xs text-coral-600 font-medium active:scale-95 transition-transform"
+              className="text-xs text-orchid-600 font-medium active:scale-95 transition-transform"
             >
               {profil.kullanici_adi ? `@${profil.kullanici_adi}` : 'Kullanıcı adı belirle'}
             </button>
@@ -541,7 +541,7 @@ function KimlikKarti({ profil, onDegisti }: { profil: Profil; onDegisti: () => P
         <button
           onClick={() => setProfilDuzenle(true)}
           aria-label="Profili düzenle"
-          className="w-9 h-9 rounded-xl bg-cream-50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          className="w-9 h-9 rounded-xl bg-mist-50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
         >
           <Icon name="Pencil" className="w-4 h-4 text-ink-400" />
         </button>
@@ -561,7 +561,7 @@ function KimlikKarti({ profil, onDegisti }: { profil: Profil; onDegisti: () => P
       {duzenle && (
         <div className="mb-4">
           <div className="flex gap-2">
-            <div className="flex-1 flex items-center bg-cream-100 border border-ink-100/40 rounded-xl px-3">
+            <div className="flex-1 flex items-center bg-mist-100 border border-ink-100 rounded-xl px-3">
               <span className="text-ink-300 text-sm">@</span>
               <input
                 value={kullaniciAdi}
@@ -592,7 +592,7 @@ function KimlikKarti({ profil, onDegisti }: { profil: Profil; onDegisti: () => P
         </div>
       )}
 
-      <div className="bg-cream-100 rounded-2xl p-4 mb-3">
+      <div className="bg-mist-100 rounded-2xl p-4 mb-3">
         <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">Arkadaş kodun</p>
         <div className="flex items-center gap-2">
           <span className="font-display text-xl font-bold text-ink-700 tracking-wider flex-1">
@@ -600,7 +600,7 @@ function KimlikKarti({ profil, onDegisti }: { profil: Profil; onDegisti: () => P
           </span>
           <button
             onClick={() => void kopyala()}
-            className="w-9 h-9 rounded-xl bg-cream-50 border border-ink-100/40 flex items-center justify-center active:scale-90 transition-transform"
+            className="w-9 h-9 rounded-xl bg-mist-50 border border-ink-100 flex items-center justify-center active:scale-90 transition-transform"
             aria-label="Kodu kopyala"
           >
             <Icon
@@ -610,7 +610,7 @@ function KimlikKarti({ profil, onDegisti }: { profil: Profil; onDegisti: () => P
           </button>
           <button
             onClick={() => void paylas()}
-            className="w-9 h-9 rounded-xl bg-coral-500 flex items-center justify-center active:scale-90 transition-transform"
+            className="w-9 h-9 rounded-xl bg-orchid-500 flex items-center justify-center active:scale-90 transition-transform"
             aria-label="Paylaş"
           >
             <Icon name="Share2" className="w-4 h-4 text-white" />
@@ -699,7 +699,7 @@ function AvatarSecici({
         className="block active:scale-95 transition-transform disabled:opacity-60"
       >
         <Avatar ad={profil.ad} foto={profil.avatar} emoji={profil.emoji} renk={profil.renk} />
-        <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-coral-500 text-white flex items-center justify-center shadow-soft ring-2 ring-cream-50">
+        <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-orchid text-white flex items-center justify-center shadow-soft ring-2 ring-mist-50">
           <Icon name={calisiyor ? 'Loader2' : 'Camera'} className={`w-3.5 h-3.5 ${calisiyor ? 'animate-spin' : ''}`} />
         </span>
       </button>
@@ -743,7 +743,7 @@ function Anahtar({
     >
       <div
         className={`w-11 h-6 rounded-full transition-colors shrink-0 relative ${
-          acik ? 'bg-teal-500' : 'bg-ink-200'
+          acik ? 'bg-gradient-orchid' : 'bg-ink-200'
         }`}
       >
         <div
@@ -812,7 +812,7 @@ function ArkadasEkle({
   return (
     <div className="card p-5">
       <div className="flex items-center gap-2 mb-3">
-        <Icon name="UserPlus" className="w-4 h-4 text-coral-500" />
+        <Icon name="UserPlus" className="w-4 h-4 text-orchid-500" />
         <h2 className="text-sm font-semibold text-ink-600">Arkadaş ekle</h2>
       </div>
 
@@ -839,7 +839,7 @@ function ArkadasEkle({
       )}
 
       {sonuc && (
-        <div className="mt-3 flex items-center gap-3 bg-cream-100 rounded-2xl p-3">
+        <div className="mt-3 flex items-center gap-3 bg-mist-100 rounded-2xl p-3">
           <Avatar ad={sonuc.ad} foto={sonuc.avatar} boyut="sm" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-ink-700 truncate">{sonuc.ad}</p>
@@ -890,7 +890,7 @@ function IstekKarti({ arkadas, onYanit }: { arkadas: Arkadas; onYanit: () => Pro
         <button
           onClick={() => void yanitla(false)}
           disabled={isleniyor}
-          className="btn-ghost flex-1 border border-ink-100/40 text-sm py-2.5 disabled:opacity-50"
+          className="btn-ghost flex-1 border border-ink-100 text-sm py-2.5 disabled:opacity-50"
         >
           Reddet
         </button>
@@ -990,7 +990,7 @@ function DavetKarti({
     .join(' · ')
 
   return (
-    <div className="card p-4 border-coral-100 bg-coral-50/40">
+    <div className="card p-4 border-orchid-100 bg-orchid-50/40">
       <div className="flex items-center gap-2.5 mb-2">
         <Avatar ad={gonderenAd} boyut="sm" />
         <div className="min-w-0">
@@ -1007,7 +1007,7 @@ function DavetKarti({
         <button
           onClick={() => void yanitla(onRed)}
           disabled={isleniyor}
-          className="btn-ghost flex-1 border border-ink-100/40 text-sm py-2.5 disabled:opacity-50"
+          className="btn-ghost flex-1 border border-ink-100 text-sm py-2.5 disabled:opacity-50"
         >
           Uygun değilim
         </button>

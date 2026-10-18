@@ -27,17 +27,18 @@ const NOKTA_DESENI =
 const CIZGI_DESENI =
   'repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 10px)'
 
+// The first theme is the default: the app's own blue orchid look.
 export const TEMALAR: SohbetTemasi[] = [
   {
-    id: 'mercan',
-    ad: 'Mercan',
-    benim: 'bg-coral-500',
+    id: 'orkide',
+    ad: 'Mavi orkide',
+    benim: 'bg-gradient-orchid shadow-brand',
     benimMetin: 'text-white',
-    karsi: 'bg-cream-50 border border-ink-100/40',
+    karsi: 'bg-white border border-ink-100/70',
     karsiMetin: 'text-ink-700',
-    zemin: 'bg-cream-100',
+    zemin: 'bg-mist-100',
     desen: NOKTA_DESENI,
-    onizleme: 'bg-coral-500',
+    onizleme: 'bg-gradient-orchid',
   },
   {
     id: 'okyanus',
@@ -75,13 +76,25 @@ export const TEMALAR: SohbetTemasi[] = [
   {
     id: 'gece',
     ad: 'Gece',
-    benim: 'bg-coral-500',
+    benim: 'bg-gradient-orchid',
     benimMetin: 'text-white',
     karsi: 'bg-ink-700/90 border border-ink-500/40',
-    karsiMetin: 'text-cream-50',
+    karsiMetin: 'text-mist-50',
     zemin: 'bg-ink-800',
     desen: CIZGI_DESENI,
     onizleme: 'bg-ink-800',
+  },
+  // The app's earlier look, kept for those who picked it.
+  {
+    id: 'mercan',
+    ad: 'Mercan',
+    benim: 'bg-coral-500',
+    benimMetin: 'text-white',
+    karsi: 'bg-white border border-ink-100/70',
+    karsiMetin: 'text-ink-700',
+    zemin: 'bg-coral-50',
+    desen: NOKTA_DESENI,
+    onizleme: 'bg-coral-500',
   },
 ]
 

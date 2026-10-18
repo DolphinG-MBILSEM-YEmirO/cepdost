@@ -178,7 +178,7 @@ export const CATEGORY_COLORS: Record<Kategori, { bg: string; text: string; ring:
   mekan: { bg: 'bg-teal-100', text: 'text-teal-700', ring: 'ring-teal-200' },
   tarif: { bg: 'bg-amber-100', text: 'text-amber-700', ring: 'ring-amber-200' },
   urun: { bg: 'bg-sky-100', text: 'text-sky-700', ring: 'ring-sky-200' },
-  etkinlik: { bg: 'bg-coral-100', text: 'text-coral-700', ring: 'ring-coral-200' },
+  etkinlik: { bg: 'bg-violet-100', text: 'text-violet-700', ring: 'ring-violet-200' },
   not: { bg: 'bg-ink-100', text: 'text-ink-600', ring: 'ring-ink-200' },
 }
 

@@ -108,7 +108,7 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
         <button
           onClick={onClose}
           aria-label="Geri"
-          className="w-10 h-10 rounded-full bg-cream-50/80 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:scale-90 transition-transform shrink-0"
         >
           <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />
         </button>
@@ -124,7 +124,7 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
           <button
             onClick={() => setTemaAcik(true)}
             aria-label="Sohbet temasını değiştir"
-            className="w-10 h-10 rounded-full bg-cream-50/80 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+            className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:scale-90 transition-transform shrink-0"
           >
             <Icon name="Palette" className="w-5 h-5 text-ink-400" />
           </button>
@@ -132,7 +132,7 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
         <button
           onClick={() => setDuzenleAcik(true)}
           aria-label="Grubu düzenle"
-          className="w-10 h-10 rounded-full bg-cream-50/80 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:scale-90 transition-transform shrink-0"
         >
           <Icon name="Pencil" className="w-4 h-4 text-ink-400" />
         </button>
@@ -156,7 +156,7 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
             key={s.id}
             onClick={() => setSekme(s.id)}
             className={`chip shrink-0 ${
-              sekme === s.id ? 'bg-coral-500 text-white' : 'bg-cream-50 text-ink-400 border border-ink-100/40'
+              sekme === s.id ? 'bg-gradient-orchid text-white' : 'bg-mist-50 text-ink-400 border border-ink-100'
             }`}
           >
             <Icon name={s.ikon} className="w-4 h-4" />
@@ -275,7 +275,7 @@ function PlanlarSekmesi({
 
         <button
           onClick={() => setEkleAcik(true)}
-          className="w-full btn-ghost border border-ink-100/40 flex items-center justify-center gap-2 text-sm py-3"
+          className="w-full btn-ghost border border-ink-100 flex items-center justify-center gap-2 text-sm py-3"
         >
           <Icon name="Plus" className="w-4 h-4" />
           Kendim plan oluştur
@@ -386,7 +386,7 @@ function PlanKarti({
               onClick={() => onYanit(s.d)}
               aria-pressed={benimYanit === s.d}
               className={`flex-1 rounded-xl py-2 text-xs font-semibold active:scale-95 transition-all ${
-                benimYanit === s.d ? s.renk : 'bg-cream-100 text-ink-400 border border-ink-100/40'
+                benimYanit === s.d ? s.renk : 'bg-mist-100 text-ink-400 border border-ink-100'
               }`}
             >
               {s.etiket}
@@ -538,7 +538,7 @@ function PlanEkleModal({
         )}
 
         <div className="flex gap-3">
-          <button onClick={onClose} disabled={kaydediliyor} className="btn-ghost flex-1 border border-ink-100/40">
+          <button onClick={onClose} disabled={kaydediliyor} className="btn-ghost flex-1 border border-ink-100">
             Vazgeç
           </button>
           <button
@@ -643,7 +643,7 @@ function SohbetSekmesi({
               <p className="text-sm text-ink-400 mb-3">Sohbet boş. İlk mesajı sen yaz.</p>
               <button
                 onClick={() => setSihirbazAcik(true)}
-                className="chip bg-coral-100 text-coral-700 mx-auto"
+                className="chip bg-orchid-100 text-orchid-700 mx-auto"
               >
                 <Icon name="Wand2" className="w-4 h-4" />
                 Yapay zekâdan plan iste
@@ -687,12 +687,12 @@ function SohbetSekmesi({
         </div>
       </SohbetZemini>
 
-      <div className="px-5 pb-[calc(1rem+var(--safe-bottom))] pt-3 border-t border-ink-100/40 safe-x shrink-0 bg-cream-100">
+      <div className="px-5 pb-[calc(1rem+var(--safe-bottom))] pt-3 border-t border-ink-100 safe-x shrink-0 bg-mist-100">
         <div className="flex items-end gap-2">
           <button
             onClick={() => setPaylasAcik(true)}
             aria-label="Plan paylaş"
-            className="w-11 h-11 rounded-full bg-coral-100 text-coral-600 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+            className="w-11 h-11 rounded-full bg-orchid-100 text-orchid-600 flex items-center justify-center active:scale-90 transition-transform shrink-0"
           >
             <Icon name="CalendarPlus" className="w-5 h-5" />
           </button>
@@ -707,7 +707,7 @@ function SohbetSekmesi({
             }}
             placeholder="Mesaj yaz..."
             rows={1}
-            className="flex-1 bg-cream-50 border border-ink-100/40 rounded-2xl px-4 py-3 text-ink-700 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-coral-200 transition-all resize-none max-h-32"
+            className="flex-1 bg-mist-50 border border-ink-100 rounded-2xl px-4 py-3 text-ink-700 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-orchid-200 transition-all resize-none max-h-32"
           />
           <GonderButonu
             onClick={() => void gonder()}
@@ -827,7 +827,7 @@ function UyelerSekmesi({
           await onAyrildi()
         }}
         className={`w-full rounded-2xl py-3 text-sm font-semibold transition-all active:scale-[0.97] ${
-          ayrilOnay ? 'bg-rose-500 text-white' : 'bg-cream-50 text-rose-600 border border-rose-100'
+          ayrilOnay ? 'bg-rose-500 text-white' : 'bg-mist-50 text-rose-600 border border-rose-100'
         }`}
       >
         {ayrilOnay ? 'Emin misin? Dokun ve ayrıl' : 'Gruptan ayrıl'}

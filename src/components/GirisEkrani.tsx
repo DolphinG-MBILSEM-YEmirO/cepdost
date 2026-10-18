@@ -67,7 +67,7 @@ export function GirisEkrani({
           <label htmlFor="giris-kullanici" className="sr-only">
             Kullanıcı adı
           </label>
-          <div className="flex items-center bg-cream-50 border border-ink-100/40 rounded-2xl px-4">
+          <div className="flex items-center bg-mist-50 border border-ink-100 rounded-2xl px-4">
             <span className="text-ink-300">@</span>
             <input
               id="giris-kullanici"
@@ -114,7 +114,7 @@ export function GirisEkrani({
             setAsama('kod')
             setHata(null)
           }}
-          className="w-full mt-5 text-sm font-semibold text-coral-600"
+          className="w-full mt-5 text-sm font-semibold text-orchid-600"
         >
           Şifreni mi unuttun? Kurtarma koduyla gir
         </button>
@@ -125,7 +125,7 @@ export function GirisEkrani({
   if (asama === 'kod') {
     return (
       <Cerceve baslik="Kurtarma koduyla gir" altBaslik="Ayarlar'da sakladığın kod" onGeri={geri}>
-        <div className="card p-4 mb-4 bg-cream-50">
+        <div className="card p-4 mb-4 bg-mist-50">
           <p className="text-xs text-ink-500 leading-relaxed">
             Kurtarma kodu <strong>nsec1</strong> ile başlayan uzun bir koddur. Hesabını açtığın
             telefonda <strong>Hesabım → Ayarlar → Hesap güvenliği</strong> bölümünde bulunur.
@@ -169,8 +169,8 @@ export function GirisEkrani({
   return (
     <Cerceve baslik={baslik} altBaslik={altBaslik}>
       <div className="card p-5 mb-5">
-        <div className="w-14 h-14 rounded-2xl bg-coral-100 flex items-center justify-center mb-4">
-          <Icon name="Users" className="w-7 h-7 text-coral-500" />
+        <div className="w-14 h-14 rounded-2xl bg-orchid-100 flex items-center justify-center mb-4">
+          <Icon name="Users" className="w-7 h-7 text-orchid-500" />
         </div>
         <h2 className="font-display text-lg font-bold text-ink-700 mb-2">{tanitimBaslik}</h2>
         <p className="text-sm text-ink-400 leading-relaxed">{tanitimMetin}</p>
@@ -217,7 +217,7 @@ export function GirisEkrani({
           setHata(null)
         }}
         disabled={yukleniyor}
-        className="w-full mt-3 btn-ghost border border-ink-100/40 disabled:opacity-50"
+        className="w-full mt-3 btn-ghost border border-ink-100 disabled:opacity-50"
       >
         Zaten hesabım var
       </button>

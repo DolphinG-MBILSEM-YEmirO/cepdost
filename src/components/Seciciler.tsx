@@ -26,7 +26,7 @@ export function EmojiSecici({
           aria-label={`${etiket} ${e}`}
           aria-pressed={secili === e}
           className={`w-9 h-9 rounded-xl text-lg flex items-center justify-center transition-all active:scale-90 ${
-            secili === e ? 'bg-coral-100 ring-2 ring-coral-300' : 'bg-cream-100'
+            secili === e ? 'bg-orchid-100 ring-2 ring-orchid-300' : 'bg-mist-100'
           }`}
         >
           {e}
@@ -69,7 +69,7 @@ export function TumGunAnahtari({ acik, onDegistir }: { acik: boolean; onDegistir
       className="w-full flex items-center gap-3 text-left active:scale-[0.98] transition-transform"
     >
       <span
-        className={`w-11 h-6 rounded-full transition-colors shrink-0 relative ${acik ? 'bg-coral-500' : 'bg-ink-200'}`}
+        className={`w-11 h-6 rounded-full transition-colors shrink-0 relative ${acik ? 'bg-gradient-orchid' : 'bg-ink-200'}`}
         aria-hidden="true"
       >
         <span

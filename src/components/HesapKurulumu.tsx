@@ -88,7 +88,7 @@ export function HesapKurulumu({ profil, onTamamlandi }: Props) {
           <label className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
             Kullanıcı adın
           </label>
-          <div className="flex items-center bg-cream-100 border border-ink-100/40 rounded-xl px-3 mb-2">
+          <div className="flex items-center bg-mist-100 border border-ink-100 rounded-xl px-3 mb-2">
             <span className="text-ink-300">@</span>
             <input
               value={kullaniciAdi}
@@ -204,23 +204,23 @@ function GizlilikSecenegi({
     <button
       onClick={onSec}
       className={`w-full text-left rounded-2xl p-3.5 border transition-all active:scale-[0.98] flex gap-3 ${
-        secili ? 'bg-coral-50 border-coral-200' : 'bg-cream-100 border-ink-100/40'
+        secili ? 'bg-orchid-50 border-orchid-200' : 'bg-mist-100 border-ink-100'
       }`}
     >
       <Icon
         name={ikon}
-        className={`w-5 h-5 shrink-0 mt-0.5 ${secili ? 'text-coral-600' : 'text-ink-300'}`}
+        className={`w-5 h-5 shrink-0 mt-0.5 ${secili ? 'text-orchid-600' : 'text-ink-300'}`}
       />
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-semibold ${secili ? 'text-coral-800' : 'text-ink-600'}`}>{baslik}</p>
+        <p className={`text-sm font-semibold ${secili ? 'text-orchid-800' : 'text-ink-600'}`}>{baslik}</p>
         <p className="text-xs text-ink-400 mt-0.5 leading-relaxed">{aciklama}</p>
       </div>
       <div
         className={`w-5 h-5 rounded-full border-2 shrink-0 mt-0.5 flex items-center justify-center ${
-          secili ? 'border-coral-500' : 'border-ink-200'
+          secili ? 'border-orchid-500' : 'border-ink-200'
         }`}
       >
-        {secili && <div className="w-2.5 h-2.5 rounded-full bg-coral-500" />}
+        {secili && <div className="w-2.5 h-2.5 rounded-full bg-orchid-500" />}
       </div>
     </button>
   )

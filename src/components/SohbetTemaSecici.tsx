@@ -12,14 +12,14 @@ export function TemaSheet({ onKapat }: { onKapat: () => void }) {
       onClick={onKapat}
     >
       <div
-        className="w-full max-w-md bg-cream-50 rounded-t-3xl p-5 pb-[calc(1.25rem+var(--safe-bottom))] animate-slide-up"
+        className="w-full max-w-md bg-mist-50 rounded-t-3xl p-5 pb-[calc(1.25rem+var(--safe-bottom))] animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="w-10 h-1 rounded-full bg-ink-200 mx-auto mb-4" />
         <h3 className="font-semibold text-ink-700 mb-1">Sohbet teması</h3>
         <p className="text-xs text-ink-400 mb-4">Sadece senin ekranında değişir.</p>
 
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-6 gap-2">
           {TEMALAR.map((t) => {
             const aktif = t.id === secili.id
             return (
@@ -32,7 +32,7 @@ export function TemaSheet({ onKapat }: { onKapat: () => void }) {
               >
                 <span
                   className={`w-11 h-11 rounded-2xl ${t.onizleme} flex items-center justify-center ${
-                    aktif ? 'ring-2 ring-offset-2 ring-coral-500 ring-offset-cream-50' : ''
+                    aktif ? 'ring-2 ring-offset-2 ring-orchid-500 ring-offset-mist-50' : ''
                   }`}
                 >
                   {aktif && <Icon name="Check" className="w-4 h-4 text-white" />}
@@ -49,7 +49,7 @@ export function TemaSheet({ onKapat }: { onKapat: () => void }) {
           })}
         </div>
 
-        <button onClick={onKapat} className="btn-ghost w-full mt-5 border border-ink-100/40">
+        <button onClick={onKapat} className="btn-ghost w-full mt-5 border border-ink-100">
           Tamam
         </button>
       </div>
@@ -65,8 +65,8 @@ export function SohbetTemaSecici() {
   return (
     <div className="card p-5">
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 rounded-xl bg-coral-100 flex items-center justify-center">
-          <Icon name="MessagesSquare" className="w-5 h-5 text-coral-500" />
+        <div className="w-10 h-10 rounded-xl bg-orchid-100 flex items-center justify-center">
+          <Icon name="MessagesSquare" className="w-5 h-5 text-orchid-500" />
         </div>
         <h2 className="font-semibold text-ink-700">Sohbet teması</h2>
       </div>
@@ -97,7 +97,7 @@ export function SohbetTemaSecici() {
         </div>
       </div>
 
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-6 gap-2">
         {TEMALAR.map((t) => {
           const aktif = t.id === secili.id
           return (
@@ -110,7 +110,7 @@ export function SohbetTemaSecici() {
             >
               <span
                 className={`w-10 h-10 rounded-2xl ${t.onizleme} flex items-center justify-center ${
-                  aktif ? 'ring-2 ring-offset-2 ring-coral-500 ring-offset-cream-50' : ''
+                  aktif ? 'ring-2 ring-offset-2 ring-orchid-500 ring-offset-mist-50' : ''
                 }`}
               >
                 {aktif && <Icon name="Check" className="w-4 h-4 text-white" />}

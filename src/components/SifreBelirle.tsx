@@ -97,7 +97,7 @@ export function SifreBelirle({
             <button
               type="button"
               onClick={() => setGorunur((g) => !g)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-coral-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-orchid-600"
             >
               {gorunur ? 'Gizle' : 'Göster'}
             </button>

@@ -98,7 +98,7 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
 
   return (
     <div className={gomulu ? 'flex flex-col h-full min-h-0' : 'panel-tam z-[55]'}>
-      <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-4 border-b border-ink-100/40 shrink-0">
+      <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-4 border-b border-ink-100 shrink-0">
         <div className="flex items-center gap-3 min-w-0">
           <Avatar ad={arkadas.ad} foto={arkadas.avatar} emoji={arkadas.emoji} renk={arkadas.renk} boyut="sm" />
           <div className="min-w-0">
@@ -193,12 +193,12 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
         </div>
       </SohbetZemini>
 
-      <div className="px-5 pb-[calc(1rem+var(--safe-bottom))] pt-3 border-t border-ink-100/40 safe-x shrink-0 bg-cream-100">
+      <div className="px-5 pb-[calc(1rem+var(--safe-bottom))] pt-3 border-t border-ink-100 safe-x shrink-0 bg-mist-100">
         <div className="flex items-end gap-2">
           <button
             onClick={() => setPaylasAcik(true)}
             aria-label="Plan paylaş"
-            className="w-11 h-11 rounded-full bg-coral-100 text-coral-600 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+            className="w-11 h-11 rounded-full bg-orchid-100 text-orchid-600 flex items-center justify-center active:scale-90 transition-transform shrink-0"
           >
             <Icon name="CalendarPlus" className="w-5 h-5" />
           </button>
@@ -213,7 +213,7 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
             }}
             placeholder="Mesaj yaz..."
             rows={1}
-            className="flex-1 bg-cream-50 border border-ink-100/40 rounded-2xl px-4 py-3 text-ink-700 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-coral-200 transition-all resize-none max-h-32"
+            className="flex-1 bg-mist-50 border border-ink-100 rounded-2xl px-4 py-3 text-ink-700 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-orchid-200 transition-all resize-none max-h-32"
           />
           <GonderButonu
             onClick={() => void gonder()}

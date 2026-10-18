@@ -298,7 +298,7 @@ export default function App() {
     activeTab === 'sohbet' ? 'lg:max-w-none lg:px-0' : activeTab === 'akis' ? 'lg:max-w-4xl lg:pt-4' : 'lg:max-w-6xl lg:pt-4'
 
   return (
-    <div className="min-h-screen bg-cream-100">
+    <div className="min-h-screen bg-uygulama">
       {banner === 'ok' && (
         <div className="fixed top-0 left-0 right-0 z-50 safe-top px-4 pt-2 animate-slide-down">
           <div className="bg-teal-500 text-white text-sm font-medium rounded-2xl px-4 py-3 shadow-float flex items-center gap-2 max-w-md mx-auto">
@@ -406,7 +406,7 @@ export default function App() {
 // panel instead of stretching across the screen.
 function TekEkran({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-cream-100 lg:grid lg:grid-cols-2">
+    <div className="min-h-screen bg-uygulama lg:grid lg:grid-cols-2">
       <MarkaPaneli />
       <div className="max-w-md mx-auto w-full relative min-h-screen lg:min-h-0 lg:flex lg:flex-col lg:justify-center lg:py-12">
         {children}
@@ -422,17 +422,20 @@ function MarkaPaneli() {
     { ikon: 'ShieldCheck', metin: 'Planların telefonunda kalır, arkadaşlarınla paylaştıkların şifrelenir.' },
   ]
   return (
-    <div className="hidden lg:flex flex-col justify-between bg-gradient-to-br from-coral-500 to-coral-700 text-white p-12">
-      <div className="flex items-center gap-3">
+    <div className="hidden lg:flex flex-col justify-between bg-gradient-orchid-deep text-white p-12 relative overflow-hidden">
+      {/* Soft light behind the text, like petals out of focus. */}
+      <div aria-hidden className="absolute -top-28 -right-20 w-96 h-96 rounded-full bg-violet-400/30 blur-3xl" />
+      <div aria-hidden className="absolute -bottom-36 -left-24 w-[28rem] h-[28rem] rounded-full bg-sky-400/20 blur-3xl" />
+      <div className="relative flex items-center gap-3">
         <img src="/icons/icon-192.png" alt="" className="w-11 h-11 rounded-2xl ring-2 ring-white/30" />
         <span className="font-display text-2xl font-bold">CepDost</span>
       </div>
-      <div className="max-w-md">
+      <div className="relative max-w-md">
         <h2 className="font-display text-4xl font-bold leading-tight mb-8">Kaydettiğin şey nihayet işe yarasın.</h2>
         <ul className="space-y-5">
           {maddeler.map((m) => (
             <li key={m.ikon} className="flex items-start gap-3">
-              <span className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+              <span className="w-9 h-9 rounded-xl bg-white/15 ring-1 ring-white/20 flex items-center justify-center shrink-0">
                 <Icon name={m.ikon} className="w-5 h-5" />
               </span>
               <span className="text-white/90 leading-relaxed pt-1.5">{m.metin}</span>
@@ -440,14 +443,14 @@ function MarkaPaneli() {
           ))}
         </ul>
       </div>
-      <p className="text-sm text-white/70">Ücretsiz. Reklamsız. Planların sende kalır.</p>
+      <p className="relative text-sm text-white/70">Ücretsiz. Reklamsız. Planların sende kalır.</p>
     </div>
   )
 }
 
 function Bekleme({ metin }: { metin?: string }) {
   return (
-    <div className="min-h-screen bg-cream-100 max-w-md mx-auto flex flex-col items-center justify-center gap-3">
+    <div className="min-h-screen bg-uygulama max-w-md mx-auto flex flex-col items-center justify-center gap-3">
       <Icon name="Loader2" className="w-6 h-6 animate-spin text-ink-300" />
       {metin && <p className="text-sm text-ink-400">{metin}</p>}
     </div>

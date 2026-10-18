@@ -28,13 +28,13 @@ interface CerceveProps {
 function KartCercevesi({ etiket, emoji, baslik, tarih, saat, sure, tumGun, konum, not, children }: CerceveProps) {
   const zaman = [formatDate(tarih) ?? tarih, formatPlanTime(saat, tumGun), formatDuration(sure)].filter(Boolean).join(' · ')
   return (
-    <div className="w-72 max-w-full rounded-2xl bg-cream-50 border border-ink-100/50 shadow-soft p-3.5 text-ink-700">
+    <div className="w-72 max-w-full rounded-2xl bg-mist-50 border border-ink-100 shadow-soft p-3.5 text-ink-700">
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-coral-100 flex items-center justify-center shrink-0 text-lg">
-          {emoji ?? <Icon name="CalendarClock" className="w-5 h-5 text-coral-500" />}
+        <div className="w-10 h-10 rounded-xl bg-orchid-100 flex items-center justify-center shrink-0 text-lg">
+          {emoji ?? <Icon name="CalendarClock" className="w-5 h-5 text-orchid-500" />}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-coral-600">{etiket}</p>
+          <p className="text-[10px] font-bold uppercase tracking-wide text-orchid-600">{etiket}</p>
           <p className="text-sm font-semibold leading-snug">{baslik}</p>
           <p className="text-xs text-ink-400 mt-0.5">{zaman}</p>
         </div>
@@ -44,9 +44,9 @@ function KartCercevesi({ etiket, emoji, baslik, tarih, saat, sure, tumGun, konum
           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(konum)}`}
           target="_blank"
           rel="noreferrer"
-          className="flex items-center gap-1 text-xs text-ink-500 mt-2 hover:text-coral-600"
+          className="flex items-center gap-1 text-xs text-ink-500 mt-2 hover:text-orchid-600"
         >
-          <Icon name="MapPin" className="w-3.5 h-3.5 text-coral-500 shrink-0" />
+          <Icon name="MapPin" className="w-3.5 h-3.5 text-orchid-500 shrink-0" />
           <span className="truncate">{konum}</span>
         </a>
       )}
@@ -152,14 +152,14 @@ export function DavetKartiSohbet({
         <button
           onClick={() => void calistir(() => onYanit(false))}
           disabled={isleniyor}
-          className="flex-1 rounded-xl bg-cream-100 border border-ink-100/40 text-ink-500 text-xs font-semibold py-2 active:scale-95 transition-transform disabled:opacity-50"
+          className="flex-1 rounded-xl bg-mist-100 border border-ink-100 text-ink-500 text-xs font-semibold py-2 active:scale-95 transition-transform disabled:opacity-50"
         >
           Uymuyor
         </button>
         <button
           onClick={() => void calistir(() => onYanit(true))}
           disabled={isleniyor}
-          className="flex-1 rounded-xl bg-coral-500 text-white text-xs font-semibold py-2 active:scale-95 transition-transform disabled:opacity-50"
+          className="flex-1 rounded-xl bg-gradient-orchid text-white text-xs font-semibold py-2 active:scale-95 transition-transform disabled:opacity-50"
         >
           Geliyorum
         </button>
@@ -296,7 +296,7 @@ export function GrupPlanKartiSohbet({
                 disabled={isleniyor}
                 aria-pressed={benimYanit === s.d}
                 className={`flex-1 rounded-lg py-1.5 text-[11px] font-semibold active:scale-95 transition-all disabled:opacity-60 ${
-                  benimYanit === s.d ? s.renk : 'bg-cream-100 text-ink-400 border border-ink-100/40'
+                  benimYanit === s.d ? s.renk : 'bg-mist-100 text-ink-400 border border-ink-100'
                 }`}
               >
                 {s.etiket}

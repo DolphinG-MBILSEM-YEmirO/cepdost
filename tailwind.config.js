@@ -1,7 +1,10 @@
 /** @type {import('tailwindcss').Config} */
-// Renk paleti / gölgeler / animasyonlar "Hallet" bolt.new referansından
-// taşındı (2026-08-05) — CepDost'un kendi tasarım sistemi olarak
-// benimsendi, ürün adı/kimliği değişmedi.
+// "Blue orchid" theme (2026-10-18): blue to violet accents on cool,
+// near-white surfaces with navy text. `orchid` is the brand colour, `mist`
+// the surfaces and `ink` the text; the gradients below carry the brand on
+// buttons, the sidebar and hero areas. `coral` only stays for the personal
+// "Mercan" accent people can pick (lib/kisisellestirme.ts). Animations come
+// from the earlier "Hallet" design (2026-08-05).
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
@@ -11,37 +14,45 @@ export default {
         display: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
       },
       colors: {
-        cream: {
-          50: '#FDFBF7',
-          100: '#FBF8F4',
-          200: '#F5F0E8',
-          300: '#EDE5D8',
-          400: '#E0D5C3',
-          500: '#C9B89E',
+        mist: {
+          50: '#FCFDFF',
+          100: '#F4F6FD',
+          200: '#E9EDF9',
+          300: '#DCE2F4',
+          400: '#C6CEEA',
+          500: '#A6B1DA',
         },
         ink: {
-          50: '#F4F2EE',
-          100: '#E5E1D9',
-          200: '#C9C2B6',
-          300: '#A89F90',
-          400: '#7A7163',
-          500: '#524A3D',
-          600: '#3D362B',
-          700: '#2A241B',
-          800: '#1A1610',
-          900: '#0F0C08',
+          50: '#F3F5FA',
+          100: '#E3E7F1',
+          200: '#C6CDDE',
+          300: '#9CA5BF',
+          400: '#6C7694',
+          500: '#4B5473',
+          600: '#353D5B',
+          700: '#232A45',
+          800: '#151A2F',
+          900: '#0B0E1D',
         },
+        orchid: {
+          50: '#EFF3FF',
+          100: '#DFE7FF',
+          200: '#C3D1FF',
+          300: '#9BB1FD',
+          400: '#6F88F9',
+          500: '#4A62F0',
+          600: '#3549DB',
+          700: '#2C3AB5',
+          800: '#28338F',
+          900: '#222B6B',
+        },
+        // Only for the personal "Mercan" accent.
         coral: {
           50: '#FFF4F0',
           100: '#FFE3D9',
-          200: '#FFC4B0',
-          300: '#FF9F82',
-          400: '#FF7A5C',
           500: '#FF5A3C',
           600: '#E83F22',
           700: '#C5331A',
-          800: '#9E2A16',
-          900: '#7A2011',
         },
         teal: {
           50: '#EEFBF6',
@@ -92,16 +103,29 @@ export default {
           900: '#6F111D',
         },
       },
-      boxShadow: {
-        soft: '0 2px 12px -2px rgba(42, 36, 27, 0.08)',
-        card: '0 4px 24px -4px rgba(42, 36, 27, 0.10)',
-        float: '0 8px 32px -6px rgba(42, 36, 27, 0.16)',
-        glow: '0 0 0 4px rgba(255, 90, 60, 0.12)',
+      backgroundImage: {
+        // Blue to violet, like a dyed blue orchid: buttons, active pills,
+        // my chat bubbles.
+        'gradient-orchid': 'linear-gradient(135deg, #2F6BFF 0%, #4A5CF0 48%, #7B5CF5 100%)',
+        // Deep version for large areas (sidebar brand panel, hero).
+        'gradient-orchid-deep': 'linear-gradient(150deg, #16205A 0%, #2C3AB5 55%, #6A47D8 100%)',
+        // Barely tinted, for headers and highlighted cards.
+        'gradient-orchid-soft': 'linear-gradient(135deg, #EEF3FF 0%, #F3F0FF 100%)',
       },
+      boxShadow: {
+        soft: '0 2px 10px -2px rgba(35, 42, 69, 0.08)',
+        card: '0 1px 2px rgba(35, 42, 69, 0.04), 0 6px 24px -8px rgba(35, 42, 69, 0.12)',
+        float: '0 12px 32px -8px rgba(35, 42, 69, 0.20)',
+        glow: '0 0 0 4px rgba(74, 98, 240, 0.15)',
+        // Coloured lift under gradient buttons.
+        brand: '0 8px 20px -6px rgba(74, 92, 240, 0.45)',
+      },
+      // Slightly tighter corners than before for a crisper, more
+      // professional outline.
       borderRadius: {
-        '2xl': '1.25rem',
-        '3xl': '1.75rem',
-        '4xl': '2.25rem',
+        '2xl': '1.125rem',
+        '3xl': '1.5rem',
+        '4xl': '2rem',
       },
       animation: {
         'fade-in': 'fadeIn 0.4s ease-out',

@@ -1,26 +1,26 @@
-import sharp from 'sharp';
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
+// Renders the app icons from the SVG sources in this folder:
+//   public/icons/icon-192.png, icon-512.png   rounded icon (browser, PWA)
+//   public/icons/icon-512-maskable.png        full bleed, art in the safe zone
+//   store_icon.png                            Play Store listing (full bleed)
+//
+//   node scripts/generate-icons.mjs
+import sharp from 'sharp'
+import { fileURLToPath } from 'node:url'
+import path from 'node:path'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const src = path.join(__dirname, 'icon-source.svg');
-const outDir = path.join(__dirname, '..', 'public', 'icons');
+const klasor = path.dirname(fileURLToPath(import.meta.url))
+const kok = path.join(klasor, '..')
+const yuvarlak = path.join(klasor, 'icon-source.svg')
+const tamKaplayan = path.join(klasor, 'icon-maskable.svg')
 
-const sizes = [192, 512];
+const ciktilar = [
+  { kaynak: yuvarlak, boyut: 192, hedef: 'public/icons/icon-192.png' },
+  { kaynak: yuvarlak, boyut: 512, hedef: 'public/icons/icon-512.png' },
+  { kaynak: tamKaplayan, boyut: 512, hedef: 'public/icons/icon-512-maskable.png' },
+  { kaynak: tamKaplayan, boyut: 512, hedef: 'store_icon.png' },
+]
 
-for (const size of sizes) {
-  await sharp(src, { density: 384 })
-    .resize(size, size)
-    .png()
-    .toFile(path.join(outDir, `icon-${size}.png`));
-  console.log(`wrote icon-${size}.png`);
+for (const { kaynak, boyut, hedef } of ciktilar) {
+  await sharp(kaynak, { density: 384 }).resize(boyut, boyut).png().toFile(path.join(kok, hedef))
+  console.log(`wrote ${hedef}`)
 }
-
-// maskable: same art, sharp already has ~30% padding built into the source
-// (icon occupies the inner region within a 512 canvas with a filled bg),
-// good enough for a spike test.
-await sharp(src, { density: 384 })
-  .resize(512, 512)
-  .png()
-  .toFile(path.join(outDir, 'icon-512-maskable.png'));
-console.log('wrote icon-512-maskable.png');
