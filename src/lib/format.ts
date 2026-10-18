@@ -1,5 +1,11 @@
 import type { Kayit, Kategori, Oncelik } from '../db'
 
+// Today's date as YYYY-MM-DD in the user's own time zone. toISOString() gives
+// the UTC date, which in Turkey (UTC+3) is still "yesterday" until 03:00.
+export function localDateString(d: Date = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 export function formatDate(dateStr: string | null): string | null {
   if (!dateStr) return null
   const date = new Date(dateStr)

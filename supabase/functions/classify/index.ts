@@ -152,6 +152,8 @@ interface Girdi {
   gorselMime?: string
   enlem?: number
   boylam?: number
+  // Client's local date, YYYY-MM-DD.
+  bugun?: string
 }
 
 interface YakinOneri {
@@ -317,7 +319,12 @@ Deno.serve(async (req: Request) => {
     })
   }
 
-  const bugun = new Date().toISOString().slice(0, 10)
+  // Prefer the client's local date; the function runs in UTC, which lags
+  // Turkey by three hours around midnight.
+  const bugun =
+    typeof girdi.bugun === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(girdi.bugun)
+      ? girdi.bugun
+      : new Date().toISOString().slice(0, 10)
 
   // Gemini "contents[].parts" — metin + (varsa) görsel aynı istekte.
   const parts: unknown[] = []

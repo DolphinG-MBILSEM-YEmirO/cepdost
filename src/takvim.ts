@@ -162,7 +162,10 @@ const GUN_KODLARI: Record<string, number> = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4,
 // destekleniyor: günlük/haftalık/aylık/yıllık + INTERVAL + COUNT/UNTIL +
 // haftalıkta BYDAY. Desteklenmeyen bir kural varsa etkinlik yalnızca ilk
 // tarihiyle içe aktarılır — eksik göstermek, yanlış göstermekten iyidir.
-function tekrarlariUret(etkinlik: HamEtkinlik, pencereSonu: Date): Date[] {
+// Occurrences before `windowStart` are still walked (COUNT counts from the
+// first occurrence) but not returned, so a series that began years ago still
+// yields its upcoming dates instead of running out of room in the past.
+function tekrarlariUret(etkinlik: HamEtkinlik, pencereSonu: Date, windowStart: Date): Date[] {
   const ilk = etkinlik.baslangic!
   if (!etkinlik.rrule) return [ilk]
 
@@ -192,25 +195,39 @@ function tekrarlariUret(etkinlik: HamEtkinlik, pencereSonu: Date): Date[] {
   const sonuc: Date[] = []
   // Sonsuz döngüye karşı sert üst sınır — bozuk bir RRULE tarayıcıyı kilitlemesin.
   const AZAMI = 400
+  // Separate cap on steps walked, so old series can reach the window
+  // (a daily event from ten years ago is ~3650 steps).
+  const MAX_STEPS = 20000
+  let occurrences = 0
+
+  // Returns false once COUNT is used up.
+  const add = (tarih: Date): boolean => {
+    occurrences++
+    if (tarih >= windowStart) sonuc.push(tarih)
+    return !(sayi && occurrences >= sayi)
+  }
 
   if (sıklık === 'WEEKLY' && gunler.length > 0) {
     const haftaBasi = new Date(ilk)
     haftaBasi.setDate(haftaBasi.getDate() - haftaBasi.getDay())
-    for (let h = 0; sonuc.length < AZAMI; h += aralik) {
+    let devam = true
+    for (let h = 0, step = 0; devam && sonuc.length < AZAMI && step < MAX_STEPS; h += aralik, step++) {
       const hafta = new Date(haftaBasi)
       hafta.setDate(hafta.getDate() + h * 7)
       if (hafta > son) break
-      for (const g of gunler) {
+      for (const g of [...gunler].sort((a, b) => a - b)) {
         const tarih = new Date(hafta)
         tarih.setDate(tarih.getDate() + g)
         tarih.setHours(ilk.getHours(), ilk.getMinutes(), 0, 0)
-        if (tarih >= ilk && tarih <= son) sonuc.push(tarih)
-        if (sayi && sonuc.length >= sayi) break
+        if (tarih < ilk || tarih > son) continue
+        if (!add(tarih)) {
+          devam = false
+          break
+        }
       }
-      if (sayi && sonuc.length >= sayi) break
     }
   } else {
-    for (let i = 0; sonuc.length < AZAMI; i++) {
+    for (let i = 0; sonuc.length < AZAMI && i < MAX_STEPS; i++) {
       const tarih = new Date(ilk)
       if (sıklık === 'DAILY') tarih.setDate(tarih.getDate() + i * aralik)
       else if (sıklık === 'WEEKLY') tarih.setDate(tarih.getDate() + i * aralik * 7)
@@ -218,12 +235,15 @@ function tekrarlariUret(etkinlik: HamEtkinlik, pencereSonu: Date): Date[] {
       else tarih.setFullYear(tarih.getFullYear() + i * aralik)
 
       if (tarih > son) break
-      sonuc.push(tarih)
-      if (sayi && sonuc.length >= sayi) break
+      // RFC 5545: an occurrence that would fall on a day the month does not
+      // have (the 31st in November, 29 February) is skipped, not moved to
+      // the next month.
+      if ((sıklık === 'MONTHLY' || sıklık === 'YEARLY') && tarih.getDate() !== ilk.getDate()) continue
+      if (!add(tarih)) break
     }
   }
 
-  return sonuc.length > 0 ? sonuc.sort((a, b) => a.getTime() - b.getTime()) : [ilk]
+  return sonuc.sort((a, b) => a.getTime() - b.getTime())
 }
 
 // ---------- içe aktarma ----------
@@ -261,7 +281,7 @@ export function icsiEtkinliklereCevir(ics: string, bugun = new Date()): TakvimEt
         ? ham.bitis.getTime() - ham.baslangic.getTime()
         : 60 * 60 * 1000
 
-    for (const baslangic of tekrarlariUret(ham, ust)) {
+    for (const baslangic of tekrarlariUret(ham, ust, alt)) {
       if (baslangic < alt || baslangic > ust) continue
 
       const bitis = new Date(baslangic.getTime() + sureMs)
@@ -342,10 +362,11 @@ export function planIcsOlustur(plan: {
 
   let bitis: string
   if (plan.saat) {
-    const [ss, dd] = plan.saat.split(':').map(Number)
-    const b = new Date(2000, 0, 1, ss, dd)
+    // Use the plan's real date so a plan that runs past midnight ends on the
+    // next day instead of before it starts.
+    const b = new Date(`${plan.tarih}T${plan.saat.slice(0, 5)}:00`)
     b.setMinutes(b.getMinutes() + (plan.sure && plan.sure > 0 ? plan.sure : 60))
-    bitis = icsZaman(plan.tarih, `${String(b.getHours()).padStart(2, '0')}:${String(b.getMinutes()).padStart(2, '0')}`)
+    bitis = icsZaman(tarihStr(b), saatStr(b))
   } else {
     // Saatsiz plan = tüm gün etkinliği; DTEND ertesi gün olmalı.
     const g = new Date(`${plan.tarih}T00:00:00`)
@@ -389,7 +410,8 @@ export function planiTakvimeIndir(plan: Parameters<typeof planIcsOlustur>[0]): v
 // Kayıt tipinden .ics'e köprü — çağrı yerlerinde alan eşlemesi tekrarlanmasın.
 export function kayittanIcsIndir(kayit: Kayit): void {
   planiTakvimeIndir({
-    baslik: kayit.baslik ?? kayit.hamBaslik ?? 'CepDost planı',
+    // hamBaslik is '' (not null) for shared items, so ?? would keep it.
+    baslik: kayit.baslik || kayit.hamBaslik || 'CepDost planı',
     tarih: kayit.tarih!,
     saat: kayit.saat,
     sure: kayit.sure,

@@ -1,4 +1,5 @@
 import { db, type Kayit, type Kategori, type Oncelik, type YakinOneri } from './db'
+import { localDateString } from './lib/format'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
@@ -57,6 +58,8 @@ export async function siniflandirOnizleme(girdi: SiniflandirGirdi): Promise<Sini
     hamLink: girdi.hamLink,
     enlem: girdi.enlem,
     boylam: girdi.boylam,
+    // Lets the function resolve "yarın", "cuma" etc. against the user's date.
+    bugun: localDateString(),
   }
   if (girdi.gorselBlob) {
     body.gorselBase64 = await blobToBase64(girdi.gorselBlob)

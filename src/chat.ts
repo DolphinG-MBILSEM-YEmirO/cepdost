@@ -1,5 +1,5 @@
 import type { Kayit, Kategori, Oncelik } from './db'
-import { CATEGORY_LABELS } from './lib/format'
+import { CATEGORY_LABELS, localDateString } from './lib/format'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
@@ -81,7 +81,7 @@ export async function sohbetGonder(mesajlar: SohbetMesaji[], kayitlar: Kayit[]):
     body: JSON.stringify({
       mesajlar,
       planOzeti: planOzetiOlustur(kayitlar),
-      bugun: new Date().toISOString().slice(0, 10),
+      bugun: localDateString(),
     }),
   })
 
