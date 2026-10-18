@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { PlanlarView } from './components/PlanlarView'
 import { SohbetlerView } from './components/SohbetlerView'
@@ -77,7 +77,9 @@ export default function App() {
   const [profilYuklendi, setProfilYuklendi] = useState(false)
 
   const kayitlarSonucu = useLiveQuery(() => tumKayitlar(), [])
-  const kayitlar = kayitlarSonucu ?? []
+  // Keep a stable empty array while Dexie is loading; a fresh `[]` on every
+  // render would re-run every effect that depends on `kayitlar`.
+  const kayitlar = useMemo(() => kayitlarSonucu ?? [], [kayitlarSonucu])
   const loading = kayitlarSonucu === undefined
 
   useEffect(() => {
