@@ -1,3 +1,4 @@
+import { Icon } from './Icon'
 import { renkAl } from '../lib/kisisellestirme'
 
 // Profile photo when there is one; otherwise the person's emoji or the
@@ -35,6 +36,35 @@ export function Avatar({ ad, foto, emoji, renk, boyut = 'md' }: Props) {
       aria-label={ad}
     >
       {emoji || harf}
+    </div>
+  )
+}
+
+const IKON_OLCULERI: Record<AvatarBoyut, string> = {
+  sm: 'w-[18px] h-[18px]',
+  md: 'w-5 h-5',
+  lg: 'w-9 h-9',
+}
+
+// A group's picture: its emoji (or a people icon) on its colour, so a
+// group looks the same in the chat list, its own screen and every picker.
+export function GrupAvatari({
+  grup,
+  boyut = 'md',
+}: {
+  grup: { ad: string; emoji: string | null; renk: string | null }
+  boyut?: AvatarBoyut
+}) {
+  return (
+    <div
+      className={`${OLCULER[boyut]} ${renkAl(grup.renk, grup.ad).yumusak} rounded-2xl flex items-center justify-center shrink-0`}
+      aria-label={grup.ad}
+    >
+      {grup.emoji ? (
+        <span className={boyut === 'lg' ? 'text-4xl' : 'text-lg'}>{grup.emoji}</span>
+      ) : (
+        <Icon name="Users" className={IKON_OLCULERI[boyut]} />
+      )}
     </div>
   )
 }

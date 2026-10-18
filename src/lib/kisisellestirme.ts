@@ -40,6 +40,8 @@ export function renkAl(anahtar: string | null | undefined, ad = ''): RenkTanimi 
 
 export const PROFIL_EMOJILERI = ['😎', '🌟', '☕', '🎧', '🎮', '📚', '🏃', '🎨', '🌿', '✈️', '⚽', '🍕']
 
+export const GRUP_ACIKLAMA_MAKS = 120
+
 export const GRUP_EMOJILERI = ['🎉', '🏠', '🎓', '💼', '⚽', '🎮', '🍻', '🏖️', '🎵', '👨‍👩‍👧', '🧗', '🍳']
 
 export const ETKINLIK_EMOJILERI = ['☕', '🍽️', '🎬', '🎉', '⚽', '🏖️', '🎮', '🎵', '📚', '🛍️', '🏃', '🍻']

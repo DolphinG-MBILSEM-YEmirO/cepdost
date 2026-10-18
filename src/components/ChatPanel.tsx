@@ -245,7 +245,7 @@ function PlanOnerisiKart({
     <div className="card p-4 mt-2">
       <div className="flex items-center gap-2.5 mb-3">
         <div className={`w-9 h-9 rounded-xl ${CATEGORY_COLORS[oneri.kategori].bg} flex items-center justify-center shrink-0`}>
-          <Icon name={CATEGORY_ICON_NAME[oneri.kategori]} className={`w-4.5 h-4.5 ${CATEGORY_COLORS[oneri.kategori].text}`} />
+          <Icon name={CATEGORY_ICON_NAME[oneri.kategori]} className={`w-[18px] h-[18px] ${CATEGORY_COLORS[oneri.kategori].text}`} />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-ink-700 truncate">{oneri.baslik}</p>

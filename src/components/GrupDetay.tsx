@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Icon, type IconName } from './Icon'
-import { Avatar } from './Avatar'
+import { Avatar, GrupAvatari } from './Avatar'
+import { GrupDuzenle } from './GrupDuzenle'
+import { EmojiSecici } from './Seciciler'
 import { AniArsivi } from './AniArsivi'
 import {
   grubaUyeEkle,
   grupPlaniOlustur,
   grupPlanlariGetir,
   grupUyeleriGetir,
+  gruplarimiGetir,
   gruptanAyril,
   grupOkunduIsaretle,
   mesajGonder,
@@ -37,6 +40,7 @@ import { grupPlaniYanitla, planGectiMi } from '../lib/planPaylasimi'
 import { formatDate, formatMessageTime, formatTime, toDateString } from '../lib/format'
 import { useSosyalSurum } from '../sosyal/cekirdek'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
+import { ETKINLIK_EMOJILERI, renkAl } from '../lib/kisisellestirme'
 
 type Sekme = 'planlar' | 'sohbet' | 'anilar' | 'uyeler'
 
@@ -50,14 +54,31 @@ interface Props {
   gomulu?: boolean
 }
 
-export function GrupDetay({ grup, benimId, arkadaslar, onClose, onAyrildi, gomulu = false }: Props) {
+export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAyrildi, gomulu = false }: Props) {
   useEscapeIleKapat(onClose, !gomulu)
   const [sekme, setSekme] = useState<Sekme>('planlar')
   const [temaAcik, setTemaAcik] = useState(false)
+  const [duzenleAcik, setDuzenleAcik] = useState(false)
   const [uyeler, setUyeler] = useState<GrupUyesi[]>([])
   // Everything in the group (members, plans, answers, messages) is read
   // from the local copy and reloads when social data changes.
   const sosyalSurum = useSosyalSurum()
+
+  // The caller hands over the group as it was when opened; a new name,
+  // emoji or colour (mine or another member's) arrives through sync.
+  const [guncelGrup, setGuncelGrup] = useState<Grup | null>(null)
+  useEffect(() => {
+    let iptal = false
+    void gruplarimiGetir().then((liste) => {
+      const g = liste.find((x) => x.id === acilanGrup.id)
+      if (!iptal && g) setGuncelGrup(g)
+    })
+    return () => {
+      iptal = true
+    }
+  }, [acilanGrup.id, sosyalSurum])
+  const grup = guncelGrup?.id === acilanGrup.id ? guncelGrup : acilanGrup
+  const zemin = renkAl(grup.renk, grup.ad).zemin
 
   const uyeleriTazele = useCallback(async () => {
     setUyeler(await grupUyeleriGetir(grup.id))
@@ -83,32 +104,53 @@ export function GrupDetay({ grup, benimId, arkadaslar, onClose, onAyrildi, gomul
 
   return (
     <div className={gomulu ? 'flex flex-col h-full min-h-0' : 'panel-tam z-[55]'}>
-      <div className="flex items-center gap-3 px-5 pt-[calc(1rem+var(--safe-top))] pb-3 shrink-0">
+      <div className={`flex items-center gap-3 px-5 pt-[calc(1rem+var(--safe-top))] pb-3 shrink-0 ${zemin}`}>
         <button
           onClick={onClose}
           aria-label="Geri"
-          className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          className="w-10 h-10 rounded-full bg-cream-50/80 flex items-center justify-center active:scale-90 transition-transform shrink-0"
         >
           <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />
         </button>
+        <GrupAvatari grup={grup} boyut="sm" />
         <div className="min-w-0 flex-1">
           <h2 className="font-display text-base font-bold text-ink-700 truncate">{grup.ad}</h2>
-          <p className="text-xs text-ink-400">{uyeler.length} üye</p>
+          <p className="text-xs text-ink-400 truncate">
+            {grup.aciklama ? `${grup.aciklama} · ` : ''}
+            {uyeler.length} üye
+          </p>
         </div>
         {sekme === 'sohbet' && (
           <button
             onClick={() => setTemaAcik(true)}
             aria-label="Sohbet temasını değiştir"
-            className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+            className="w-10 h-10 rounded-full bg-cream-50/80 flex items-center justify-center active:scale-90 transition-transform shrink-0"
           >
             <Icon name="Palette" className="w-5 h-5 text-ink-400" />
           </button>
         )}
+        <button
+          onClick={() => setDuzenleAcik(true)}
+          aria-label="Grubu düzenle"
+          className="w-10 h-10 rounded-full bg-cream-50/80 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+        >
+          <Icon name="Pencil" className="w-4 h-4 text-ink-400" />
+        </button>
       </div>
 
       {temaAcik && <TemaSheet onKapat={() => setTemaAcik(false)} />}
+      {duzenleAcik && (
+        <GrupDuzenle
+          grup={grup}
+          onKapat={() => setDuzenleAcik(false)}
+          onKaydedildi={() => {
+            setDuzenleAcik(false)
+            void gruplarimiGetir().then((liste) => setGuncelGrup(liste.find((x) => x.id === grup.id) ?? null))
+          }}
+        />
+      )}
 
-      <div className="flex gap-1.5 px-5 pb-3 shrink-0 overflow-x-auto no-scrollbar">
+      <div className={`flex gap-1.5 px-5 pb-3 shrink-0 overflow-x-auto no-scrollbar ${zemin}`}>
         {sekmeler.map((s) => (
           <button
             key={s.id}
@@ -272,7 +314,7 @@ function PlanlarSekmesi({
 
       {ekleAcik && (
         <PlanEkleModal
-          grupId={grup.id}
+          grup={grup}
           onClose={() => setEkleAcik(false)}
           onEklendi={async () => {
             setEkleAcik(false)
@@ -321,7 +363,10 @@ function PlanKarti({
 
   return (
     <div className="card p-4">
-      <p className="text-sm font-semibold text-ink-700">{plan.baslik}</p>
+      <p className="text-sm font-semibold text-ink-700">
+        {plan.emoji && <span aria-hidden="true">{plan.emoji} </span>}
+        {plan.baslik}
+      </p>
       <p className="text-xs text-ink-500 mt-0.5">{detay}</p>
       {plan.notlar && <p className="text-xs text-ink-400 mt-1">{plan.notlar}</p>}
 
@@ -354,20 +399,22 @@ function PlanKarti({
 }
 
 function PlanEkleModal({
-  grupId,
+  grup,
   onClose,
   onEklendi,
 }: {
-  grupId: string
+  grup: Grup
   onClose: () => void
   onEklendi: () => Promise<void>
 }) {
+  useEscapeIleKapat(onClose)
   const [baslik, setBaslik] = useState('')
   const [tarih, setTarih] = useState(toDateString(new Date()))
   const [saat, setSaat] = useState('')
   const [sure, setSure] = useState('')
   const [konum, setKonum] = useState('')
   const [notlar, setNotlar] = useState('')
+  const [emoji, setEmoji] = useState<string | null>(null)
   const [kaydediliyor, setKaydediliyor] = useState(false)
   const [hata, setHata] = useState<string | null>(null)
 
@@ -380,21 +427,26 @@ function PlanEkleModal({
     setHata(null)
     try {
       const planId = await grupPlaniOlustur({
-        grupId,
+        grupId: grup.id,
         baslik: baslik.trim(),
         tarih,
         saat: saat || null,
         sure: sure ? Number(sure) : null,
         konum: konum.trim() || null,
         notlar: notlar.trim() || null,
+        emoji,
       })
       // Hangi yoldan oluşturulursa oluşturulsun plan sohbete düşsün —
       // yoksa üyeler Planlar sekmesine bakmadan haberdar olmuyor.
       try {
-        await mesajGonder(grupId, 'Yeni bir plan 👇', planId)
+        await mesajGonder(grup.id, 'Yeni bir plan 👇', planId)
       } catch {
         /* plan oluştu; sohbet kartı isteğe bağlı bir ekstra */
       }
+      // Whoever sets up the plan is coming, and it goes in their calendar,
+      // the same as a plan made from the "+" button.
+      const plan = (await planlariIdyeGoreGetir([planId])).get(planId)
+      if (plan) await grupPlaniYanitla(plan, 'geliyorum', grup)
       await onEklendi()
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Oluşturulamadı')
@@ -409,6 +461,9 @@ function PlanEkleModal({
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Grup planı"
         className="card w-full max-w-sm mx-4 mb-4 sm:mb-0 p-5 animate-slide-up max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
@@ -422,6 +477,11 @@ function PlanEkleModal({
           className="input-field mb-4"
           autoFocus
         />
+
+        <FieldLabel>Simge</FieldLabel>
+        <div className="mb-4">
+          <EmojiSecici secenekler={ETKINLIK_EMOJILERI} secili={emoji} onSec={setEmoji} />
+        </div>
 
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div>

@@ -1,12 +1,11 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Icon } from './Icon'
-import { Avatar } from './Avatar'
+import { Avatar, GrupAvatari } from './Avatar'
 import { goruntulemeBasligi, tumKayitlar, type Kayit } from '../db'
 import { formatDate } from '../lib/format'
 import { paylasilabilirPlanlar, planiPaylas, type PaylasimHedefi } from '../lib/planPaylasimi'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
-import { renkAl } from '../lib/kisisellestirme'
 import { arkadaslariGetir, type Profil } from '../sosyal/api'
 import { gruplarimiGetir, type Grup } from '../sosyal/gruplar'
 
@@ -247,13 +246,7 @@ export function PaylasimHedefiSheet({ kayit, onKapat }: { kayit: Kayit; onKapat:
               key={g.id}
               onClick={() => void paylas(g.id, g.ad, { tur: 'grup', grup: g })}
               disabled={gonderilen !== null}
-              sol={
-                <span
-                  className={`w-10 h-10 rounded-xl ${renkAl(g.renk, g.ad).yumusak} flex items-center justify-center shrink-0 text-lg`}
-                >
-                  {g.emoji ?? <Icon name="Users" className="w-5 h-5" />}
-                </span>
-              }
+              sol={<GrupAvatari grup={g} boyut="sm" />}
               baslik={g.ad}
               alt="Grup planı olarak"
               sag={sag(g.id)}

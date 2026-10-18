@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Icon } from './Icon'
-import { Avatar } from './Avatar'
+import { Avatar, GrupAvatari } from './Avatar'
 import { ArkadasMusaitlik } from './ArkadasMusaitlik'
 import { ProfilDuzenle } from './ProfilDuzenle'
 import { useAuth } from '../sosyal/auth'
@@ -25,7 +25,9 @@ import { OrtakPlanSihirbazi } from './OrtakPlanSihirbazi'
 import { grupOlustur, gruplarimiGetir, type Grup } from '../sosyal/gruplar'
 import { davetiYanitla, planGectiMi } from '../lib/planPaylasimi'
 import { formatDate, formatTime } from '../lib/format'
-import { GRUP_EMOJILERI, renkAl } from '../lib/kisisellestirme'
+import { GRUP_ACIKLAMA_MAKS, GRUP_EMOJILERI, renkAl } from '../lib/kisisellestirme'
+import { EmojiSecici, RenkSecici } from './Seciciler'
+import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 
 interface Props {
   // Set when the app was opened from an invite link (?ekle=CODE): the
@@ -191,11 +193,7 @@ function ArkadaslarIcerik({
                       onClick={() => setSeciliGrup(g)}
                       className="card p-4 w-full flex items-center gap-3 text-left active:scale-[0.98] transition-transform"
                     >
-                      <div
-                        className={`w-9 h-9 rounded-2xl ${renkAl(g.renk ?? 'gok').yumusak} flex items-center justify-center shrink-0`}
-                      >
-                        {g.emoji ? <span className="text-lg">{g.emoji}</span> : <Icon name="Users" className="w-4.5 h-4.5" />}
-                      </div>
+                      <GrupAvatari grup={g} boyut="sm" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-ink-700 truncate">{g.ad}</p>
                         {g.aciklama && <p className="text-xs text-ink-400 truncate">{g.aciklama}</p>}
@@ -313,8 +311,11 @@ function GrupKurModal({
   onClose: () => void
   onKuruldu: () => Promise<void>
 }) {
+  useEscapeIleKapat(onClose)
   const [ad, setAd] = useState('')
   const [emoji, setEmoji] = useState<string | null>(null)
+  const [renk, setRenk] = useState<string | null>(null)
+  const [aciklama, setAciklama] = useState('')
   const [secilenler, setSecilenler] = useState<Set<string>>(new Set())
   const [kuruluyor, setKuruluyor] = useState(false)
   const [hata, setHata] = useState<string | null>(null)
@@ -336,7 +337,7 @@ function GrupKurModal({
     setKuruluyor(true)
     setHata(null)
     try {
-      await grupOlustur(ad.trim(), Array.from(secilenler), { emoji })
+      await grupOlustur(ad.trim(), Array.from(secilenler), { emoji, renk, aciklama })
       await onKuruldu()
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Grup kurulamadı')
@@ -351,6 +352,9 @@ function GrupKurModal({
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Grup kur"
         className="card w-full max-w-sm mx-4 mb-4 sm:mb-0 p-5 animate-slide-up max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
@@ -367,24 +371,26 @@ function GrupKurModal({
           autoFocus
         />
 
-        <label className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
-          Simge
+        <label htmlFor="grup-aciklama" className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
+          Açıklama
         </label>
-        <div className="flex flex-wrap gap-1.5 mb-4">
-          {GRUP_EMOJILERI.map((e) => (
-            <button
-              key={e}
-              type="button"
-              onClick={() => setEmoji(emoji === e ? null : e)}
-              aria-label={`Simge ${e}`}
-              aria-pressed={emoji === e}
-              className={`w-9 h-9 rounded-xl text-lg flex items-center justify-center transition-all active:scale-90 ${
-                emoji === e ? 'bg-coral-100 ring-2 ring-coral-300' : 'bg-cream-100'
-              }`}
-            >
-              {e}
-            </button>
-          ))}
+        <input
+          id="grup-aciklama"
+          value={aciklama}
+          onChange={(e) => setAciklama(e.target.value)}
+          maxLength={GRUP_ACIKLAMA_MAKS}
+          placeholder="Cumartesi buluşmaları (isteğe bağlı)"
+          className="input-field mb-4"
+        />
+
+        <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">Simge</p>
+        <div className="mb-4">
+          <EmojiSecici secenekler={GRUP_EMOJILERI} secili={emoji} onSec={setEmoji} />
+        </div>
+
+        <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">Renk</p>
+        <div className="mb-4">
+          <RenkSecici secili={renk} onSec={setRenk} />
         </div>
 
         <label className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
@@ -517,7 +523,7 @@ function KimlikKarti({ profil, onDegisti }: { profil: Profil; onDegisti: () => P
 
   return (
     <div className="card p-5">
-      <div className="flex items-center gap-3 mb-4">
+      <div className={`-mx-5 -mt-5 mb-4 px-5 pt-5 pb-4 rounded-t-3xl flex items-center gap-3 ${renkAl(profil.renk, profil.ad).zemin}`}>
         <AvatarSecici profil={profil} onDegisti={onDegisti} onHata={setHata} />
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-ink-700 truncate">{profil.ad}</p>
@@ -534,7 +540,7 @@ function KimlikKarti({ profil, onDegisti }: { profil: Profil; onDegisti: () => P
         <button
           onClick={() => setProfilDuzenle(true)}
           aria-label="Profili düzenle"
-          className="w-9 h-9 rounded-xl bg-cream-100 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          className="w-9 h-9 rounded-xl bg-cream-50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
         >
           <Icon name="Pencil" className="w-4 h-4 text-ink-400" />
         </button>
@@ -987,7 +993,10 @@ function DavetKarti({
         <Avatar ad={gonderenAd} boyut="sm" />
         <div className="min-w-0">
           <p className="text-xs text-ink-400">{gonderenAd} davet etti</p>
-          <p className="text-sm font-semibold text-ink-700 truncate">{davet.baslik}</p>
+          <p className="text-sm font-semibold text-ink-700 truncate">
+            {davet.emoji && <span aria-hidden="true">{davet.emoji} </span>}
+            {davet.baslik}
+          </p>
         </div>
       </div>
       <p className="text-xs text-ink-500 mb-1">{detay}</p>

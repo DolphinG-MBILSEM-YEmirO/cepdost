@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Icon, type IconName } from './Icon'
-import { Avatar } from './Avatar'
+import { Avatar, GrupAvatari } from './Avatar'
 import { kayitOlustur, type Kategori, type YakinOneri } from '../db'
 import { siniflandirOnizleme } from '../classify'
 import { useAuth } from '../sosyal/auth'
@@ -24,6 +24,8 @@ import { direktMesajGonder } from '../sosyal/mesajlar'
 import { ortakPlanOner } from '../sosyal/ortakPlan'
 import { addDays, formatDate, toDateString } from '../lib/format'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
+import { ETKINLIK_EMOJILERI } from '../lib/kisisellestirme'
+import { EmojiSecici } from './Seciciler'
 
 // F19 — "+" akışı yeniden tasarlandı (2026-08-08).
 //
@@ -42,23 +44,23 @@ interface Props {
 
 interface Etkinlik {
   ad: string
-  ikon: IconName
   kategori: Kategori
+  emoji: string
   // Tipik süre — kullanıcı değiştirebiliyor ama makul bir başlangıç.
   sure: number
 }
 
 const ETKINLIKLER: Etkinlik[] = [
-  { ad: 'Kahve', ikon: 'UtensilsCrossed', kategori: 'mekan', sure: 90 },
-  { ad: 'Yemek', ikon: 'UtensilsCrossed', kategori: 'mekan', sure: 120 },
-  { ad: 'Sinema', ikon: 'ImageIcon', kategori: 'etkinlik', sure: 150 },
-  { ad: 'Yürüyüş', ikon: 'MapPin', kategori: 'etkinlik', sure: 60 },
-  { ad: 'Spor', ikon: 'Flame', kategori: 'etkinlik', sure: 90 },
-  { ad: 'Ders / çalışma', ikon: 'ListChecks', kategori: 'etkinlik', sure: 120 },
-  { ad: 'Oyun', ikon: 'Sparkles', kategori: 'etkinlik', sure: 120 },
-  { ad: 'Konser', ikon: 'CalendarHeart', kategori: 'etkinlik', sure: 180 },
-  { ad: 'Alışveriş', ikon: 'ShoppingBag', kategori: 'urun', sure: 90 },
-  { ad: 'Tarif dene', ikon: 'UtensilsCrossed', kategori: 'tarif', sure: 90 },
+  { ad: 'Kahve', kategori: 'mekan', emoji: '☕', sure: 90 },
+  { ad: 'Yemek', kategori: 'mekan', emoji: '🍽️', sure: 120 },
+  { ad: 'Sinema', kategori: 'etkinlik', emoji: '🎬', sure: 150 },
+  { ad: 'Yürüyüş', kategori: 'etkinlik', emoji: '🏃', sure: 60 },
+  { ad: 'Spor', kategori: 'etkinlik', emoji: '⚽', sure: 90 },
+  { ad: 'Ders / çalışma', kategori: 'etkinlik', emoji: '📚', sure: 120 },
+  { ad: 'Oyun', kategori: 'etkinlik', emoji: '🎮', sure: 120 },
+  { ad: 'Konser', kategori: 'etkinlik', emoji: '🎵', sure: 180 },
+  { ad: 'Alışveriş', kategori: 'urun', emoji: '🛍️', sure: 90 },
+  { ad: 'Tarif dene', kategori: 'tarif', emoji: '🍽️', sure: 90 },
 ]
 
 const SURELER = [60, 90, 120, 180]
@@ -96,6 +98,8 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
 
   const [etkinlik, setEtkinlik] = useState<Etkinlik | null>(null)
   const [serbestBaslik, setSerbestBaslik] = useState('')
+  // Follows the picked activity until the person chooses one themselves.
+  const [emoji, setEmoji] = useState<string | null>(null)
   const [konum, setKonum] = useState('')
   const [yakinOneriler, setYakinOneriler] = useState<YakinOneri[] | null>(null)
   const [konumAraniyor, setKonumAraniyor] = useState(false)
@@ -271,6 +275,7 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
           sure,
           konum: konum.trim() || null,
           notlar: null,
+          emoji,
         })
         grupPlanId = planId
         // Planı kuran zaten geliyor.
@@ -290,6 +295,7 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
             sure,
             konum: konum.trim() || null,
             mesaj: null,
+            emoji,
           })
           // Davet, o kişiyle olan sohbete de kart olarak düşsün — böylece
           // "bir yerde bir davet var" diye aramak gerekmiyor.
@@ -311,6 +317,7 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
         oncelik: 'orta',
         sure,
         ozetNot: null,
+        emoji,
         mekanOnerisi: null,
         yakinOneriler,
         kaynakTipi: 'metin',
@@ -394,9 +401,12 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
             etkinlik={etkinlik}
             onEtkinlik={(e) => {
               setEtkinlik(e)
+              setEmoji(e.emoji)
               setSure(e.sure)
               setYakinOneriler(null)
             }}
+            emoji={emoji}
+            onEmoji={setEmoji}
             serbestBaslik={serbestBaslik}
             onSerbestBaslik={setSerbestBaslik}
             konum={konum}
@@ -422,6 +432,7 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
         {adim === 'ozet' && (
           <OzetAdimi
             baslik={baslik}
+            emoji={emoji}
             tarih={tarih}
             saat={saat}
             sure={sure}
@@ -624,9 +635,7 @@ function KiminleAdimi({
                       secili ? 'bg-coral-50 border-coral-200' : 'bg-cream-50 border-ink-100/40'
                     }`}
                   >
-                    <div className="w-9 h-9 rounded-2xl bg-sky-100 flex items-center justify-center shrink-0">
-                      <Icon name="Users" className="w-4.5 h-4.5 text-sky-600" />
-                    </div>
+                    <GrupAvatari grup={g} boyut="sm" />
                     <p className="flex-1 min-w-0 text-sm font-medium text-ink-700 truncate text-left">
                       {g.ad}
                     </p>
@@ -653,6 +662,8 @@ function KiminleAdimi({
 function DetayAdimi(p: {
   etkinlik: Etkinlik | null
   onEtkinlik: (e: Etkinlik) => void
+  emoji: string | null
+  onEmoji: (e: string | null) => void
   serbestBaslik: string
   onSerbestBaslik: (v: string) => void
   konum: string
@@ -697,7 +708,7 @@ function DetayAdimi(p: {
                     : 'bg-cream-100 text-ink-500 border border-ink-100/40'
                 }`}
               >
-                <Icon name={e.ikon} className="w-4 h-4" />
+                <span aria-hidden="true">{e.emoji}</span>
                 {e.ad}
               </button>
             )
@@ -707,8 +718,10 @@ function DetayAdimi(p: {
           value={p.serbestBaslik}
           onChange={(e) => p.onSerbestBaslik(e.target.value)}
           placeholder={p.etkinlik ? `${p.etkinlik.ad} — istersen kendi başlığını yaz` : 'Ya da kendin yaz...'}
-          className="input-field"
+          className="input-field mb-3"
         />
+        <FieldLabel>Simge</FieldLabel>
+        <EmojiSecici secenekler={ETKINLIK_EMOJILERI} secili={p.emoji} onSec={p.onEmoji} />
       </Bolum>
 
       <Bolum baslik="Nerede?" ikon="MapPin">
@@ -891,6 +904,7 @@ function DetayAdimi(p: {
 
 function OzetAdimi({
   baslik,
+  emoji,
   tarih,
   saat,
   sure,
@@ -901,6 +915,7 @@ function OzetAdimi({
   cakisanlar,
 }: {
   baslik: string
+  emoji: string | null
   tarih: string
   saat: string
   sure: number
@@ -913,7 +928,10 @@ function OzetAdimi({
   return (
     <>
       <div className="card p-5">
-        <p className="font-display text-lg font-bold text-ink-700 mb-2">{baslik}</p>
+        <p className="font-display text-lg font-bold text-ink-700 mb-2">
+          {emoji && <span aria-hidden="true">{emoji} </span>}
+          {baslik}
+        </p>
 
         <div className="space-y-1.5 text-sm text-ink-500">
           <p className="flex items-center gap-2">
@@ -945,9 +963,7 @@ function OzetAdimi({
           <>
             {kapsam === 'grup' && grup && (
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-xl bg-sky-100 flex items-center justify-center shrink-0">
-                  <Icon name="Users" className="w-4 h-4 text-sky-600" />
-                </div>
+                <GrupAvatari grup={grup} boyut="sm" />
                 <p className="text-sm font-medium text-ink-700">{grup.ad}</p>
               </div>
             )}

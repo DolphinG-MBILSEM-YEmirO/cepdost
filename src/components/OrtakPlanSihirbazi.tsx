@@ -390,7 +390,7 @@ export function OrtakPlanSihirbazi({
                 <div className="card p-5">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-9 h-9 rounded-xl bg-coral-100 flex items-center justify-center shrink-0">
-                      <Icon name="Wand2" className="w-4.5 h-4.5 text-coral-500" />
+                      <Icon name="Wand2" className="w-[18px] h-[18px] text-coral-500" />
                     </div>
                     <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide">
                       Herkese uyan öneri

@@ -58,6 +58,7 @@ export async function davetiYanitla(davet: PlanDaveti, kabul: boolean, gonderenA
       konum: davet.konum,
       sure: davet.sure,
       ozetNot: davet.mesaj,
+      emoji: davet.emoji,
       // So the "how was it?" photo prompt goes to the right archive.
       arkadasId: davet.gonderen_id,
       arkadasAdi: gonderenAd,
@@ -66,6 +67,26 @@ export async function davetiYanitla(davet: PlanDaveti, kabul: boolean, gonderenA
   }
   await davetYanitla(davet.id, kabul)
   if (!kabul && mevcut) await kayitSil(mevcut.id)
+}
+
+// My own copy of a plan I invited one friend to: I'm coming either way, so
+// it goes in my calendar (and my shared availability) right away.
+export async function davetimiTakvimeEkle(
+  davet: { baslik: string; tarih: string; saat: string | null; sure: number | null; konum: string | null; mesaj: string | null; emoji: string | null },
+  arkadas: { id: string; ad: string },
+): Promise<void> {
+  await kayitOlustur({
+    ...ortakAlanlar(),
+    baslik: davet.baslik,
+    tarih: davet.tarih,
+    saat: davet.saat ? davet.saat.slice(0, 5) : null,
+    konum: davet.konum,
+    sure: davet.sure,
+    ozetNot: davet.mesaj,
+    emoji: davet.emoji,
+    arkadasId: arkadas.id,
+    arkadasAdi: arkadas.ad,
+  })
 }
 
 // Group plan answer + my calendar.
@@ -88,6 +109,7 @@ export async function grupPlaniYanitla(plan: GrupPlani, durum: YanitDurumu, grup
       konum: plan.konum,
       sure: plan.sure,
       ozetNot: plan.notlar,
+      emoji: plan.emoji,
       grupId: grup.id,
       grupAdi: grup.ad,
       grupPlanId: plan.id,
@@ -117,6 +139,7 @@ export async function planiPaylas(kayit: Kayit, hedef: PaylasimHedefi): Promise<
     saat: kayit.saat,
     sure: kayit.sure,
     konum: kayit.konum,
+    emoji: kayit.emoji ?? null,
   }
 
   if (hedef.tur === 'arkadas') {

@@ -6,6 +6,8 @@ import { ConfirmDialog } from './ConfirmDialog'
 import { AniEkleModal } from './AniArsivi'
 import { kayittanIcsIndir } from '../takvim'
 import { PaylasimHedefiSheet } from './PlanPaylas'
+import { EmojiSecici } from './Seciciler'
+import { ETKINLIK_EMOJILERI } from '../lib/kisisellestirme'
 import { paylasilabilirPlanlar } from '../lib/planPaylasimi'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 
@@ -27,6 +29,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
   const [priority, setPriority] = useState<Oncelik>(kayit.oncelik)
   const [duration, setDuration] = useState(kayit.sure ? String(kayit.sure) : '')
   const [notes, setNotes] = useState(kayit.ozetNot ?? '')
+  const [emoji, setEmoji] = useState<string | null>(kayit.emoji ?? null)
   const [saving, setSaving] = useState(false)
   const [showDelete, setShowDelete] = useState(false)
   const [aniAcik, setAniAcik] = useState(false)
@@ -46,6 +49,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
     setPriority(kayit.oncelik)
     setDuration(kayit.sure ? String(kayit.sure) : '')
     setNotes(kayit.ozetNot ?? '')
+    setEmoji(kayit.emoji ?? null)
   }, [kayit, editing])
 
   // One object URL per image, revoked when the images change or the screen
@@ -87,6 +91,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
         oncelik: priority,
         sure: duration ? Number(duration) : null,
         ozetNot: notes.trim() || null,
+        emoji,
       })
       setEditing(false)
       onUpdated()
@@ -145,8 +150,10 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
       <div className="flex-1 overflow-y-auto px-5 pb-8">
         <div className="card p-5 mb-4">
           <div className="flex items-center gap-2 mb-4">
-            <div className={`w-10 h-10 rounded-xl ${colors.bg} flex items-center justify-center`}>
-              <Icon name={CATEGORY_ICON_NAME[kayit.kategori ?? 'not']} className={`w-5 h-5 ${colors.text}`} />
+            <div className={`w-10 h-10 rounded-xl ${colors.bg} flex items-center justify-center text-xl`}>
+              {(editing ? emoji : kayit.emoji) || (
+                <Icon name={CATEGORY_ICON_NAME[kayit.kategori ?? 'not']} className={`w-5 h-5 ${colors.text}`} />
+              )}
             </div>
             <span className={`chip ${colors.bg} ${colors.text}`}>{kayit.kategori ? CATEGORY_LABELS[kayit.kategori] : 'Sınıflandırılmamış'}</span>
             <span className={`chip ${PRIORITY_COLORS[kayit.oncelik].bg} ${PRIORITY_COLORS[kayit.oncelik].text}`}>
@@ -172,6 +179,11 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
                     {CATEGORY_LABELS[cat]}
                   </button>
                 ))}
+              </div>
+
+              <FieldLabel>Simge</FieldLabel>
+              <div className="mb-4">
+                <EmojiSecici secenekler={ETKINLIK_EMOJILERI} secili={emoji} onSec={setEmoji} />
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-4">

@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Icon } from './Icon'
 import { Avatar } from './Avatar'
+import { EmojiSecici, RenkSecici } from './Seciciler'
 import { profilGuncelle, type Profil } from '../sosyal/api'
-import { PROFIL_EMOJILERI, RENKLER, RENK_ANAHTARLARI, renkAl } from '../lib/kisisellestirme'
+import { PROFIL_EMOJILERI, renkAl } from '../lib/kisisellestirme'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 
 // Edits how the user appears to friends: name, a short bio, an emoji and
@@ -87,37 +87,13 @@ export function ProfilDuzenle({
         </p>
 
         <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">Simgen</p>
-        <div className="flex flex-wrap gap-1.5 mb-4">
-          {PROFIL_EMOJILERI.map((e) => (
-            <button
-              key={e}
-              onClick={() => setEmoji(emoji === e ? null : e)}
-              aria-label={`Simge ${e}`}
-              aria-pressed={emoji === e}
-              className={`w-9 h-9 rounded-xl text-lg flex items-center justify-center transition-all active:scale-90 ${
-                emoji === e ? 'bg-coral-100 ring-2 ring-coral-300' : 'bg-cream-100'
-              }`}
-            >
-              {e}
-            </button>
-          ))}
+        <div className="mb-4">
+          <EmojiSecici secenekler={PROFIL_EMOJILERI} secili={emoji} onSec={setEmoji} />
         </div>
 
         <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">Rengin</p>
-        <div className="flex gap-2 mb-4">
-          {RENK_ANAHTARLARI.map((r) => (
-            <button
-              key={r}
-              onClick={() => setRenk(r)}
-              aria-label={RENKLER[r].ad}
-              aria-pressed={renk === r}
-              className={`w-8 h-8 rounded-full ${RENKLER[r].dolu} flex items-center justify-center transition-transform active:scale-90 ${
-                renk === r ? 'ring-2 ring-offset-2 ring-ink-300' : ''
-              }`}
-            >
-              {renk === r && <Icon name="Check" className="w-4 h-4 text-white" />}
-            </button>
-          ))}
+        <div className="mb-4">
+          <RenkSecici secili={renk} onSec={setRenk} />
         </div>
 
         {hata && <p className="text-sm text-rose-600 mb-3">{hata}</p>}

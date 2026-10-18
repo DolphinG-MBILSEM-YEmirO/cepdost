@@ -305,7 +305,10 @@ function TimelineItem({ kayit, onClick, onToggle, onReschedule, rescheduling }: 
                   </span>
                 )}
               </div>
-              <h3 className="font-semibold text-ink-700 text-sm leading-snug">{baslik}</h3>
+              <h3 className="font-semibold text-ink-700 text-sm leading-snug">
+                {kayit.emoji && <span aria-hidden="true">{kayit.emoji} </span>}
+                {baslik}
+              </h3>
               {kayit.konum && (
                 <span className="flex items-center gap-1 text-xs text-teal-600 mt-1">
                   <Icon name="MapPin" className="w-3 h-3" />
@@ -344,7 +347,10 @@ function UnscheduledItem({ kayit, onClick, onToggle, onReschedule, rescheduling 
                 {kayit.kategori ? CATEGORY_LABELS[kayit.kategori] : 'Sınıflandırılmamış'}
               </span>
             </div>
-            <h3 className="font-semibold text-ink-700 text-sm leading-snug">{baslik}</h3>
+            <h3 className="font-semibold text-ink-700 text-sm leading-snug">
+              {kayit.emoji && <span aria-hidden="true">{kayit.emoji} </span>}
+              {baslik}
+            </h3>
             {kayit.konum && (
               <span className="flex items-center gap-1 text-xs text-teal-600 mt-1">
                 <Icon name="MapPin" className="w-3 h-3" />

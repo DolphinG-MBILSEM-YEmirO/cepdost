@@ -60,6 +60,7 @@ export function KayitCard({ kayit, onToggleStatus, onDelete, onClick }: KayitCar
           </div>
 
           <h3 className={`font-semibold text-ink-700 text-balance leading-snug ${done ? 'line-through' : ''}`}>
+            {kayit.emoji && <span aria-hidden="true">{kayit.emoji} </span>}
             {baslik}
           </h3>
 

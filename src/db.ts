@@ -69,6 +69,9 @@ export interface Kayit {
   // Same for a friend's plan invite: set when I accepted it, so declining
   // later (or the sender cancelling) can take it off my calendar.
   davetId?: string | null
+  // The emoji picked for the plan (☕, 🎬...), shown before its title here
+  // and on the cards friends see.
+  emoji?: string | null
   // Anı eklendiyse tekrar tekrar sorulmasın.
   aniEklendi?: boolean
 }

@@ -6,6 +6,9 @@ import { arkadasMusaitligi, davetGonder, type MusaitlikBlogu, type Profil } from
 import { direktMesajGonder } from '../sosyal/mesajlar'
 import { addDays, toDateString, formatDate } from '../lib/format'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
+import { ETKINLIK_EMOJILERI, renkAl } from '../lib/kisisellestirme'
+import { davetimiTakvimeEkle } from '../lib/planPaylasimi'
+import { EmojiSecici } from './Seciciler'
 
 // Kaç günlük müsaitlik gösterilsin. Bir haftalık pencere, "bu hafta ne
 // zaman buluşabiliriz" sorusunun doğal kapsamı.
@@ -64,7 +67,9 @@ export function ArkadasMusaitlik({ arkadas, benimId, onClose }: Props) {
 
   return (
     <div className="panel-tam z-[55]">
-      <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-4 border-b border-ink-100/40 shrink-0">
+      <div
+        className={`flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-4 mb-3 shrink-0 ${renkAl(arkadas.renk, arkadas.ad).zemin}`}
+      >
         <div className="flex items-center gap-3 min-w-0">
           <Avatar ad={arkadas.ad} foto={arkadas.avatar} emoji={arkadas.emoji} renk={arkadas.renk} />
           <div className="min-w-0">
@@ -74,11 +79,13 @@ export function ArkadasMusaitlik({ arkadas, benimId, onClose }: Props) {
             <p className="text-xs text-ink-400 truncate">
               {arkadas.kullanici_adi ? `@${arkadas.kullanici_adi}` : 'Müsaitlik takvimi'}
             </p>
+            {arkadas.biyografi && <p className="text-xs text-ink-500 mt-0.5 line-clamp-2">{arkadas.biyografi}</p>}
           </div>
         </div>
         <button
           onClick={onClose}
-          className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          aria-label="Kapat"
+          className="w-10 h-10 rounded-full bg-cream-50/80 flex items-center justify-center active:scale-90 transition-transform shrink-0"
         >
           <Icon name="X" className="w-5 h-5 text-ink-500" />
         </button>
@@ -231,6 +238,7 @@ function DavetModal({
   const [sure, setSure] = useState('')
   const [konum, setKonum] = useState('')
   const [mesaj, setMesaj] = useState('')
+  const [emoji, setEmoji] = useState<string | null>(null)
   const [gonderiliyor, setGonderiliyor] = useState(false)
   const [hata, setHata] = useState<string | null>(null)
   const [basarili, setBasarili] = useState(false)
@@ -243,15 +251,17 @@ function DavetModal({
     setGonderiliyor(true)
     setHata(null)
     try {
-      const davetId = await davetGonder({
-        alanId: arkadas.id,
+      const davet = {
         baslik: baslik.trim(),
         tarih,
         saat: saat || null,
         sure: sure ? Number(sure) : null,
         konum: konum.trim() || null,
         mesaj: mesaj.trim() || null,
-      })
+        emoji,
+      }
+      const davetId = await davetGonder({ ...davet, alanId: arkadas.id })
+      await davetimiTakvimeEkle(davet, arkadas)
       // Davet sohbette de kart olarak görünsün.
       try {
         await direktMesajGonder(arkadas.id, 'Bir plan önerdim 👇', davetId)
@@ -275,7 +285,7 @@ function DavetModal({
           </div>
           <p className="font-display text-lg font-bold text-ink-700 mb-1">Davet gönderildi</p>
           <p className="text-sm text-ink-400 mb-5">
-            {arkadas.ad} kabul ederse ikinizin de planına eklenecek.
+            Plan takvimine eklendi. {arkadas.ad} kabul ederse onun takvimine de düşecek.
           </p>
           <button onClick={onClose} className="btn-primary w-full">
             Tamam
@@ -312,6 +322,11 @@ function DavetModal({
           className="input-field mb-4"
           autoFocus
         />
+
+        <FieldLabel>Simge</FieldLabel>
+        <div className="mb-4">
+          <EmojiSecici secenekler={ETKINLIK_EMOJILERI} secili={emoji} onSec={setEmoji} />
+        </div>
 
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div>
