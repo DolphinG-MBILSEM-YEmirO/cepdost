@@ -548,7 +548,7 @@ function KiminleAdimi({
           {arkadaslar.length === 0 ? (
             <div className="card p-5 text-center">
               <p className="text-sm text-ink-400">
-                Henüz arkadaşın yok. Sohbet → Arkadaşlar'dan arkadaş kodunla ekleyebilirsin.
+                Henüz arkadaşın yok. Sohbet → Arkadaşlar'dan kullanıcı adıyla ekleyebilirsin.
               </p>
             </div>
           ) : (

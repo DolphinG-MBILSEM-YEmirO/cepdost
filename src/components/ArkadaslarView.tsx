@@ -28,27 +28,30 @@ import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 import { UYGULAMA_ADI } from '../../shared/marka'
 
 // Everything about friends, in the Sohbet tab: what needs an answer
-// (requests, plan invites), adding people (search plus my own code), and
-// my friends and groups. The profile itself is HesabimView.
+// (requests, plan invites), adding people (search plus my own username),
+// and my friends and groups. The profile itself is HesabimView.
 interface Props {
-  // Set when the app was opened from an invite link (?ekle=CODE): the
-  // search box starts filled in.
+  // Set when the app was opened from an invite link (?ekle=CODE): that
+  // person is looked up straight away.
   baslangicKodu?: string | null
+  // Called once the invite link has been used, so it doesn't run again.
+  onBaslangicKullanildi?: () => void
   onDegisti?: () => void
   // The Sohbetler/Arkadaşlar switch, shown as the page header.
   ust: ReactNode
 }
 
 // The sign-in gate in App guarantees an account here.
-export function ArkadaslarView({ baslangicKodu, onDegisti, ust }: Props) {
+export function ArkadaslarView(props: Props) {
   const { kullanici } = useAuth()
   if (!kullanici) return null
-  return <ArkadaslarIcerik kullaniciId={kullanici.id} baslangicKodu={baslangicKodu} onDegisti={onDegisti} ust={ust} />
+  return <ArkadaslarIcerik kullaniciId={kullanici.id} {...props} />
 }
 
 function ArkadaslarIcerik({
   kullaniciId,
   baslangicKodu,
+  onBaslangicKullanildi,
   onDegisti,
   ust,
 }: Props & { kullaniciId: string }) {
@@ -160,7 +163,14 @@ function ArkadaslarIcerik({
             )}
 
             <div className="space-y-6 lg:col-start-1 lg:row-start-1 lg:row-span-2">
-              <ArkadasEkle onEklendi={tazele} baslangicKodu={baslangicKodu} arkadasKodu={profil?.arkadas_kodu} />
+              <ArkadasEkle
+                onEklendi={tazele}
+                baslangicKodu={baslangicKodu}
+                onBaslangicKullanildi={onBaslangicKullanildi}
+                profil={profil}
+                benimId={kullaniciId}
+                arkadaslar={arkadaslar}
+              />
 
               {kabulEdilmis.length > 0 && (
                 <button
@@ -186,7 +196,7 @@ function ArkadaslarIcerik({
                 {kabulEdilmis.length === 0 ? (
                   <div className="card p-5 text-center">
                     <p className="text-sm text-ink-400">
-                      Henüz arkadaşın yok. Kodunu paylaş ya da bir arkadaşının kodunu gir.
+                      Henüz arkadaşın yok. Kullanıcı adını paylaş ya da arkadaşını kullanıcı adıyla ara.
                     </p>
                   </div>
                 ) : (
@@ -440,13 +450,13 @@ function GrupKurModal({
   )
 }
 
-// My own friend code under the search box: the other half of adding
-// someone. Sharing sends a link that opens the app with the code filled in.
-function KodPaylas({ kod }: { kod: string }) {
+// How others find me, under the search box: my @username, to copy or
+// share. The shared link carries my friend code (stable even if the
+// username changes) and opens the app with me found.
+function BeniPaylas({ kod, kullaniciAdi }: { kod: string; kullaniciAdi: string | null }) {
   const [kopyalandi, setKopyalandi] = useState(false)
   const [hata, setHata] = useState<string | null>(null)
 
-  const kodGosterim = `${kod.slice(0, 4)}-${kod.slice(4)}`
   const davetLinki = `${window.location.origin}/?ekle=${kod}`
 
   function kopyalandiGoster() {
@@ -455,16 +465,19 @@ function KodPaylas({ kod }: { kod: string }) {
   }
 
   async function kopyala() {
+    if (!kullaniciAdi) return
     try {
-      await navigator.clipboard.writeText(kodGosterim)
+      await navigator.clipboard.writeText(`@${kullaniciAdi}`)
       kopyalandiGoster()
     } catch {
-      setHata('Kopyalanamadı — kodu elle seçebilirsin.')
+      setHata('Kopyalanamadı — kullanıcı adını elle seçebilirsin.')
     }
   }
 
   async function paylas() {
-    const metin = `${UYGULAMA_ADI} uygulamasında arkadaşım ol! Kodum: ${kodGosterim}`
+    const metin = kullaniciAdi
+      ? `${UYGULAMA_ADI} uygulamasında arkadaşım ol! Kullanıcı adım: @${kullaniciAdi}`
+      : `${UYGULAMA_ADI} uygulamasında arkadaşım ol!`
     if (navigator.share) {
       try {
         await navigator.share({ title: UYGULAMA_ADI, text: metin, url: davetLinki })
@@ -485,19 +498,29 @@ function KodPaylas({ kod }: { kod: string }) {
     <div className="mt-4 pt-4 border-t border-ink-100">
       <div className="flex items-center gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-ink-400">Senin kodun</p>
-          <p className="font-display text-lg font-bold text-ink-700 tracking-wider select-all">{kodGosterim}</p>
+          {kullaniciAdi ? (
+            <>
+              <p className="text-xs text-ink-400">Senin kullanıcı adın</p>
+              <p className="font-display text-lg font-bold text-ink-700 truncate select-all">@{kullaniciAdi}</p>
+            </>
+          ) : (
+            <p className="text-xs text-ink-400">
+              Profil'den bir kullanıcı adı belirlersen arkadaşların seni onunla bulur.
+            </p>
+          )}
         </div>
-        <button
-          onClick={() => void kopyala()}
-          className="w-9 h-9 rounded-xl bg-mist-100 border border-ink-100 flex items-center justify-center active:scale-90 transition-transform shrink-0"
-          aria-label="Kodu kopyala"
-        >
-          <Icon
-            name={kopyalandi ? 'Check' : 'Copy'}
-            className={`w-4 h-4 ${kopyalandi ? 'text-teal-600' : 'text-ink-400'}`}
-          />
-        </button>
+        {kullaniciAdi && (
+          <button
+            onClick={() => void kopyala()}
+            className="w-9 h-9 rounded-xl bg-mist-100 border border-ink-100 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+            aria-label="Kullanıcı adını kopyala"
+          >
+            <Icon
+              name={kopyalandi ? 'Check' : 'Copy'}
+              className={`w-4 h-4 ${kopyalandi ? 'text-teal-600' : 'text-ink-400'}`}
+            />
+          </button>
+        )}
         <button
           onClick={() => void paylas()}
           className="btn-primary text-sm px-3.5 py-2 flex items-center gap-1.5 shrink-0"
@@ -511,39 +534,77 @@ function KodPaylas({ kod }: { kod: string }) {
   )
 }
 
+// What the search result's button says, given where we already stand.
+type Iliski = 'yok' | 'ben' | 'arkadas' | 'gonderildi' | 'geldi'
+
+function iliskiBul(id: string, benimId: string, arkadaslar: Arkadas[]): Iliski {
+  if (id === benimId) return 'ben'
+  const a = arkadaslar.find((x) => x.profil.id === id)
+  if (!a) return 'yok'
+  if (a.durum === 'kabul') return 'arkadas'
+  if (a.durum === 'bekliyor') return a.yon === 'giden' ? 'gonderildi' : 'geldi'
+  return 'yok'
+}
+
+const ILISKI_ETIKETI: Partial<Record<Iliski, string>> = {
+  ben: 'Bu sensin',
+  arkadas: 'Arkadaşsınız',
+  gonderildi: 'İstek gönderildi',
+}
+
 function ArkadasEkle({
   onEklendi,
   baslangicKodu,
-  arkadasKodu,
+  onBaslangicKullanildi,
+  profil,
+  benimId,
+  arkadaslar,
 }: {
   onEklendi: () => Promise<void>
   baslangicKodu?: string | null
-  arkadasKodu?: string
+  onBaslangicKullanildi?: () => void
+  profil: Profil | null
+  benimId: string
+  arkadaslar: Arkadas[]
 }) {
-  const [girdi, setGirdi] = useState(baslangicKodu ?? '')
+  const [girdi, setGirdi] = useState('')
   const [araniyor, setAraniyor] = useState(false)
   const [sonuc, setSonuc] = useState<AramaSonucu | null>(null)
   const [bulunamadi, setBulunamadi] = useState(false)
   const [hata, setHata] = useState<string | null>(null)
   const [ekleniyor, setEkleniyor] = useState(false)
 
-  async function ara(e: React.FormEvent) {
-    e.preventDefault()
-    const q = girdi.trim()
-    if (!q) return
+  // Codes from older shares still work; the box just doesn't ask for one.
+  const bul = useCallback(async (q: string) => {
     setAraniyor(true)
     setHata(null)
     setSonuc(null)
     setBulunamadi(false)
     try {
       const p = await profilAra(q)
-      if (p) setSonuc(p)
-      else setBulunamadi(true)
+      if (p) {
+        setSonuc(p)
+        if (p.kullanici_adi) setGirdi(`@${p.kullanici_adi}`)
+      } else setBulunamadi(true)
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Arama başarısız')
     } finally {
       setAraniyor(false)
     }
+  }, [])
+
+  // Opened from an invite link: look the person up straight away, once.
+  useEffect(() => {
+    if (!baslangicKodu) return
+    setGirdi(baslangicKodu)
+    void bul(baslangicKodu)
+    onBaslangicKullanildi?.()
+  }, [baslangicKodu, bul, onBaslangicKullanildi])
+
+  function ara(e: React.FormEvent) {
+    e.preventDefault()
+    const q = girdi.trim()
+    if (q) void bul(q)
   }
 
   async function ekle() {
@@ -562,6 +623,9 @@ function ArkadasEkle({
     }
   }
 
+  const iliski = sonuc ? iliskiBul(sonuc.id, benimId, arkadaslar) : 'yok'
+  const etiket = ILISKI_ETIKETI[iliski]
+
   return (
     <div className="card p-5">
       <div className="flex items-center gap-2 mb-3">
@@ -573,7 +637,11 @@ function ArkadasEkle({
         <input
           value={girdi}
           onChange={(e) => setGirdi(e.target.value)}
-          placeholder="Kod (A1B2-C3D4) veya @kullaniciadi"
+          placeholder="@kullaniciadi"
+          aria-label="Kullanıcı adıyla ara"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           className="input-field flex-1"
         />
         <button
@@ -587,7 +655,7 @@ function ArkadasEkle({
 
       {bulunamadi && (
         <p className="text-sm text-ink-400 mt-3">
-          Bu kod veya kullanıcı adıyla kimse bulunamadı. Yazımı kontrol eder misin?
+          Bu kullanıcı adıyla kimse bulunamadı. Yazımı kontrol eder misin?
         </p>
       )}
 
@@ -598,19 +666,23 @@ function ArkadasEkle({
             <p className="text-sm font-medium text-ink-700 truncate">{sonuc.ad}</p>
             {sonuc.kullanici_adi && <p className="text-xs text-ink-400">@{sonuc.kullanici_adi}</p>}
           </div>
-          <button
-            onClick={() => void ekle()}
-            disabled={ekleniyor}
-            className="btn-primary text-sm px-3.5 py-2 disabled:opacity-50 shrink-0"
-          >
-            {ekleniyor ? '...' : 'İstek gönder'}
-          </button>
+          {etiket ? (
+            <span className="text-xs font-medium text-ink-400 shrink-0">{etiket}</span>
+          ) : (
+            <button
+              onClick={() => void ekle()}
+              disabled={ekleniyor}
+              className="btn-primary text-sm px-3.5 py-2 disabled:opacity-50 shrink-0"
+            >
+              {ekleniyor ? '...' : iliski === 'geldi' ? 'Kabul et' : 'İstek gönder'}
+            </button>
+          )}
         </div>
       )}
 
       {hata && <p className="text-xs text-rose-600 mt-3">{hata}</p>}
 
-      {arkadasKodu && <KodPaylas kod={arkadasKodu} />}
+      {profil && <BeniPaylas kod={profil.arkadas_kodu} kullaniciAdi={profil.kullanici_adi} />}
     </div>
   )
 }

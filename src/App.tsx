@@ -68,7 +68,7 @@ async function handleGetShareTarget(): Promise<ShareBanner> {
 
 export default function App() {
   // Davet linkiyle gelindiyse (?ekle=KOD) doğrudan Sohbet → Arkadaşlar açılsın.
-  const [davetKodu] = useState<string | null>(
+  const [davetKodu, setDavetKodu] = useState<string | null>(
     () => new URLSearchParams(window.location.search).get('ekle'),
   )
   const [activeTab, setActiveTab] = useState<Tab>(davetKodu ? 'sohbet' : 'planlar')
@@ -137,6 +137,10 @@ export default function App() {
   useEffect(() => {
     rozetiTazele()
   }, [rozetiTazele, activeTab, sosyalSurum])
+
+  // The invite link is looked up once; coming back to Arkadaşlar later
+  // doesn't search for that person again.
+  const davetiKullan = useCallback(() => setDavetKodu(null), [])
 
   // Takvim bağlıysa açılışta sessizce tazele — kullanıcı elle "içe aktar"a
   // basmak zorunda kalmasın.
@@ -364,7 +368,12 @@ export default function App() {
                 onArkadasEkle={() => setSosyalBolum('arkadaslar')}
               />
             ) : (
-              <ArkadaslarView baslangicKodu={davetKodu} onDegisti={rozetiTazele} ust={sosyalUst} />
+              <ArkadaslarView
+                baslangicKodu={davetKodu}
+                onBaslangicKullanildi={davetiKullan}
+                onDegisti={rozetiTazele}
+                ust={sosyalUst}
+              />
             ))}
 
           {activeTab === 'akis' && <AkisView />}
