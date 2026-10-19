@@ -27,15 +27,15 @@ export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
           <div className="space-y-3 text-sm text-ink-500">
             <div className="flex gap-3">
               <span className="w-6 h-6 rounded-full bg-orchid-100 text-orchid-600 font-bold text-xs flex items-center justify-center shrink-0">1</span>
-              <p>Bir link, ekran görüntüsü veya not paylaş — uygulama içinden ya da telefonun paylaş menüsünden.</p>
+              <p>Arkadaşlarını Sohbet → Arkadaşlar'dan kullanıcı adıyla ekle.</p>
             </div>
             <div className="flex gap-3">
               <span className="w-6 h-6 rounded-full bg-orchid-100 text-orchid-600 font-bold text-xs flex items-center justify-center shrink-0">2</span>
-              <p>İçeriği okuyup kategori, başlık, tarih, saat ve öncelik çıkarır — sen hiçbir şey yazmazsın, hiçbir API anahtarı girmezsin.</p>
+              <p>+ ile plan kur ya da asistana yaz ("Cumartesi Ayşe'yle kahvaltı"); herkesin boş olduğu saati bulur, davetleri gönderir.</p>
             </div>
             <div className="flex gap-3">
               <span className="w-6 h-6 rounded-full bg-orchid-100 text-orchid-600 font-bold text-xs flex items-center justify-center shrink-0">3</span>
-              <p>Arşivde arar, hatırlatır, harita bağlantısı verir.</p>
+              <p>Bir link ya da ekran görüntüsünü paylaş menüsünden gönder; saatiyle, yeriyle plana dönüşür, Arşiv'de kalır.</p>
             </div>
           </div>
         </div>

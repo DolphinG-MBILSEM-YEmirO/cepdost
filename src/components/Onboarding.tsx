@@ -5,23 +5,25 @@ interface OnboardingProps {
   onDone: () => void
 }
 
+// The app in three steps: friends first, then the assistant, then saving
+// what you come across (the share menu), which is how CepDost started.
 const steps = [
   {
-    icon: 'Share2' as IconName,
-    title: 'Paylaş, planla',
-    desc: 'Bir reel, TikTok, ekran görüntüsü veya link — telefonun paylaş menüsünden direkt buraya gönder.',
+    icon: 'Users' as IconName,
+    title: 'Arkadaşlarınla planla',
+    desc: 'Arkadaşlarını kullanıcı adıyla ekle, planı gönder; kimin geldiğini anında gör.',
     color: 'bg-gradient-orchid',
   },
   {
     icon: 'Sparkles' as IconName,
-    title: 'Otomatik planla',
-    desc: 'İçeriği okuyup kategori, başlık, tarih, saat ve öncelik çıkarırım. Sen hiçbir alanı elle doldurmazsın.',
+    title: 'Saati asistan bulsun',
+    desc: '"Cumartesi Ayşe\'yle kahvaltı" yaz; herkesin boş olduğu saati bulup planı hazırlar.',
     color: 'bg-gradient-to-br from-sky-400 to-orchid-500',
   },
   {
-    icon: 'CalendarDays' as IconName,
-    title: 'Günü gör, hallet',
-    desc: 'Bugünün zaman çizelgesinde ne varsa gör. Öncelik sırasına göre ilerle, bitenleri işaretle.',
+    icon: 'Share2' as IconName,
+    title: 'Gördüğünü kaydet',
+    desc: 'Reel, TikTok, ekran görüntüsü ya da link; telefonun paylaş menüsünden gönder, saatiyle yeriyle plana dönüşsün.',
     color: 'bg-gradient-to-br from-orchid-500 to-violet-500',
   },
 ]
