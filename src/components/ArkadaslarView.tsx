@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Icon } from './Icon'
 import { Avatar, GrupAvatari } from './Avatar'
-import { ArkadasMusaitlik } from './ArkadasMusaitlik'
+import { ArkadasProfili } from './ArkadasProfili'
+import { DirektSohbet } from './DirektSohbet'
 import { useAuth } from '../sosyal/auth'
 import { useSosyalSurum } from '../sosyal/cekirdek'
 import {
@@ -61,7 +62,8 @@ function ArkadaslarIcerik({
   const [gruplar, setGruplar] = useState<Grup[]>([])
   const [yukleniyor, setYukleniyor] = useState(true)
   const [hata, setHata] = useState<string | null>(null)
-  const [secili, setSecili] = useState<Profil | null>(null)
+  const [secili, setSecili] = useState<Arkadas | null>(null)
+  const [mesajArkadasi, setMesajArkadasi] = useState<Profil | null>(null)
   const [seciliGrup, setSeciliGrup] = useState<Grup | null>(null)
   const [grupKurAcik, setGrupKurAcik] = useState(false)
   const [sihirbazAcik, setSihirbazAcik] = useState(false)
@@ -205,7 +207,7 @@ function ArkadaslarIcerik({
                       <ArkadasKarti
                         key={a.arkadaslikId}
                         arkadas={a}
-                        onAc={() => setSecili(a.profil)}
+                        onAc={() => setSecili(a)}
                         onCikar={tazele}
                       />
                     ))}
@@ -270,7 +272,25 @@ function ArkadaslarIcerik({
       </div>
 
       {secili && (
-        <ArkadasMusaitlik arkadas={secili} benimId={kullaniciId} onClose={() => setSecili(null)} />
+        <ArkadasProfili
+          arkadas={secili.profil}
+          benimId={kullaniciId}
+          onClose={() => setSecili(null)}
+          onMesaj={() => setMesajArkadasi(secili.profil)}
+          onGrupAc={(g) => {
+            setSecili(null)
+            setSeciliGrup(g)
+          }}
+          arkadaslikId={secili.arkadaslikId}
+          onCikarildi={async () => {
+            setSecili(null)
+            await tazele()
+          }}
+        />
+      )}
+
+      {mesajArkadasi && (
+        <DirektSohbet arkadas={mesajArkadasi} benimId={kullaniciId} onClose={() => setMesajArkadasi(null)} />
       )}
 
       {seciliGrup && (
@@ -752,7 +772,7 @@ function ArkadasKarti({
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-ink-700 truncate">{arkadas.profil.ad}</p>
           <p className="text-xs text-ink-400 truncate">
-            {arkadas.profil.musaitlik_paylas ? 'Müsaitliğine bak' : 'Müsaitlik paylaşmıyor'}
+            {arkadas.profil.kullanici_adi ? `@${arkadas.profil.kullanici_adi}` : 'Profilini gör'}
           </p>
         </div>
         <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />

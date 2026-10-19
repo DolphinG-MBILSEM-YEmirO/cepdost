@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Icon } from './Icon'
-import { Avatar } from './Avatar'
-import { AniArsivi } from './AniArsivi'
 import { arkadasTakvimi, type ArkadasTakvimi, type MusaitlikBlogu, type Profil } from '../sosyal/api'
 import { addDays, toDateString, formatDate, formatRelativeTime } from '../lib/format'
-import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
-import { ETKINLIK_EMOJILERI, renkAl } from '../lib/kisisellestirme'
+import { ETKINLIK_EMOJILERI } from '../lib/kisisellestirme'
 import { planiKur } from '../lib/planPaylasimi'
 import { EmojiSecici, TumGunAnahtari } from './Seciciler'
+
+// The Müsaitlik tab of a friend's profile (ArkadasProfili): their busy
+// ranges for the coming week, and a quick invite for any day.
 
 // Kaç günlük müsaitlik gösterilsin. Bir haftalık pencere, "bu hafta ne
 // zaman buluşabiliriz" sorusunun doğal kapsamı.
@@ -16,17 +16,7 @@ const GUN_SAYISI = 7
 // Older than this, the screen says the calendar may have changed since.
 const ESKI_TAKVIM_MS = 3 * 24 * 60 * 60 * 1000
 
-interface Props {
-  arkadas: Profil
-  benimId: string
-  onClose: () => void
-}
-
-type Sekme = 'musaitlik' | 'anilar'
-
-export function ArkadasMusaitlik({ arkadas, benimId, onClose }: Props) {
-  useEscapeIleKapat(onClose)
-  const [sekme, setSekme] = useState<Sekme>('musaitlik')
+export function ArkadasMusaitlik({ arkadas }: { arkadas: Profil }) {
   // null while loading.
   const [takvim, setTakvim] = useState<ArkadasTakvimi | null>(null)
   const [hata, setHata] = useState<string | null>(null)
@@ -71,114 +61,58 @@ export function ArkadasMusaitlik({ arkadas, benimId, onClose }: Props) {
   const henuzGelmedi = !paylasimKapali && takvim !== null && takvim.bloklar === null
 
   return (
-    <div className="panel-tam z-[55]">
-      <div
-        className={`flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-4 mb-3 shrink-0 ${renkAl(arkadas.renk, arkadas.ad).zemin}`}
-      >
-        <div className="flex items-center gap-3 min-w-0">
-          <Avatar ad={arkadas.ad} foto={arkadas.avatar} emoji={arkadas.emoji} renk={arkadas.renk} />
-          <div className="min-w-0">
-            <h2 className="font-display text-base font-bold text-ink-700 leading-tight truncate">
-              {arkadas.ad}
-            </h2>
-            <p className="text-xs text-ink-400 truncate">
-              {arkadas.kullanici_adi ? `@${arkadas.kullanici_adi}` : 'Müsaitlik takvimi'}
-            </p>
-            {arkadas.biyografi && <p className="text-xs text-ink-500 mt-0.5 line-clamp-2">{arkadas.biyografi}</p>}
-          </div>
+    <div className="px-5 pt-1 pb-8 space-y-3">
+      {hata && (
+        <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3">
+          <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+          <p className="text-sm text-rose-700">{hata}</p>
         </div>
-        <button
-          onClick={onClose}
-          aria-label="Kapat"
-          className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:scale-90 transition-transform shrink-0"
-        >
-          <Icon name="X" className="w-5 h-5 text-ink-500" />
-        </button>
-      </div>
+      )}
 
-      <div className="flex gap-1.5 px-5 pb-3 shrink-0">
-        {([
-          { id: 'musaitlik' as const, etiket: 'Müsaitlik', ikon: 'CalendarClock' as const },
-          { id: 'anilar' as const, etiket: 'Anılar', ikon: 'ImageIcon' as const },
-        ]).map((s) => (
-          <button
-            key={s.id}
-            onClick={() => setSekme(s.id)}
-            className={`chip ${
-              sekme === s.id ? 'bg-gradient-orchid text-white' : 'bg-mist-50 text-ink-400 border border-ink-100'
-            }`}
-          >
-            <Icon name={s.ikon} className="w-4 h-4" />
-            {s.etiket}
-          </button>
-        ))}
-      </div>
+      {paylasimKapali && (
+        <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3">
+          <Icon name="Info" className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-800">
+            {arkadas.ad} müsaitlik paylaşımını kapatmış. Yine de plan daveti gönderebilirsin.
+          </p>
+        </div>
+      )}
 
-      {sekme === 'anilar' ? (
-        <div className="flex-1 overflow-y-auto px-5 pb-8">
-          <AniArsivi arkadasId={arkadas.id} benimId={benimId} baslik={arkadas.ad} />
+      {henuzGelmedi && (
+        <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3">
+          <Icon name="Info" className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-800">
+            {arkadas.ad} takvimini paylaşıyor ama henüz bu cihaza ulaşmadı. Yine de plan daveti gönderebilirsin.
+          </p>
+        </div>
+      )}
+
+      {takvim?.bloklar && <TakvimDurumu takvim={takvim} />}
+
+      {takvim === null && !hata ? (
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="skeleton h-20 rounded-3xl" />
+          ))}
         </div>
       ) : (
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
-        {hata && (
-          <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3">
-            <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
-            <p className="text-sm text-rose-700">{hata}</p>
-          </div>
-        )}
-
-        {paylasimKapali && (
-          <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3">
-            <Icon name="Info" className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-            <p className="text-sm text-amber-800">
-              {arkadas.ad} müsaitlik paylaşımını kapatmış. Yine de plan daveti gönderebilirsin.
-            </p>
-          </div>
-        )}
-
-        {henuzGelmedi && (
-          <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3">
-            <Icon name="Info" className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-            <p className="text-sm text-amber-800">
-              {arkadas.ad} takvimini paylaşıyor ama henüz bu cihaza ulaşmadı. Yine de plan daveti gönderebilirsin.
-            </p>
-          </div>
-        )}
-
-        {takvim?.bloklar && <TakvimDurumu takvim={takvim} />}
-
-        {takvim === null && !hata ? (
-          <div className="space-y-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="skeleton h-20 rounded-3xl" />
-            ))}
-          </div>
-        ) : (
-          gunler.map((gun) => (
-            <GunSatiri
-              key={gun}
-              tarih={gun}
-              bloklar={gunBazli.get(gun) ?? []}
-              paylasimKapali={paylasimKapali}
-              bilinmiyor={henuzGelmedi}
-              onDavet={() => setDavetGunu(gun)}
-            />
-          ))
-        )}
-
-        <p className="text-[11px] text-ink-300 text-center pt-2 leading-relaxed">
-          Sadece dolu saat aralıkları görünür — {arkadas.ad} o saatte ne yaptığını paylaşmıyor.
-        </p>
-      </div>
+        gunler.map((gun) => (
+          <GunSatiri
+            key={gun}
+            tarih={gun}
+            bloklar={gunBazli.get(gun) ?? []}
+            paylasimKapali={paylasimKapali}
+            bilinmiyor={henuzGelmedi}
+            onDavet={() => setDavetGunu(gun)}
+          />
+        ))
       )}
 
-      {davetGunu && (
-        <DavetModal
-          arkadas={arkadas}
-          tarih={davetGunu}
-          onClose={() => setDavetGunu(null)}
-        />
-      )}
+      <p className="text-[11px] text-ink-300 text-center pt-2 leading-relaxed">
+        Sadece dolu saat aralıkları görünür — {arkadas.ad} o saatte ne yaptığını paylaşmıyor.
+      </p>
+
+      {davetGunu && <DavetModal arkadas={arkadas} tarih={davetGunu} onClose={() => setDavetGunu(null)} />}
     </div>
   )
 }

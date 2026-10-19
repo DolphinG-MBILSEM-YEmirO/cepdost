@@ -11,19 +11,19 @@ import {
 import { TemaSheet } from './SohbetTemaSecici'
 import { DavetKartiSohbet } from './SohbetPlanKarti'
 import { PlanPaylasSheet } from './PlanPaylas'
-import { OrtakPlanSihirbazi } from './OrtakPlanSihirbazi'
+import { ArkadaslaSihirbaz } from './OrtakPlanSihirbazi'
+import { ArkadasProfili } from './ArkadasProfili'
 import { useSohbetTemasi } from '../sohbetTema'
 import { formatMessageTime } from '../lib/format'
 import { davetiYanitla } from '../lib/planPaylasimi'
 import { useSosyalSurum } from '../sosyal/cekirdek'
-import { useAuth } from '../sosyal/auth'
 import {
   direktMesajGonder,
   direktMesajlariGetir,
   okunduIsaretle,
   type DirektMesaj,
 } from '../sosyal/mesajlar'
-import { davetiIptalEt, davetleriIdyeGoreGetir, profilimiGetir, type PlanDaveti, type Profil } from '../sosyal/api'
+import { davetiIptalEt, davetleriIdyeGoreGetir, type PlanDaveti, type Profil } from '../sosyal/api'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 
 // One-to-one chat with a friend. Messages are read from the local copy and
@@ -37,7 +37,8 @@ interface Props {
 }
 
 export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Props) {
-  useEscapeIleKapat(onClose, !gomulu)
+  const [profilAcik, setProfilAcik] = useState(false)
+  useEscapeIleKapat(onClose, !gomulu && !profilAcik)
   const [mesajlar, setMesajlar] = useState<DirektMesaj[]>([])
   const [yukleniyor, setYukleniyor] = useState(true)
   const [girdi, setGirdi] = useState('')
@@ -99,7 +100,11 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
   return (
     <div className={gomulu ? 'flex flex-col h-full min-h-0' : 'panel-tam z-[55]'}>
       <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-4 border-b border-ink-100 shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
+        <button
+          onClick={() => setProfilAcik(true)}
+          aria-label={`${arkadas.ad} profilini aç`}
+          className="flex items-center gap-3 min-w-0 text-left rounded-2xl -m-1 p-1 hover:bg-ink-50 active:scale-[0.98] transition-all"
+        >
           <Avatar ad={arkadas.ad} foto={arkadas.avatar} emoji={arkadas.emoji} renk={arkadas.renk} boyut="sm" />
           <div className="min-w-0">
             <h2 className="font-display text-base font-bold text-ink-700 leading-tight truncate">
@@ -109,7 +114,7 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
               <p className="text-xs text-ink-400 truncate">@{arkadas.kullanici_adi}</p>
             )}
           </div>
-        </div>
+        </button>
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setTemaAcik(true)}
@@ -130,6 +135,15 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
 
       {temaAcik && <TemaSheet onKapat={() => setTemaAcik(false)} />}
 
+      {profilAcik && (
+        <ArkadasProfili
+          arkadas={arkadas}
+          benimId={benimId}
+          onClose={() => setProfilAcik(false)}
+          onMesaj={() => setProfilAcik(false)}
+        />
+      )}
+
       {paylasAcik && (
         <PlanPaylasSheet
           hedef={{ tur: 'arkadas', id: arkadas.id, ad: arkadas.ad }}
@@ -142,7 +156,7 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
       )}
 
       {sihirbazAcik && (
-        <SihirbazAc arkadas={arkadas} onKapat={() => setSihirbazAcik(false)} />
+        <ArkadaslaSihirbaz arkadas={arkadas} onKapat={() => setSihirbazAcik(false)} />
       )}
 
       <SohbetZemini tema={tema} className="px-5 py-4">
@@ -224,16 +238,4 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
       </div>
     </div>
   )
-}
-
-// The AI planner for just this friend. My own name goes into the plan
-// message, so it waits for my profile.
-function SihirbazAc({ arkadas, onKapat }: { arkadas: Profil; onKapat: () => void }) {
-  const { kullanici } = useAuth()
-  const [benimAdim, setBenimAdim] = useState<string | null>(null)
-  useEffect(() => {
-    void profilimiGetir().then((p) => setBenimAdim(p?.ad ?? 'Ben'))
-  }, [kullanici])
-  if (!benimAdim) return null
-  return <OrtakPlanSihirbazi benimAdim={benimAdim} sabitKisiler={[arkadas]} onKapat={onKapat} onOlusturuldu={() => {}} />
 }

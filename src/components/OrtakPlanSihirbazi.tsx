@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Icon } from './Icon'
 import { Avatar } from './Avatar'
-import type { Arkadas, Profil } from '../sosyal/api'
+import { profilimiGetir, type Arkadas, type Profil } from '../sosyal/api'
 import type { Grup } from '../sosyal/gruplar'
 import { gunleriUret, ortakPlanOner, type BosAralik, type OnerilenPlan } from '../sosyal/ortakPlan'
 import { planiKur } from '../lib/planPaylasimi'
@@ -450,6 +450,19 @@ export function OrtakPlanSihirbazi({
       </div>
     </Kabuk>
   )
+}
+
+// The planner for just one friend (from a chat or their profile). My own
+// name goes into the plan message, so it waits for my profile.
+export function ArkadaslaSihirbaz({ arkadas, onKapat }: { arkadas: Profil; onKapat: () => void }) {
+  const [benimAdim, setBenimAdim] = useState<string | null>(null)
+  useEffect(() => {
+    void profilimiGetir()
+      .then((p) => setBenimAdim(p?.ad ?? 'Ben'))
+      .catch(() => setBenimAdim('Ben'))
+  }, [])
+  if (!benimAdim) return null
+  return <OrtakPlanSihirbazi benimAdim={benimAdim} sabitKisiler={[arkadas]} onKapat={onKapat} onOlusturuldu={() => {}} />
 }
 
 function Kabuk({

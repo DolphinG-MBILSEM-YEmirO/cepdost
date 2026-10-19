@@ -201,6 +201,17 @@ export async function gruplarimiGetir(): Promise<Grup[]> {
   return liste.sort((a, b) => b.olusturulma.localeCompare(a.olusturulma))
 }
 
+// The groups someone and I are both in (for their profile).
+export async function ortakGruplar(kisiId: string): Promise<Grup[]> {
+  const durum = await kanalDurumu()
+  const liste: Grup[] = []
+  for (const [grupId, g] of durum.gruplar) {
+    const uye = (await uyeKayitlari(g.kanal)).get(kisiId)
+    if (uye?.veri.durum === 'aktif') liste.push(grupKur(grupId, g.veri, await grupKarti(g.kanal)))
+  }
+  return liste.sort((a, b) => b.olusturulma.localeCompare(a.olusturulma))
+}
+
 export async function grupGuncelle(grupId: string, degisiklik: GrupGorunumu & { ad?: string }): Promise<void> {
   const m = motor()
   const kanal = await grupKanaliBul(grupId)
