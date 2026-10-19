@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Icon } from './Icon'
 import { Avatar, GrupAvatari } from './Avatar'
 import { DirektSohbet } from './DirektSohbet'
@@ -16,7 +16,15 @@ import { useMasaustu } from '../lib/useMasaustu'
 // sohbet başlatmanın yolu olmazdı.
 // Phone: the list, with a chat opening over it. Desktop: the list on the
 // left and the open chat beside it.
-export function SohbetlerView({ onDegisti }: { onDegisti?: () => void }) {
+interface Props {
+  onDegisti?: () => void
+  // The Sohbetler/Arkadaşlar switch, shown as the page header.
+  ust: ReactNode
+  // Opens the friends side, from the empty state.
+  onArkadasEkle: () => void
+}
+
+export function SohbetlerView({ onDegisti, ust, onArkadasEkle }: Props) {
   const { kullanici } = useAuth()
   const sosyalSurum = useSosyalSurum()
   const [sohbetler, setSohbetler] = useState<Sohbet[] | null>(null)
@@ -93,10 +101,7 @@ export function SohbetlerView({ onDegisti }: { onDegisti?: () => void }) {
   return (
     <div className="flex flex-col h-full lg:flex-row lg:h-screen">
       <div className="flex flex-col h-full min-h-0 lg:w-[360px] lg:shrink-0 lg:border-r lg:border-ink-100">
-        <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3 lg:pt-8">
-          <h1 className="font-display text-2xl font-bold text-ink-700">Sohbet</h1>
-          <p className="text-sm text-ink-400 mt-0.5">Arkadaşların ve grupların</p>
-        </div>
+        <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3 lg:pt-8">{ust}</div>
 
         <div className="flex-1 overflow-y-auto px-5 pb-24 lg:pb-6">
           {hata && (
@@ -118,9 +123,16 @@ export function SohbetlerView({ onDegisti }: { onDegisti?: () => void }) {
                 <Icon name="MessagesSquare" className="w-7 h-7 text-orchid-500" />
               </div>
               <p className="font-semibold text-ink-600 mb-1">Henüz sohbet yok</p>
-              <p className="text-sm text-ink-400">
-                Profil sekmesinden arkadaş ekle ya da grup kur, sohbetler burada görünsün.
+              <p className="text-sm text-ink-400 mb-4">
+                Arkadaş ekle ya da grup kur, sohbetler burada görünsün.
               </p>
+              <button
+                onClick={onArkadasEkle}
+                className="btn-primary text-sm px-4 py-2.5 inline-flex items-center gap-2"
+              >
+                <Icon name="UserPlus" className="w-4 h-4" />
+                Arkadaş ekle
+              </button>
             </div>
           ) : (
             <div className="space-y-2">

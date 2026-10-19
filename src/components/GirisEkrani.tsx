@@ -129,7 +129,7 @@ export function GirisEkrani({
         <div className="card p-4 mb-4 bg-mist-50">
           <p className="text-xs text-ink-500 leading-relaxed">
             Kurtarma kodu <strong>nsec1</strong> ile başlayan uzun bir koddur. Hesabını açtığın
-            telefonda <strong>Hesabım → Ayarlar → Hesap güvenliği</strong> bölümünde bulunur.
+            telefonda <strong>Profil → Ayarlar → Hesap güvenliği</strong> bölümünde bulunur.
           </p>
         </div>
         <form

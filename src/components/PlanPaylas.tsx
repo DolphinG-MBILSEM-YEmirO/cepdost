@@ -234,7 +234,7 @@ export function PaylasimHedefiSheet({ kayit, onKapat }: { kayit: Kayit; onKapat:
         </div>
       ) : bos ? (
         <p className="text-sm text-ink-400 px-1 py-3">
-          Henüz arkadaşın yok. Profil sekmesinden arkadaş ekleyince planlarını onlarla paylaşabilirsin.
+          Henüz arkadaşın yok. Sohbet → Arkadaşlar'dan arkadaş ekleyince planlarını onlarla paylaşabilirsin.
         </p>
       ) : (
         <>

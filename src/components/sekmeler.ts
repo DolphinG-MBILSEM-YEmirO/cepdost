@@ -23,3 +23,7 @@ export const SAG_TABLAR: SekmeTanimi[] = [
 ]
 
 export const TABLAR: SekmeTanimi[] = [...SOL_TABLAR, ...SAG_TABLAR]
+
+// The Sohbet tab holds two sections: chats, and friends (code, requests,
+// groups). Kept apart from the profile, which only shows the person.
+export type SosyalBolum = 'sohbetler' | 'arkadaslar'

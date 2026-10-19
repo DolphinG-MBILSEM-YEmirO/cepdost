@@ -7,15 +7,14 @@ export type { Tab }
 // kayıyordu (2 sol + 3 sağ) ve seçenek kalabalığı vardı; Hatırlatmalar
 // "Planlar" içine, Ayarlar "Profil" içine taşındı.
 // Arşiv alt bardan çıkıp Profil'in içine taşındı; yeri Sohbet'e verildi.
+// Arkadaşlar da Sohbet'te; istekler ve davetler Sohbet rozetine sayılır.
 // Masaüstünde (lg) bu çubuk gizli; yerini KenarCubugu alıyor.
 
 interface BottomNavProps {
   active: Tab
   onChange: (tab: Tab) => void
   onAddClick: () => void
-  // Bekleyen arkadaşlık isteği / plan daveti sayısı.
-  profilRozeti?: number
-  // Okunmamış mesaj sayısı.
+  // Okunmamış mesaj + bekleyen arkadaşlık isteği / plan daveti sayısı.
   sohbetRozeti?: number
 }
 
@@ -23,7 +22,6 @@ export function BottomNav({
   active,
   onChange,
   onAddClick,
-  profilRozeti = 0,
   sohbetRozeti = 0,
 }: BottomNavProps) {
   return (
@@ -58,7 +56,6 @@ export function BottomNav({
               tab={t}
               active={active === t.id}
               onClick={() => onChange(t.id)}
-              rozet={t.id === 'profil' ? profilRozeti : 0}
             />
           ))}
         </div>

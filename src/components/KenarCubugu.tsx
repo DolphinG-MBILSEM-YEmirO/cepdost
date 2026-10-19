@@ -12,7 +12,7 @@ interface Props {
   onAddClick: () => void
   onAsistan: () => void
   profil: Profil | null
-  profilRozeti?: number
+  // Unread messages plus pending friend requests and plan invites.
   sohbetRozeti?: number
 }
 
@@ -22,10 +22,9 @@ export function KenarCubugu({
   onAddClick,
   onAsistan,
   profil,
-  profilRozeti = 0,
   sohbetRozeti = 0,
 }: Props) {
-  const rozetler: Partial<Record<Tab, number>> = { sohbet: sohbetRozeti, profil: profilRozeti }
+  const rozetler: Partial<Record<Tab, number>> = { sohbet: sohbetRozeti }
 
   return (
     <aside className="hidden lg:flex fixed inset-y-0 left-0 z-30 w-64 flex-col border-r border-ink-100/70 bg-white/80 backdrop-blur-xl px-4 py-6">

@@ -1,19 +1,21 @@
 import { useState } from 'react'
 import { Icon, type IconName } from './Icon'
-import { ArkadaslarView } from './ArkadaslarView'
+import { HesabimView } from './HesabimView'
 import { ArchiveView } from './ArchiveView'
 import { SettingsView } from './SettingsView'
 import type { Kayit } from '../db'
 
 // Alt barda ayrı sekme tutmak yerine hesapla ilgili her şey burada:
-// profil/arkadaşlar/gruplar + kayıt arşivi + uygulama ayarları.
+// profil + kayıt arşivi + uygulama ayarları. Arkadaşlar, kod ve istekler
+// Sohbet sekmesinde (ArkadaslarView); profil sadece kişinin kendisi.
 type Sekme = 'hesap' | 'arsiv' | 'ayarlar'
 
 interface Props {
   kayitlar: Kayit[]
   loading: boolean
-  baslangicKodu?: string | null
   onDegisti?: () => void
+  // Opens Sohbet → Arkadaşlar (from the friend and group counts).
+  onArkadaslar: () => void
   onRecordClick: (kayit: Kayit) => void
   onToggleStatus: (id: string) => void
   onDelete: (id: string) => void
@@ -28,8 +30,8 @@ const sekmeler: { id: Sekme; etiket: string; ikon: IconName }[] = [
 export function ProfilView({
   kayitlar,
   loading,
-  baslangicKodu,
   onDegisti,
+  onArkadaslar,
   onRecordClick,
   onToggleStatus,
   onDelete,
@@ -54,9 +56,7 @@ export function ProfilView({
       </div>
 
       <div className="flex-1 min-h-0">
-        {sekme === 'hesap' && (
-          <ArkadaslarView baslangicKodu={baslangicKodu} onDegisti={onDegisti} />
-        )}
+        {sekme === 'hesap' && <HesabimView onArkadaslar={onArkadaslar} />}
         {sekme === 'arsiv' && (
           <ArchiveView
             kayitlar={kayitlar}

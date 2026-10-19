@@ -2,12 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { PlanlarView } from './components/PlanlarView'
 import { SohbetlerView } from './components/SohbetlerView'
+import { ArkadaslarView } from './components/ArkadaslarView'
+import { SosyalSekmeler } from './components/SosyalSekmeler'
 import { AkisView } from './components/AkisView'
 import { ProfilView } from './components/ProfilView'
 import { PlanOlustur } from './components/PlanOlustur'
 import { RecordDetail } from './components/RecordDetail'
 import { Onboarding } from './components/Onboarding'
 import { BottomNav, type Tab } from './components/BottomNav'
+import type { SosyalBolum } from './components/sekmeler'
 import { KenarCubugu } from './components/KenarCubugu'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { ChatButton } from './components/ChatButton'
@@ -64,11 +67,12 @@ async function handleGetShareTarget(): Promise<ShareBanner> {
 }
 
 export default function App() {
-  // Davet linkiyle gelindiyse (?ekle=KOD) doğrudan Arkadaşlar sekmesi açılsın.
+  // Davet linkiyle gelindiyse (?ekle=KOD) doğrudan Sohbet → Arkadaşlar açılsın.
   const [davetKodu] = useState<string | null>(
     () => new URLSearchParams(window.location.search).get('ekle'),
   )
-  const [activeTab, setActiveTab] = useState<Tab>(davetKodu ? 'profil' : 'planlar')
+  const [activeTab, setActiveTab] = useState<Tab>(davetKodu ? 'sohbet' : 'planlar')
+  const [sosyalBolum, setSosyalBolum] = useState<SosyalBolum>(davetKodu ? 'arkadaslar' : 'sohbetler')
   const [showCapture, setShowCapture] = useState(false)
   const [showChat, setShowChat] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
@@ -293,8 +297,18 @@ export default function App() {
     )
   }
 
+  function arkadaslariAc() {
+    setSosyalBolum('arkadaslar')
+    setActiveTab('sohbet')
+  }
+
+  const sosyalUst = (
+    <SosyalSekmeler secili={sosyalBolum} onSec={setSosyalBolum} sohbetRozeti={mesajRozeti} arkadasRozeti={rozet} />
+  )
+
   // Phone: one column under a bottom bar. Desktop (lg): a sidebar and a
-  // wider content area; chats use the full width for their two panes.
+  // wider content area; the Sohbet tab uses the full width (two panes for
+  // chats) and both of its sides line up under the same switch.
   const icerikGenisligi =
     activeTab === 'sohbet' ? 'lg:max-w-none lg:px-0' : activeTab === 'akis' ? 'lg:max-w-4xl lg:pt-4' : 'lg:max-w-6xl lg:pt-4'
 
@@ -323,8 +337,7 @@ export default function App() {
         onAddClick={() => setShowCapture(true)}
         onAsistan={() => setShowChat(true)}
         profil={profil}
-        profilRozeti={rozet}
-        sohbetRozeti={mesajRozeti}
+        sohbetRozeti={mesajRozeti + rozet}
       />
 
       <main className="lg:pl-64">
@@ -343,7 +356,16 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'sohbet' && <SohbetlerView onDegisti={rozetiTazele} />}
+          {activeTab === 'sohbet' &&
+            (sosyalBolum === 'sohbetler' ? (
+              <SohbetlerView
+                onDegisti={rozetiTazele}
+                ust={sosyalUst}
+                onArkadasEkle={() => setSosyalBolum('arkadaslar')}
+              />
+            ) : (
+              <ArkadaslarView baslangicKodu={davetKodu} onDegisti={rozetiTazele} ust={sosyalUst} />
+            ))}
 
           {activeTab === 'akis' && <AkisView />}
 
@@ -351,8 +373,8 @@ export default function App() {
             <ProfilView
               kayitlar={kayitlar}
               loading={loading}
-              baslangicKodu={davetKodu}
               onDegisti={rozetiTazele}
+              onArkadaslar={arkadaslariAc}
               onRecordClick={(k) => setDetailKayit(k)}
               onToggleStatus={handleToggleStatus}
               onDelete={(id) => {
@@ -364,15 +386,16 @@ export default function App() {
         </div>
       </main>
 
-      {/* Sohbet butonu Profil sekmesinde gizleniyor — o ekranın kendi
-          aksiyonları var, sağ altta ikinci bir yüzen buton kalabalık yapıyor. */}
-      {activeTab !== 'profil' && <ChatButton onClick={() => setShowChat(true)} />}
+      {/* Sohbet butonu Profil'de ve Arkadaşlar'da gizleniyor — o ekranların
+          kendi aksiyonları var, sağ altta ikinci bir yüzen buton kalabalık yapıyor. */}
+      {activeTab !== 'profil' && !(activeTab === 'sohbet' && sosyalBolum === 'arkadaslar') && (
+        <ChatButton onClick={() => setShowChat(true)} />
+      )}
       <BottomNav
         active={activeTab}
         onChange={setActiveTab}
         onAddClick={() => setShowCapture(true)}
-        profilRozeti={rozet}
-        sohbetRozeti={mesajRozeti}
+        sohbetRozeti={mesajRozeti + rozet}
       />
 
       {showCapture && <PlanOlustur onClose={() => setShowCapture(false)} onSaved={() => {}} />}
