@@ -1,7 +1,7 @@
 // End-to-end test of the social layer against a local relay: accounts,
 // friend requests, profiles, availability, chat, invites, groups, unfriend
 // with key rotation, password sign-in, restoring on a new device, plan links
-// and email verification.
+// (Sharloop's own and Davet invites) and email verification.
 //
 //   npm test
 
@@ -62,7 +62,8 @@ import { CepDostDB, db, kayitOlustur, type Kayit } from '../src/db'
 import { planlariEsitle } from '../src/sosyal/planEsitleme'
 import { TUR } from '../src/sosyal/cekirdek'
 import { linkKanali } from '../src/sosyal/nostr/kanal'
-import { base64UrldenBayt } from '../src/sosyal/nostr/kodlama'
+import { aesAnahtari, base64UrldenBayt, hexe, hmac, jsonCoz, jsonSifrele } from '../src/sosyal/nostr/kodlama'
+import type { NostrOlayi } from '../src/sosyal/nostr/role'
 import {
   benimLinkim,
   linkeYanitVer,
@@ -71,8 +72,10 @@ import {
   linkPlaniniGuncelle,
   linkPlaniniIptalEt,
   planiLinklePaylas,
+  sharloopKaynagi,
 } from '../src/sosyal/planLinki'
-import { linkKaydi, linkPlaniniYanitla } from '../src/lib/planPaylasimi'
+import { DAVET_ADRESI, benimDavetim, davetKaynagi, davetLinkiCoz, planiDavetlePaylas } from '../src/sosyal/davet'
+import { linkKaydi, linkPlaniniYanitla, planiGuncelle, planiSil } from '../src/lib/planPaylasimi'
 import { adresimiKaydet, adresimiSil, bildir, bildirimGondericisiniAyarla } from '../src/sosyal/bildirimler'
 import type { BildirimIcerigi, BildirimTuru, Gonderim, WebPushAdresi } from '../shared/bildirim'
 
@@ -544,8 +547,8 @@ test('plan links: anyone with the link sees the plan and answers; only the host 
 
   // A signed-in friend says they're coming: it lands in their calendar
   // once, and leaves it when they change their mind.
-  await olarak(ayse, () => linkPlaniniYanitla(ayse.motor, link, gorulen.plan!, 'Ayşe', 'geliyorum'))
-  await olarak(ayse, () => linkPlaniniYanitla(ayse.motor, link, gorulen.plan!, 'Ayşe', 'geliyorum'))
+  await olarak(ayse, () => linkPlaniniYanitla(ayse.motor, sharloopKaynagi(link), gorulen.plan!, 'Ayşe', 'geliyorum'))
+  await olarak(ayse, () => linkPlaniniYanitla(ayse.motor, sharloopKaynagi(link), gorulen.plan!, 'Ayşe', 'geliyorum'))
   const takvimde = await linkKaydi(link.anahtar)
   assert.equal(takvimde?.baslik, 'Piknik')
   assert.equal(await db.kayitlar.filter((k) => k.linkAnahtari === link.anahtar).count(), 1)
@@ -565,8 +568,99 @@ test('plan links: anyone with the link sees the plan and answers; only the host 
   assert.equal(iptal.plan?.iptal, true)
   assert.equal(iptal.katilimcilar.length, 2)
 
-  await olarak(ayse, () => linkPlaniniYanitla(ayse.motor, link, iptal.plan!, 'Ayşe', 'gelemiyorum'))
+  await olarak(ayse, () => linkPlaniniYanitla(ayse.motor, sharloopKaynagi(link), iptal.plan!, 'Ayşe', 'gelemiyorum'))
   assert.equal(await linkKaydi(link.anahtar), undefined)
+})
+
+// Edits go out in the background: waits until the relay shows them.
+async function olanaKadar(kosul: () => Promise<boolean>, mesaj: string) {
+  for (let i = 0; i < 50; i++) {
+    if (await kosul()) return
+    await new Promise((r) => setTimeout(r, 50))
+  }
+  assert.fail(mesaj)
+}
+
+test('plan links as Davet invites: Davet reads them, its answers show in Sharloop and back', async () => {
+  const kayit = await kayitOlustur({ ...plan('Kahvaltı', { emoji: '☕', saat: '10:00', sure: 90 }), konum: 'Moda' })
+  const adres = await olarak(ali, () => planiDavetlePaylas(kayit))
+  assert.ok(adres.startsWith(`${DAVET_ADRESI}#/e/`))
+  const kimlik = adres.slice(adres.indexOf('#/e/') + 4)
+  const link = davetLinkiCoz(`#davet=${kimlik}`)
+  assert.ok(link)
+  assert.equal(link.sahip, ali.motor.benimId)
+  const kayitli = (await db.kayitlar.get(kayit.id))!
+  assert.equal(kayitli.davetLinki, link.gizli)
+  assert.equal(await olarak(ali, () => planiDavetlePaylas(kayitli)), adres, 'sharing again gives the same link')
+  assert.equal(davetLinkiCoz('#davet=bozuk.link'), null)
+
+  // What Davet reads: its own fields, plus Sharloop's.
+  const sirdan = base64UrldenBayt(link.gizli)
+  const konu = hexe(await hmac(sirdan, 'davet/topic'))
+  const sifre = await aesAnahtari(await hmac(sirdan, 'davet/encryption'))
+  const davetOlayi = (await can.motor.hamSorgula({ kinds: [30078], '#i': [konu] })).find((o) => o.pubkey === link.sahip)!
+  assert.ok(verifyEvent(davetOlayi as Event))
+  assert.deepEqual(davetOlayi.tags.find((t) => t[0] === 'd'), ['d', konu])
+  const davet = (await jsonCoz(sifre, davetOlayi.content)) as Record<string, unknown>
+  assert.equal(davet.title, 'Kahvaltı')
+  assert.equal(davet.startsAt, '2099-04-01T10:00')
+  assert.equal(davet.hostName, 'Ali')
+  assert.equal(davet.theme, 'coffee')
+  assert.equal(davet.emoji, '☕')
+  assert.equal(davet.allDay, false)
+  assert.equal(davet.durationMinutes, 90)
+  assert.deepEqual(davet.sharloop, { kod: arkadasKodu(ali.motor.benimId), kullaniciAdi: 'ali' })
+
+  // Someone answers in Davet, with a key Davet made for their browser.
+  const davetMisafiri = generateSecretKey()
+  const misafirYaniti = finalizeEvent(
+    {
+      kind: 30078,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: [['d', `${konu}:rsvp`], ['i', konu]],
+      content: await jsonSifrele(sifre, { name: 'Zeynep', status: 'maybe', note: 'Geç kalabilirim' }),
+    },
+    davetMisafiri,
+  )
+  await can.motor.hamYayinla(misafirYaniti as NostrOlayi)
+
+  // A Sharloop user opens it from Davet ("Sharloop'ta aç") and is coming:
+  // it lands in their calendar, and the answer is in Davet's format.
+  const kaynak = davetKaynagi(link)
+  const gorulen = await olarak(ayse, () => kaynak.oku(ayse.motor))
+  assert.equal(gorulen.plan?.baslik, 'Kahvaltı')
+  assert.equal(gorulen.plan?.saat, '10:00')
+  assert.equal(gorulen.plan?.sure, 90)
+  assert.equal(gorulen.plan?.sahipKodu, arkadasKodu(ali.motor.benimId))
+  assert.deepEqual(gorulen.katilimcilar.map((k) => [k.ad, k.yanit]), [['Zeynep', 'belki']])
+  await olarak(ayse, () => linkPlaniniYanitla(ayse.motor, kaynak, gorulen.plan!, 'Ayşe', 'geliyorum'))
+  assert.equal((await linkKaydi(link.gizli))?.baslik, 'Kahvaltı')
+  const ayseninYaniti = (await can.motor.hamSorgula({ kinds: [30078], '#i': [konu], authors: [ayse.motor.benimId] }))[0]
+  assert.deepEqual(await jsonCoz(sifre, ayseninYaniti.content), { name: 'Ayşe', status: 'going', note: '' })
+
+  // The host sees both answers on the plan's page.
+  const ev = await olarak(ali, () => davetKaynagi(benimDavetim(kayitli)!).oku(ali.motor))
+  assert.deepEqual(ev.katilimcilar.map((k) => [k.ad, k.yanit]).sort(), [['Ayşe', 'geliyorum'], ['Zeynep', 'belki']])
+
+  // Someone else with the link can't replace the invite.
+  await can.motor.hamYayinla(
+    finalizeEvent(
+      { kind: 30078, created_at: Math.floor(Date.now() / 1000) + 30, tags: [['d', konu], ['i', konu]], content: await jsonSifrele(sifre, { ...davet, title: 'Sahte' }) },
+      can.sk,
+    ) as NostrOlayi,
+  )
+  assert.equal((await kaynak.oku(can.motor)).plan?.baslik, 'Kahvaltı')
+
+  // Editing the plan moves the invite; an all-day plan has no time there.
+  await olarak(ali, () => planiGuncelle(kayitli, { tumGun: true, saat: null }))
+  await olanaKadar(async () => (await kaynak.oku(can.motor)).plan?.tum_gun === true, 'invite follows the edit')
+  const tumGun = await kaynak.oku(can.motor)
+  assert.equal(tumGun.plan?.saat, null)
+  assert.equal(tumGun.plan?.sure, null)
+
+  // Deleting the plan deletes the invite, the way Davet does it.
+  await olarak(ali, () => planiSil({ ...kayitli, tumGun: true, saat: null }))
+  await olanaKadar(async () => (await kaynak.oku(can.motor)).plan === null, 'invite deleted')
 })
 
 // ---------- push notifications ----------

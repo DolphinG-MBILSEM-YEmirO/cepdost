@@ -72,8 +72,10 @@ export async function bildirimMetni(veri: string | null, bilinenler: Bilinenler)
   }
 
   if (bilinenler.kisiler.has(olay.pubkey)) return kendiMetni
-  // Whoever answers my plan link holds its key: that's all a guest can show.
-  if (tur === 'link' && git.startsWith('link:') && bilinenler.linkler.has(await linkOzeti(git.slice(5)))) {
+  // Whoever answers my plan link (or my Davet invite) holds its key: that's
+  // all a guest can show.
+  const linkAnahtari = /^(link|davet):/.test(git) ? git.slice(git.indexOf(':') + 1) : null
+  if (tur === 'link' && linkAnahtari && bilinenler.linkler.has(await linkOzeti(linkAnahtari))) {
     return kendiMetni
   }
   return sabit(tur)

@@ -9,7 +9,12 @@ import { goruntulemeBasligi, kayitGuncelle, type Kayit } from '../db'
 // Plan links: one of my plans shared as a link, so people who aren't on
 // Sharloop (or aren't my friends) can see it and say whether they're coming.
 //
-// The link is `https://…/#plan=<key>.<host>`. Everything lives on a channel
+// New links are Davet invites (sosyal/davet.ts): people without the app
+// open them in Davet. This file holds what both kinds share (the plan as a
+// link shows it, the answers, LinkKaynagi) and Sharloop's own link format,
+// which links shared before Davet still use.
+//
+// That link is `https://…/#plan=<key>.<host>`. Everything lives on a channel
 // made from <key>; the #fragment never reaches the server that serves the
 // page, and relays only see ciphertext. <host> is my public key: the plan is
 // only believed when I signed it, so someone with the link can't swap it
@@ -37,8 +42,9 @@ export interface LinkPlani {
   not: string | null
   sahipAdi: string
   sahipKullaniciAdi: string | null
-  // My friend code, so "join" can open the app with me found.
-  sahipKodu: string
+  // My friend code, so "join" can open the app with me found (null for a
+  // Davet invite that didn't come from Sharloop).
+  sahipKodu: string | null
   iptal: boolean
 }
 
@@ -53,6 +59,18 @@ export interface LinkKatilimcisi {
 export interface LinkDurumu {
   plan: LinkPlani | null
   katilimcilar: LinkKatilimcisi[]
+}
+
+// What the link screen and the plan page need from a link, whichever kind
+// it is.
+export interface LinkKaynagi {
+  tur: 'sharloop' | 'davet'
+  // Kayit.linkAnahtari of the calendar entry a "coming" makes.
+  id: string
+  // The host's account (hex public key).
+  sahip: string
+  oku(m: SosyalMotor): Promise<LinkDurumu>
+  yanitVer(m: SosyalMotor, plan: LinkPlani, ad: string, yanit: LinkYaniti): Promise<void>
 }
 
 const ANAHTAR_BOYU = 32
@@ -182,7 +200,8 @@ export async function linkiOku(m: SosyalMotor, link: PlanLinki): Promise<LinkDur
   return { plan: planKaydi ? linkPlaniAl(planKaydi.veri) : null, katilimcilar }
 }
 
-const YANIT_METNI: Record<LinkYaniti, string> = {
+// How the host's notification puts an answer: "Zeynep geliyor".
+export const YANIT_METNI: Record<LinkYaniti, string> = {
   geliyorum: 'geliyor',
   belki: 'belki gelir',
   gelemiyorum: 'gelemiyor',
@@ -210,6 +229,16 @@ export async function linkeYanitVer(
     },
     { motor: m, dizinden: true },
   )
+}
+
+export function sharloopKaynagi(link: PlanLinki): LinkKaynagi {
+  return {
+    tur: 'sharloop',
+    id: link.anahtar,
+    sahip: link.sahip,
+    oku: (m) => linkiOku(m, link),
+    yanitVer: (m, plan, ad, yanit) => linkeYanitVer(m, link, plan, ad, yanit),
+  }
 }
 
 // ---------- visitors without an account ----------

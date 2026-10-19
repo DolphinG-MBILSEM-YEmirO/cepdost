@@ -185,7 +185,11 @@ test('the service worker shows text only from people it knows', async () => {
   const arkadas = generateSecretKey()
   const yabanci = generateSecretKey()
   const linkAnahtari = 'A'.repeat(43)
-  const bilinenler: Bilinenler = { kisiler: new Set([getPublicKey(arkadas)]), linkler: new Set([await linkOzeti(linkAnahtari)]) }
+  const davetGizlisi = 'D'.repeat(22)
+  const bilinenler: Bilinenler = {
+    kisiler: new Set([getPublicKey(arkadas)]),
+    linkler: new Set([await linkOzeti(linkAnahtari), await linkOzeti(davetGizlisi)]),
+  }
   const dm = `dm:${getPublicKey(arkadas)}`
 
   // A friend: their own words, and the way into the chat.
@@ -209,6 +213,12 @@ test('the service worker shows text only from people it knows', async () => {
   assert.deepEqual([yanit.baslik, yanit.git], ['Zeynep geliyor', link])
   const baskaLink = await bildirimMetni(imzali(yabanci, { tur: 'link', baslik: 'Zeynep', git: `link:${'B'.repeat(43)}` }), bilinenler)
   assert.equal(baskaLink.govde, 'Planına yeni bir yanıt geldi.')
+  // The same for a plan shared as a Davet invite.
+  const davet = `davet:${davetGizlisi}`
+  const davetYaniti = await bildirimMetni(imzali(yabanci, { tur: 'link', baslik: 'Ayşe geliyor', govde: 'Kahvaltı', git: davet }), bilinenler)
+  assert.deepEqual([davetYaniti.baslik, davetYaniti.git], ['Ayşe geliyor', davet])
+  const baskaDavet = await bildirimMetni(imzali(yabanci, { tur: 'link', baslik: 'Ayşe', git: `davet:${'E'.repeat(22)}` }), bilinenler)
+  assert.equal(baskaDavet.govde, 'Planına yeni bir yanıt geldi.')
 
   // Forged, unreadable or foreign payloads.
   const olay = JSON.parse(imzali(arkadas, {})) as { content: string }
@@ -221,4 +231,5 @@ test('the service worker shows text only from people it knows', async () => {
   // Somewhere outside the app is never followed.
   assert.equal((await bildirimMetni(imzali(arkadas, { git: 'https://evil.example' }), bilinenler)).git, '')
   assert.ok(gitGecerliMi('arkadaslar') && gitGecerliMi('grup:abc_DEF-1') && !gitGecerliMi('dm:xyz'))
+  assert.ok(gitGecerliMi(davet) && !gitGecerliMi('davet:kisa'))
 })

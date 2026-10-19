@@ -5,10 +5,13 @@ import { goruntulemeBasligi, type Kayit } from '../db'
 import { formatDate, formatPlanTime } from '../lib/format'
 import { paylasVeyaKopyala } from '../lib/paylas'
 import { motor } from '../sosyal/cekirdek'
-import { benimLinkim, linkAdresi, linkiOku, planiLinklePaylas, type LinkKatilimcisi } from '../sosyal/planLinki'
+import { benimDavetim, davetAdresi, davetKaynagi, planiDavetlePaylas } from '../sosyal/davet'
+import { benimLinkim, linkAdresi, sharloopKaynagi, type LinkKatilimcisi } from '../sosyal/planLinki'
 
 // The host's side of plan links: sharing a plan as a link, and seeing who
-// answered through it.
+// answered through it. Links go out as Davet invites, which people without
+// the app open in Davet; a plan shared before that also keeps its old
+// Sharloop link, and its answers are listed together.
 
 function paylasimMetni(kayit: Kayit): string {
   const ne = [kayit.emoji, goruntulemeBasligi(kayit)].filter(Boolean).join(' ')
@@ -17,7 +20,7 @@ function paylasimMetni(kayit: Kayit): string {
 }
 
 async function linkiPaylas(kayit: Kayit): Promise<'paylasildi' | 'kopyalandi' | 'vazgecildi'> {
-  const url = await planiLinklePaylas(kayit)
+  const url = await planiDavetlePaylas(kayit)
   return paylasVeyaKopyala({ baslik: goruntulemeBasligi(kayit), metin: paylasimMetni(kayit), url })
 }
 
@@ -43,7 +46,7 @@ export function LinkSatiri({ kayit }: { kayit: Kayit }) {
       ? 'Link kopyalandı; istediğin yere yapıştır'
       : durum === 'paylasildi'
         ? 'Paylaşıldı; yanıtlar planın sayfasında görünecek'
-        : 'Uygulaması olmayanlar da görüp yanıt verebilir'
+        : 'Uygulaması olmayanlar Davet’te görüp yanıt verebilir'
 
   return (
     <div className="mb-3">
@@ -76,10 +79,13 @@ export function LinkYanitlari({ kayit }: { kayit: Kayit }) {
   const [kopyalandi, setKopyalandi] = useState(false)
 
   const oku = useCallback(async () => {
-    const link = benimLinkim(kayit)
-    if (!link) return
+    const davet = benimDavetim(kayit)
+    const eski = benimLinkim(kayit)
+    const kaynaklar = [davet && davetKaynagi(davet), eski && sharloopKaynagi(eski)].filter((k) => !!k)
+    if (kaynaklar.length === 0) return
     try {
-      setKatilimcilar((await linkiOku(motor(), link)).katilimcilar)
+      const durumlar = await Promise.all(kaynaklar.map((k) => k.oku(motor())))
+      setKatilimcilar(durumlar.flatMap((d) => d.katilimcilar).sort((a, b) => a.zaman - b.zaman))
       setHata(null)
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Yanıtlar alınamadı')
@@ -103,10 +109,12 @@ export function LinkYanitlari({ kayit }: { kayit: Kayit }) {
   }
 
   async function kopyala() {
-    const link = benimLinkim(kayit)
-    if (!link) return
+    const davet = benimDavetim(kayit)
+    const eski = benimLinkim(kayit)
+    const adres = davet ? davetAdresi(davet) : eski ? linkAdresi(eski) : null
+    if (!adres) return
     try {
-      await navigator.clipboard.writeText(linkAdresi(link))
+      await navigator.clipboard.writeText(adres)
       setKopyalandi(true)
       setTimeout(() => setKopyalandi(false), 2000)
     } catch {

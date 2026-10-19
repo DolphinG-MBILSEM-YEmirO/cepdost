@@ -5,7 +5,8 @@ import { SohbetlerView } from './components/SohbetlerView'
 import { ArkadaslarView } from './components/ArkadaslarView'
 import { SosyalSekmeler } from './components/SosyalSekmeler'
 import { PlanLinkiEkrani } from './components/PlanLinkiEkrani'
-import { linkiCoz, type PlanLinki } from './sosyal/planLinki'
+import { linkiCoz, sharloopKaynagi, type LinkKaynagi } from './sosyal/planLinki'
+import { davetKaynagi, davetLinkiCoz } from './sosyal/davet'
 import { AkisView } from './components/AkisView'
 import { ProfilView } from './components/ProfilView'
 import { PlanOlustur } from './components/PlanOlustur'
@@ -70,6 +71,15 @@ async function handleGetShareTarget(): Promise<ShareBanner> {
   }
 }
 
+// A plan link in the address: #plan=… (Sharloop's own, older links) or
+// #davet=… ("Sharloop'ta aç" on a Davet invite).
+function adrestekiLink(hash: string): LinkKaynagi | null {
+  const link = linkiCoz(hash)
+  if (link) return sharloopKaynagi(link)
+  const davet = davetLinkiCoz(hash)
+  return davet ? davetKaynagi(davet) : null
+}
+
 export default function App() {
   // Davet linkiyle gelindiyse (?ekle=KOD) doğrudan Sohbet → Arkadaşlar açılsın.
   const [davetKodu, setDavetKodu] = useState<string | null>(
@@ -79,9 +89,10 @@ export default function App() {
   const [sosyalBolum, setSosyalBolum] = useState<SosyalBolum>(davetKodu ? 'arkadaslar' : 'sohbetler')
   // A chat to open, from a tapped notification.
   const [acilacakSohbet, setAcilacakSohbet] = useState<string | null>(null)
-  // Opened from a plan link (#plan=…): that plan is shown first, with or
-  // without an account.
-  const [planLinki, setPlanLinki] = useState<PlanLinki | null>(() => linkiCoz(window.location.hash))
+  // Opened from a plan link: that plan is shown first. An old #plan= link
+  // works without an account too; a Davet invite waits for sign-in (people
+  // without the app answer in Davet itself).
+  const [planLinki, setPlanLinki] = useState<LinkKaynagi | null>(() => adrestekiLink(window.location.hash))
   const [showCapture, setShowCapture] = useState(false)
   const [showChat, setShowChat] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
@@ -153,7 +164,7 @@ export default function App() {
 
   // A plan link opened while the app is already open in this tab.
   useEffect(() => {
-    const degisti = () => setPlanLinki(linkiCoz(window.location.hash))
+    const degisti = () => setPlanLinki(adrestekiLink(window.location.hash))
     window.addEventListener('hashchange', degisti)
     return () => window.removeEventListener('hashchange', degisti)
   }, [])
@@ -186,9 +197,9 @@ export default function App() {
       setSosyalBolum('sohbetler')
       setActiveTab('sohbet')
       setAcilacakSohbet(deger)
-    } else if (tur === 'link') {
+    } else if (tur === 'link' || tur === 'davet') {
       void db.kayitlar
-        .filter((k) => k.planLinki === deger)
+        .filter((k) => (tur === 'link' ? k.planLinki : k.davetLinki) === deger)
         .first()
         .then((k) => k && setDetailKayit(k))
     }
@@ -296,18 +307,28 @@ export default function App() {
   }
 
   // A plan link comes before everything else: whoever opens it sees the
-  // plan, even without an account or before the intro.
+  // plan, even without an account or before the intro. A Davet invite is
+  // for people with the app (the rest open it in Davet), so it waits until
+  // the account is fully set up; the steps below come first.
   if (planLinki) {
     if (authYukleniyor) return <Bekleme />
-    return (
-      <PlanLinkiEkrani
-        key={`${planLinki.anahtar}-${kullanici ? 'hesap' : 'misafir'}`}
-        link={planLinki}
-        girisli={!!kullanici}
-        onKapat={planLinkiniKapat}
-        onSahibiEkle={linkSahibiniEkle}
-      />
-    )
+    const hesapTamam =
+      !!kullanici &&
+      profilSahibi === kullanici.id &&
+      !!profil?.kullanici_adi &&
+      !!profil.sifre_belirlendi &&
+      (!epostaImzaci || onayGecerliMi(profil.onay, profil.id, epostaImzaci))
+    if (planLinki.tur === 'sharloop' || hesapTamam) {
+      return (
+        <PlanLinkiEkrani
+          key={`${planLinki.id}-${kullanici ? 'hesap' : 'misafir'}`}
+          link={planLinki}
+          girisli={!!kullanici}
+          onKapat={planLinkiniKapat}
+          onSahibiEkle={linkSahibiniEkle}
+        />
+      )
+    }
   }
 
   // --- Açılış kapısı: tanıtım → giriş → hesap kurulumu → uygulama ---

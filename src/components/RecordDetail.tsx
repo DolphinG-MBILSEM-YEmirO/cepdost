@@ -405,7 +405,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
         )}
 
         {/* Once shared as a link: who answered, and the link again. */}
-        {kayit.planLinki && !editing && <LinkYanitlari kayit={kayit} />}
+        {(kayit.planLinki || kayit.davetLinki) && !editing && <LinkYanitlari kayit={kayit} />}
 
         {/* Tarayıcıdan telefonun takvimine doğrudan yazan bir API yok;
             standart yol .ics indirip takvim uygulamasında açmak. */}

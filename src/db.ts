@@ -85,8 +85,11 @@ export interface Kayit {
   // My plan shared as a link: the link's key (base64url), so my other
   // devices can show the answers and keep the shared copy up to date.
   planLinki?: string | null
-  // A plan I said I'm coming to from someone's link: that link's key and
-  // its host, so changing my answer finds this entry.
+  // The same, for a plan shared as a Davet invite (sosyal/davet.ts): the
+  // invite's secret (base64url, 16 bytes). Newer links are all Davet ones.
+  davetLinki?: string | null
+  // A plan I said I'm coming to from someone's link: that link's key (or
+  // Davet secret) and its host, so changing my answer finds this entry.
   linkAnahtari?: string | null
   linkSahibi?: string | null
 }

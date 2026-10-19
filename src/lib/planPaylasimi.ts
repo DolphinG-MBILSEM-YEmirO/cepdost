@@ -2,13 +2,13 @@ import { db, goruntulemeBasligi, kayitGuncelle, kayitOlustur, kayitSil, type Kat
 import { davetGonder, davetYanitla, type PlanDaveti } from '../sosyal/api'
 import { direktMesajGonder } from '../sosyal/mesajlar'
 import { grupPlaniOlustur, mesajGonder, planaYanitVer, type Grup, type GrupPlani, type YanitDurumu } from '../sosyal/gruplar'
+import { davetiGuncelle, davetiSil } from '../sosyal/davet'
 import {
   linkPlaniniGuncelle,
   linkPlaniniIptalEt,
-  linkeYanitVer,
+  type LinkKaynagi,
   type LinkPlani,
   type LinkYaniti,
-  type PlanLinki,
 } from '../sosyal/planLinki'
 import type { SosyalMotor } from '../sosyal/nostr/motor'
 import { localDateString } from './format'
@@ -191,12 +191,12 @@ export async function grupPlaniYanitla(plan: GrupPlani, durum: YanitDurumu, grup
 // out again.
 export async function linkPlaniniYanitla(
   m: SosyalMotor,
-  link: PlanLinki,
+  link: LinkKaynagi,
   plan: LinkPlani,
   ad: string,
   yanit: LinkYaniti,
 ): Promise<void> {
-  const mevcut = await yerelKayit((k) => k.linkAnahtari === link.anahtar)
+  const mevcut = await yerelKayit((k) => k.linkAnahtari === link.id)
   if (yanit === 'geliyorum' && !mevcut && !plan.iptal) {
     await kayitOlustur({
       ...ortakAlanlar(),
@@ -208,11 +208,11 @@ export async function linkPlaniniYanitla(
       sure: plan.sure,
       ozetNot: plan.not,
       emoji: plan.emoji,
-      linkAnahtari: link.anahtar,
+      linkAnahtari: link.id,
       linkSahibi: link.sahip,
     })
   }
-  await linkeYanitVer(m, link, plan, ad, yanit)
+  await link.yanitVer(m, plan, ad, yanit)
   if (yanit !== 'geliyorum' && mevcut) await kayitSil(mevcut.id)
 }
 
@@ -221,16 +221,18 @@ export async function linkPlaniniYanitla(
 export async function planiGuncelle(kayit: Kayit, degisiklik: Partial<Kayit>): Promise<void> {
   await kayitGuncelle(kayit.id, degisiklik)
   if (kayit.planLinki) void linkPlaniniGuncelle({ ...kayit, ...degisiklik }).catch(() => {})
+  if (kayit.davetLinki) void davetiGuncelle({ ...kayit, ...degisiklik }).catch(() => {})
 }
 
 export async function planiSil(kayit: Kayit): Promise<void> {
   await kayitSil(kayit.id)
   if (kayit.planLinki) void linkPlaniniIptalEt(kayit).catch(() => {})
+  if (kayit.davetLinki) void davetiSil(kayit).catch(() => {})
 }
 
 // The calendar entry I got from a plan link, if I said I'm coming.
-export function linkKaydi(anahtar: string): Promise<Kayit | undefined> {
-  return yerelKayit((k) => k.linkAnahtari === anahtar)
+export function linkKaydi(id: string): Promise<Kayit | undefined> {
+  return yerelKayit((k) => k.linkAnahtari === id)
 }
 
 // Plans from my calendar that can be shared: upcoming, not done, with a

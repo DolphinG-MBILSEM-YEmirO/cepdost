@@ -6,26 +6,26 @@ import { linkKaydi, linkPlaniniYanitla } from '../lib/planPaylasimi'
 import { motor, motorVarMi } from '../sosyal/cekirdek'
 import { arkadaslariGetir, profilimiGetir } from '../sosyal/api'
 import {
-  linkeYanitVer,
-  linkiOku,
   misafirAdi,
   misafirAdiniKaydet,
   misafirMotoru,
   type LinkDurumu,
+  type LinkKaynagi,
   type LinkKatilimcisi,
   type LinkPlani,
   type LinkYaniti,
-  type PlanLinki,
 } from '../sosyal/planLinki'
 import type { SosyalMotor } from '../sosyal/nostr/motor'
 import { UYGULAMA_ADI } from '../../shared/marka'
 
-// What someone sees when they open a plan link: the plan, who's coming,
-// and their own answer. It works without an account (the answer is signed
-// with a key made for this browser) and also for signed-in people, whose
-// "coming" goes into their calendar like an accepted invite.
+// What someone sees when they open a plan link in Sharloop: the plan, who's
+// coming, and their own answer. Signed-in people's "coming" goes into their
+// calendar like an accepted invite. An old Sharloop link also works without
+// an account (the answer is signed with a key made for this browser); a
+// Davet invite is only opened here by people with an account, the rest see
+// it in Davet.
 interface Props {
-  link: PlanLinki
+  link: LinkKaynagi
   // Signed in: answers come from the account and the page can be closed.
   girisli: boolean
   onKapat: () => void
@@ -51,7 +51,7 @@ export function PlanLinkiEkrani({ link, girisli, onKapat, onSahibiEkle }: Props)
 
   const oku = useCallback(async () => {
     try {
-      setDurum(await linkiOku(m, link))
+      setDurum(await link.oku(m))
       setHata(null)
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Plan açılamadı')
@@ -72,7 +72,7 @@ export function PlanLinkiEkrani({ link, girisli, onKapat, onSahibiEkle }: Props)
     void arkadaslariGetir()
       .then((liste) => setArkadasMi(liste.some((a) => a.profil.id === link.sahip && a.durum === 'kabul')))
       .catch(() => {})
-    void linkKaydi(link.anahtar).then((k) => setTakvimde(!!k))
+    void linkKaydi(link.id).then((k) => setTakvimde(!!k))
   }, [girisli, link])
 
   const plan = durum?.plan ?? null
@@ -88,7 +88,7 @@ export function PlanLinkiEkrani({ link, girisli, onKapat, onSahibiEkle }: Props)
         await linkPlaniniYanitla(m, link, plan, ad, yanit)
         setTakvimde(yanit === 'geliyorum')
       } else {
-        await linkeYanitVer(m, link, plan, ad, yanit)
+        await link.yanitVer(m, plan, ad, yanit)
         misafirAdiniKaydet(ad)
       }
       await oku()
@@ -212,13 +212,13 @@ export function PlanLinkiEkrani({ link, girisli, onKapat, onSahibiEkle }: Props)
               </p>
             )}
 
-            {!girisli ? (
+            {!plan.sahipKodu ? null : !girisli ? (
               <div className="card p-5 bg-gradient-orchid-soft border-orchid-100">
                 <p className="font-semibold text-ink-700 mb-1">Planlarını {UYGULAMA_ADI} ile kur</p>
                 <p className="text-sm text-ink-500 mb-4">
                   {plan.sahipAdi} ile arkadaş ol; boş saatlerinizi görün, sonraki planı birlikte ayarlayın. Ücretsiz.
                 </p>
-                <button onClick={() => onSahibiEkle(plan.sahipKodu)} className="btn-primary w-full">
+                <button onClick={() => onSahibiEkle(plan.sahipKodu!)} className="btn-primary w-full">
                   Hesap oluştur
                 </button>
               </div>
@@ -226,7 +226,7 @@ export function PlanLinkiEkrani({ link, girisli, onKapat, onSahibiEkle }: Props)
               !arkadasMi &&
               !sahibimMi && (
                 <button
-                  onClick={() => onSahibiEkle(plan.sahipKodu)}
+                  onClick={() => onSahibiEkle(plan.sahipKodu!)}
                   className="w-full card p-4 flex items-center gap-3 text-left active:scale-[0.98] transition-transform"
                 >
                   <Avatar ad={plan.sahipAdi} boyut="sm" />

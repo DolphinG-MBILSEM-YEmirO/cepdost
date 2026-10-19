@@ -45,7 +45,7 @@ export function useBildirimler(girisli: boolean, onGit: (git: string) => void) {
   }, [girisli])
 
   // Friends, people I asked, group members, me (a test from the settings)
-  // and my plan links.
+  // and my plan links (old ones and Davet invites).
   useEffect(() => {
     if (!girisli || !motorVarMi()) return
     const zamanlayici = setTimeout(() => {
@@ -53,7 +53,9 @@ export function useBildirimler(girisli: boolean, onGit: (git: string) => void) {
         const arkadaslar = await arkadaslariGetir()
         const kisiler = arkadaslar.filter((a) => a.durum === 'kabul' || a.yon === 'giden').map((a) => a.profil.id)
         const uyeler = await tumGrupUyeleri()
-        const linkler = (await db.kayitlar.filter((k) => !!k.planLinki).toArray()).map((k) => k.planLinki!)
+        const linkler = (await db.kayitlar.filter((k) => !!k.planLinki || !!k.davetLinki).toArray()).flatMap((k) =>
+          [k.planLinki, k.davetLinki].filter((x): x is string => !!x),
+        )
         await bilinenleriYaz([...kisiler, ...uyeler, motor().benimId], linkler)
       })().catch(() => {})
     }, BILINENLER_GECIKME_MS)

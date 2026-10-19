@@ -282,6 +282,21 @@ export class SosyalMotor {
     return kayit
   }
 
+  // ---------- other apps' records ----------
+  // Davet invites (sosyal/davet.ts) live on the same relays in Davet's own
+  // format: signed and read by the caller, not stored or decrypted here.
+
+  async hamYayinla(olay: NostrOlayi): Promise<void> {
+    const { kabul } = await this.havuz.yayinla(olay)
+    if (kabul === 0) throw new Error(BAGLANTI_YOK)
+  }
+
+  async hamSorgula(filtre: Filtre): Promise<NostrOlayi[]> {
+    const { ulasilan, olaylar } = await this.havuz.sorgula([filtre])
+    if (ulasilan === 0) throw new Error(BAGLANTI_YOK)
+    return olaylar
+  }
+
   // ---------- receiving ----------
 
   private async kanalCozumle(olay: NostrOlayi, konu: string): Promise<Kanal | null> {
