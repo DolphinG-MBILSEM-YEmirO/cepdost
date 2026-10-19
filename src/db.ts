@@ -82,6 +82,13 @@ export interface Kayit {
   emoji?: string | null
   // Anı eklendiyse tekrar tekrar sorulmasın.
   aniEklendi?: boolean
+  // My plan shared as a link: the link's key (base64url), so my other
+  // devices can show the answers and keep the shared copy up to date.
+  planLinki?: string | null
+  // A plan I said I'm coming to from someone's link: that link's key and
+  // its host, so changing my answer finds this entry.
+  linkAnahtari?: string | null
+  linkSahibi?: string | null
 }
 
 // F15 — telefon takviminden içe aktarılan etkinlikler. Uygulamanın kendi kayıtlarından

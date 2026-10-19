@@ -1,7 +1,7 @@
 // End-to-end test of the social layer against a local relay: accounts,
 // friend requests, profiles, availability, chat, invites, groups, unfriend
-// with key rotation, password sign-in, restoring on a new device and email
-// verification.
+// with key rotation, password sign-in, restoring on a new device, plan links
+// and email verification.
 //
 //   npm test
 
@@ -58,8 +58,21 @@ import {
   planYanitlariGetir,
 } from '../src/sosyal/gruplar'
 import { bloklariCikar, musaitligiSenkronla } from '../src/sosyal/musaitlikSenkron'
-import { CepDostDB, kayitOlustur, type Kayit } from '../src/db'
+import { CepDostDB, db, kayitOlustur, type Kayit } from '../src/db'
 import { planlariEsitle } from '../src/sosyal/planEsitleme'
+import { TUR } from '../src/sosyal/cekirdek'
+import { linkKanali } from '../src/sosyal/nostr/kanal'
+import { base64UrldenBayt } from '../src/sosyal/nostr/kodlama'
+import {
+  benimLinkim,
+  linkeYanitVer,
+  linkiCoz,
+  linkiOku,
+  linkPlaniniGuncelle,
+  linkPlaniniIptalEt,
+  planiLinklePaylas,
+} from '../src/sosyal/planLinki'
+import { linkKaydi, linkPlaniniYanitla } from '../src/lib/planPaylasimi'
 
 let relay: { url: string; close: () => Promise<void> }
 const motorlar: SosyalMotor[] = []
@@ -487,6 +500,71 @@ test('a shared plan added on two devices before they synced keeps one copy', asy
   // Settled: nothing left to send either way.
   assert.equal((await esitlePlanlar(saat)).gonderilen, 0)
   assert.equal((await esitlePlanlar(tablet)).gonderilen, 0)
+})
+
+test('plan links: anyone with the link sees the plan and answers; only the host can change it', async () => {
+  const kayit = await kayitOlustur({
+    ...plan('Piknik'),
+    konum: 'Maçka Parkı',
+    ozetNot: 'Herkes bir şey getirsin',
+  })
+  const adres = await olarak(ali, () => planiLinklePaylas(kayit))
+  const link = linkiCoz(adres.slice(adres.indexOf('#')))
+  assert.ok(link)
+  assert.equal(link.sahip, ali.motor.benimId)
+  // Sharing again gives the same link.
+  const kayitli = (await db.kayitlar.get(kayit.id))!
+  assert.equal(kayitli.planLinki, link.anahtar)
+  assert.equal(await olarak(ali, () => planiLinklePaylas(kayitli)), adres)
+  assert.equal(linkiCoz('#plan=bozuk.link'), null)
+  assert.equal(linkiCoz('#baska=1'), null)
+
+  // Someone without an account opens the link and answers.
+  const misafir = kisiOlustur('misafir')
+  const gorulen = await linkiOku(misafir.motor, link)
+  assert.equal(gorulen.plan?.baslik, 'Piknik')
+  assert.equal(gorulen.plan?.konum, 'Maçka Parkı')
+  assert.equal(gorulen.plan?.sahipAdi, 'Ali')
+  assert.equal(gorulen.plan?.sahipKodu, arkadasKodu(ali.motor.benimId))
+  assert.deepEqual(gorulen.katilimcilar, [])
+  await assert.rejects(linkeYanitVer(misafir.motor, link, gorulen.plan!, '  ', 'geliyorum'), /Adını/)
+  await linkeYanitVer(misafir.motor, link, gorulen.plan!, 'Zeynep', 'geliyorum')
+  await linkeYanitVer(misafir.motor, link, gorulen.plan!, 'Zeynep', 'belki')
+
+  // Someone else with the link can't replace the plan.
+  const sahte = kisiOlustur('sahte')
+  await sahte.motor.yayinla(await linkKanali(base64UrldenBayt(link.anahtar)), TUR.linkPlan, 'plan', {
+    ...gorulen.plan,
+    baslik: 'Sahte plan',
+  })
+  assert.equal((await linkiOku(misafir.motor, link)).plan?.baslik, 'Piknik')
+  assert.equal((await linkiOku(misafir.motor, { ...link, sahip: sahte.motor.benimId })).plan?.baslik, 'Sahte plan')
+
+  // A signed-in friend says they're coming: it lands in their calendar
+  // once, and leaves it when they change their mind.
+  await olarak(ayse, () => linkPlaniniYanitla(ayse.motor, link, gorulen.plan!, 'Ayşe', 'geliyorum'))
+  await olarak(ayse, () => linkPlaniniYanitla(ayse.motor, link, gorulen.plan!, 'Ayşe', 'geliyorum'))
+  const takvimde = await linkKaydi(link.anahtar)
+  assert.equal(takvimde?.baslik, 'Piknik')
+  assert.equal(await db.kayitlar.filter((k) => k.linkAnahtari === link.anahtar).count(), 1)
+
+  // The host sees one answer per person (the latest), and not their own.
+  const ev = await olarak(ali, () => linkiOku(ali.motor, benimLinkim(kayitli)!))
+  assert.deepEqual(
+    ev.katilimcilar.map((k) => [k.ad, k.yanit]).sort(),
+    [['Ayşe', 'geliyorum'], ['Zeynep', 'belki']],
+  )
+
+  // The host moves it, then calls it off; the link follows.
+  await olarak(ali, () => linkPlaniniGuncelle({ ...kayitli, saat: '20:30' }))
+  assert.equal((await linkiOku(misafir.motor, link)).plan?.saat, '20:30')
+  await olarak(ali, () => linkPlaniniIptalEt(kayitli))
+  const iptal = await linkiOku(misafir.motor, link)
+  assert.equal(iptal.plan?.iptal, true)
+  assert.equal(iptal.katilimcilar.length, 2)
+
+  await olarak(ayse, () => linkPlaniniYanitla(ayse.motor, link, iptal.plan!, 'Ayşe', 'gelemiyorum'))
+  assert.equal(await linkKaydi(link.anahtar), undefined)
 })
 
 test('email verification: strangers only see and hear from verified accounts', async () => {

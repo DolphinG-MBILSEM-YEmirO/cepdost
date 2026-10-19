@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon, type IconName } from './Icon'
-import { type Kayit, goruntulemeBasligi, kayitGuncelle } from '../db'
+import { type Kayit, goruntulemeBasligi } from '../db'
+import { planiGuncelle } from '../lib/planPaylasimi'
 import {
   CATEGORY_LABELS,
   CATEGORY_COLORS,
@@ -78,7 +79,8 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
   async function handleReschedule(id: string, newDate: Date) {
     setRescheduling(id)
     try {
-      await kayitGuncelle(id, { tarih: toDateString(newDate) })
+      const kayit = kayitlar.find((k) => k.id === id)
+      if (kayit) await planiGuncelle(kayit, { tarih: toDateString(newDate) })
     } finally {
       setRescheduling(null)
     }

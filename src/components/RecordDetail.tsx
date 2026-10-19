@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
-import { type Kayit, type Kategori, type Oncelik, kayitGuncelle, kayitDurumDegistir, kayitSil, goruntulemeBasligi } from '../db'
+import { type Kayit, type Kategori, type Oncelik, kayitGuncelle, kayitDurumDegistir, goruntulemeBasligi } from '../db'
 import { CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_ICON_NAME, PRIORITY_LABELS, PRIORITY_COLORS, CATEGORIES, PRIORITIES, formatDate, formatPlanTime, formatDuration, formatRelativeTime, isPast, isUpcoming, mapUrl, toDateString, addDays } from '../lib/format'
 import { ConfirmDialog } from './ConfirmDialog'
 import { AniEkleModal } from './AniArsivi'
@@ -8,7 +8,8 @@ import { kayittanIcsIndir } from '../takvim'
 import { PaylasimHedefiSheet } from './PlanPaylas'
 import { EmojiSecici, TumGunAnahtari } from './Seciciler'
 import { ETKINLIK_EMOJILERI } from '../lib/kisisellestirme'
-import { paylasilabilirPlanlar } from '../lib/planPaylasimi'
+import { paylasilabilirPlanlar, planiGuncelle, planiSil } from '../lib/planPaylasimi'
+import { LinkYanitlari } from './PlanLinkiPaylas'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 
 interface RecordDetailProps {
@@ -84,7 +85,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
   async function handleSave() {
     setSaving(true)
     try {
-      await kayitGuncelle(kayit.id, {
+      await planiGuncelle(kayit, {
         baslik: title.trim() || baslik,
         kategori: category,
         tarih: eventDate || null,
@@ -110,12 +111,12 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
   }
 
   async function handleDelete() {
-    await kayitSil(kayit.id)
+    await planiSil(kayit)
     onDeleted()
   }
 
   async function handleReschedule(newDate: string) {
-    await kayitGuncelle(kayit.id, { tarih: newDate })
+    await planiGuncelle(kayit, { tarih: newDate })
     onUpdated()
   }
 
@@ -402,6 +403,9 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
             Arkadaşlarınla paylaş
           </button>
         )}
+
+        {/* Once shared as a link: who answered, and the link again. */}
+        {kayit.planLinki && !editing && <LinkYanitlari kayit={kayit} />}
 
         {/* Tarayıcıdan telefonun takvimine doğrudan yazan bir API yok;
             standart yol .ics indirip takvim uygulamasında açmak. */}

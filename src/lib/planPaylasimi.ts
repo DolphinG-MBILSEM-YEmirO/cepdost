@@ -2,6 +2,15 @@ import { db, goruntulemeBasligi, kayitGuncelle, kayitOlustur, kayitSil, type Kat
 import { davetGonder, davetYanitla, type PlanDaveti } from '../sosyal/api'
 import { direktMesajGonder } from '../sosyal/mesajlar'
 import { grupPlaniOlustur, mesajGonder, planaYanitVer, type Grup, type GrupPlani, type YanitDurumu } from '../sosyal/gruplar'
+import {
+  linkPlaniniGuncelle,
+  linkPlaniniIptalEt,
+  linkeYanitVer,
+  type LinkPlani,
+  type LinkYaniti,
+  type PlanLinki,
+} from '../sosyal/planLinki'
+import type { SosyalMotor } from '../sosyal/nostr/motor'
 import { localDateString } from './format'
 
 // Sharing plans in chats, and keeping my own calendar in step with my
@@ -177,12 +186,61 @@ export async function grupPlaniYanitla(plan: GrupPlani, durum: YanitDurumu, grup
   }
 }
 
+// Answering someone's plan link while signed in: "coming" puts the plan in
+// my calendar (before answering, as with invites), anything else takes it
+// out again.
+export async function linkPlaniniYanitla(
+  m: SosyalMotor,
+  link: PlanLinki,
+  plan: LinkPlani,
+  ad: string,
+  yanit: LinkYaniti,
+): Promise<void> {
+  const mevcut = await yerelKayit((k) => k.linkAnahtari === link.anahtar)
+  if (yanit === 'geliyorum' && !mevcut && !plan.iptal) {
+    await kayitOlustur({
+      ...ortakAlanlar(),
+      baslik: plan.baslik,
+      tarih: plan.tarih,
+      saat: plan.saat,
+      tumGun: plan.tum_gun,
+      konum: plan.konum,
+      sure: plan.sure,
+      ozetNot: plan.not,
+      emoji: plan.emoji,
+      linkAnahtari: link.anahtar,
+      linkSahibi: link.sahip,
+    })
+  }
+  await linkeYanitVer(m, link, plan, ad, yanit)
+  if (yanit !== 'geliyorum' && mevcut) await kayitSil(mevcut.id)
+}
+
+// Editing or deleting one of my plans: if it went out as a link, the link
+// follows (in the background; the change here never waits on the network).
+export async function planiGuncelle(kayit: Kayit, degisiklik: Partial<Kayit>): Promise<void> {
+  await kayitGuncelle(kayit.id, degisiklik)
+  if (kayit.planLinki) void linkPlaniniGuncelle({ ...kayit, ...degisiklik }).catch(() => {})
+}
+
+export async function planiSil(kayit: Kayit): Promise<void> {
+  await kayitSil(kayit.id)
+  if (kayit.planLinki) void linkPlaniniIptalEt(kayit).catch(() => {})
+}
+
+// The calendar entry I got from a plan link, if I said I'm coming.
+export function linkKaydi(anahtar: string): Promise<Kayit | undefined> {
+  return yerelKayit((k) => k.linkAnahtari === anahtar)
+}
+
 // Plans from my calendar that can be shared: upcoming, not done, with a
 // date, and not themselves something someone shared with me.
 export function paylasilabilirPlanlar(kayitlar: Kayit[]): Kayit[] {
   const bugun = localDateString()
   return kayitlar
-    .filter((k) => k.durum === 'bekliyor' && k.tarih && k.tarih >= bugun && !k.davetId && !k.grupPlanId)
+    .filter(
+      (k) => k.durum === 'bekliyor' && k.tarih && k.tarih >= bugun && !k.davetId && !k.grupPlanId && !k.linkAnahtari,
+    )
     .sort((a, b) => `${a.tarih}${a.saat ?? '99'}`.localeCompare(`${b.tarih}${b.saat ?? '99'}`))
 }
 

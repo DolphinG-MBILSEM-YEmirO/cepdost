@@ -8,6 +8,7 @@ import { paylasilabilirPlanlar, planiPaylas, type PaylasimHedefi } from '../lib/
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
 import { arkadaslariGetir, type Profil } from '../sosyal/api'
 import { gruplarimiGetir, type Grup } from '../sosyal/gruplar'
+import { LinkSatiri } from './PlanLinkiPaylas'
 
 // Two ways to share a plan into a chat:
 // - from a chat: pick one of my upcoming plans (PlanPaylasSheet),
@@ -159,7 +160,8 @@ export function PlanPaylasSheet({
   )
 }
 
-// From a plan: choose a friend or a group to share it with.
+// From a plan: choose a friend or a group to share it with, or share it as
+// a link anyone can open.
 export function PaylasimHedefiSheet({ kayit, onKapat }: { kayit: Kayit; onKapat: () => void }) {
   const [arkadaslar, setArkadaslar] = useState<Profil[] | null>(null)
   const [gruplar, setGruplar] = useState<Grup[]>([])
@@ -227,6 +229,7 @@ export function PaylasimHedefiSheet({ kayit, onKapat }: { kayit: Kayit; onKapat:
 
   return (
     <Sheet baslik="Kiminle paylaşalım?" onKapat={onKapat}>
+      <LinkSatiri kayit={kayit} />
       {arkadaslar === null ? (
         <div className="space-y-2">
           <div className="skeleton h-14 rounded-2xl" />

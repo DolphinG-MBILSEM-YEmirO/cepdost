@@ -4,6 +4,8 @@ import { PlanlarView } from './components/PlanlarView'
 import { SohbetlerView } from './components/SohbetlerView'
 import { ArkadaslarView } from './components/ArkadaslarView'
 import { SosyalSekmeler } from './components/SosyalSekmeler'
+import { PlanLinkiEkrani } from './components/PlanLinkiEkrani'
+import { linkiCoz, type PlanLinki } from './sosyal/planLinki'
 import { AkisView } from './components/AkisView'
 import { ProfilView } from './components/ProfilView'
 import { PlanOlustur } from './components/PlanOlustur'
@@ -29,7 +31,8 @@ import { okunmamisMesajSayisi } from './sosyal/mesajlar'
 import { musaitligiSenkronla } from './sosyal/musaitlikSenkron'
 import { planlariArkadaEsitle } from './sosyal/planEsitleme'
 import { usePlanAyarlari } from './lib/planAyarlari'
-import { type Kayit, db, tumKayitlar, kayitEkle, kayitDurumDegistir, kayitSil, goruntulemeBasligi } from './db'
+import { type Kayit, db, tumKayitlar, kayitEkle, kayitDurumDegistir, goruntulemeBasligi } from './db'
+import { planiSil } from './lib/planPaylasimi'
 import { kayitSiniflandir } from './classify'
 import { onayGecerliMi } from '../shared/epostaOnayi'
 import { SLOGAN, UYGULAMA_ADI } from '../shared/marka'
@@ -73,6 +76,9 @@ export default function App() {
   )
   const [activeTab, setActiveTab] = useState<Tab>(davetKodu ? 'sohbet' : 'planlar')
   const [sosyalBolum, setSosyalBolum] = useState<SosyalBolum>(davetKodu ? 'arkadaslar' : 'sohbetler')
+  // Opened from a plan link (#plan=…): that plan is shown first, with or
+  // without an account.
+  const [planLinki, setPlanLinki] = useState<PlanLinki | null>(() => linkiCoz(window.location.hash))
   const [showCapture, setShowCapture] = useState(false)
   const [showChat, setShowChat] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
@@ -141,6 +147,27 @@ export default function App() {
   // The invite link is looked up once; coming back to Arkadaşlar later
   // doesn't search for that person again.
   const davetiKullan = useCallback(() => setDavetKodu(null), [])
+
+  // A plan link opened while the app is already open in this tab.
+  useEffect(() => {
+    const degisti = () => setPlanLinki(linkiCoz(window.location.hash))
+    window.addEventListener('hashchange', degisti)
+    return () => window.removeEventListener('hashchange', degisti)
+  }, [])
+
+  function planLinkiniKapat() {
+    window.history.replaceState(null, '', window.location.pathname + window.location.search)
+    setPlanLinki(null)
+  }
+
+  // From a plan link: open Sohbet → Arkadaşlar with the host found (after
+  // sign-up, for someone who came without an account).
+  function linkSahibiniEkle(sahipKodu: string) {
+    setDavetKodu(sahipKodu)
+    setSosyalBolum('arkadaslar')
+    setActiveTab('sohbet')
+    planLinkiniKapat()
+  }
 
   // Takvim bağlıysa açılışta sessizce tazele — kullanıcı elle "içe aktar"a
   // basmak zorunda kalmasın.
@@ -241,7 +268,23 @@ export default function App() {
   }
 
   async function handleDelete(id: string) {
-    await kayitSil(id)
+    const kayit = kayitlar.find((k) => k.id === id)
+    if (kayit) await planiSil(kayit)
+  }
+
+  // A plan link comes before everything else: whoever opens it sees the
+  // plan, even without an account or before the intro.
+  if (planLinki) {
+    if (authYukleniyor) return <Bekleme />
+    return (
+      <PlanLinkiEkrani
+        key={`${planLinki.anahtar}-${kullanici ? 'hesap' : 'misafir'}`}
+        link={planLinki}
+        girisli={!!kullanici}
+        onKapat={planLinkiniKapat}
+        onSahibiEkle={linkSahibiniEkle}
+      />
+    )
   }
 
   // --- Açılış kapısı: tanıtım → giriş → hesap kurulumu → uygulama ---

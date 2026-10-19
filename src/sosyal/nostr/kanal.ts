@@ -18,9 +18,10 @@ import { aesAnahtari, hexe, hmac, sha256, sha256Hex } from './kodlama'
 //   yayin  - a random key I hand to each friend: my friends
 //   grup   - a random key handed to each member: the group
 //   dizin  - derived from a friend code/username: anyone who knows it
+//   link   - a random key in a shared plan link: anyone who has the link
 //   kesfet - public
 
-export type KanalTuru = 'ben' | 'cift' | 'yayin' | 'grup' | 'dizin' | 'kesfet' | 'yedek'
+export type KanalTuru = 'ben' | 'cift' | 'yayin' | 'grup' | 'dizin' | 'link' | 'kesfet' | 'yedek'
 
 export interface Kanal {
   tur: KanalTuru
@@ -71,6 +72,12 @@ export async function yayinKanali(anahtar: Uint8Array, sahip: string): Promise<K
 
 export async function grupKanali(anahtar: Uint8Array, grupId: string): Promise<Kanal> {
   return gizlidenKanal('grup', anahtar, { grupId })
+}
+
+// A plan shared as a link (see sosyal/planLinki.ts). The key travels in the
+// link's #fragment, which browsers never send to the server.
+export async function linkKanali(anahtar: Uint8Array): Promise<Kanal> {
+  return gizlidenKanal('link', anahtar)
 }
 
 export type DizinTipi = 'kod' | 'kullanici'

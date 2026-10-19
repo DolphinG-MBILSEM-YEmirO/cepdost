@@ -70,6 +70,9 @@ export const TUR = {
   yanit: 'yanit',
   mesaj: 'mesaj',
   dizin: 'dizin',
+  // A plan shared as a link, and the answers of the people who opened it.
+  linkPlan: 'link-plan',
+  linkYanit: 'link-yanit',
 } as const
 
 export type Gizlilik = 'arkadaslar' | 'herkes'
