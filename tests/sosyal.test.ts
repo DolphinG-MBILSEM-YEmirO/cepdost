@@ -8,7 +8,7 @@
 import 'fake-indexeddb/auto'
 import assert from 'node:assert/strict'
 import { after, before, test } from 'node:test'
-import { finalizeEvent, generateSecretKey, getPublicKey } from 'nostr-tools/pure'
+import { finalizeEvent, generateSecretKey, getPublicKey, verifyEvent, type Event } from 'nostr-tools/pure'
 // @ts-expect-error plain JS dev tool without types
 import { startRelay } from '../scripts/relay.mjs'
 import { SosyalMotor } from '../src/sosyal/nostr/motor'
@@ -73,6 +73,8 @@ import {
   planiLinklePaylas,
 } from '../src/sosyal/planLinki'
 import { linkKaydi, linkPlaniniYanitla } from '../src/lib/planPaylasimi'
+import { adresimiKaydet, adresimiSil, bildir, bildirimGondericisiniAyarla } from '../src/sosyal/bildirimler'
+import type { BildirimIcerigi, BildirimTuru, Gonderim, WebPushAdresi } from '../shared/bildirim'
 
 let relay: { url: string; close: () => Promise<void> }
 const motorlar: SosyalMotor[] = []
@@ -565,6 +567,131 @@ test('plan links: anyone with the link sees the plan and answers; only the host 
 
   await olarak(ayse, () => linkPlaniniYanitla(ayse.motor, link, iptal.plan!, 'Ayşe', 'gelemiyorum'))
   assert.equal(await linkKaydi(link.anahtar), undefined)
+})
+
+// ---------- push notifications ----------
+
+// A browser's push subscription, with what the browser does on arrival.
+async function testCihazi() {
+  const anahtar = (await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, false, [
+    'deriveBits',
+  ])) as CryptoKeyPair
+  const acik = new Uint8Array(await crypto.subtle.exportKey('raw', anahtar.publicKey))
+  const auth = crypto.getRandomValues(new Uint8Array(16))
+  const endpoint = `https://fcm.googleapis.com/fcm/send/${Math.random().toString(36).slice(2)}`
+  const b64 = (b: Uint8Array) => Buffer.from(b).toString('base64url')
+  const hkdf = async (tuz: Uint8Array, girdi: Uint8Array, bilgi: Uint8Array, boy: number) =>
+    new Uint8Array(
+      await crypto.subtle.deriveBits(
+        { name: 'HKDF', hash: 'SHA-256', salt: tuz, info: bilgi },
+        await crypto.subtle.importKey('raw', girdi, 'HKDF', false, ['deriveBits']),
+        boy * 8,
+      ),
+    )
+  const yazi = (m: string) => new TextEncoder().encode(m)
+  return {
+    endpoint,
+    adres: (turler: BildirimTuru[]): WebPushAdresi => ({ tur: 'webpush', endpoint, p256dh: b64(acik), auth: b64(auth), turler }),
+    // RFC 8291 decryption, as the receiving browser does it.
+    async coz(g: Gonderim): Promise<Event & { icerik: BildirimIcerigi }> {
+      assert.equal(g.endpoint, endpoint)
+      const govde = new Uint8Array(Buffer.from(g.govde, 'base64url'))
+      const tuz = govde.slice(0, 16)
+      const gonderen = govde.slice(21, 21 + govde[20])
+      const ortak = new Uint8Array(
+        await crypto.subtle.deriveBits(
+          {
+            name: 'ECDH',
+            public: await crypto.subtle.importKey('raw', gonderen, { name: 'ECDH', namedCurve: 'P-256' }, false, []),
+          },
+          anahtar.privateKey,
+          256,
+        ),
+      )
+      const ikm = await hkdf(auth, ortak, new Uint8Array([...yazi('WebPush: info\0'), ...acik, ...gonderen]), 32)
+      const cek = await hkdf(tuz, ikm, yazi('Content-Encoding: aes128gcm\0'), 16)
+      const nonce = await hkdf(tuz, ikm, yazi('Content-Encoding: nonce\0'), 12)
+      const acikMetin = new Uint8Array(
+        await crypto.subtle.decrypt(
+          { name: 'AES-GCM', iv: nonce },
+          await crypto.subtle.importKey('raw', cek, 'AES-GCM', false, ['decrypt']),
+          govde.slice(21 + govde[20]),
+        ),
+      )
+      assert.equal(acikMetin.at(-1), 2)
+      const olay = JSON.parse(new TextDecoder().decode(acikMetin.slice(0, -1))) as Event
+      assert.ok(verifyEvent(olay))
+      return { ...olay, icerik: JSON.parse(olay.content) as BildirimIcerigi }
+    },
+  }
+}
+
+async function olana(kosul: () => boolean, mesaj: string) {
+  for (let i = 0; i < 100 && !kosul(); i++) await new Promise((r) => setTimeout(r, 30))
+  assert.ok(kosul(), mesaj)
+}
+
+const icerik = (tur: BildirimTuru): BildirimIcerigi => ({ tur, baslik: 'Bora', govde: 'Selam', git: 'arkadaslar', etiket: 't' })
+
+test('notifications reach a device through friends, groups and the directory, for the kinds it chose', async () => {
+  const gonderilen: Gonderim[] = []
+  bildirimGondericisiniAyarla(async (g) => void gonderilen.push(...g))
+  try {
+    const [bora, cem, dila] = ['bora', 'cem', 'dila'].map((ad) => kisiOlustur(ad))
+    for (const k of [bora, cem, dila]) {
+      await olarak(k, () => hesabiKur({ ad: k.ad, kullanici_adi: k.ad, gizlilik: 'arkadaslar' }))
+    }
+    await olarak(bora, async () => arkadaslikIsteGonder(cem.motor.benimId, await profilAra('@cem')))
+    await esitle(cem)
+    await olarak(cem, () => arkadaslikYanitla(bora.motor.benimId, true))
+    await esitle(bora, cem)
+
+    // Cem turns notifications on for messages, requests and groups.
+    const cihaz = await testCihazi()
+    await olarak(cem, () => adresimiKaydet(cihaz.adres(['mesaj', 'istek', 'grup'])))
+    await esitle(cem, bora)
+
+    // A friend finds it on Cem's broadcast channel; it arrives signed by them.
+    assert.equal(await olarak(bora, () => bildir([cem.motor.benimId], icerik('mesaj'))), 1)
+    const olay = await cihaz.coz(gonderilen.pop()!)
+    assert.equal(olay.pubkey, bora.motor.benimId)
+    assert.deepEqual(olay.icerik, icerik('mesaj'))
+    // Kinds Cem turned off are skipped, and nobody notifies themselves.
+    assert.equal(await olarak(bora, () => bildir([cem.motor.benimId], icerik('davet'))), 0)
+    assert.equal(await olarak(cem, () => bildir([cem.motor.benimId], icerik('mesaj'))), 0)
+
+    // A stranger finds it next to Cem's directory entry, and only there.
+    assert.equal(await olarak(dila, () => bildir([cem.motor.benimId], icerik('mesaj'))), 0)
+    assert.equal(await olarak(dila, () => bildir([cem.motor.benimId], icerik('istek'), { dizinden: true })), 1)
+    assert.equal((await cihaz.coz(gonderilen.pop()!)).pubkey, dila.motor.benimId)
+
+    // Sending a message notifies by itself (in the background).
+    await olarak(bora, () => direktMesajGonder(cem.motor.benimId, 'Yarın akşam?'))
+    await olana(() => gonderilen.length === 1, 'mesaj bildirimi gitti')
+    const dm = await cihaz.coz(gonderilen.pop()!)
+    assert.deepEqual([dm.icerik.tur, dm.icerik.baslik, dm.icerik.govde, dm.icerik.git], [
+      'mesaj',
+      'bora',
+      'Yarın akşam?',
+      `dm:${bora.motor.benimId}`,
+    ])
+
+    // Group members find it on the group's channel.
+    const grupId = await olarak(bora, () => grupOlustur('Kulüp', [cem.motor.benimId]))
+    await esitle(cem, bora)
+    await olarak(bora, () => mesajGonder(grupId, 'Cuma toplanıyoruz'))
+    await olana(() => gonderilen.length === 1, 'grup bildirimi gitti')
+    const grup = await cihaz.coz(gonderilen.pop()!)
+    assert.deepEqual([grup.icerik.baslik, grup.icerik.govde, grup.icerik.git], ['Kulüp', 'bora: Cuma toplanıyoruz', `grup:${grupId}`])
+
+    // Turning the device off takes it out everywhere.
+    await olarak(cem, () => adresimiSil(cihaz.endpoint))
+    await esitle(cem, bora)
+    assert.equal(await olarak(bora, () => bildir([cem.motor.benimId], icerik('mesaj'))), 0)
+    assert.equal(await olarak(bora, () => bildir([cem.motor.benimId], icerik('grup'), { grupId })), 0)
+  } finally {
+    bildirimGondericisiniAyarla(null)
+  }
 })
 
 test('email verification: strangers only see and hear from verified accounts', async () => {

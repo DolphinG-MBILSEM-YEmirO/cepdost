@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Icon } from './Icon'
 import { Avatar, GrupAvatari } from './Avatar'
 import { DirektSohbet } from './DirektSohbet'
+import { BildirimBandi } from './BildirimAyarlari'
 import { GrupDetay } from './GrupDetay'
 import { useAuth } from '../sosyal/auth'
 import { useSosyalSurum } from '../sosyal/cekirdek'
@@ -22,9 +23,12 @@ interface Props {
   ust: ReactNode
   // Opens the friends side, from the empty state.
   onArkadasEkle: () => void
+  // Opened from a notification: this chat (a friend's or a group's id).
+  acilacak?: string | null
+  onAcildi?: () => void
 }
 
-export function SohbetlerView({ onDegisti, ust, onArkadasEkle }: Props) {
+export function SohbetlerView({ onDegisti, ust, onArkadasEkle, acilacak, onAcildi }: Props) {
   const { kullanici } = useAuth()
   const sosyalSurum = useSosyalSurum()
   const [sohbetler, setSohbetler] = useState<Sohbet[] | null>(null)
@@ -51,6 +55,19 @@ export function SohbetlerView({ onDegisti, ust, onArkadasEkle }: Props) {
   useEffect(() => {
     void tazele()
   }, [tazele])
+
+  useEffect(() => {
+    if (!acilacak || sohbetler === null) return
+    const s = sohbetler.find((x) => x.id === acilacak)
+    if (s?.tur === 'grup') {
+      setAcikArkadas(null)
+      setAcikGrup(s.grup!)
+    } else if (s) {
+      setAcikGrup(null)
+      setAcikArkadas(s.profil!)
+    }
+    onAcildi?.()
+  }, [acilacak, sohbetler, onAcildi])
 
   // The app gate only renders this screen after sign-in.
   if (!kullanici) return null
@@ -110,6 +127,8 @@ export function SohbetlerView({ onDegisti, ust, onArkadasEkle }: Props) {
               <p className="text-sm text-rose-700">{hata}</p>
             </div>
           )}
+
+          {sohbetler && sohbetler.length > 0 && <BildirimBandi />}
 
           {sohbetler === null ? (
             <div className="space-y-3">

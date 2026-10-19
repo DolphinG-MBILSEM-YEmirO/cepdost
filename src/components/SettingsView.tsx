@@ -2,6 +2,7 @@ import { Icon } from './Icon'
 import { TakvimAyarlari } from './TakvimAyarlari'
 import { SohbetTemaSecici } from './SohbetTemaSecici'
 import { HesapGuvenligi } from './HesapGuvenligi'
+import { BildirimAyarlari } from './BildirimAyarlari'
 import { SLOGAN, UYGULAMA_ADI } from '../../shared/marka'
 
 // Not: Hallet referansındaki "Gemini API Anahtarı" kartı buraya bilerek
@@ -39,6 +40,8 @@ export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
             </div>
           </div>
         </div>
+
+        <BildirimAyarlari />
 
         <HesapGuvenligi />
 

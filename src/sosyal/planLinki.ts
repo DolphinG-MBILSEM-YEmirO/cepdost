@@ -3,6 +3,7 @@ import { SosyalMotor } from './nostr/motor'
 import { linkKanali } from './nostr/kanal'
 import { base64Url, base64UrldenBayt, hexe, hextenBayt, rastgeleBaytlar } from './nostr/kodlama'
 import { arkadasKodu, benimProfilVerim, metinAl, motor, nesneMi, sayiAl, TUR } from './cekirdek'
+import { bildirArkaplanda } from './bildirimler'
 import { goruntulemeBasligi, kayitGuncelle, type Kayit } from '../db'
 
 // Plan links: one of my plans shared as a link, so people who aren't on
@@ -181,7 +182,13 @@ export async function linkiOku(m: SosyalMotor, link: PlanLinki): Promise<LinkDur
   return { plan: planKaydi ? linkPlaniAl(planKaydi.veri) : null, katilimcilar }
 }
 
-// One answer per person; answering again replaces it.
+const YANIT_METNI: Record<LinkYaniti, string> = {
+  geliyorum: 'geliyor',
+  belki: 'belki gelir',
+  gelemiyorum: 'gelemiyor',
+}
+
+// One answer per person; answering again replaces it. The host hears about it.
 export async function linkeYanitVer(
   m: SosyalMotor,
   link: PlanLinki,
@@ -192,6 +199,17 @@ export async function linkeYanitVer(
   const temizAd = ad.trim().slice(0, 60)
   if (!temizAd) throw new Error('Adını yaz, kim olduğunu bilsinler.')
   await m.yayinla(await kanal(link), TUR.linkYanit, 'yanit', { ad: temizAd, yanit }, { sonaErme: sonaErme(plan.tarih) })
+  bildirArkaplanda(
+    [link.sahip],
+    {
+      tur: 'link',
+      baslik: `${temizAd} ${YANIT_METNI[yanit]}`,
+      govde: plan.baslik,
+      git: `link:${link.anahtar}`,
+      etiket: `link:${link.anahtar}`,
+    },
+    { motor: m, dizinden: true },
+  )
 }
 
 // ---------- visitors without an account ----------

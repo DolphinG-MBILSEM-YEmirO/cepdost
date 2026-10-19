@@ -23,6 +23,7 @@ import { SifreBelirle } from './components/SifreBelirle'
 import { EpostaDogrulamaEkrani } from './components/EpostaDogrulama'
 import { Icon, type IconName } from './components/Icon'
 import { useTakvimOtomatikYenile } from './components/TakvimAyarlari'
+import { useBildirimler } from './bildirim/useBildirimler'
 import { useAuth } from './sosyal/auth'
 import { motor, useSosyalSurum } from './sosyal/cekirdek'
 import { bekleyenSayisi, profilimiGetir, type Profil } from './sosyal/api'
@@ -76,6 +77,8 @@ export default function App() {
   )
   const [activeTab, setActiveTab] = useState<Tab>(davetKodu ? 'sohbet' : 'planlar')
   const [sosyalBolum, setSosyalBolum] = useState<SosyalBolum>(davetKodu ? 'arkadaslar' : 'sohbetler')
+  // A chat to open, from a tapped notification.
+  const [acilacakSohbet, setAcilacakSohbet] = useState<string | null>(null)
   // Opened from a plan link (#plan=…): that plan is shown first, with or
   // without an account.
   const [planLinki, setPlanLinki] = useState<PlanLinki | null>(() => linkiCoz(window.location.hash))
@@ -172,6 +175,26 @@ export default function App() {
   // Takvim bağlıysa açılışta sessizce tazele — kullanıcı elle "içe aktar"a
   // basmak zorunda kalmasın.
   useTakvimOtomatikYenile()
+
+  // A tapped notification leads to the chat, the friends list or the plan.
+  const bildirimeGit = useCallback((git: string) => {
+    const [tur, deger] = [git.slice(0, git.indexOf(':')), git.slice(git.indexOf(':') + 1)]
+    if (git === 'arkadaslar') {
+      setSosyalBolum('arkadaslar')
+      setActiveTab('sohbet')
+    } else if (tur === 'dm' || tur === 'grup') {
+      setSosyalBolum('sohbetler')
+      setActiveTab('sohbet')
+      setAcilacakSohbet(deger)
+    } else if (tur === 'link') {
+      void db.kayitlar
+        .filter((k) => k.planLinki === deger)
+        .first()
+        .then((k) => k && setDetailKayit(k))
+    }
+  }, [])
+  const sohbetAcildi = useCallback(() => setAcilacakSohbet(null), [])
+  useBildirimler(!!kullanici && !!profil, bildirimeGit)
 
   // The gate looks at the username and password flags, so the profile is
   // loaded at App level.
@@ -409,6 +432,8 @@ export default function App() {
                 onDegisti={rozetiTazele}
                 ust={sosyalUst}
                 onArkadasEkle={() => setSosyalBolum('arkadaslar')}
+                acilacak={acilacakSohbet}
+                onAcildi={sohbetAcildi}
               />
             ) : (
               <ArkadaslarView

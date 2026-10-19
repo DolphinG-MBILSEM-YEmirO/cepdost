@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { motor, motoruBaslat, motoruKapat } from './cekirdek'
 import { sifreyiKaydet, sifreyleGiris } from './hesap'
+import { cihaziBildirimlerdenCikar } from '../bildirim/useBildirimler'
 import {
   acikAnahtar,
   eskiOturumVarMi,
@@ -84,6 +85,9 @@ export function AuthSaglayici({ children }: { children: ReactNode }) {
         return sk ? kurtarmaKodu(sk) : null
       },
       async cikis() {
+        // This device stops taking the account's notifications first, while
+        // the account can still say so.
+        await cihaziBildirimlerdenCikar()
         // The local copy of messages and friends goes with the account; the
         // relays keep it for the next sign-in.
         try {

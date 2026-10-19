@@ -73,6 +73,8 @@ export const TUR = {
   // A plan shared as a link, and the answers of the people who opened it.
   linkPlan: 'link-plan',
   linkYanit: 'link-yanit',
+  // Where my devices take push notifications (see bildirimler.ts).
+  bildirim: 'bildirim',
 } as const
 
 export type Gizlilik = 'arkadaslar' | 'herkes'
@@ -639,6 +641,7 @@ function ayniMi(a: unknown, b: unknown): boolean {
 //   - group keys friends handed me become memberships
 //   - my membership card in each group stays current
 //   - my availability copy in each group follows my broadcast one
+//   - where my devices take notifications reaches friends and groups
 //   - long-lived records are re-published before relays forget them
 async function uzlastir(m: SosyalMotor): Promise<void> {
   // Account not set up yet (or not synced yet on a new device): nothing to
@@ -663,6 +666,15 @@ async function uzlastir(m: SosyalMotor): Promise<void> {
   if (!ayniMi(yayinProfilKaydi?.veri, yayinProfili(profil)) || eskiMi(yayinProfilKaydi)) {
     yayinla(yayin, TUR.profil, 'profil', yayinProfili(profil))
   }
+
+  // Where my devices take notifications: my own channel has the list;
+  // friends get a copy here, groups and the directory further down.
+  const bildirim = (await m.kayit(ben, m.benimId, 'bildirim'))?.veri ?? null
+  const bildirimKopyasi = async (kanal: Kanal) => {
+    const kopya = await m.kayit(kanal, m.benimId, 'bildirim')
+    if (bildirim && (!ayniMi(kopya?.veri, bildirim) || eskiMi(kopya))) yayinla(kanal, TUR.bildirim, 'bildirim', bildirim)
+  }
+  await bildirimKopyasi(yayin)
 
   // Friendships.
   for (const iliski of durum.iliskiler.values()) {
@@ -701,7 +713,8 @@ async function uzlastir(m: SosyalMotor): Promise<void> {
     }
   }
 
-  // My card, the group card and my availability in each group.
+  // My card, the group card, my availability and where to notify me in
+  // each group.
   const ozet: ProfilOzeti = { ad: profil.ad, kullanici_adi: profil.kullanici_adi, avatar: profil.avatar }
   const yayinMusaitlik = await m.kayit(yayin, m.benimId, 'musaitlik')
   for (const [grupId, veri] of grupumlar) {
@@ -728,12 +741,14 @@ async function uzlastir(m: SosyalMotor): Promise<void> {
     const kopya = await m.kayit(kanal, m.benimId, 'musaitlik')
     const istenen = profil.musaitlik_paylas ? (yayinMusaitlik?.veri ?? null) : null
     if ((kopya || istenen) && !ayniMi(kopya?.veri, istenen)) yayinla(kanal, TUR.musaitlik, 'musaitlik', istenen)
+
+    await bildirimKopyasi(kanal)
   }
 
   // Keep-alive: public relays drop old events. Re-publish what the account
   // can't live without well before that happens.
   for (const k of await m.kayitlar(ben.konu)) {
-    if ([TUR.profil, TUR.yayin, TUR.kisi, TUR.grupum, TUR.yedek].includes(k.tur as never) && eskiMi(k)) {
+    if ([TUR.profil, TUR.yayin, TUR.kisi, TUR.grupum, TUR.yedek, TUR.bildirim].includes(k.tur as never) && eskiMi(k)) {
       yayinla(ben, k.tur, k.anahtar, k.veri)
     }
   }
@@ -783,10 +798,15 @@ export async function hesapKayitlariniTazele(m: SosyalMotor, profil: BenimProfil
   const dizin = dizinVerisi(m.benimId, profil)
   const kanallar = [await dizinKanali('kod', dizin.arkadas_kodu)]
   if (profil.kullanici_adi) kanallar.push(await dizinKanali('kullanici', profil.kullanici_adi))
+  // People who aren't my friends yet (a request, a plan link) find where to
+  // notify me next to the entry.
+  const bildirim = (await m.kayit(await m.ben(), m.benimId, 'bildirim'))?.veri ?? null
   for (const kanal of kanallar) {
     m.kanalKaydet(kanal)
     const mevcut = await m.kayit(kanal, m.benimId, 'dizin')
     if (!ayniMi(mevcut?.veri, dizin) || eskiMi(mevcut)) await m.yayinla(kanal, TUR.dizin, 'dizin', dizin)
+    const kopya = await m.kayit(kanal, m.benimId, 'bildirim')
+    if (bildirim && (!ayniMi(kopya?.veri, bildirim) || eskiMi(kopya))) await m.yayinla(kanal, TUR.bildirim, 'bildirim', bildirim)
   }
 
   const yedek = await benimYedegim(m)

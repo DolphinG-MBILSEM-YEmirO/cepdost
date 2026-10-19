@@ -1,5 +1,6 @@
 import {
   TUR,
+  benimProfilVerim,
   isoZaman,
   kanalBilgisi,
   kanalDurumu,
@@ -11,10 +12,12 @@ import {
   sayiAl,
   simdiMs,
 } from './cekirdek'
-import { arkadaslariGetir, type Profil } from './api'
+import { arkadaslariGetir, davetleriIdyeGoreGetir, type Profil } from './api'
+import { bildirArkaplanda } from './bildirimler'
 import { grupOkunmamisSayisi, gruplarimiGetir, mesajlariGetir, type Grup } from './gruplar'
 import { rastgeleId } from './nostr/kodlama'
 import type { SosyalKayit } from './nostr/motor'
+import { UYGULAMA_ADI } from '../../shared/marka'
 
 // One-to-one chat with friends, and the combined chat list. Messages live
 // on the pair channel only the two people can read.
@@ -86,11 +89,23 @@ export async function direktMesajlariGetir(arkadasId: string, limit = 100): Prom
 // With davetId the message shows as a card for that plan invite.
 export async function direktMesajGonder(arkadasId: string, metin: string, davetId?: string | null): Promise<void> {
   const kanal = await arkadasKanali(arkadasId)
-  await motor().yayinla(kanal, TUR.dm, `dm:${rastgeleId()}`, {
+  const m = motor()
+  await m.yayinla(kanal, TUR.dm, `dm:${rastgeleId()}`, {
     metin: metin.trim().slice(0, 4000),
     davetId: davetId ?? null,
     zaman: simdiMs(),
   })
+  void (async () => {
+    const ad = (await benimProfilVerim())?.ad ?? UYGULAMA_ADI
+    const davet = davetId ? (await davetleriIdyeGoreGetir([davetId])).get(davetId) : null
+    bildirArkaplanda([arkadasId], {
+      tur: davet ? 'davet' : 'mesaj',
+      baslik: ad,
+      govde: davet ? `Seni davet etti: ${davet.baslik}` : metin,
+      git: `dm:${m.benimId}`,
+      etiket: `dm:${m.benimId}`,
+    })
+  })().catch(() => {})
 }
 
 export async function okunduIsaretle(arkadasId: string): Promise<void> {

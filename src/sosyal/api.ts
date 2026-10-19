@@ -30,6 +30,7 @@ import {
 } from './cekirdek'
 import type { EpostaOnayi } from './epostaImzacisi'
 import { onaylilariSec } from './epostaImzacisi'
+import { bildirArkaplanda } from './bildirimler'
 import { kullaniciAdiAlinmisMi, kullaniciAdiHatasi, kullaniciAdiniTasi } from './hesap'
 import { davetAnahtarindanKimlik } from './kimlik'
 import { dizinKanali, gelenKutusuKonusu } from './nostr/kanal'
@@ -272,8 +273,20 @@ export async function arkadaslikIsteGonder(hedefId: string, kim?: AramaSonucu | 
   await m.yayinla(await m.ben(), TUR.kisi, `kisi:${hedefId}`, { eklenme: zaman, profil: ozet })
   await m.yayinla(kanal, TUR.iliski, 'iliski', { durum: 'istek', zaman })
   // The request also goes to their inbox, which is how they find out.
-  await m.yayinla(kanal, TUR.istek, 'istek', { profil: await benimOzetim(), zaman }, { konu: await gelenKutusuKonusu(hedefId) })
+  const benim = await benimOzetim()
+  await m.yayinla(kanal, TUR.istek, 'istek', { profil: benim, zaman }, { konu: await gelenKutusuKonusu(hedefId) })
   void m.esitle().catch(() => {})
+  bildirArkaplanda(
+    [hedefId],
+    {
+      tur: 'istek',
+      baslik: 'Yeni arkadaşlık isteği',
+      govde: `${benim.ad}${benim.kullanici_adi ? ` (@${benim.kullanici_adi})` : ''} seni arkadaş olarak eklemek istiyor.`,
+      git: 'arkadaslar',
+      etiket: 'istek',
+    },
+    { dizinden: true },
+  )
 }
 
 export async function arkadaslikYanitla(arkadaslikId: string, kabul: boolean): Promise<void> {
@@ -293,6 +306,21 @@ export async function arkadaslikYanitla(arkadaslikId: string, kabul: boolean): P
     kabul ? { durum: 'kabul', yayinAnahtari: durum.yayinAnahtari, zaman } : { durum: 'red', zaman },
   )
   void m.esitle().catch(() => {})
+  if (kabul) {
+    const ad = (await benimProfilVerim())?.ad ?? UYGULAMA_ADI
+    bildirArkaplanda(
+      [arkadaslikId],
+      {
+        tur: 'kabul',
+        baslik: `${ad} isteğini kabul etti`,
+        govde: 'Artık arkadaşsınız. Boş saatlerinizi görüp bir plan kurabilirsiniz.',
+        git: `dm:${m.benimId}`,
+        etiket: `dm:${m.benimId}`,
+      },
+      // Their copy of my broadcast key may not have arrived yet.
+      { dizinden: true },
+    )
+  }
 }
 
 // Ending a friendship (or withdrawing a request). The other person still
@@ -583,4 +611,15 @@ export async function davetYanitla(davetId: string, kabul: boolean): Promise<voi
   const kanal = k ? kanalBilgisi(k.konu) : undefined
   if (!k || !kanal) throw new Error('Davet bulunamadı.')
   await m.yayinla(kanal, TUR.davetYanit, `davet-yanit:${davetId}`, { durum: kabul ? 'kabul' : 'red', zaman: simdiMs() })
+  if (k.yazar !== m.benimId) {
+    const ad = (await benimProfilVerim())?.ad ?? UYGULAMA_ADI
+    const baslik = (nesneMi(k.veri) && metinAl(k.veri.baslik, 120)) || 'Plan'
+    bildirArkaplanda([k.yazar], {
+      tur: 'davet',
+      baslik: ad,
+      govde: `${kabul ? 'Geliyor' : 'Gelemiyor'}: ${baslik}`,
+      git: `dm:${m.benimId}`,
+      etiket: `dm:${m.benimId}`,
+    })
+  }
 }

@@ -23,6 +23,7 @@ import {
 } from './cekirdek'
 import { bilinenProfiller, musaitlikKaydi, ozettenProfil, type Profil } from './api'
 import { onaylilariSec } from './epostaImzacisi'
+import { bildirArkaplanda } from './bildirimler'
 import { fotoBilgisiAl, fotoHazirla, fotoSil, fotoUrl, fotoYayinla, type FotoBilgisi } from './foto'
 import { kesfetKanali, type Kanal } from './nostr/kanal'
 import { rastgeleId } from './nostr/kodlama'
@@ -199,6 +200,16 @@ export async function gruplarimiGetir(): Promise<Grup[]> {
   const liste: Grup[] = []
   for (const [grupId, g] of durum.gruplar) liste.push(grupKur(grupId, g.veri, await grupKarti(g.kanal)))
   return liste.sort((a, b) => b.olusturulma.localeCompare(a.olusturulma))
+}
+
+// Everyone in any of my groups (for whose notifications may show text).
+export async function tumGrupUyeleri(): Promise<Set<string>> {
+  const durum = await kanalDurumu()
+  const kisiler = new Set<string>()
+  for (const g of durum.gruplar.values()) {
+    for (const [pk, uye] of await uyeKayitlari(g.kanal)) if (uye.veri.durum === 'aktif') kisiler.add(pk)
+  }
+  return kisiler
 }
 
 // The groups someone and I are both in (for their profile).
@@ -401,11 +412,29 @@ export async function mesajlariGetir(grupId: string, limit = 100): Promise<GrupM
 // With planId the message shows as a card for that plan.
 export async function mesajGonder(grupId: string, metin: string, planId?: string | null): Promise<void> {
   const kanal = await grupKanaliBul(grupId)
-  await motor().yayinla(kanal, TUR.mesaj, `mesaj:${rastgeleId()}`, {
+  const m = motor()
+  await m.yayinla(kanal, TUR.mesaj, `mesaj:${rastgeleId()}`, {
     metin: metin.trim().slice(0, 4000),
     planId: planId ?? null,
     zaman: simdiMs(),
   })
+  void (async () => {
+    const uyeler = [...(await uyeKayitlari(kanal))].filter(([, u]) => u.veri.durum === 'aktif').map(([pk]) => pk)
+    const ad = (await benimProfilVerim())?.ad ?? 'Biri'
+    const grup = (await gruplarimiGetir()).find((g) => g.id === grupId)
+    const plan = planId ? (await planlariIdyeGoreGetir([planId])).get(planId) : null
+    bildirArkaplanda(
+      uyeler,
+      {
+        tur: 'grup',
+        baslik: grup?.ad ?? 'Grup',
+        govde: plan ? `${ad} bir plan paylaştı: ${plan.baslik}` : `${ad}: ${metin}`,
+        git: `grup:${grupId}`,
+        etiket: `grup:${grupId}`,
+      },
+      { grupId },
+    )
+  })().catch(() => {})
 }
 
 // New messages as they arrive (including my own from other devices).
