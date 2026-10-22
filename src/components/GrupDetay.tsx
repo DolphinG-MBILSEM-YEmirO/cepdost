@@ -25,21 +25,19 @@ import {
 } from '../sosyal/gruplar'
 import type { Arkadas, Profil } from '../sosyal/api'
 import { OrtakPlanSihirbazi } from './OrtakPlanSihirbazi'
-import {
-  Baloncuk,
-  GonderButonu,
-  SohbetZemini,
-  useSonaKaydir,
-  useYeniMesajEsigi,
-} from './SohbetGovde'
+import { SohbetZemini, useSonaKaydir, useYeniMesajEsigi } from './SohbetGovde'
+import { MesajKatmanlari, MesajSatiri, MesajYazmaAlani, SohbetUstSeridi } from './MesajIslemleri'
+import { useMesajIslemleri } from './useMesajIslemleri'
 import { TemaSheet } from './SohbetTemaSecici'
 import { GrupPlanKartiSohbet } from './SohbetPlanKarti'
 import { PlanPaylasSheet } from './PlanPaylas'
 import { useSohbetTemasi } from '../sohbetTema'
 import { grupPlaniYanitla, planGectiMi } from '../lib/planPaylasimi'
-import { formatDate, formatMessageTime, formatPlanTime, toDateString } from '../lib/format'
+import { formatDate, formatPlanTime, toDateString } from '../lib/format'
 import { useSosyalSurum } from '../sosyal/cekirdek'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
+import type { MesajGonderimEki } from '../sosyal/mesajOrtak'
+import type { SohbetHedefi } from '../sosyal/mesajIslemleri'
 import { ETKINLIK_EMOJILERI, renkAl } from '../lib/kisisellestirme'
 import { UYGULAMA_ADI } from '../../shared/marka'
 
@@ -573,8 +571,6 @@ function SohbetSekmesi({
   const [mesajlar, setMesajlar] = useState<GrupMesaji[]>([])
   const [planlar, setPlanlar] = useState<Map<string, GrupPlani>>(new Map())
   const [planYanitlari, setPlanYanitlari] = useState<PlanYaniti[]>([])
-  const [girdi, setGirdi] = useState('')
-  const [gonderiliyor, setGonderiliyor] = useState(false)
   const [hata, setHata] = useState<string | null>(null)
   const [sihirbazAcik, setSihirbazAcik] = useState(false)
   const [paylasAcik, setPaylasAcik] = useState(false)
@@ -584,6 +580,17 @@ function SohbetSekmesi({
   const yeniMi = useYeniMesajEsigi(mesajlar, !yukleniyor)
 
   const sosyalSurum = useSosyalSurum()
+  const hedef = useMemo<SohbetHedefi>(() => ({ tur: 'grup', id: grup.id }), [grup.id])
+  const adAl = useCallback(
+    (id: string) => adHaritasi.get(id) ?? `${UYGULAMA_ADI} kullanıcısı`,
+    [adHaritasi],
+  )
+  const gonder = useCallback(
+    (metin: string, ek: MesajGonderimEki) => mesajGonder(grup.id, metin, null, ek),
+    [grup.id],
+  )
+  // Reply, react, edit, delete... (see MesajIslemleri.tsx).
+  const islemler = useMesajIslemleri({ hedef, benimId, mesajlar, adAl, gonder, onHata: setHata })
 
   // Messages plus the plans and answers behind plan cards, so a card can be
   // answered right in the chat. Plans are always fetched for the whole list
@@ -619,24 +626,10 @@ function SohbetSekmesi({
     }
   }, [tazele, sosyalSurum])
 
-  async function gonder() {
-    const metin = girdi.trim()
-    if (!metin || gonderiliyor) return
-    setGirdi('')
-    setGonderiliyor(true)
-    setHata(null)
-    try {
-      await mesajGonder(grup.id, metin)
-    } catch (err) {
-      setHata(err instanceof Error ? err.message : 'Gönderilemedi')
-      setGirdi(metin)
-    } finally {
-      setGonderiliyor(false)
-    }
-  }
-
   return (
     <>
+      <SohbetUstSeridi islemler={islemler} />
+
       <SohbetZemini tema={tema} className="px-5 pb-4">
         <div className="space-y-2 pt-2">
           {mesajlar.length === 0 && (
@@ -655,12 +648,12 @@ function SohbetSekmesi({
           {mesajlar.map((m) => {
             const plan = m.plan_id ? planlar.get(m.plan_id) : null
             return (
-              <Baloncuk
+              <MesajSatiri
                 key={m.id}
-                benim={m.gonderen_id === benimId}
+                mesaj={m}
+                islemler={islemler}
                 yeni={yeniMi(m.olusturulma)}
-                gonderenAd={adHaritasi.get(m.gonderen_id) ?? `${UYGULAMA_ADI} kullanıcısı`}
-                zaman={formatMessageTime(m.olusturulma) ?? undefined}
+                gonderenAd={adAl(m.gonderen_id)}
                 ek={
                   plan && (
                     <GrupPlanKartiSohbet
@@ -672,9 +665,7 @@ function SohbetSekmesi({
                     />
                   )
                 }
-              >
-                {m.metin}
-              </Baloncuk>
+              />
             )
           })}
 
@@ -688,35 +679,8 @@ function SohbetSekmesi({
         </div>
       </SohbetZemini>
 
-      <div className="px-5 pb-[calc(1rem+var(--safe-bottom))] pt-3 border-t border-ink-100 safe-x shrink-0 bg-mist-100">
-        <div className="flex items-end gap-2">
-          <button
-            onClick={() => setPaylasAcik(true)}
-            aria-label="Plan paylaş"
-            className="w-11 h-11 rounded-full bg-orchid-100 text-orchid-600 flex items-center justify-center active:scale-90 transition-transform shrink-0"
-          >
-            <Icon name="CalendarPlus" className="w-5 h-5" />
-          </button>
-          <textarea
-            value={girdi}
-            onChange={(e) => setGirdi(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                void gonder()
-              }
-            }}
-            placeholder="Mesaj yaz..."
-            rows={1}
-            className="flex-1 bg-mist-50 border border-ink-100 rounded-2xl px-4 py-3 text-ink-700 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-orchid-200 transition-all resize-none max-h-32"
-          />
-          <GonderButonu
-            onClick={() => void gonder()}
-            gonderiliyor={gonderiliyor}
-            pasif={!girdi.trim()}
-          />
-        </div>
-      </div>
+      <MesajYazmaAlani islemler={islemler} onPlanPaylas={() => setPaylasAcik(true)} />
+      <MesajKatmanlari islemler={islemler} />
 
       {sihirbazAcik && (
         <OrtakPlanSihirbazi

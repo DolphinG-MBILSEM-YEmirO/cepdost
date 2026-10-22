@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, type HTMLAttributes, type ReactNode, type Ref } from 'react'
 import { Icon } from './Icon'
 import { useSohbetTemasi, type SohbetTemasi } from '../sohbetTema'
 
@@ -32,12 +32,26 @@ export function SohbetZemini({
 // Mesaj baloncuğu. `yeni` true ise giriş animasyonu oynar — ilk yüklemede
 // tüm geçmiş aynı anda zıplamasın diye sadece sonradan gelenlerde açılıyor.
 // `ek` (a plan card) sits under the bubble, on the same side.
+//
+// Message actions (MesajSatiri) fill the optional slots: `ust` above the
+// text inside the bubble (forwarded mark, quoted message), `alt` under it
+// (reactions), `durum` after the time (edited, star, read ticks) and
+// `secenekler` next to it (the options button on desktop). `satir` takes
+// the row's gesture handlers.
 export function Baloncuk({
   benim,
   yeni,
   gonderenAd,
   zaman,
   ek,
+  ust,
+  alt,
+  durum,
+  secenekler,
+  silindi,
+  vurgulu,
+  satir,
+  icRef,
   children,
 }: {
   benim: boolean
@@ -45,35 +59,52 @@ export function Baloncuk({
   gonderenAd?: string | null
   zaman?: string
   ek?: ReactNode
+  ust?: ReactNode
+  alt?: ReactNode
+  durum?: ReactNode
+  secenekler?: ReactNode
+  silindi?: boolean
+  vurgulu?: boolean
+  satir?: HTMLAttributes<HTMLDivElement> & { [veri: `data-${string}`]: string }
+  icRef?: Ref<HTMLDivElement>
   children: ReactNode
 }) {
   const tema = useSohbetTemasi()
 
   return (
     <div
-      className={`flex ${benim ? 'justify-end' : 'justify-start'} ${
+      {...satir}
+      className={`relative flex ${benim ? 'justify-end' : 'justify-start'} ${
         yeni ? (benim ? 'animate-bubble-in-right' : 'animate-bubble-in-left') : ''
-      }`}
+      } ${satir?.className ?? ''}`}
     >
-      <div className="max-w-[80%] min-w-0">
+      <div ref={icRef} className="max-w-[80%] min-w-0">
         {!benim && gonderenAd && (
           <p className="text-[11px] font-semibold text-ink-400 mb-1 px-1 truncate">{gonderenAd}</p>
         )}
-        <div
-          className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words ${
-            benim
-              ? `${tema.benim} ${tema.benimMetin} rounded-br-md`
-              : `${tema.karsi} ${tema.karsiMetin} rounded-bl-md`
-          }`}
-        >
-          {children}
+        <div className={`flex items-center gap-1.5 ${benim ? 'flex-row-reverse' : ''}`}>
+          <div
+            className={`min-w-0 rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words transition-shadow duration-300 ${
+              benim
+                ? `${tema.benim} ${tema.benimMetin} rounded-br-md`
+                : `${tema.karsi} ${tema.karsiMetin} rounded-bl-md`
+            } ${silindi ? 'italic opacity-70' : ''} ${vurgulu ? 'ring-4 ring-amber-300/80' : ''}`}
+          >
+            {ust}
+            {children}
+          </div>
+          {secenekler}
         </div>
+        {alt && <div className={`-mt-1.5 flex px-2 ${benim ? 'justify-end' : 'justify-start'}`}>{alt}</div>}
         {ek && <div className={`mt-1.5 flex ${benim ? 'justify-end' : 'justify-start'}`}>{ek}</div>}
-        {zaman && (
+        {(zaman || durum) && (
           <p
-            className={`text-[10px] text-ink-300 mt-0.5 px-1 ${benim ? 'text-right' : 'text-left'}`}
+            className={`flex items-center gap-1 text-[10px] text-ink-300 mt-0.5 px-1 ${
+              benim ? 'justify-end' : 'justify-start'
+            }`}
           >
             {zaman}
+            {durum}
           </p>
         )}
       </div>

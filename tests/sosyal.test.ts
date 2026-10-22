@@ -1,13 +1,14 @@
 // End-to-end test of the social layer against a local relay: accounts,
 // friend requests, profiles, availability, chat, invites, groups, unfriend
 // with key rotation, password sign-in, restoring on a new device, plan links
-// (Sharloop's own and Davet invites) and email verification.
+// (Sharloop's own and Davet invites), message actions (reply, react, edit,
+// delete, pin, star, forward) and email verification.
 //
 //   npm test
 
 import 'fake-indexeddb/auto'
 import assert from 'node:assert/strict'
-import { after, before, test } from 'node:test'
+import { after, before, mock, test } from 'node:test'
 import { finalizeEvent, generateSecretKey, getPublicKey, verifyEvent, type Event } from 'nostr-tools/pure'
 // @ts-expect-error plain JS dev tool without types
 import { startRelay } from '../scripts/relay.mjs'
@@ -40,6 +41,7 @@ import {
 } from '../src/sosyal/api'
 import {
   direktMesajGonder,
+  direktMesajlariDinle,
   direktMesajlariGetir,
   okunduIsaretle,
   okunmamisMesajSayisi,
@@ -51,6 +53,8 @@ import {
   grupPlanlariGetir,
   grupUyeleriGetir,
   gruplarimiGetir,
+  grupOkunduIsaretle,
+  grupOkunmamisSayisi,
   gruptanAyril,
   mesajGonder,
   mesajlariGetir,
@@ -77,6 +81,18 @@ import {
 import { DAVET_ADRESI, benimDavetim, davetKaynagi, davetLinkiCoz, planiDavetlePaylas } from '../src/sosyal/davet'
 import { linkKaydi, linkPlaniniYanitla, planiGuncelle, planiSil } from '../src/lib/planPaylasimi'
 import { adresimiKaydet, adresimiSil, bildir, bildirimGondericisiniAyarla } from '../src/sosyal/bildirimler'
+import {
+  bendenSil,
+  herkestenSil,
+  mesajBilgisi,
+  mesajiDuzenle,
+  mesajiIlet,
+  sabitle,
+  sabitMesajId,
+  tepkiVer,
+  yildizla,
+  type SohbetHedefi,
+} from '../src/sosyal/mesajIslemleri'
 import type { BildirimIcerigi, BildirimTuru, Gonderim, WebPushAdresi } from '../shared/bildirim'
 
 let relay: { url: string; close: () => Promise<void> }
@@ -784,6 +800,166 @@ test('notifications reach a device through friends, groups and the directory, fo
     assert.equal(await olarak(bora, () => bildir([cem.motor.benimId], icerik('mesaj'))), 0)
     assert.equal(await olarak(bora, () => bildir([cem.motor.benimId], icerik('grup'), { grupId })), 0)
   } finally {
+    bildirimGondericisiniAyarla(null)
+  }
+})
+
+test('message actions: reply, react, edit, delete, pin, star, forward and read info', async () => {
+  const gonderilen: Gonderim[] = []
+  bildirimGondericisiniAyarla(async (g) => void gonderilen.push(...g))
+  try {
+    const [eda, fil, gul] = ['eda', 'fil', 'gul'].map((ad) => kisiOlustur(ad))
+    for (const k of [eda, fil, gul]) {
+      await olarak(k, () => hesabiKur({ ad: k.ad, kullanici_adi: k.ad, gizlilik: 'arkadaslar' }))
+    }
+    for (const k of [fil, gul]) {
+      await olarak(k, () => arkadaslikIsteGonder(eda.motor.benimId, null))
+      await esitle(eda)
+      await olarak(eda, () => arkadaslikYanitla(k.motor.benimId, true))
+      await esitle(eda, k)
+    }
+    const filIle: SohbetHedefi = { tur: 'arkadas', id: fil.motor.benimId }
+    const edaIle: SohbetHedefi = { tur: 'arkadas', id: eda.motor.benimId }
+    const edaninMesajlari = () => olarak(fil, () => direktMesajlariGetir(eda.motor.benimId))
+
+    // A reply carries a short copy of the message it answers.
+    await olarak(eda, () => direktMesajGonder(fil.motor.benimId, 'Bu akşam sinema?'))
+    await esitle(fil)
+    const [soru] = await edaninMesajlari()
+    await olarak(fil, () => direktMesajGonder(eda.motor.benimId, 'Olur!', null, { yanit: soru }))
+    await esitle(eda)
+    const [, cevap] = await olarak(eda, () => direktMesajlariGetir(fil.motor.benimId))
+    assert.deepEqual(cevap?.yanit, { id: soru.id, gonderen_id: eda.motor.benimId, metin: 'Bu akşam sinema?' })
+
+    // One reaction per person: a new emoji replaces it, the same one takes it back.
+    await olarak(fil, () => tepkiVer(edaIle, soru, '👍'))
+    await esitle(eda)
+    assert.deepEqual((await olarak(eda, () => direktMesajlariGetir(fil.motor.benimId)))[0]?.tepkiler, [
+      { kullanici_id: fil.motor.benimId, emoji: '👍' },
+    ])
+    await olarak(fil, () => tepkiVer(edaIle, soru, '❤️'))
+    await esitle(eda)
+    assert.deepEqual((await olarak(eda, () => direktMesajlariGetir(fil.motor.benimId)))[0]?.tepkiler.map((t) => t.emoji), ['❤️'])
+    await olarak(fil, () => tepkiVer(edaIle, soru, '❤️'))
+    await esitle(eda)
+    assert.deepEqual((await olarak(eda, () => direktMesajlariGetir(fil.motor.benimId)))[0]?.tepkiler, [])
+
+    // The author's phone hears about a reaction.
+    const cihaz = await testCihazi()
+    await olarak(eda, () => adresimiKaydet(cihaz.adres(['mesaj', 'grup'])))
+    await esitle(eda, fil)
+    await olarak(fil, () => tepkiVer(edaIle, soru, '😂'))
+    await olana(() => gonderilen.length === 1, 'tepki bildirimi gitti')
+    const tepkiBildirimi = await cihaz.coz(gonderilen.pop()!)
+    assert.deepEqual([tepkiBildirimi.icerik.baslik, tepkiBildirimi.icerik.govde, tepkiBildirimi.icerik.git], [
+      'fil',
+      'Mesajına 😂 bıraktı: “Bu akşam sinema?”',
+      `dm:${fil.motor.benimId}`,
+    ])
+
+    // Edits keep the message in its place; nobody else can edit it, and
+    // a "new message" listener doesn't fire for them.
+    const yeniGelenler: string[] = []
+    const dinlemeyiBirak = olarak(fil, async () => direktMesajlariDinle(fil.motor.benimId, (m) => yeniGelenler.push(m.metin)))
+    await olarak(eda, () => mesajiDuzenle(filIle, soru.id, 'Bu akşam sinemaya ne dersin?'))
+    await esitle(fil)
+    const [duzenlenen, ikinci] = await edaninMesajlari()
+    assert.deepEqual([duzenlenen?.id, duzenlenen?.metin, !!duzenlenen?.duzenlendi, ikinci?.metin], [
+      soru.id,
+      'Bu akşam sinemaya ne dersin?',
+      true,
+      'Olur!',
+    ])
+    assert.deepEqual(yeniGelenler, [])
+    await olarak(eda, () => direktMesajGonder(fil.motor.benimId, 'Saat 9 iyi mi?'))
+    await esitle(fil)
+    assert.deepEqual(yeniGelenler, ['Saat 9 iyi mi?'])
+    ;(await dinlemeyiBirak)()
+    await assert.rejects(olarak(fil, () => mesajiDuzenle(edaIle, soru.id, 'Sahte')), /bulunamadı/)
+    const simdi = Date.now()
+    mock.method(Date, 'now', () => simdi + 16 * 60 * 1000)
+    try {
+      await assert.rejects(olarak(eda, () => mesajiDuzenle(filIle, soru.id, 'Geç kaldım')), /15 dakika/)
+    } finally {
+      mock.restoreAll()
+    }
+
+    // Deleted for everyone: the place stays, the text is gone, and it
+    // doesn't count as unread.
+    await olarak(eda, () => direktMesajGonder(fil.motor.benimId, 'Yanlış kişiye yazdım'))
+    await esitle(fil)
+    const yanlis = (await edaninMesajlari()).at(-1)!
+    await olarak(eda, () => herkestenSil(filIle, yanlis.id))
+    await esitle(fil)
+    const silinen = (await edaninMesajlari()).at(-1)!
+    assert.deepEqual([silinen.id, silinen.silindi, silinen.metin], [yanlis.id, true, ''])
+    await olarak(fil, () => okunduIsaretle(eda.motor.benimId))
+    assert.equal(await olarak(fil, () => okunmamisMesajSayisi()), 0)
+    const filinSohbetleri = await olarak(fil, () => sohbetleriGetir())
+    assert.equal(filinSohbetleri.find((s) => s.id === eda.motor.benimId)?.sonMesaj, 'Bu mesaj silindi')
+    // Plan cards are cancelled on the card, not deleted from the chat.
+    await olarak(eda, () => direktMesajGonder(fil.motor.benimId, 'Plan', 'davet-kimligi'))
+    const kartli = (await olarak(eda, () => direktMesajlariGetir(fil.motor.benimId))).at(-1)!
+    await assert.rejects(olarak(eda, () => herkestenSil(filIle, kartli.id)), /Plan kartları/)
+
+    // Read info for my message.
+    await esitle(eda)
+    assert.deepEqual(await olarak(eda, () => mesajBilgisi(filIle, soru)), { okuyanlar: [fil.motor.benimId], bekleyenler: [] })
+
+    // Deleting for me hides it on my devices only.
+    await olarak(fil, () => bendenSil(cevap!.id))
+    assert.equal((await edaninMesajlari()).some((m) => m.id === cevap!.id), false)
+    assert.equal((await olarak(eda, () => direktMesajlariGetir(fil.motor.benimId))).some((m) => m.id === cevap!.id), true)
+
+    // Stars are mine; pins are shared, and the latest one wins.
+    await olarak(eda, () => yildizla(soru.id, true))
+    assert.equal((await olarak(eda, () => direktMesajlariGetir(fil.motor.benimId)))[0]?.yildizli, true)
+    assert.equal((await edaninMesajlari())[0]?.yildizli, false)
+    await olarak(eda, () => yildizla(soru.id, false))
+    assert.equal((await olarak(eda, () => direktMesajlariGetir(fil.motor.benimId)))[0]?.yildizli, false)
+    await olarak(fil, () => sabitle(edaIle, soru.id))
+    await esitle(eda)
+    assert.equal(await olarak(eda, () => sabitMesajId(filIle)), soru.id)
+    await olarak(eda, () => sabitle(filIle, null))
+    await esitle(fil)
+    assert.equal(await olarak(fil, () => sabitMesajId(edaIle)), null)
+
+    // Forwarding sends the text on to other chats, marked as forwarded.
+    const grupId = await olarak(eda, () => grupOlustur('Sinema', [fil.motor.benimId, gul.motor.benimId]))
+    await esitle(fil, gul, eda)
+    const grupla: SohbetHedefi = { tur: 'grup', id: grupId }
+    assert.equal(
+      await olarak(eda, () => mesajiIlet('Olur!', [{ tur: 'arkadas', id: gul.motor.benimId }, grupla])),
+      2,
+    )
+    await esitle(gul)
+    const gulGorur = await olarak(gul, () => direktMesajlariGetir(eda.motor.benimId))
+    assert.deepEqual(gulGorur.map((m) => [m.metin, m.iletildi]), [['Olur!', true]])
+    const grupMesajlari = await olarak(gul, () => mesajlariGetir(grupId))
+    assert.deepEqual(grupMesajlari.map((m) => [m.metin, m.iletildi]), [['Olur!', true]])
+
+    // Group chats: reactions from members, deletions, unread counts, read info.
+    gonderilen.length = 0
+    await olarak(gul, () => tepkiVer(grupla, grupMesajlari[0], '🎉'))
+    await olana(() => gonderilen.length === 1, 'grup tepki bildirimi gitti')
+    assert.equal((await cihaz.coz(gonderilen.pop()!)).icerik.govde, 'gul mesajına 🎉 bıraktı: “Olur!”')
+    await olarak(gul, () => mesajGonder(grupId, 'Saat kaçta?', null, { yanit: grupMesajlari[0] }))
+    await esitle(eda, fil)
+    const edaGrupta = await olarak(eda, () => mesajlariGetir(grupId))
+    assert.deepEqual(edaGrupta[0]?.tepkiler, [{ kullanici_id: gul.motor.benimId, emoji: '🎉' }])
+    assert.equal(edaGrupta[1]?.yanit?.id, grupMesajlari[0].id)
+    assert.equal(await olarak(fil, () => grupOkunmamisSayisi(grupId)), 2)
+    await olarak(gul, () => herkestenSil(grupla, edaGrupta[1]!.id))
+    await esitle(fil)
+    assert.equal(await olarak(fil, () => grupOkunmamisSayisi(grupId)), 1)
+    await olarak(gul, () => grupOkunduIsaretle(grupId))
+    await esitle(eda)
+    assert.deepEqual(await olarak(eda, () => mesajBilgisi(grupla, edaGrupta[0]!)), {
+      okuyanlar: [gul.motor.benimId],
+      bekleyenler: [fil.motor.benimId],
+    })
+  } finally {
+    mock.restoreAll()
     bildirimGondericisiniAyarla(null)
   }
 })

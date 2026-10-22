@@ -63,6 +63,15 @@ import {
   CircleHelp,
   CircleX,
   Link2,
+  Reply,
+  Forward,
+  Pin,
+  PinOff,
+  Star,
+  StarOff,
+  Ban,
+  SmilePlus,
+  ChevronDown,
 } from 'lucide-react'
 
 const iconMap = {
@@ -130,6 +139,15 @@ const iconMap = {
   CircleHelp,
   CircleX,
   Link2,
+  Reply,
+  Forward,
+  Pin,
+  PinOff,
+  Star,
+  StarOff,
+  Ban,
+  SmilePlus,
+  ChevronDown,
 }
 
 export type IconName = keyof typeof iconMap

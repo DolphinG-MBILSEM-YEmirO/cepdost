@@ -1,20 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Icon } from './Icon'
 import { Avatar } from './Avatar'
-import {
-  Baloncuk,
-  GonderButonu,
-  SohbetZemini,
-  useSonaKaydir,
-  useYeniMesajEsigi,
-} from './SohbetGovde'
+import { SohbetZemini, useSonaKaydir, useYeniMesajEsigi } from './SohbetGovde'
+import { MesajKatmanlari, MesajSatiri, MesajYazmaAlani, SohbetUstSeridi } from './MesajIslemleri'
+import { useMesajIslemleri } from './useMesajIslemleri'
 import { TemaSheet } from './SohbetTemaSecici'
 import { DavetKartiSohbet } from './SohbetPlanKarti'
 import { PlanPaylasSheet } from './PlanPaylas'
 import { ArkadaslaSihirbaz } from './OrtakPlanSihirbazi'
 import { ArkadasProfili } from './ArkadasProfili'
 import { useSohbetTemasi } from '../sohbetTema'
-import { formatMessageTime } from '../lib/format'
 import { davetiYanitla } from '../lib/planPaylasimi'
 import { useSosyalSurum } from '../sosyal/cekirdek'
 import {
@@ -25,6 +20,8 @@ import {
 } from '../sosyal/mesajlar'
 import { davetiIptalEt, davetleriIdyeGoreGetir, type PlanDaveti, type Profil } from '../sosyal/api'
 import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
+import type { MesajGonderimEki } from '../sosyal/mesajOrtak'
+import type { SohbetHedefi } from '../sosyal/mesajIslemleri'
 
 // One-to-one chat with a friend. Messages are read from the local copy and
 // reloaded whenever social data changes (live events, sync, own sends).
@@ -41,8 +38,6 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
   useEscapeIleKapat(onClose, !gomulu && !profilAcik)
   const [mesajlar, setMesajlar] = useState<DirektMesaj[]>([])
   const [yukleniyor, setYukleniyor] = useState(true)
-  const [girdi, setGirdi] = useState('')
-  const [gonderiliyor, setGonderiliyor] = useState(false)
   const [hata, setHata] = useState<string | null>(null)
   const [temaAcik, setTemaAcik] = useState(false)
   const tema = useSohbetTemasi()
@@ -54,6 +49,14 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
   const [paylasAcik, setPaylasAcik] = useState(false)
   const [sihirbazAcik, setSihirbazAcik] = useState(false)
   const sosyalSurum = useSosyalSurum()
+  const hedef = useMemo<SohbetHedefi>(() => ({ tur: 'arkadas', id: arkadas.id }), [arkadas.id])
+  const adAl = useCallback((id: string) => (id === arkadas.id ? arkadas.ad : 'Sen'), [arkadas.id, arkadas.ad])
+  const gonder = useCallback(
+    (metin: string, ek: MesajGonderimEki) => direktMesajGonder(arkadas.id, metin, null, ek),
+    [arkadas.id],
+  )
+  // Reply, react, edit, delete... (see MesajIslemleri.tsx).
+  const islemler = useMesajIslemleri({ hedef, benimId, mesajlar, adAl, gonder, onHata: setHata })
 
   useEffect(() => {
     let iptal = false
@@ -80,22 +83,6 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
       iptal = true
     }
   }, [arkadas.id, sosyalSurum])
-
-  async function gonder() {
-    const metin = girdi.trim()
-    if (!metin || gonderiliyor) return
-    setGirdi('')
-    setGonderiliyor(true)
-    setHata(null)
-    try {
-      await direktMesajGonder(arkadas.id, metin)
-    } catch (err) {
-      setHata(err instanceof Error ? err.message : 'Mesaj gönderilemedi')
-      setGirdi(metin)
-    } finally {
-      setGonderiliyor(false)
-    }
-  }
 
   return (
     <div className={gomulu ? 'flex flex-col h-full min-h-0' : 'panel-tam z-[55]'}>
@@ -159,6 +146,8 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
         <ArkadaslaSihirbaz arkadas={arkadas} onKapat={() => setSihirbazAcik(false)} />
       )}
 
+      <SohbetUstSeridi islemler={islemler} />
+
       <SohbetZemini tema={tema} className="px-5 py-4">
         <div className="space-y-2">
           {yukleniyor ? (
@@ -173,11 +162,12 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
             mesajlar.map((m) => {
               const davet = m.davet_id ? davetler.get(m.davet_id) : null
               return (
-                <Baloncuk
+                <MesajSatiri
                   key={m.id}
-                  benim={m.gonderen_id === benimId}
+                  mesaj={m}
+                  islemler={islemler}
                   yeni={yeniMi(m.olusturulma)}
-                  zaman={formatMessageTime(m.olusturulma) ?? undefined}
+                  okunduGoster
                   ek={
                     davet && (
                       <DavetKartiSohbet
@@ -189,9 +179,7 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
                       />
                     )
                   }
-                >
-                  {m.metin}
-                </Baloncuk>
+                />
               )
             })
           )}
@@ -207,35 +195,8 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
         </div>
       </SohbetZemini>
 
-      <div className="px-5 pb-[calc(1rem+var(--safe-bottom))] pt-3 border-t border-ink-100 safe-x shrink-0 bg-mist-100">
-        <div className="flex items-end gap-2">
-          <button
-            onClick={() => setPaylasAcik(true)}
-            aria-label="Plan paylaş"
-            className="w-11 h-11 rounded-full bg-orchid-100 text-orchid-600 flex items-center justify-center active:scale-90 transition-transform shrink-0"
-          >
-            <Icon name="CalendarPlus" className="w-5 h-5" />
-          </button>
-          <textarea
-            value={girdi}
-            onChange={(e) => setGirdi(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                void gonder()
-              }
-            }}
-            placeholder="Mesaj yaz..."
-            rows={1}
-            className="flex-1 bg-mist-50 border border-ink-100 rounded-2xl px-4 py-3 text-ink-700 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-orchid-200 transition-all resize-none max-h-32"
-          />
-          <GonderButonu
-            onClick={() => void gonder()}
-            gonderiliyor={gonderiliyor}
-            pasif={!girdi.trim()}
-          />
-        </div>
-      </div>
+      <MesajYazmaAlani islemler={islemler} onPlanPaylas={() => setPaylasAcik(true)} />
+      <MesajKatmanlari islemler={islemler} />
     </div>
   )
 }

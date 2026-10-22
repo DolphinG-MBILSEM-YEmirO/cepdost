@@ -19,6 +19,8 @@ export type { SaatPenceresi }
 //     kisi    'kisi:<pk>'        someone I added (so I keep following them)
 //     grupum  'grup:<id>'        a group I'm in, with its key
 //     yedek   'yedek'            copy of my password backup (for keep-alive)
+//     gizle   'gizle:<mesajId>'  a chat message I deleted for myself
+//     yildiz  'yildiz:<mesajId>' a chat message I starred
 //
 //   my broadcast channel (my friends)
 //     profil  'profil'           public profile
@@ -27,7 +29,10 @@ export type { SaatPenceresi }
 //   pair channel (me and one other person)
 //     iliski  'iliski'           each side's view of the friendship
 //     istek   'istek'            friend request, filed under the other's inbox
-//     dm      'dm:<id>'          direct message
+//     dm      'dm:<id>'          direct message (edits and "delete for
+//                                everyone" replace it, keeping its zaman)
+//     tepki   'tepki:<mesajId>'  each side's emoji reaction to a message
+//     sabit   'sabit'            the pinned message, newest pin wins
 //     davet   'davet:<id>'       plan invite, by its sender
 //     davet-yanit 'davet-yanit:<davetId>'  answer, by the invitee
 //     okundu  'okundu'           when each side last read the chat
@@ -39,7 +44,9 @@ export type { SaatPenceresi }
 //     uye     'uye:<pk>'         membership (joined/left) with a profile snapshot
 //     plan    'plan:<id>'        group plan, by its creator
 //     yanit   'yanit:<planId>'   one member's answer to a plan
-//     mesaj   'mesaj:<id>'       chat message
+//     mesaj   'mesaj:<id>'       chat message (edited and deleted like dm)
+//     tepki   'tepki:<mesajId>'  each member's emoji reaction to a message
+//     sabit   'sabit'            the pinned message, newest pin wins
 //     okundu  'okundu'           when each member last read the chat
 //     ani     'ani:<id>'         memory
 //     musaitlik 'musaitlik'      a copy of each member's busy ranges
@@ -75,6 +82,11 @@ export const TUR = {
   linkYanit: 'link-yanit',
   // Where my devices take push notifications (see bildirimler.ts).
   bildirim: 'bildirim',
+  // Chat message actions (see mesajOrtak.ts and mesajIslemleri.ts).
+  tepki: 'tepki',
+  sabit: 'sabit',
+  gizle: 'gizle',
+  yildiz: 'yildiz',
 } as const
 
 export type Gizlilik = 'arkadaslar' | 'herkes'

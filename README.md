@@ -30,6 +30,12 @@ another address signs in once with their username and password.
   and group messages, a feed of memories, profile photos. Free and serverless:
   records are end-to-end encrypted and stored on public Nostr relays (see
   below).
+- **Message actions, WhatsApp style**: right-click or long-press a message
+  (or use its options button on desktop) to reply with a quote, react with
+  an emoji, copy, forward, pin, star, see who read it, edit it for 15
+  minutes, or delete it for everyone or just for yourself; swipe right on a
+  phone to reply (`src/sosyal/mesajIslemleri.ts`,
+  `src/components/MesajIslemleri.tsx`).
 - **Ortak plan**: finds a time when everyone is free. Only busy time ranges
   are shared, never titles or locations (`api/ortak-plan.ts`,
   `shared/bosluklar.ts`).

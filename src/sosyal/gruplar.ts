@@ -25,6 +25,18 @@ import { bilinenProfiller, musaitlikKaydi, ozettenProfil, type Profil } from './
 import { onaylilariSec } from './epostaImzacisi'
 import { bildirArkaplanda } from './bildirimler'
 import { fotoBilgisiAl, fotoHazirla, fotoSil, fotoUrl, fotoYayinla, type FotoBilgisi } from './foto'
+import {
+  BOS_BAGLAM,
+  degisiklikMi,
+  gizlenenMesajlar,
+  gonderimEkiVerisi,
+  mesajBaglami,
+  mesajEkleriniOku,
+  silindiMi,
+  type MesajBaglami,
+  type MesajEkleri,
+  type MesajGonderimEki,
+} from './mesajOrtak'
 import { kesfetKanali, type Kanal } from './nostr/kanal'
 import { rastgeleId } from './nostr/kodlama'
 import type { SosyalKayit } from './nostr/motor'
@@ -73,7 +85,7 @@ export interface PlanYaniti {
   durum: YanitDurumu
 }
 
-export interface GrupMesaji {
+export interface GrupMesaji extends MesajEkleri {
   id: string
   grup_id: string
   gonderen_id: string
@@ -385,38 +397,49 @@ export async function planlariIdyeGoreGetir(idler: string[]): Promise<Map<string
 
 // ---------- group chat ----------
 
-function mesajKur(k: SosyalKayit, grupId: string): GrupMesaji | null {
+function mesajKur(k: SosyalKayit, grupId: string, baglam: MesajBaglami = BOS_BAGLAM): GrupMesaji | null {
   if (!nesneMi(k.veri)) return null
-  const metin = metinAl(k.veri.metin, 4000) ?? ''
-  const planId = metinAl(k.veri.planId, 40)
-  if (!metin && !planId) return null
+  const id = k.anahtar.slice('mesaj:'.length)
+  const silindi = silindiMi(k.veri)
+  // A deleted message keeps its place but loses its text and card.
+  const metin = silindi ? '' : (metinAl(k.veri.metin, 4000) ?? '')
+  const planId = silindi ? null : metinAl(k.veri.planId, 40)
+  if ((!metin && !planId && !silindi) || baglam.gizliler.has(id)) return null
   return {
-    id: k.anahtar.slice('mesaj:'.length),
+    id,
     grup_id: grupId,
     gonderen_id: k.yazar,
     metin,
     plan_id: planId,
     olusturulma: isoZaman(kayitZamani(k)),
+    ...mesajEkleriniOku(id, k.veri, baglam),
   }
 }
 
 export async function mesajlariGetir(grupId: string, limit = 100): Promise<GrupMesaji[]> {
   const kanal = await grupKanaliBul(grupId)
-  const kayitlar = await motor().kayitlar(kanal.konu, TUR.mesaj)
+  const [kayitlar, baglam] = await Promise.all([motor().kayitlar(kanal.konu, TUR.mesaj), mesajBaglami(kanal.konu)])
   return kayitlar
-    .flatMap((k) => mesajKur(k, grupId) ?? [])
+    .flatMap((k) => mesajKur(k, grupId, baglam) ?? [])
     .sort((a, b) => a.olusturulma.localeCompare(b.olusturulma))
     .slice(-limit)
 }
 
-// With planId the message shows as a card for that plan.
-export async function mesajGonder(grupId: string, metin: string, planId?: string | null): Promise<void> {
+// With planId the message shows as a card for that plan; `ek` makes it a
+// reply or marks it as forwarded.
+export async function mesajGonder(
+  grupId: string,
+  metin: string,
+  planId?: string | null,
+  ek: MesajGonderimEki = {},
+): Promise<void> {
   const kanal = await grupKanaliBul(grupId)
   const m = motor()
   await m.yayinla(kanal, TUR.mesaj, `mesaj:${rastgeleId()}`, {
     metin: metin.trim().slice(0, 4000),
     planId: planId ?? null,
     zaman: simdiMs(),
+    ...gonderimEkiVerisi(ek),
   })
   void (async () => {
     const uyeler = [...(await uyeKayitlari(kanal))].filter(([, u]) => u.veri.durum === 'aktif').map(([pk]) => pk)
@@ -437,27 +460,36 @@ export async function mesajGonder(grupId: string, metin: string, planId?: string
   })().catch(() => {})
 }
 
-// New messages as they arrive (including my own from other devices).
+// New messages as they arrive (including my own from other devices; edits
+// and deletions aren't new).
 export function mesajlariDinle(grupId: string, geldi: (m: GrupMesaji) => void): () => void {
   let konu: string | null = null
   void grupKanaliBul(grupId)
     .then((k) => (konu = k.konu))
     .catch(() => {})
   return kayitlariDinle((k) => {
-    if (k.konu !== konu || k.tur !== TUR.mesaj) return
+    if (k.konu !== konu || k.tur !== TUR.mesaj || !nesneMi(k.veri) || degisiklikMi(k.veri)) return
     const mesaj = mesajKur(k, grupId)
     if (mesaj) geldi(mesaj)
   })
 }
 
-// Unread = messages from others newer than my last 'okundu' mark.
+// Unread = messages from others newer than my last 'okundu' mark, apart
+// from deleted ones.
 export async function grupOkunmamisSayisi(grupId: string): Promise<number> {
   const m = motor()
   const kanal = await grupKanaliBul(grupId)
   const okundu = await m.kayit(kanal, m.benimId, 'okundu')
   const sinir = nesneMi(okundu?.veri) ? (sayiAl(okundu.veri.zaman) ?? 0) : 0
-  const mesajlar = await m.kayitlar(kanal.konu, TUR.mesaj)
-  return mesajlar.filter((k) => k.yazar !== m.benimId && kayitZamani(k) > sinir).length
+  const [mesajlar, gizliler] = await Promise.all([m.kayitlar(kanal.konu, TUR.mesaj), gizlenenMesajlar()])
+  return mesajlar.filter(
+    (k) =>
+      k.yazar !== m.benimId &&
+      kayitZamani(k) > sinir &&
+      nesneMi(k.veri) &&
+      !silindiMi(k.veri) &&
+      !gizliler.has(k.anahtar.slice('mesaj:'.length)),
+  ).length
 }
 
 export async function grupOkunduIsaretle(grupId: string): Promise<void> {
