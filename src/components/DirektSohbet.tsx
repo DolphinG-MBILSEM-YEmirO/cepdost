@@ -19,7 +19,7 @@ import {
   type DirektMesaj,
 } from '../sosyal/mesajlar'
 import { davetiIptalEt, davetleriIdyeGoreGetir, type PlanDaveti, type Profil } from '../sosyal/api'
-import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
+import { useGeriAdimi, useGeriIleKapat } from '../lib/geriTusu'
 import type { MesajGonderimEki } from '../sosyal/mesajOrtak'
 import type { SohbetHedefi } from '../sosyal/mesajIslemleri'
 
@@ -35,7 +35,9 @@ interface Props {
 
 export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Props) {
   const [profilAcik, setProfilAcik] = useState(false)
-  useEscapeIleKapat(onClose, !gomulu && !profilAcik)
+  useGeriIleKapat(onClose, !gomulu)
+  // Desktop: the chat sits in the side pane, so only back closes it.
+  useGeriAdimi(onClose, gomulu)
   const [mesajlar, setMesajlar] = useState<DirektMesaj[]>([])
   const [yukleniyor, setYukleniyor] = useState(true)
   const [hata, setHata] = useState<string | null>(null)

@@ -3,7 +3,7 @@ import { Avatar } from './Avatar'
 import { EmojiSecici, RenkSecici } from './Seciciler'
 import { profilGuncelle, type Profil } from '../sosyal/api'
 import { PROFIL_EMOJILERI, renkAl } from '../lib/kisisellestirme'
-import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
+import { useGeriIleKapat } from '../lib/geriTusu'
 
 // Edits how the user appears to friends: name, a short bio, an emoji and
 // an accent colour (used when there's no photo, and on the profile card).
@@ -19,7 +19,7 @@ export function ProfilDuzenle({
   onKapat: () => void
   onKaydedildi: () => Promise<void>
 }) {
-  useEscapeIleKapat(onKapat)
+  useGeriIleKapat(onKapat)
   const [ad, setAd] = useState(profil.ad)
   const [biyografi, setBiyografi] = useState(profil.biyografi ?? '')
   const [emoji, setEmoji] = useState<string | null>(profil.emoji)

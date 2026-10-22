@@ -3,7 +3,7 @@ import { GrupAvatari } from './Avatar'
 import { EmojiSecici, RenkSecici } from './Seciciler'
 import { grupGuncelle, type Grup } from '../sosyal/gruplar'
 import { GRUP_ACIKLAMA_MAKS, GRUP_EMOJILERI, renkAl } from '../lib/kisisellestirme'
-import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
+import { useGeriIleKapat } from '../lib/geriTusu'
 
 // Edits how a group looks to its members: name, a short description, an
 // emoji and a colour. Any member can change it, like most group chats; the
@@ -17,7 +17,7 @@ export function GrupDuzenle({
   onKapat: () => void
   onKaydedildi: () => void
 }) {
-  useEscapeIleKapat(onKapat)
+  useGeriIleKapat(onKapat)
   const [ad, setAd] = useState(grup.ad)
   const [aciklama, setAciklama] = useState(grup.aciklama ?? '')
   const [emoji, setEmoji] = useState<string | null>(grup.emoji)

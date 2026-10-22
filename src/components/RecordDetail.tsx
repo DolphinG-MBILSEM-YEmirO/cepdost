@@ -10,7 +10,7 @@ import { EmojiSecici, TumGunAnahtari } from './Seciciler'
 import { ETKINLIK_EMOJILERI } from '../lib/kisisellestirme'
 import { paylasilabilirPlanlar, planiGuncelle, planiSil } from '../lib/planPaylasimi'
 import { LinkYanitlari } from './PlanLinkiPaylas'
-import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
+import { useGeriIleKapat } from '../lib/geriTusu'
 
 interface RecordDetailProps {
   kayit: Kayit
@@ -20,7 +20,7 @@ interface RecordDetailProps {
 }
 
 export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDetailProps) {
-  useEscapeIleKapat(onClose)
+  useGeriIleKapat(onClose)
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState(goruntulemeBasligi(kayit))
   const [category, setCategory] = useState<Kategori>(kayit.kategori ?? 'not')

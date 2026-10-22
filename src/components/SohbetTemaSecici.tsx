@@ -1,10 +1,12 @@
 import { Icon } from './Icon'
 import { TEMALAR, temayiYaz, useSohbetTemasi } from '../sohbetTema'
+import { useGeriIleKapat } from '../lib/geriTusu'
 
 // Sohbet ekranının başlığındaki hızlı seçici — kullanıcı temayı görmek
 // istediği yerde, Ayarlar'a gitmeden değiştirebilsin.
 export function TemaSheet({ onKapat }: { onKapat: () => void }) {
   const secili = useSohbetTemasi()
+  useGeriIleKapat(onKapat)
 
   return (
     <div

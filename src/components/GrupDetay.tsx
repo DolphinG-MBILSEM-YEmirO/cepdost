@@ -35,7 +35,7 @@ import { useSohbetTemasi } from '../sohbetTema'
 import { grupPlaniYanitla, planGectiMi } from '../lib/planPaylasimi'
 import { formatDate, formatPlanTime, toDateString } from '../lib/format'
 import { useSosyalSurum } from '../sosyal/cekirdek'
-import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
+import { useGeriAdimi, useGeriIleKapat } from '../lib/geriTusu'
 import type { MesajGonderimEki } from '../sosyal/mesajOrtak'
 import type { SohbetHedefi } from '../sosyal/mesajIslemleri'
 import { ETKINLIK_EMOJILERI, renkAl } from '../lib/kisisellestirme'
@@ -54,7 +54,9 @@ interface Props {
 }
 
 export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAyrildi, gomulu = false }: Props) {
-  useEscapeIleKapat(onClose, !gomulu)
+  useGeriIleKapat(onClose, !gomulu)
+  // Desktop: the group sits in the side pane, so only back closes it.
+  useGeriAdimi(onClose, gomulu)
   const [sekme, setSekme] = useState<Sekme>('planlar')
   const [temaAcik, setTemaAcik] = useState(false)
   const [duzenleAcik, setDuzenleAcik] = useState(false)
@@ -406,7 +408,7 @@ function PlanEkleModal({
   onClose: () => void
   onEklendi: () => Promise<void>
 }) {
-  useEscapeIleKapat(onClose)
+  useGeriIleKapat(onClose)
   const [baslik, setBaslik] = useState('')
   const [tarih, setTarih] = useState(toDateString(new Date()))
   const [saat, setSaat] = useState('')

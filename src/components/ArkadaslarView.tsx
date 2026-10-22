@@ -25,7 +25,7 @@ import { davetiYanitla, planGectiMi } from '../lib/planPaylasimi'
 import { formatDate, formatPlanTime } from '../lib/format'
 import { GRUP_ACIKLAMA_MAKS, GRUP_EMOJILERI } from '../lib/kisisellestirme'
 import { EmojiSecici, RenkSecici } from './Seciciler'
-import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
+import { useGeriIleKapat } from '../lib/geriTusu'
 import { UYGULAMA_ADI } from '../../shared/marka'
 
 // Everything about friends, in the Sohbet tab: what needs an answer
@@ -338,7 +338,7 @@ function GrupKurModal({
   onClose: () => void
   onKuruldu: () => Promise<void>
 }) {
-  useEscapeIleKapat(onClose)
+  useGeriIleKapat(onClose)
   const [ad, setAd] = useState('')
   const [emoji, setEmoji] = useState<string | null>(null)
   const [renk, setRenk] = useState<string | null>(null)

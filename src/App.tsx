@@ -33,6 +33,7 @@ import { okunmamisMesajSayisi } from './sosyal/mesajlar'
 import { musaitligiSenkronla } from './sosyal/musaitlikSenkron'
 import { planlariArkadaEsitle } from './sosyal/planEsitleme'
 import { usePlanAyarlari } from './lib/planAyarlari'
+import { useGeriAdimi } from './lib/geriTusu'
 import { type Kayit, db, tumKayitlar, kayitEkle, kayitDurumDegistir, goruntulemeBasligi } from './db'
 import { planiSil } from './lib/planPaylasimi'
 import { kayitSiniflandir } from './classify'
@@ -62,11 +63,11 @@ async function handleGetShareTarget(): Promise<ShareBanner> {
   try {
     const kayit = await kayitEkle({ hamBaslik, hamMetin, hamLink })
     void kayitSiniflandir(kayit)
-    window.history.replaceState({}, '', '/?shared=ok')
+    window.history.replaceState(window.history.state, '', '/?shared=ok')
     return 'ok'
   } catch (err) {
     console.error('share-target (iOS): kayıt oluşturulamadı', err)
-    window.history.replaceState({}, '', '/?shared=error')
+    window.history.replaceState(window.history.state, '', '/?shared=error')
     return 'error'
   }
 }
@@ -133,7 +134,7 @@ export default function App() {
       if (sonuc) setBanner(sonuc)
     })
     if (banner) {
-      window.history.replaceState({}, '', '/')
+      window.history.replaceState(window.history.state, '', '/')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -170,7 +171,7 @@ export default function App() {
   }, [])
 
   function planLinkiniKapat() {
-    window.history.replaceState(null, '', window.location.pathname + window.location.search)
+    window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search)
     setPlanLinki(null)
   }
 
@@ -405,6 +406,13 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-uygulama">
+      <SekmeGeriAdimlari
+        sekme={activeTab}
+        sosyalBolum={sosyalBolum}
+        onSekme={setActiveTab}
+        onSosyalBolum={setSosyalBolum}
+      />
+
       {banner === 'ok' && (
         <div className="fixed top-0 left-0 right-0 z-50 safe-top px-4 pt-2 animate-slide-down">
           <div className="bg-teal-500 text-white text-sm font-medium rounded-2xl px-4 py-3 shadow-float flex items-center gap-2 max-w-md mx-auto">
@@ -522,6 +530,25 @@ export default function App() {
       )}
     </div>
   )
+}
+
+// The phone's back button leads home before it leaves the app: from
+// Arkadaşlar to Sohbetler, from any other tab to Planlar. Rendered with the
+// main screens only, so the sign-in steps hold no tab step.
+function SekmeGeriAdimlari({
+  sekme,
+  sosyalBolum,
+  onSekme,
+  onSosyalBolum,
+}: {
+  sekme: Tab
+  sosyalBolum: SosyalBolum
+  onSekme: (sekme: Tab) => void
+  onSosyalBolum: (bolum: SosyalBolum) => void
+}) {
+  useGeriAdimi(() => onSekme('planlar'), sekme !== 'planlar')
+  useGeriAdimi(() => onSosyalBolum('sohbetler'), sekme === 'sohbet' && sosyalBolum === 'arkadaslar')
+  return null
 }
 
 // Sign-in and setup screens. On desktop the form sits next to a brand

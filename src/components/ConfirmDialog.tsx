@@ -1,5 +1,5 @@
 import { Icon } from './Icon'
-import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
+import { useGeriIleKapat } from '../lib/geriTusu'
 
 interface ConfirmDialogProps {
   title: string
@@ -18,7 +18,7 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
-  useEscapeIleKapat(onCancel)
+  useGeriIleKapat(onCancel)
   return (
     <div
       className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink-900/40 backdrop-blur-sm animate-fade-in"

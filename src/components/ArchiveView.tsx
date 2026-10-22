@@ -4,6 +4,7 @@ import { KayitCard } from './KayitCard'
 import { LinkEkleModal } from './LinkEkleModal'
 import { type Kayit, type Kategori, goruntulemeBasligi } from '../db'
 import { CATEGORY_LABELS, CATEGORY_ICON_NAME, CATEGORIES } from '../lib/format'
+import { useGeriIleKapat } from '../lib/geriTusu'
 
 // Not: eskiden bir `onAddClick` prop'u vardı ve plan sihirbazını açıyordu.
 // Arşivde "yeni plan" yanlış işti — alt bardaki + zaten onu yapıyor. Burada
@@ -24,6 +25,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
   const [filter, setFilter] = useState<Filter>('all')
   const [sortMode, setSortMode] = useState<SortMode>('recent')
   const [showSortMenu, setShowSortMenu] = useState(false)
+  useGeriIleKapat(() => setShowSortMenu(false), showSortMenu)
   const [linkEkleAcik, setLinkEkleAcik] = useState(false)
 
   const filtered = useMemo(() => {

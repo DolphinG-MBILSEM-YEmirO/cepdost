@@ -9,7 +9,7 @@ import { ArkadaslaSihirbaz } from './OrtakPlanSihirbazi'
 import { db, goruntulemeBasligi } from '../db'
 import { formatDate, formatPlanTime, localDateString } from '../lib/format'
 import { renkAl } from '../lib/kisisellestirme'
-import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
+import { useGeriIleKapat } from '../lib/geriTusu'
 import { useSosyalSurum } from '../sosyal/cekirdek'
 import { arkadasliktanCik, davetleriGetir, type Profil } from '../sosyal/api'
 import { ortakGruplar, type Grup } from '../sosyal/gruplar'
@@ -42,8 +42,9 @@ export function ArkadasProfili({ arkadas, benimId, onClose, onMesaj, onGrupAc, a
   const [sekme, setSekme] = useState<Sekme>('birlikte')
   const [paylasAcik, setPaylasAcik] = useState(false)
   const [sihirbazAcik, setSihirbazAcik] = useState(false)
-  // Escape closes the sheet on top first, then the profile.
-  useEscapeIleKapat(onClose, !paylasAcik && !sihirbazAcik)
+  // Sheets opened from here sit above the profile, so Escape and the back
+  // button close them first.
+  useGeriIleKapat(onClose)
   const zemin = renkAl(arkadas.renk, arkadas.ad).zemin
 
   return (

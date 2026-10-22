@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Icon, type IconName } from './Icon'
+import { useGeriAdimi } from '../lib/geriTusu'
 
 interface OnboardingProps {
   onDone: () => void
@@ -30,6 +31,7 @@ const steps = [
 
 export function Onboarding({ onDone }: OnboardingProps) {
   const [step, setStep] = useState(0)
+  useGeriAdimi(() => setStep((s) => Math.max(0, s - 1)), step > 0)
   const current = steps[step]
   const isLast = step === steps.length - 1
 

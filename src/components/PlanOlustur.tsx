@@ -14,7 +14,7 @@ import {
 import { gruplarimiGetir, grupUyeleriGetir, type Grup } from '../sosyal/gruplar'
 import { kendiBloklarim, ortakPlanOner } from '../sosyal/ortakPlan'
 import { addDays, formatBusyRanges, formatDate, toDateString } from '../lib/format'
-import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
+import { useGeriAdimi, useGeriIleKapat } from '../lib/geriTusu'
 import { planiKur, type PlanKitlesi } from '../lib/planPaylasimi'
 import { ETKINLIK_EMOJILERI } from '../lib/kisisellestirme'
 import { EmojiSecici, TumGunAnahtari } from './Seciciler'
@@ -76,10 +76,13 @@ function dakikaya(saat: string): number {
 }
 
 export function PlanOlustur({ onClose, onSaved }: Props) {
-  useEscapeIleKapat(onClose)
+  useGeriIleKapat(onClose)
   const { kullanici } = useAuth()
 
   const [adim, setAdim] = useState<Adim>('kiminle')
+  // One back step per wizard step, like its own Geri button.
+  useGeriAdimi(() => setAdim('kiminle'), adim !== 'kiminle')
+  useGeriAdimi(() => setAdim('detay'), adim === 'ozet')
   const [kapsam, setKapsam] = useState<Kapsam>('tek')
 
   const [arkadaslar, setArkadaslar] = useState<Arkadas[]>([])

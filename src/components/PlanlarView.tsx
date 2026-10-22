@@ -5,6 +5,7 @@ import { RemindersView } from './RemindersView'
 import { AniHatirlatici } from './AniHatirlatici'
 import type { Kayit } from '../db'
 import { useMasaustu } from '../lib/useMasaustu'
+import { useGeriAdimi } from '../lib/geriTusu'
 
 // "Hatırlat" ayrı bir alt sekmeydi ama Bugün ile aynı veriye bakıyordu
 // (tarihli, bekleyen kayıtlar) — alt bar kalabalığını azaltmak için ikisi
@@ -31,6 +32,7 @@ export function PlanlarView({
 }: Props) {
   const [gorunum, setGorunum] = useState<Gorunum>('bugun')
   const masaustu = useMasaustu()
+  useGeriAdimi(() => setGorunum('bugun'), !masaustu && gorunum === 'hatirlat')
 
   // Geciken/bekleyen sayısı rozet olarak gösteriliyor ki "Hatırlat"
   // görünümü gizlendiğinde gözden kaçmasın.

@@ -4,6 +4,7 @@ import { HesabimView } from './HesabimView'
 import { ArchiveView } from './ArchiveView'
 import { SettingsView } from './SettingsView'
 import type { Kayit } from '../db'
+import { useGeriAdimi } from '../lib/geriTusu'
 
 // Alt barda ayrı sekme tutmak yerine hesapla ilgili her şey burada:
 // profil + kayıt arşivi + uygulama ayarları. Arkadaşlar, kod ve istekler
@@ -37,6 +38,7 @@ export function ProfilView({
   onDelete,
 }: Props) {
   const [sekme, setSekme] = useState<Sekme>('hesap')
+  useGeriAdimi(() => setSekme('hesap'), sekme !== 'hesap')
 
   return (
     <div className="flex flex-col h-full">

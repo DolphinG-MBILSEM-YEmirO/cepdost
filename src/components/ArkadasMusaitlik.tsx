@@ -5,6 +5,7 @@ import { addDays, toDateString, formatDate, formatRelativeTime } from '../lib/fo
 import { ETKINLIK_EMOJILERI } from '../lib/kisisellestirme'
 import { planiKur } from '../lib/planPaylasimi'
 import { EmojiSecici, TumGunAnahtari } from './Seciciler'
+import { useGeriIleKapat } from '../lib/geriTusu'
 
 // The Müsaitlik tab of a friend's profile (ArkadasProfili): their busy
 // ranges for the coming week, and a quick invite for any day.
@@ -209,6 +210,7 @@ function DavetModal({
   tarih: string
   onClose: () => void
 }) {
+  useGeriIleKapat(onClose)
   const [baslik, setBaslik] = useState('')
   const [saat, setSaat] = useState('')
   const [sure, setSure] = useState('')

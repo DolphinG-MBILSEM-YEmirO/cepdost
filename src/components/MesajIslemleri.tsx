@@ -12,7 +12,7 @@ import {
   type SohbetMesaji,
 } from './useMesajIslemleri'
 import { formatMessageTime } from '../lib/format'
-import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
+import { useGeriIleKapat } from '../lib/geriTusu'
 import { sohbetleriGetir, type Sohbet } from '../sosyal/mesajlar'
 import { duzenlenebilirMi, mesajBilgisi, type MesajBilgisi, type SohbetHedefi } from '../sosyal/mesajIslemleri'
 
@@ -307,7 +307,7 @@ export function SohbetUstSeridi({ islemler }: { islemler: MesajIslemleri }) {
 
 export function MesajYazmaAlani({ islemler, onPlanPaylas }: { islemler: MesajIslemleri; onPlanPaylas: () => void }) {
   const { yanitlanan, duzenlenen } = islemler
-  useEscapeIleKapat(islemler.yazmaCubugunuKapat, !!(yanitlanan || duzenlenen))
+  useGeriIleKapat(islemler.yazmaCubugunuKapat, !!(yanitlanan || duzenlenen))
 
   return (
     <div className="px-5 pb-[calc(1rem+var(--safe-bottom))] pt-3 border-t border-ink-100 safe-x shrink-0 bg-mist-100">
@@ -503,7 +503,7 @@ function MenuIcerigi({ mesaj, islemler, buyuk = false }: { mesaj: SohbetMesaji; 
 // Right-click and the options button: a small menu at the pointer, kept
 // inside the window.
 function YuzenMenu({ konum, onKapat, children }: { konum: { x: number; y: number }; onKapat: () => void; children: ReactNode }) {
-  useEscapeIleKapat(onKapat)
+  useGeriIleKapat(onKapat)
   const ref = useRef<HTMLDivElement>(null)
 
   useLayoutEffect(() => {
@@ -550,7 +550,7 @@ function AltSayfa({
   baslik?: string
   children: ReactNode
 }) {
-  useEscapeIleKapat(onKapat)
+  useGeriIleKapat(onKapat)
   return (
     <div
       className="fixed inset-0 z-[80] flex items-end justify-center bg-ink-900/40 backdrop-blur-sm animate-fade-in"

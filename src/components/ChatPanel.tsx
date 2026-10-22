@@ -4,7 +4,7 @@ import { Avatar, GrupAvatari } from './Avatar'
 import type { Kayit } from '../db'
 import { sohbetGonder, type PlanOnerisi, type SohbetMesaji } from '../chat'
 import { CATEGORY_COLORS, CATEGORY_ICON_NAME, formatDate, formatDuration } from '../lib/format'
-import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
+import { useGeriIleKapat } from '../lib/geriTusu'
 import { planiKur, type PlanKitlesi } from '../lib/planPaylasimi'
 import { useAuth } from '../sosyal/auth'
 import { asistanBaglamiHazirla, type AsistanBaglami } from '../sosyal/asistanBaglami'
@@ -77,7 +77,7 @@ function ornekIstekler(baglam: AsistanBaglami | null): string[] {
 }
 
 export function ChatPanel({ kayitlar, onClose }: ChatPanelProps) {
-  useEscapeIleKapat(onClose)
+  useGeriIleKapat(onClose)
   const { kullanici } = useAuth()
   const [mesajlar, setMesajlar] = useState<GosterilenMesaj[]>([KARSILAMA_MESAJI])
   const [girdi, setGirdi] = useState('')

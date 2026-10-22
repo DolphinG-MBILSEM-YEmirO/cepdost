@@ -8,6 +8,7 @@ import { useAuth } from '../sosyal/auth'
 import { useSosyalSurum } from '../sosyal/cekirdek'
 import { epostayiKaydet } from '../sosyal/eposta'
 import { epostaDogrulamasiGerekli } from '../sosyal/epostaImzacisi'
+import { useGeriIleKapat } from '../lib/geriTusu'
 
 // Settings card for the account itself: the verified email, the recovery
 // code (the account's key, the last resort if the password is forgotten),
@@ -18,6 +19,7 @@ export function HesapGuvenligi() {
   const [kopyalandi, setKopyalandi] = useState(false)
   const [sifreAcik, setSifreAcik] = useState(false)
   const [cikisOnay, setCikisOnay] = useState(false)
+  useGeriIleKapat(() => setSifreAcik(false), sifreAcik)
   const kod = kurtarmaKodunuGetir()
 
   async function kopyala() {

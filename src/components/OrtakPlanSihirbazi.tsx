@@ -6,7 +6,7 @@ import type { Grup } from '../sosyal/gruplar'
 import { gunleriUret, ortakPlanOner, type BosAralik, type OnerilenPlan } from '../sosyal/ortakPlan'
 import { planiKur } from '../lib/planPaylasimi'
 import { formatDate } from '../lib/format'
-import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
+import { useGeriAdimi, useGeriIleKapat } from '../lib/geriTusu'
 
 // F16 — "herkese uyan plan" sihirbazı.
 //
@@ -54,7 +54,7 @@ export function OrtakPlanSihirbazi({
   onKapat,
   onOlusturuldu,
 }: Props) {
-  useEscapeIleKapat(onKapat)
+  useGeriIleKapat(onKapat)
   const grupModu = !!grup
   const secilebilir = useMemo(
     () => (arkadaslar ?? []).filter((a) => a.durum === 'kabul').map((a) => a.profil),
@@ -63,6 +63,9 @@ export function OrtakPlanSihirbazi({
 
   const kisilerSabit = grupModu || !!sabitKisiler
   const [asama, setAsama] = useState<Asama>(kisilerSabit ? 'istek' : 'kisiler')
+  // One back step per wizard step, like its own back buttons.
+  useGeriAdimi(() => setAsama('kisiler'), !kisilerSabit && asama !== 'kisiler')
+  useGeriAdimi(() => setAsama('istek'), asama === 'oneri')
   const [secili, setSecili] = useState<string[]>([])
   const [istek, setIstek] = useState('')
   const [gunSayisi, setGunSayisi] = useState(7)

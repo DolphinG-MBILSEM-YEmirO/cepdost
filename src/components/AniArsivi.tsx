@@ -5,6 +5,7 @@ import { useSosyalSurum } from '../sosyal/cekirdek'
 import { aniEkle, aniSil, anilariGetir, type Ani } from '../sosyal/gruplar'
 import type { Gizlilik } from '../sosyal/api'
 import { formatDate, toDateString } from '../lib/format'
+import { useGeriIleKapat } from '../lib/geriTusu'
 import { UYGULAMA_ADI } from '../../shared/marka'
 
 // "Gidilen mekana özel foto yükleyip gidilen kişi veya grubun arşivine
@@ -149,6 +150,7 @@ export function AniEkleModal({
   onClose: () => void
   onEklendi: () => Promise<void>
 }) {
+  useGeriIleKapat(onClose)
   const [mekan, setMekan] = useState(baslangicMekan ?? '')
   const [tarih, setTarih] = useState(baslangicTarih || toDateString(new Date()))
   const [notlar, setNotlar] = useState('')

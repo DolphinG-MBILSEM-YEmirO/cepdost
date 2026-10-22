@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Icon } from './Icon'
 import { useAuth } from '../sosyal/auth'
+import { useGeriAdimi } from '../lib/geriTusu'
 import { SLOGAN, UYGULAMA_ADI } from '../../shared/marka'
 
 // The gate before the app. A new account is created on the spot (no email,
@@ -47,6 +48,7 @@ export function GirisEkrani({
     setAsama('karsilama')
     setHata(null)
   }
+  useGeriAdimi(geri, asama !== 'karsilama')
 
   const hataKutusu = hata && (
     <div className="mt-4 flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3 animate-fade-in">

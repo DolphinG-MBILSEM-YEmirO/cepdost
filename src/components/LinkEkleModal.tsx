@@ -3,7 +3,7 @@ import { Icon } from './Icon'
 import { kayitOlustur, type Kategori } from '../db'
 import { siniflandirOnizleme, type SiniflandirmaSonucu } from '../classify'
 import { CATEGORIES, CATEGORY_ICON_NAME, CATEGORY_LABELS } from '../lib/format'
-import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
+import { useGeriIleKapat } from '../lib/geriTusu'
 
 // F22 — arşive elle link ekleme.
 //
@@ -21,7 +21,7 @@ interface Props {
 }
 
 export function LinkEkleModal({ onClose, onEklendi }: Props) {
-  useEscapeIleKapat(onClose)
+  useGeriIleKapat(onClose)
   const [link, setLink] = useState('')
   const [yukleniyor, setYukleniyor] = useState(false)
   const [hata, setHata] = useState<string | null>(null)

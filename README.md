@@ -36,6 +36,11 @@ another address signs in once with their username and password.
   minutes, or delete it for everyone or just for yourself; swipe right on a
   phone to reply (`src/sosyal/mesajIslemleri.ts`,
   `src/components/MesajIslemleri.tsx`).
+- **Back button**: on a phone (and in the browser), back closes the open
+  sheet, menu or chat, steps back through a wizard, returns from a
+  sub-section and then from any tab to Planlar, and only then leaves the
+  app. Each of these is a layer mirrored by a history entry
+  (`src/lib/geriTusu.ts`); overlays also close with Escape.
 - **Ortak plan**: finds a time when everyone is free. Only busy time ranges
   are shared, never titles or locations (`api/ortak-plan.ts`,
   `shared/bosluklar.ts`).

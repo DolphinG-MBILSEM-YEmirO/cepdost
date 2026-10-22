@@ -5,7 +5,7 @@ import { Avatar, GrupAvatari } from './Avatar'
 import { goruntulemeBasligi, tumKayitlar, type Kayit } from '../db'
 import { formatDate } from '../lib/format'
 import { paylasilabilirPlanlar, planiPaylas, type PaylasimHedefi } from '../lib/planPaylasimi'
-import { useEscapeIleKapat } from '../lib/useEscapeIleKapat'
+import { useGeriIleKapat } from '../lib/geriTusu'
 import { arkadaslariGetir, type Profil } from '../sosyal/api'
 import { gruplarimiGetir, type Grup } from '../sosyal/gruplar'
 import { LinkSatiri } from './PlanLinkiPaylas'
@@ -17,7 +17,7 @@ import { LinkSatiri } from './PlanLinkiPaylas'
 // a card into the chat.
 
 function Sheet({ baslik, onKapat, children }: { baslik: string; onKapat: () => void; children: ReactNode }) {
-  useEscapeIleKapat(onKapat)
+  useGeriIleKapat(onKapat)
   return (
     <div
       className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-ink-900/40 backdrop-blur-sm animate-fade-in"
