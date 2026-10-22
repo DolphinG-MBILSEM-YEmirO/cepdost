@@ -273,4 +273,6 @@ test('the service worker shows text only from people it knows', async () => {
   assert.ok(gitGecerliMi('arkadaslar') && gitGecerliMi('grup:abc_DEF-1') && !gitGecerliMi('dm:xyz'))
   assert.ok(gitGecerliMi(davet) && !gitGecerliMi('davet:kisa'))
   assert.ok(gitGecerliMi(`plan:${crypto.randomUUID()}`) && !gitGecerliMi('plan:') && !gitGecerliMi('plan:a/b'))
+  // Answers to my memories open the feed.
+  assert.ok(gitGecerliMi('akis') && !gitGecerliMi('akis:x'))
 })

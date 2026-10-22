@@ -57,6 +57,13 @@ another address signs in once with their username and password.
   and group messages, a feed of memories, profile photos. Free and serverless:
   records are end-to-end encrypted and stored on public Nostr relays (see
   below).
+- **Answers on memories**: friends react to a memory in the feed, comment
+  on it, or tap "Ben de gitmek istiyorum", which puts the place in their
+  own calendar as an idea with no day yet; the one who shared it sees who
+  wants to go and turns it into a plan in one tap, and hears about each
+  answer. Answers travel only on the memory's pair or group channel, so
+  public copies on Keşfet take none (`src/sosyal/aniEtkilesimi.ts`,
+  `src/components/AniYanitlari.tsx`).
 - **Message actions, WhatsApp style**: right-click or long-press a message
   (or use its options button on desktop) to reply with a quote, react with
   an emoji, copy, forward, pin, star, see who read it, edit it for 15

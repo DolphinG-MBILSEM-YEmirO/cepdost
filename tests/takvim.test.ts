@@ -11,7 +11,7 @@ import 'fake-indexeddb/auto'
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { type Kayit, db } from '../src/db'
-import { formatDate, isPast, isSameDay, isToday, localDateString, parseLocalDate } from '../src/lib/format'
+import { deDa, formatDate, isPast, isSameDay, isToday, localDateString, parseLocalDate } from '../src/lib/format'
 import {
   ayIzgarasi,
   ertelemeSecenekleri,
@@ -160,4 +160,11 @@ test('several plans at once: move, mark done, and undo', async () => {
   assert.equal(islemMesaji([a, b], { tur: 'tasi', tarih: gunEkle(bugun, 1) }, bugun), '2 plan yarına ertelendi')
   assert.equal(islemMesaji([a, b], { tur: 'tasi', tarih: gunEkle(bugun, 7) }, bugun), '2 plan taşındı: Haftaya')
   assert.equal(islemMesaji([a, b, c], { tur: 'yapildi' }, bugun), '3 plan yapıldı olarak işaretlendi')
+})
+
+test('"de/da" follows the last vowel of the name before it', () => {
+  assert.deepEqual(
+    ['Ali Veli', 'Ayşe Yılmaz', 'Can', 'Ömür', 'Bir arkadaşın', 'Ayşe ve 2 kişi daha', 'Kâmil', 'X'].map(deDa),
+    ['de', 'da', 'da', 'de', 'da', 'da', 'de', 'de'],
+  )
 })

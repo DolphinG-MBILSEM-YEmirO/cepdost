@@ -195,6 +195,8 @@ export default function App() {
     if (git === 'arkadaslar') {
       setSosyalBolum('arkadaslar')
       setActiveTab('sohbet')
+    } else if (git === 'akis') {
+      setActiveTab('akis')
     } else if (tur === 'dm' || tur === 'grup') {
       setSosyalBolum('sohbetler')
       setActiveTab('sohbet')
@@ -478,7 +480,7 @@ export default function App() {
               />
             ))}
 
-          {activeTab === 'akis' && <AkisView />}
+          {activeTab === 'akis' && <AkisView onPlanAc={(k) => setDetailKayit(k)} />}
 
           {activeTab === 'profil' && (
             <ProfilView

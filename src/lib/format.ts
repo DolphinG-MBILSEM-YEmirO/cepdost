@@ -94,6 +94,14 @@ export function formatRelativeTime(timestamp: number): string {
   return new Date(timestamp).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })
 }
 
+// Turkish "de/da" ("too") after a name, by its last vowel: "Ali de",
+// "Ayşe Yılmaz da". Words with no Turkish vowel get "de".
+export function deDa(onceki: string): 'de' | 'da' {
+  const unluler = onceki.toLocaleLowerCase('tr-TR').match(/[aâeıiîoöuûü]/g)
+  const son = unluler?.[unluler.length - 1]
+  return son && 'aâıouû'.includes(son) ? 'da' : 'de'
+}
+
 export function isSameDay(dateStr: string | null, ref: Date): boolean {
   if (!dateStr) return false
   const d = parseLocalDate(dateStr)

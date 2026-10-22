@@ -20,6 +20,7 @@ import {
   arkadasKodu,
   benimYayinAnahtarim,
   etkinMotoruAyarla,
+  kanalDurumu,
   koduGoster,
   motorOlustur,
   yayinKanaliAl,
@@ -60,6 +61,8 @@ import {
   mesajlariGetir,
   planaYanitVer,
   planYanitlariGetir,
+  anilariGetir,
+  type Ani,
 } from '../src/sosyal/gruplar'
 import { bloklariCikar, musaitligiSenkronla } from '../src/sosyal/musaitlikSenkron'
 import { CepDostDB, db, kayitOlustur, type Kayit } from '../src/db'
@@ -67,6 +70,13 @@ import { planlariEsitle } from '../src/sosyal/planEsitleme'
 import { planKatilimi, yanitsizlar } from '../src/sosyal/planKatilimi'
 import { getirEkle, getirListesi, getirSil, getiriUstlen } from '../src/sosyal/getirListesi'
 import { arkadasPlandaMi } from '../src/sosyal/ortakGecmis'
+import {
+  aniEtkilesimleri,
+  aniYorumunuSil,
+  aniyaTepkiVer,
+  aniyaYorumYap,
+  gitmekIstiyorum,
+} from '../src/sosyal/aniEtkilesimi'
 import { TUR } from '../src/sosyal/cekirdek'
 import { linkKanali } from '../src/sosyal/nostr/kanal'
 import { aesAnahtari, base64UrldenBayt, hexe, hmac, jsonCoz, jsonSifrele } from '../src/sosyal/nostr/kodlama'
@@ -82,7 +92,7 @@ import {
   sharloopKaynagi,
 } from '../src/sosyal/planLinki'
 import { DAVET_ADRESI, benimDavetim, davetKaynagi, davetLinkiCoz, planiDavetlePaylas } from '../src/sosyal/davet'
-import { linkKaydi, linkPlaniniYanitla, planiGuncelle, planiSil } from '../src/lib/planPaylasimi'
+import { anidanPlan, linkKaydi, linkPlaniniYanitla, planiGuncelle, planiSil } from '../src/lib/planPaylasimi'
 import { adresimiKaydet, adresimiSil, bildir, bildirimGondericisiniAyarla } from '../src/sosyal/bildirimler'
 import {
   bendenSil,
@@ -491,6 +501,65 @@ test("a friend's profile counts the plans we're both on", async () => {
   assert.deepEqual(alininPlanlari.filter(birlikte).map((k) => k.baslik), ['Sinema', 'Kahve', 'Eski kahve'])
   const canla = await olarak(ali, () => arkadasPlandaMi(can.motor.benimId, alininPlanlari))
   assert.deepEqual(alininPlanlari.filter(canla).map((k) => k.baslik), [])
+})
+
+test('memories: friends react, say they want to go too, and comment; strangers on Keşfet cannot', async () => {
+  // Ali shares a memory with Ayşe (its photo travels apart; left out here).
+  await olarak(ali, async () => {
+    const kanal = (await kanalDurumu()).cift.get(ayse.motor.benimId)!
+    await ali.motor.yayinla(kanal, TUR.ani, 'ani:moda1', {
+      mekan_adi: 'Moda Sahili', tarih: '2099-05-01', notlar: null, gorunurluk: 'arkadaslar', foto: null, zaman: Date.now(),
+    })
+  })
+  await esitle(ayse)
+  const bul = (liste: Ani[]) => liste.find((a) => a.id === 'moda1')!
+  const aysedeki = bul(await olarak(ayse, () => anilariGetir({ arkadasId: ali.motor.benimId })))
+  await olarak(ayse, () => aniyaTepkiVer(aysedeki, '❤️'))
+  await olarak(ayse, () => gitmekIstiyorum(aysedeki, true))
+  // A new emoji replaces the old one and keeps "I want to go".
+  await olarak(ayse, () => aniyaTepkiVer(aysedeki, '🔥'))
+  const yorum = await olarak(ayse, () => aniyaYorumYap(aysedeki, '  Çok güzel!  '))
+  await assert.rejects(olarak(ayse, () => aniyaYorumYap(aysedeki, '   ')), /Bir şey yaz/)
+  await assert.rejects(olarak(ayse, () => aniyaTepkiVer(aysedeki, '💩')), /kullanılamıyor/)
+  await esitle(ali)
+  const alideki = bul(await olarak(ali, () => anilariGetir({ arkadasId: ayse.motor.benimId })))
+  await olarak(ali, () => aniyaYorumYap(alideki, 'Haftaya beraber gidelim'))
+  await esitle(ayse)
+
+  let e = (await olarak(ayse, () => aniEtkilesimleri([aysedeki]))).get('moda1')!
+  assert.deepEqual(e.tepkiler, [{ kullanici_id: ayse.motor.benimId, emoji: '🔥' }])
+  assert.deepEqual(e.gitmekIsteyenler, [ayse.motor.benimId])
+  assert.deepEqual(
+    e.yorumlar.map((y) => [y.yazar, y.metin]),
+    [[ayse.motor.benimId, 'Çok güzel!'], [ali.motor.benimId, 'Haftaya beraber gidelim']],
+  )
+
+  // The same emoji again takes it back; she deletes her comment; then she
+  // no longer wants to go either.
+  await olarak(ayse, () => aniyaTepkiVer(aysedeki, '🔥'))
+  await olarak(ayse, () => aniYorumunuSil(aysedeki, yorum.id))
+  await esitle(ali)
+  e = (await olarak(ali, () => aniEtkilesimleri([alideki]))).get('moda1')!
+  assert.deepEqual([e.tepkiler, e.gitmekIsteyenler, e.yorumlar.map((y) => y.metin)], [[], [ayse.motor.benimId], ['Haftaya beraber gidelim']])
+  await olarak(ayse, () => gitmekIstiyorum(aysedeki, false))
+  await esitle(ali)
+  assert.deepEqual((await olarak(ali, () => aniEtkilesimleri([alideki]))).get('moda1')?.gitmekIsteyenler, [])
+
+  // Wanting to go puts the place in my calendar as an idea with no day,
+  // once: asking again (any spelling) finds the same idea.
+  const fikir = await anidanPlan('  Moda   Sahili ', 'Ali')
+  assert.equal(fikir.yeni, true)
+  assert.deepEqual(
+    [fikir.kayit.baslik, fikir.kayit.konum, fikir.kayit.tarih, fikir.kayit.kategori, fikir.kayit.ozetNot],
+    ['Moda Sahili', 'Moda Sahili', null, 'mekan', 'Ali buradan bir anı paylaştı.'],
+  )
+  const tekrar = await anidanPlan('moda sahili', null)
+  assert.deepEqual([tekrar.yeni, tekrar.kayit.id], [false, fikir.kayit.id])
+  await db.kayitlar.delete(fikir.kayit.id)
+
+  // Keşfet copies (any channel other than a pair or a group) take no answers.
+  const kesfetteki: Ani = { ...alideki, konu: 'kesfet-konusu' }
+  await assert.rejects(olarak(ayse, () => aniyaYorumYap(kesfetteki, 'Selam')), /yalnızca/)
 })
 
 test('unfriending ends the friendship and rotates the broadcast key', async () => {

@@ -38,6 +38,9 @@ export type { SaatPenceresi }
 //     okundu  'okundu'           when each side last read the chat
 //     grup-davet 'grup-davet:<grupId>'     group key handed to a friend
 //     ani     'ani:<id>'         memory shared between the two
+//     ani-tepki 'ani-tepki:<aniId>'        each side's reaction to a memory,
+//                                and whether they want to go there too
+//     ani-yorum 'ani-yorum:<aniId>:<id>'   a comment on a memory
 //
 //   group channel (the members)
 //     grup    'grup'             name and look of the group
@@ -49,6 +52,7 @@ export type { SaatPenceresi }
 //     sabit   'sabit'            the pinned message, newest pin wins
 //     okundu  'okundu'           when each member last read the chat
 //     ani     'ani:<id>'         memory
+//     ani-tepki, ani-yorum       answers to a memory, as on a pair channel
 //     musaitlik 'musaitlik'      a copy of each member's busy ranges
 //
 // Photos travel as chunks ('foto:<aniId>:<n>') on the channel's photo topic.
@@ -70,6 +74,10 @@ export const TUR = {
   okundu: 'okundu',
   grupDavet: 'grup-davet',
   ani: 'ani',
+  // Answers to a memory: a reaction (with "I want to go too") and comments
+  // (see aniEtkilesimi.ts).
+  aniTepki: 'ani-tepki',
+  aniYorum: 'ani-yorum',
   foto: 'foto',
   grup: 'grup',
   uye: 'uye',

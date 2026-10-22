@@ -30,7 +30,8 @@ export interface BildirimIcerigi {
   govde: string
   // Where tapping it leads in the app (App reads it from ?git=):
   // 'dm:<pk>', 'grup:<id>', 'link:<key>', 'davet:<secret>', 'arkadaslar',
-  // or 'plan:<id>' (one of my plans, from a reminder this device shows).
+  // 'akis' (the feed, for answers to my memories), or 'plan:<id>' (one of
+  // my plans, from a reminder this device shows).
   git: string
   // Notifications with the same tag replace each other (one per chat).
   etiket: string
@@ -39,7 +40,7 @@ export interface BildirimIcerigi {
 // The places a notification can lead to, checked by the service worker
 // and the app before following one.
 export function gitGecerliMi(git: string): boolean {
-  return /^(dm:[0-9a-f]{64}|grup:[A-Za-z0-9_-]{1,40}|link:[A-Za-z0-9_-]{43}|davet:[A-Za-z0-9_-]{22}|plan:[A-Za-z0-9-]{1,64}|arkadaslar)$/.test(git)
+  return /^(dm:[0-9a-f]{64}|grup:[A-Za-z0-9_-]{1,40}|link:[A-Za-z0-9_-]{43}|davet:[A-Za-z0-9_-]{22}|plan:[A-Za-z0-9-]{1,64}|arkadaslar|akis)$/.test(git)
 }
 
 export const BASLIK_MAKS = 80

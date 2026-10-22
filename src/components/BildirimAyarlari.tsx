@@ -16,10 +16,10 @@ import { adresimiKaydet, adresimiSil, kendimeDene } from '../sosyal/bildirimler'
 // nudge in the chat list for people who haven't decided yet.
 
 const SECENEKLER: { baslik: string; aciklama: string; turler: BildirimTuru[] }[] = [
-  { baslik: 'Mesajlar', aciklama: 'Arkadaşlarından gelen mesajlar', turler: ['mesaj'] },
+  { baslik: 'Mesajlar', aciklama: 'Arkadaşlarından gelen mesajlar ve anılarına yanıtlar', turler: ['mesaj'] },
   { baslik: 'Arkadaşlık', aciklama: 'Yeni istekler ve kabul edilenler', turler: ['istek', 'kabul'] },
   { baslik: 'Planlar', aciklama: 'Davetler, yanıtlar ve plan linkine gelenler', turler: ['davet', 'link'] },
-  { baslik: 'Gruplar', aciklama: 'Grup sohbetleri ve grup planları', turler: ['grup'] },
+  { baslik: 'Gruplar', aciklama: 'Grup sohbetleri, grup planları ve anılar', turler: ['grup'] },
 ]
 
 const DURUM_METNI: Record<Exclude<CihazDurumu, 'acik' | 'kapali'>, string> = {

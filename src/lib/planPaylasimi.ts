@@ -219,6 +219,27 @@ export async function linkPlaniniYanitla(
   if (yanit !== 'geliyorum' && mevcut) await kayitSil(mevcut.id)
 }
 
+// "I want to go too" on a memory: the place becomes an idea in my calendar,
+// with no day yet, to plan when I like. Asking twice keeps the one idea.
+export async function anidanPlan(yer: string, kimden: string | null): Promise<{ kayit: Kayit; yeni: boolean }> {
+  const konum = yer.trim().replace(/\s+/g, ' ')
+  const ayni = (k: Kayit) => k.durum === 'bekliyor' && !k.tarih && k.konum?.trim().toLocaleLowerCase('tr-TR') === konum.toLocaleLowerCase('tr-TR')
+  const mevcut = await yerelKayit(ayni)
+  if (mevcut) return { kayit: mevcut, yeni: false }
+  const kayit = await kayitOlustur({
+    ...ortakAlanlar(),
+    kategori: 'mekan',
+    baslik: konum,
+    emoji: '📍',
+    tarih: null,
+    saat: null,
+    sure: null,
+    konum,
+    ozetNot: kimden ? `${kimden} buradan bir anı paylaştı.` : 'Akıştaki bir anıdan.',
+  })
+  return { kayit, yeni: true }
+}
+
 // Editing or deleting one of my plans: if it went out as a link, the link
 // follows (in the background; the change here never waits on the network).
 export async function planiGuncelle(kayit: Kayit, degisiklik: Partial<Kayit>): Promise<void> {
