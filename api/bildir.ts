@@ -17,6 +17,12 @@
 //
 // Native apps later: a delivery with { tur: 'fcm' | 'apns', token } goes to
 // FCM/APNs from teslimEt(); nothing else here changes.
+//
+// Davet, the invite page people without the app answer plans on, lives on
+// other sites and posts its guests' answers here too (the user allowed it,
+// 2026-10-22). Only its own addresses get CORS headers, and a request from
+// them may reach one person's devices at most. Like any sender it only ever
+// hands over ciphertext; the host's phone decides what to show.
 
 import { createECDH, createHmac, createPrivateKey, sign, type KeyObject } from 'node:crypto'
 import {
@@ -36,6 +42,11 @@ const TTL_SN = 24 * 60 * 60
 const ZAMAN_ASIMI_MS = 10_000
 // Order of the P-256 group.
 const N = BigInt('0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551')
+
+// Where Davet is served (GitHub Pages, and its Vercel copy).
+const DAVET_KAYNAKLARI = new Set(['https://dolphing-mbilsem-yemiro.github.io', 'https://davet-gules.vercel.app'])
+// One host's devices (src/sosyal/bildirimler.ts keeps ten per person).
+const DAVET_AZAMI_GONDERIM = 10
 
 interface Vapid {
   // Uncompressed public key, base64url.
@@ -123,18 +134,50 @@ async function teslimEt(g: Gonderim & { bayt: Uint8Array }, vapid: Vapid, iletis
   }
 }
 
+// The Davet address a request comes from, or null for any other origin.
+function davetKaynagi(request: Request): string | null {
+  const origin = request.headers.get('origin')
+  return origin && DAVET_KAYNAKLARI.has(origin) ? origin : null
+}
+
+function davetIcinAc(cevap: Response, kaynak: string): Response {
+  cevap.headers.set('Access-Control-Allow-Origin', kaynak)
+  cevap.headers.set('Vary', 'Origin')
+  return cevap
+}
+
+// The browser's preflight before Davet's JSON POST.
+export async function OPTIONS(request: Request): Promise<Response> {
+  const kaynak = davetKaynagi(request)
+  if (!kaynak) return yanit({ error: 'İzin verilmeyen kaynak.' }, 403)
+  const cevap = new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Methods': 'POST',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Max-Age': '86400',
+    },
+  })
+  return davetIcinAc(cevap, kaynak)
+}
+
 export async function POST(request: Request): Promise<Response> {
+  const davet = davetKaynagi(request)
+  if (davet) return davetIcinAc(await gonderimleriIsle(request, DAVET_AZAMI_GONDERIM), davet)
   const red = kaynakReddi(request)
   if (red) return red
+  return gonderimleriIsle(request, AZAMI_GONDERIM)
+}
 
+async function gonderimleriIsle(request: Request, azami: number): Promise<Response> {
   const govde = await jsonGovdeOku(request, AZAMI_ISTEK)
   if (!govde.ok) return govde.yanit
   const g = gizli()
   if (!g) return yanit({ error: 'Bildirimler bu sunucuda henüz kurulmadı.' }, 503)
 
   const liste = govde.girdi.gonderimler
-  if (!Array.isArray(liste) || liste.length === 0 || liste.length > AZAMI_GONDERIM) {
-    return yanit({ error: 'gonderimler 1 ile 25 arasında olmalı' }, 400)
+  if (!Array.isArray(liste) || liste.length === 0 || liste.length > azami) {
+    return yanit({ error: `gonderimler 1 ile ${azami} arasında olmalı` }, 400)
   }
   const gonderimler = liste.map(gonderimAl)
   if (gonderimler.some((x) => x === null)) return yanit({ error: 'geçersiz gönderim' }, 400)

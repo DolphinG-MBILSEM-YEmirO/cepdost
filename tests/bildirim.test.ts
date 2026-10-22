@@ -11,7 +11,7 @@ import { webPushSifrele } from '../src/bildirim/webPush'
 import { bildirimMetni } from '../src/bildirim/goster'
 import { linkOzeti, type Bilinenler } from '../src/bildirim/bilinenler'
 import { BILDIRIM_OLAY_TURU, gitGecerliMi, pushAdresiGecerliMi, type BildirimIcerigi } from '../shared/bildirim'
-import { GET, POST } from '../api/bildir'
+import { GET, OPTIONS, POST } from '../api/bildir'
 
 const b64 = (s: string) => new Uint8Array(Buffer.from(s, 'base64url'))
 
@@ -172,6 +172,46 @@ test('api/bildir: refuses other hosts, odd bodies and other sites', async () => 
   )
   assert.equal(await red({ endpoint: 'https://fcm.googleapis.com/x', govde: GOVDE }, { origin: 'https://evil.example' }), 403)
   assert.equal(cagrildi, false)
+})
+
+test('api/bildir: Davet may post from its own addresses, with CORS, for one person at a time', async () => {
+  process.env.EPOSTA_GIZLI = GIZLI
+  globalThis.fetch = (async () => new Response(null, { status: 201 })) as unknown as typeof fetch
+  const davet = 'https://dolphing-mbilsem-yemiro.github.io'
+  const onUcus = (origin: string) =>
+    OPTIONS(
+      new Request('https://sharloop.vercel.app/api/bildir', {
+        method: 'OPTIONS',
+        headers: { origin, host: 'sharloop.vercel.app', 'access-control-request-method': 'POST' },
+      }),
+    )
+
+  const izin = await onUcus(davet)
+  assert.equal(izin.status, 204)
+  assert.equal(izin.headers.get('access-control-allow-origin'), davet)
+  assert.match(izin.headers.get('access-control-allow-headers') ?? '', /content-type/i)
+  assert.equal((await onUcus('https://evil.example')).status, 403)
+
+  const gonderim = { endpoint: 'https://fcm.googleapis.com/fcm/send/abc', govde: GOVDE }
+  const cevap = await POST(istek({ gonderimler: [gonderim] }, { origin: davet }))
+  assert.equal(cevap.status, 200)
+  assert.equal(cevap.headers.get('access-control-allow-origin'), davet)
+  assert.deepEqual(await cevap.json(), { sonuclar: ['ok'] })
+
+  // One host's devices at most; the refusal is readable there too.
+  const cok = await POST(istek({ gonderimler: Array(11).fill(gonderim) }, { origin: 'https://davet-gules.vercel.app' }))
+  assert.equal(cok.status, 400)
+  assert.equal(cok.headers.get('access-control-allow-origin'), 'https://davet-gules.vercel.app')
+
+  // The app itself: no CORS headers, and its own limit.
+  const ayniSite = await POST(istek({ gonderimler: Array(11).fill(gonderim) }))
+  assert.equal(ayniSite.status, 200)
+  assert.equal(ayniSite.headers.get('access-control-allow-origin'), null)
+
+  // Lookalikes of Davet's addresses are still other sites.
+  for (const origin of ['https://dolphing-mbilsem-yemiro.github.io.evil.example', 'http://dolphing-mbilsem-yemiro.github.io', 'https://evil.github.io']) {
+    assert.equal((await POST(istek({ gonderimler: [gonderim] }, { origin }))).status, 403, origin)
+  }
 })
 
 // ---------- what the service worker shows ----------

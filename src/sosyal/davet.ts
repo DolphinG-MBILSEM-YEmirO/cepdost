@@ -37,9 +37,10 @@ import { YANIT_METNI, type LinkDurumu, type LinkKaynagi, type LinkKatilimcisi, t
 // friend code and username, for "Sharloop'ta aç" and "add as a friend").
 // See js/shared/validate.js in Davet for how it reads them.
 //
-// Answers given in Davet don't notify me (only same-site pages may use
-// api/bildir); answers given from Sharloop do, and every answer shows on
-// the plan's page.
+// Every answer notifies me, wherever it was given: Sharloop sends its own
+// (davetiYanitla below), and Davet looks up my devices in my directory
+// entry and posts to api/bildir, which accepts Davet's addresses. Every
+// answer also shows on the plan's page.
 
 export const DAVET_ADRESI = 'https://dolphing-mbilsem-yemiro.github.io/davet/'
 
@@ -168,7 +169,6 @@ async function davetIcerigi(kayit: Kayit): Promise<Record<string, unknown>> {
     description: kisalt(kayit.ozetNot, SINIR.aciklama),
     hostName: tekSatir(profil.ad, SINIR.ad) || 'Bir arkadaşın',
     theme: temaSec(kayit.emoji),
-    hiddenComments: [],
     allDay: tumGun,
     emoji: kayit.emoji ?? null,
     durationMinutes: !tumGun && kayit.sure ? kayit.sure : null,

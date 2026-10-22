@@ -2,7 +2,8 @@
 //
 // The client always calls these routes same-origin (/api/...), so there are
 // no CORS headers: a browser on another site gets no readable response, and
-// the origin check below stops it from triggering the work at all.
+// the origin check below stops it from triggering the work at all. The one
+// exception is api/bildir, which also takes Davet's addresses (see there).
 
 const JSON_BASLIKLARI = {
   'Content-Type': 'application/json; charset=utf-8',
