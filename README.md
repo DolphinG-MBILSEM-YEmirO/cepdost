@@ -24,6 +24,14 @@ another address signs in once with their username and password.
   (`api/classify.ts`, Gemini + Foursquare).
 - **Plans and reminders**: local-first, stored on the device with Dexie
   (IndexedDB). Plan details never leave the phone.
+- **A plan's page**: a live countdown, who is coming (from the group's
+  answers or the invites sent) with a nudge for those who haven't answered
+  and a jump to the chat, a private checklist that follows you to your other
+  devices, notes edited in place, and a reminder. The reminder goes into the
+  phone calendar file as an alarm (the dependable route, since nothing can
+  wake a closed web app for free) and shows as a notification while the app
+  is open (`src/components/PlanAyrintilari.tsx`, `src/lib/planAyrintilari.ts`,
+  `src/sosyal/planKatilimi.ts`, `src/bildirim/planHatirlaticilari.ts`).
 - **Calendar import**: `.ics` import and auto-refresh (`src/takvim.ts`,
   `api/takvim.ts`).
 - **Social layer**: accounts, friends, groups, group plans with RSVPs, direct

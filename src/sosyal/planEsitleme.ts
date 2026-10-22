@@ -1,6 +1,7 @@
 import type { Table } from 'dexie'
 import { db, kayitSurumu, type Kayit } from '../db'
 import { CATEGORIES, PRIORITIES, localDateString } from '../lib/format'
+import { hatirlatmaOku, yapilacaklariOku } from '../lib/planAyrintilari'
 import { TUR, metinAl, motor, nesneMi, sayiAl } from './cekirdek'
 import { BAGLANTI_YOK, type SosyalMotor, type SosyalKayit } from './nostr/motor'
 
@@ -123,6 +124,11 @@ function kayitAl(id: string, v: Record<string, unknown>): Kayit | null {
     durum: v.durum === 'yapildi' ? 'yapildi' : 'bekliyor',
     olusturulmaTarihi: sayiAl(v.olusturulmaTarihi) ?? surum,
     guncellenme: surum,
+    yapilacaklar: yapilacaklariOku(v.yapilacaklar),
+    hatirlatma: hatirlatmaOku(v.hatirlatma),
+    gidenDavetler: Array.isArray(v.gidenDavetler)
+      ? v.gidenDavetler.filter((x): x is string => typeof x === 'string' && x.length <= 40).slice(0, 50)
+      : [],
   }
 }
 

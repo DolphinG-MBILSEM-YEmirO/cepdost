@@ -64,6 +64,7 @@ import {
 import { bloklariCikar, musaitligiSenkronla } from '../src/sosyal/musaitlikSenkron'
 import { CepDostDB, db, kayitOlustur, type Kayit } from '../src/db'
 import { planlariEsitle } from '../src/sosyal/planEsitleme'
+import { planKatilimi, yanitsizlar } from '../src/sosyal/planKatilimi'
 import { TUR } from '../src/sosyal/cekirdek'
 import { linkKanali } from '../src/sosyal/nostr/kanal'
 import { aesAnahtari, base64UrldenBayt, hexe, hmac, jsonCoz, jsonSifrele } from '../src/sosyal/nostr/kodlama'
@@ -380,6 +381,52 @@ test('groups: join through a friend, plans, answers, chat, member availability',
   assert.deepEqual((await olarak(ali, () => grupUyeleriGetir(grupId))).map((u) => u.profil?.ad).sort(), ['Ali', 'Ayşe'])
 })
 
+test("a plan's page shows who is coming, from the group's answers or the invites behind it", async () => {
+  const kayit = (baslik: string, ek: Partial<Kayit>) => plan(baslik, { tarih: '2099-06-01', saat: '18:00', ...ek })
+
+  // A group plan: every member, by their answer; only the one who set it
+  // up can nudge.
+  const grupId = await olarak(ali, () => grupOlustur('Bowling ekibi', [ayse.motor.benimId, can.motor.benimId]))
+  await esitle(ayse, can, ali)
+  const planId = await olarak(ali, () => grupPlaniOlustur({ grupId, baslik: 'Bowling', tarih: '2099-06-01', saat: '18:00' }))
+  await olarak(ali, () => planaYanitVer(planId, 'geliyorum'))
+  await esitle(ayse)
+  await olarak(ayse, () => planaYanitVer(planId, 'belki'))
+  await esitle(ali, ayse)
+  const alininki = await olarak(ali, () => planKatilimi(kayit('Bowling', { grupPlanId: planId, grupId })))
+  assert.deepEqual(
+    alininki?.katilimcilar.map((k) => [k.ad, k.durum, k.sahip, k.ben]),
+    [
+      ['Ali', 'geliyor', true, true],
+      ['Ayşe', 'belki', false, false],
+      ['Can', 'bekliyor', false, false],
+    ],
+  )
+  assert.deepEqual([alininki?.tur, alininki?.sohbet, alininki?.sahibiyim], ['grup', `grup:${grupId}`, true])
+  assert.deepEqual(yanitsizlar(alininki!).map((k) => k.ad), ['Can'])
+  const aysenin = await olarak(ayse, () => planKatilimi(kayit('Bowling', { grupPlanId: planId, grupId })))
+  assert.equal(aysenin?.sahibiyim, false)
+
+  // Invites I sent: me and each friend, found by the ids on the plan or,
+  // for plans set up before those were kept, by title and day.
+  const davetId = await olarak(ali, () => davetGonder({ alanId: ayse.motor.benimId, baslik: 'Kahve', tarih: '2099-06-02', saat: '10:00' }))
+  const idIle = await olarak(ali, () => planKatilimi(kayit('Kahve', { tarih: '2099-06-02', gidenDavetler: [davetId] })))
+  assert.deepEqual(idIle?.katilimcilar.map((k) => [k.ad, k.durum]), [['Ali', 'geliyor'], ['Ayşe', 'bekliyor']])
+  assert.deepEqual([idIle?.tur, idIle?.sohbet, idIle?.sahibiyim], ['davet', `dm:${ayse.motor.benimId}`, true])
+  const eslesen = await olarak(ali, () => planKatilimi(kayit('Kahve', { tarih: '2099-06-02' })))
+  assert.deepEqual(eslesen?.katilimcilar.map((k) => k.ad), ['Ali', 'Ayşe'])
+  assert.equal(await olarak(ali, () => planKatilimi(kayit('Yalnız', {}))), null)
+
+  // The invite I accepted: the host and me.
+  await esitle(ayse)
+  await olarak(ayse, () => davetYanitla(davetId, true))
+  await esitle(ali)
+  const gelen = await olarak(ayse, () => planKatilimi(kayit('Kahve', { davetId })))
+  assert.deepEqual(gelen?.katilimcilar.map((k) => [k.ad, k.durum, k.sahip]), [['Ali', 'geliyor', true], ['Ayşe', 'geliyor', false]])
+  assert.deepEqual([gelen?.sohbet, gelen?.sahibiyim], [`dm:${ali.motor.benimId}`, false])
+  assert.equal((await olarak(ali, () => planKatilimi(kayit('Kahve', { gidenDavetler: [davetId] }))))?.katilimcilar[1]?.durum, 'geliyor')
+})
+
 test('unfriending ends the friendship and rotates the broadcast key', async () => {
   assert.equal((await olarak(ayse, () => arkadaslariGetir())).length, 1)
   const eskiAnahtar = await olarak(ayse, () => benimYayinAnahtarim())
@@ -415,7 +462,7 @@ test('password sign-in and restoring an account on a new device', async () => {
   assert.equal((await olarak(yeniCihaz, () => profilimiGetir()))?.ad, 'Ali')
   const arkadaslar = await olarak(yeniCihaz, () => arkadaslariGetir())
   assert.deepEqual(arkadaslar.map((a) => [a.profil.ad, a.durum]), [['Can', 'kabul']])
-  assert.equal((await olarak(yeniCihaz, () => gruplarimiGetir()))[0]?.ad, 'Ekip')
+  assert.deepEqual((await olarak(yeniCihaz, () => gruplarimiGetir())).map((g) => g.ad).sort(), ['Bowling ekibi', 'Ekip'])
 })
 
 // ---------- plan sync between one account's devices ----------
@@ -499,6 +546,27 @@ test('plans follow the account to another device', async () => {
   const sonra = () => Date.now() + 22 * 24 * 60 * 60 * 1000
   assert.equal((await planlariEsitle(telefon.kisi.motor, telefon.db.kayitlar, telefon.depo, sonra)).gonderilen, 2)
   assert.equal((await esitlePlanlar(telefon)).gonderilen, 0)
+})
+
+test("a plan's checklist and reminder follow it to my other devices, cleaned on the way in", async () => {
+  const pc = cihaz(ali, 'pc-liste')
+  const tel = cihaz(kisiOlustur('ali-tel-liste', ali.sk), 'tel-liste')
+  const hazirlik = plan('Hazırlık', { yapilacaklar: [{ id: 'a', metin: 'Bilet al', tamam: true }], hatirlatma: 60, gidenDavetler: ['d1'] })
+  await pc.db.kayitlar.add(hazirlik)
+  await esitlePlanlar(pc)
+  await esitlePlanlar(tel)
+  const gelen = await tel.db.kayitlar.get(hazirlik.id)
+  assert.deepEqual(
+    [gelen?.yapilacaklar, gelen?.hatirlatma, gelen?.gidenDavetler],
+    [[{ id: 'a', metin: 'Bilet al', tamam: true }], 60, ['d1']],
+  )
+
+  // A broken copy from another device can't break the plan screen.
+  await pc.db.kayitlar.update(hazirlik.id, { yapilacaklar: [{ id: 'b', metin: '' }, 'x'] as never, hatirlatma: -5 })
+  await esitlePlanlar(pc)
+  await esitlePlanlar(tel)
+  const temiz = await tel.db.kayitlar.get(hazirlik.id)
+  assert.deepEqual([temiz?.yapilacaklar, temiz?.hatirlatma], [[], null])
 })
 
 test('a shared plan added on two devices before they synced keeps one copy', async () => {

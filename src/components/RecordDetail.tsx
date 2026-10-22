@@ -1,25 +1,27 @@
 import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
 import { type Kayit, type Kategori, type Oncelik, kayitGuncelle, kayitDurumDegistir, goruntulemeBasligi } from '../db'
-import { CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_ICON_NAME, PRIORITY_LABELS, PRIORITY_COLORS, CATEGORIES, PRIORITIES, formatDate, formatPlanTime, formatDuration, formatRelativeTime, isPast, isUpcoming, mapUrl, toDateString, addDays } from '../lib/format'
+import { CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_ICON_NAME, PRIORITY_LABELS, PRIORITY_COLORS, CATEGORIES, PRIORITIES, formatDate, formatPlanTime, formatDuration, formatRelativeTime, isPast, mapUrl, toDateString, addDays } from '../lib/format'
 import { ConfirmDialog } from './ConfirmDialog'
 import { AniEkleModal } from './AniArsivi'
-import { kayittanIcsIndir } from '../takvim'
 import { PaylasimHedefiSheet } from './PlanPaylas'
 import { EmojiSecici, TumGunAnahtari } from './Seciciler'
 import { ETKINLIK_EMOJILERI } from '../lib/kisisellestirme'
 import { paylasilabilirPlanlar, planiGuncelle, planiSil } from '../lib/planPaylasimi'
 import { LinkYanitlari } from './PlanLinkiPaylas'
 import { useGeriIleKapat } from '../lib/geriTusu'
+import { GeriSayimRozeti, HatirlatmaKarti, KatilimcilarKarti, NotlarKarti, YapilacaklarKarti } from './PlanAyrintilari'
 
 interface RecordDetailProps {
   kayit: Kayit
   onClose: () => void
   onUpdated: () => void
   onDeleted: () => void
+  // Opens a chat ('dm:<id>' or 'grup:<id>') from the plan's people.
+  onSohbeteGit?: (git: string) => void
 }
 
-export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDetailProps) {
+export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGit }: RecordDetailProps) {
   useGeriIleKapat(onClose)
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState(goruntulemeBasligi(kayit))
@@ -69,7 +71,6 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
   const timeLabel = formatPlanTime(kayit.saat, kayit.tumGun)
   const durLabel = formatDuration(kayit.sure)
   const past = isPast(kayit.tarih)
-  const upcoming = isUpcoming(kayit.tarih)
   const mapsLink = mapUrl(kayit)
   const done = kayit.durum === 'yapildi'
   const baslik = goruntulemeBasligi(kayit)
@@ -237,6 +238,11 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
           ) : (
             <>
               <h2 className={`font-display text-xl font-bold text-ink-700 leading-snug ${done ? 'line-through opacity-60' : ''}`}>{baslik}</h2>
+              {!done && kayit.tarih && (
+                <div className="mt-2">
+                  <GeriSayimRozeti kayit={kayit} />
+                </div>
+              )}
 
               {(dateLabel || timeLabel || durLabel || kayit.konum) && (
                 <div className="mt-4 pt-4 border-t border-ink-100 space-y-3">
@@ -252,7 +258,6 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
                           {timeLabel ? ` · ${timeLabel}` : ''}
                           {durLabel ? ` · ${durLabel}` : ''}
                           {past && !done && ' · Kaçtı'}
-                          {upcoming && !done && kayit.tarih && ' · Yaklaşıyor'}
                         </p>
                       </div>
                     </div>
@@ -304,11 +309,12 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
           </div>
         )}
 
-        {kayit.ozetNot && !editing && (
-          <div className="card p-5 mb-4">
-            <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-3">Notlar</p>
-            <p className="text-sm text-ink-500 whitespace-pre-wrap leading-relaxed">{kayit.ozetNot}</p>
-          </div>
+        {!editing && (
+          <>
+            <KatilimcilarKarti kayit={kayit} onSohbeteGit={onSohbeteGit} />
+            <YapilacaklarKarti kayit={kayit} />
+            <NotlarKarti kayit={kayit} />
+          </>
         )}
 
         {kayit.hamMetin && (
@@ -341,6 +347,8 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
             </div>
           </div>
         )}
+
+        {!editing && kayit.tarih && <HatirlatmaKarti kayit={kayit} />}
 
         {!editing && kayit.tarih && (
           <div className="mb-4">
@@ -406,18 +414,6 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted }: RecordDet
 
         {/* Once shared as a link: who answered, and the link again. */}
         {(kayit.planLinki || kayit.davetLinki) && !editing && <LinkYanitlari kayit={kayit} />}
-
-        {/* Tarayıcıdan telefonun takvimine doğrudan yazan bir API yok;
-            standart yol .ics indirip takvim uygulamasında açmak. */}
-        {kayit.tarih && (
-          <button
-            onClick={() => kayittanIcsIndir(kayit)}
-            className="w-full bg-sky-50 text-sky-700 font-medium rounded-2xl px-5 py-3.5 flex items-center justify-center gap-2 active:scale-[0.97] transition-all hover:bg-sky-100 mb-3"
-          >
-            <Icon name="CalendarPlus" className="w-5 h-5" />
-            Telefon takvimime ekle
-          </button>
-        )}
 
         <button
           onClick={() => setShowDelete(true)}

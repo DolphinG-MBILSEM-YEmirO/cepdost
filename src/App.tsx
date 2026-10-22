@@ -25,6 +25,7 @@ import { EpostaDogrulamaEkrani } from './components/EpostaDogrulama'
 import { Icon, type IconName } from './components/Icon'
 import { useTakvimOtomatikYenile } from './components/TakvimAyarlari'
 import { useBildirimler } from './bildirim/useBildirimler'
+import { usePlanHatirlaticilari } from './bildirim/planHatirlaticilari'
 import { useAuth } from './sosyal/auth'
 import { motor, useSosyalSurum } from './sosyal/cekirdek'
 import { bekleyenSayisi, profilimiGetir, type Profil } from './sosyal/api'
@@ -203,10 +204,14 @@ export default function App() {
         .filter((k) => (tur === 'link' ? k.planLinki : k.davetLinki) === deger)
         .first()
         .then((k) => k && setDetailKayit(k))
+    } else if (tur === 'plan') {
+      void db.kayitlar.get(deger).then((k) => k && setDetailKayit(k))
     }
   }, [])
   const sohbetAcildi = useCallback(() => setAcilacakSohbet(null), [])
   useBildirimler(!!kullanici && !!profil, bildirimeGit)
+  // The reminders set on plans, while the app is open.
+  usePlanHatirlaticilari(kayitlar)
 
   // The gate looks at the username and password flags, so the profile is
   // loaded at App level.
@@ -514,6 +519,10 @@ export default function App() {
           onClose={() => setDetailKayit(null)}
           onUpdated={() => {}}
           onDeleted={() => setDetailKayit(null)}
+          onSohbeteGit={(git) => {
+            setDetailKayit(null)
+            bildirimeGit(git)
+          }}
         />
       )}
 

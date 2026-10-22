@@ -1,5 +1,6 @@
 import { db, type Kayit, type TakvimEtkinligi } from './db'
 import { UYGULAMA_ADI } from '../shared/marka'
+import { icsTetikleyici } from './lib/planAyrintilari'
 
 // F15 — telefon takvimi entegrasyonu.
 //
@@ -397,8 +398,23 @@ export function planIcsOlustur(plan: {
   sure?: number | null
   konum?: string | null
   notlar?: string | null
+  // The same plan exported again replaces its earlier copy in the phone
+  // calendar instead of adding a second one.
+  uid?: string
+  // An alarm this many minutes before the start (see lib/planAyrintilari).
+  hatirlatmaDk?: number | null
 }): string {
   const baslangic = icsZaman(plan.tarih, plan.saat ?? null)
+  const alarm =
+    plan.hatirlatmaDk != null
+      ? [
+          'BEGIN:VALARM',
+          'ACTION:DISPLAY',
+          `DESCRIPTION:${icsKacir(plan.baslik)}`,
+          icsTetikleyici({ tarih: plan.tarih, saat: plan.saat ?? null, sure: plan.sure ?? null, tumGun: !plan.saat }, plan.hatirlatmaDk),
+          'END:VALARM',
+        ]
+      : []
 
   let bitis: string
   if (plan.saat) {
@@ -420,13 +436,14 @@ export function planIcsOlustur(plan: {
     `PRODID:-//${UYGULAMA_ADI}//TR`,
     'CALSCALE:GREGORIAN',
     'BEGIN:VEVENT',
-    `UID:${crypto.randomUUID()}@cepdost`,
+    `UID:${plan.uid ?? crypto.randomUUID()}@cepdost`,
     `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}`,
     plan.saat ? `DTSTART:${baslangic}` : `DTSTART;VALUE=DATE:${baslangic}`,
     plan.saat ? `DTEND:${bitis}` : `DTEND;VALUE=DATE:${bitis}`,
     `SUMMARY:${icsKacir(plan.baslik)}`,
     plan.konum ? `LOCATION:${icsKacir(plan.konum)}` : null,
     plan.notlar ? `DESCRIPTION:${icsKacir(plan.notlar)}` : null,
+    ...alarm,
     'END:VEVENT',
     'END:VCALENDAR',
   ].filter((s): s is string => s !== null)
@@ -459,5 +476,7 @@ export function kayittanIcsIndir(kayit: Kayit): void {
     sure: kayit.sure,
     konum: kayit.konum,
     notlar: kayit.ozetNot,
+    uid: kayit.id,
+    hatirlatmaDk: kayit.hatirlatma ?? null,
   })
 }

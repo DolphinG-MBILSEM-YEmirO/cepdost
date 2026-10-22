@@ -1,4 +1,4 @@
-import { db, goruntulemeBasligi, kayitGuncelle, kayitOlustur, kayitSil, type Kategori, type Kayit, type Oncelik, type YakinOneri } from '../db'
+import { db, goruntulemeBasligi, kayitDegistir, kayitGuncelle, kayitOlustur, kayitSil, type Kategori, type Kayit, type Oncelik, type YakinOneri } from '../db'
 import { davetGonder, davetYanitla, type PlanDaveti } from '../sosyal/api'
 import { direktMesajGonder } from '../sosyal/mesajlar'
 import { grupPlaniOlustur, mesajGonder, planaYanitVer, type Grup, type GrupPlani, type YanitDurumu } from '../sosyal/gruplar'
@@ -122,6 +122,7 @@ export async function planiKur(plan: KurulacakPlan, kitle: PlanKitlesi, sohbetMe
   if (kitle.tur !== 'tek' && !plan.tarih) throw new Error('Paylaşmak için plana bir tarih ver.')
 
   let grupPlanId: string | null = null
+  const gidenDavetler: string[] = []
   if (kitle.tur === 'grup') {
     grupPlanId = await grupPlaniOlustur({ ...ortak, tarih: plan.tarih!, grupId: kitle.grup.id, notlar: plan.not })
     // Whoever sets it up is coming.
@@ -131,6 +132,7 @@ export async function planiKur(plan: KurulacakPlan, kitle: PlanKitlesi, sohbetMe
   } else if (kitle.tur === 'arkadaslar') {
     for (const k of kitle.kisiler) {
       const davetId = await davetGonder({ ...ortak, tarih: plan.tarih!, alanId: k.id, mesaj: plan.not })
+      gidenDavetler.push(davetId)
       await direktMesajGonder(k.id, sohbetMesaji ?? DAVET_MESAJI, davetId).catch(() => {})
     }
   }
@@ -152,6 +154,7 @@ export async function planiKur(plan: KurulacakPlan, kitle: PlanKitlesi, sohbetMe
     grupPlanId,
     arkadasId: tekKisi?.id ?? null,
     arkadasAdi: tekKisi?.ad ?? null,
+    gidenDavetler,
   })
 }
 
@@ -263,6 +266,9 @@ export async function planiPaylas(kayit: Kayit, hedef: PaylasimHedefi): Promise<
 
   if (hedef.tur === 'arkadas') {
     const davetId = await davetGonder({ ...plan, alanId: hedef.id, mesaj: kayit.ozetNot })
+    // Its page lists who was invited. Read fresh: sending to several
+    // friends in a row passes the same old copy each time.
+    await kayitDegistir(kayit.id, (k) => ({ gidenDavetler: [...(k.gidenDavetler ?? []), davetId] }))
     // The invite already went out; the chat card is a convenience.
     await direktMesajGonder(hedef.id, PAYLASIM_MESAJI, davetId).catch(() => {})
     if (!kayit.arkadasId && !kayit.grupId) await kayitGuncelle(kayit.id, { arkadasId: hedef.id, arkadasAdi: hedef.ad })

@@ -272,4 +272,5 @@ test('the service worker shows text only from people it knows', async () => {
   assert.equal((await bildirimMetni(imzali(arkadas, { git: 'https://evil.example' }), bilinenler)).git, '')
   assert.ok(gitGecerliMi('arkadaslar') && gitGecerliMi('grup:abc_DEF-1') && !gitGecerliMi('dm:xyz'))
   assert.ok(gitGecerliMi(davet) && !gitGecerliMi('davet:kisa'))
+  assert.ok(gitGecerliMi(`plan:${crypto.randomUUID()}`) && !gitGecerliMi('plan:') && !gitGecerliMi('plan:a/b'))
 })

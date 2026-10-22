@@ -13,6 +13,8 @@ import {
   mapUrl,
 } from '../lib/format'
 import { tiklanabilir } from '../lib/a11y'
+import { geriSayim } from '../lib/planAyrintilari'
+import { PlanRozetleri } from './PlanRozetleri'
 
 interface KayitCardProps {
   kayit: Kayit
@@ -30,6 +32,9 @@ export function KayitCard({ kayit, onToggleStatus, onDelete, onClick }: KayitCar
   const mapsLink = mapUrl(kayit)
   const done = kayit.durum === 'yapildi'
   const baslik = goruntulemeBasligi(kayit)
+  // How long is left says more than when it was saved; undated notes and
+  // finished plans keep the saved time.
+  const kalan = !done && kayit.tarih ? geriSayim(kayit) : null
 
   return (
     <div
@@ -90,8 +95,15 @@ export function KayitCard({ kayit, onToggleStatus, onDelete, onClick }: KayitCar
           )}
 
           <div className="mt-2 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-ink-300">{formatRelativeTime(kayit.olusturulmaTarihi)}</span>
+            <div className="flex items-center gap-2 min-w-0">
+              {kalan ? (
+                <span className={`text-xs font-medium ${kalan.durum === 'yakin' || kalan.durum === 'suruyor' ? 'text-orchid-600' : 'text-ink-300'}`}>
+                  {kalan.metin}
+                </span>
+              ) : (
+                <span className="text-xs text-ink-300">{formatRelativeTime(kayit.olusturulmaTarihi)}</span>
+              )}
+              <PlanRozetleri kayit={kayit} />
               {kayit.oncelik !== 'orta' && (
                 <span className={`w-2 h-2 rounded-full ${PRIORITY_COLORS[kayit.oncelik].dot}`} />
               )}

@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie'
+import type { YapilacakMaddesi } from './lib/planAyrintilari'
 
 // Veri modeli — bkz. proje planı Bölüm 4 + "Hallet" tasarım taşıması
 // (2026-08-05). F2 (otomatik sınıflandırma) kategori/baslik/tarih/saat/
@@ -92,6 +93,14 @@ export interface Kayit {
   // Davet secret) and its host, so changing my answer finds this entry.
   linkAnahtari?: string | null
   linkSahibi?: string | null
+  // My own checklist for the plan (what to buy, book, bring). Follows me to
+  // my other devices; never shared with the others on the plan.
+  yapilacaklar?: YapilacakMaddesi[]
+  // Remind me this many minutes before the start (see lib/planAyrintilari):
+  // the alarm in the phone calendar export and an in-app notification.
+  hatirlatma?: number | null
+  // The invites I sent for this plan, so its page can show who is coming.
+  gidenDavetler?: string[]
 }
 
 // F15 — telefon takviminden içe aktarılan etkinlikler. Uygulamanın kendi kayıtlarından
@@ -218,6 +227,16 @@ export async function tumKayitlar(): Promise<Kayit[]> {
 
 export async function kayitGuncelle(id: string, degisiklik: Partial<Kayit>): Promise<void> {
   await db.kayitlar.update(id, degisiklik)
+}
+
+// A change worked out from the record as it is now, read and written in one
+// transaction, so quick taps (ticking several checklist items) don't undo
+// each other.
+export async function kayitDegistir(id: string, degistir: (kayit: Kayit) => Partial<Kayit>): Promise<void> {
+  await db.transaction('rw', db.kayitlar, async () => {
+    const kayit = await db.kayitlar.get(id)
+    if (kayit) await db.kayitlar.update(id, degistir(kayit))
+  })
 }
 
 export async function kayitSil(id: string): Promise<void> {

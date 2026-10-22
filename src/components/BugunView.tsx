@@ -20,6 +20,7 @@ import {
 } from '../lib/format'
 import { useBugun } from '../hooks/useBugun'
 import { tiklanabilir } from '../lib/a11y'
+import { PlanRozetleri } from './PlanRozetleri'
 
 interface BugunViewProps {
   kayitlar: Kayit[]
@@ -324,6 +325,9 @@ function TimelineItem({ kayit, onClick, onToggle, onReschedule, rescheduling }: 
                   {kayit.konum}
                 </span>
               )}
+              <div className="mt-1 empty:hidden">
+                <PlanRozetleri kayit={kayit} yakinsaSayim />
+              </div>
             </div>
           </div>
         </div>
@@ -366,6 +370,9 @@ function UnscheduledItem({ kayit, onClick, onToggle, onReschedule, rescheduling 
                 {kayit.konum}
               </span>
             )}
+            <div className="mt-1 empty:hidden">
+              <PlanRozetleri kayit={kayit} />
+            </div>
           </div>
         </div>
       </div>
