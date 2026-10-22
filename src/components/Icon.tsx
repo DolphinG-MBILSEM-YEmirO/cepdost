@@ -72,6 +72,7 @@ import {
   Ban,
   SmilePlus,
   ChevronDown,
+  CalendarRange,
 } from 'lucide-react'
 
 const iconMap = {
@@ -148,6 +149,7 @@ const iconMap = {
   Ban,
   SmilePlus,
   ChevronDown,
+  CalendarRange,
 }
 
 export type IconName = keyof typeof iconMap

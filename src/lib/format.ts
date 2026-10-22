@@ -6,9 +6,17 @@ export function localDateString(d: Date = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+// A date string as a Date. A plan's day ('YYYY-MM-DD') is local midnight:
+// new Date('2026-10-22') would be UTC midnight, which west of Greenwich is
+// still the day before. Anything else (a full timestamp) parses as usual.
+export function parseLocalDate(dateStr: string): Date {
+  const gun = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr)
+  return gun ? new Date(Number(gun[1]), Number(gun[2]) - 1, Number(gun[3])) : new Date(dateStr)
+}
+
 export function formatDate(dateStr: string | null): string | null {
   if (!dateStr) return null
-  const date = new Date(dateStr)
+  const date = parseLocalDate(dateStr)
   if (isNaN(date.getTime())) return null
 
   const today = new Date()
@@ -88,7 +96,7 @@ export function formatRelativeTime(timestamp: number): string {
 
 export function isSameDay(dateStr: string | null, ref: Date): boolean {
   if (!dateStr) return false
-  const d = new Date(dateStr)
+  const d = parseLocalDate(dateStr)
   return d.getFullYear() === ref.getFullYear() && d.getMonth() === ref.getMonth() && d.getDate() === ref.getDate()
 }
 
@@ -104,7 +112,7 @@ export function isTomorrow(dateStr: string | null): boolean {
 
 export function isUpcoming(dateStr: string | null): boolean {
   if (!dateStr) return false
-  const date = new Date(dateStr)
+  const date = parseLocalDate(dateStr)
   const now = new Date()
   now.setHours(0, 0, 0, 0)
   return date.getTime() >= now.getTime()
@@ -112,7 +120,7 @@ export function isUpcoming(dateStr: string | null): boolean {
 
 export function isPast(dateStr: string | null): boolean {
   if (!dateStr) return false
-  const date = new Date(dateStr)
+  const date = parseLocalDate(dateStr)
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   return date.getTime() < today.getTime()
@@ -180,6 +188,17 @@ export const CATEGORY_COLORS: Record<Kategori, { bg: string; text: string; ring:
   urun: { bg: 'bg-sky-100', text: 'text-sky-700', ring: 'ring-sky-200' },
   etkinlik: { bg: 'bg-violet-100', text: 'text-violet-700', ring: 'ring-violet-200' },
   not: { bg: 'bg-ink-100', text: 'text-ink-600', ring: 'ring-ink-200' },
+}
+
+// Category colours for small marks (calendar dots, share bars), in this
+// order checked to stay apart for colour-blind eyes; 'not' is the neutral
+// one. Marks always come with a label, so colour is never the only cue.
+export const CATEGORY_MARK_COLORS: Record<Kategori, string> = {
+  mekan: 'bg-teal-600',
+  tarif: 'bg-amber-600',
+  urun: 'bg-sky-600',
+  etkinlik: 'bg-violet-600',
+  not: 'bg-ink-400',
 }
 
 export const PRIORITY_LABELS: Record<Oncelik, string> = {

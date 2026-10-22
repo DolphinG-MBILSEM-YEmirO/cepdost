@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon, type IconName } from './Icon'
 import { type Kayit, goruntulemeBasligi } from '../db'
-import { planiGuncelle } from '../lib/planPaylasimi'
 import {
   CATEGORY_LABELS,
   CATEGORY_COLORS,
@@ -17,10 +16,36 @@ import {
   formatDuration,
   isPast,
   formatDate,
+  parseLocalDate,
 } from '../lib/format'
 import { useBugun } from '../hooks/useBugun'
 import { tiklanabilir } from '../lib/a11y'
+import { useGeriAdimi } from '../lib/geriTusu'
+import { gunFarki, gunOzetleri, kacanPlanlar } from '../lib/takvimIzgarasi'
+import { useTopluIslem } from '../lib/topluIslem'
 import { PlanRozetleri } from './PlanRozetleri'
+import { AyTakvimi } from './AyTakvimi'
+import { ErtelemeSecici, GeriAlCubugu, KacanlarKarti } from './TakvimIslemleri'
+
+// The week strip or the month grid; the choice stays on the device.
+type TakvimGorunumu = 'hafta' | 'ay'
+const GORUNUM_ANAHTARI = 'cepdost_takvim_gorunumu'
+
+function gorunumOku(): TakvimGorunumu {
+  try {
+    return localStorage.getItem(GORUNUM_ANAHTARI) === 'ay' ? 'ay' : 'hafta'
+  } catch {
+    return 'hafta'
+  }
+}
+
+function gorunumYaz(gorunum: TakvimGorunumu) {
+  try {
+    localStorage.setItem(GORUNUM_ANAHTARI, gorunum)
+  } catch {
+    // Private mode: the choice lasts until the app closes.
+  }
+}
 
 interface BugunViewProps {
   kayitlar: Kayit[]
@@ -32,8 +57,11 @@ interface BugunViewProps {
 
 export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onToggleStatus }: BugunViewProps) {
   const [selectedDate, setSelectedDate] = useState(() => new Date())
-  const [rescheduling, setRescheduling] = useState<string | null>(null)
+  const [gorunum, setGorunum] = useState<TakvimGorunumu>(gorunumOku)
+  const [gunuErtele, setGunuErtele] = useState(false)
   const bugun = useBugun()
+  const islem = useTopluIslem()
+  const seciliTarih = toDateString(selectedDate)
 
   // When the day rolls over while the app stays open, a view that was on
   // "today" follows along instead of staying on yesterday.
@@ -54,9 +82,17 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
   const unscheduled = useMemo(() => sortByPriority(pending.filter((k) => !k.saat && !k.tumGun)), [pending])
   const doneSorted = useMemo(() => sortByTime(done), [done])
 
-  const isTodayView = isToday(toDateString(selectedDate))
-  const isTomorrowView = isTomorrow(toDateString(selectedDate))
-  const isPastView = isPast(toDateString(selectedDate))
+  const isTodayView = isToday(seciliTarih)
+  const isTomorrowView = isTomorrow(seciliTarih)
+  const isPastView = isPast(seciliTarih)
+
+  // Missed plans wait on today's page until they're moved or done.
+  const kacanlar = useMemo(() => (isTodayView ? kacanPlanlar(kayitlar, bugun) : []), [kayitlar, bugun, isTodayView])
+  const ozetler = useMemo(() => gunOzetleri(kayitlar), [kayitlar])
+
+  // Moving a whole day closes with the day it was opened for.
+  useEffect(() => setGunuErtele(false), [seciliTarih])
+  useGeriAdimi(() => setGunuErtele(false), gunuErtele)
 
   const dayLabel = useMemo(() => {
     if (isTodayView) return 'Bugün'
@@ -64,27 +100,27 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
     return selectedDate.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })
   }, [selectedDate, isTodayView, isTomorrowView])
 
+  // Yesterday to five days ahead; a day outside that (picked with the
+  // arrows or in the month view) gets a week around it instead.
   const weekDays = useMemo(() => {
-    const today = new Date()
-    const days: Date[] = []
-    for (let i = -1; i <= 5; i++) days.push(addDays(today, i))
-    return days
-    // `bugun` is the trigger: the strip is rebuilt when the date changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bugun])
+    const fark = gunFarki(bugun, seciliTarih)
+    const ilk = fark >= -1 && fark <= 5 ? addDays(parseLocalDate(bugun), -1) : addDays(parseLocalDate(seciliTarih), -3)
+    return Array.from({ length: 7 }, (_, i) => addDays(ilk, i))
+  }, [bugun, seciliTarih])
 
   const totalDuration = pending.reduce((sum, k) => sum + (k.sure ?? 0), 0)
   const highPriority = pending.filter((k) => k.oncelik === 'yuksek').length
   const progressPct = allDayRecords.length > 0 ? Math.round((done.length / allDayRecords.length) * 100) : 0
 
-  async function handleReschedule(id: string, newDate: Date) {
-    setRescheduling(id)
-    try {
-      const kayit = kayitlar.find((k) => k.id === id)
-      if (kayit) await planiGuncelle(kayit, { tarih: toDateString(newDate) })
-    } finally {
-      setRescheduling(null)
-    }
+  function gorunumDegistir() {
+    const yeni = gorunum === 'ay' ? 'hafta' : 'ay'
+    setGorunum(yeni)
+    gorunumYaz(yeni)
+  }
+
+  async function gunuTasi(hedef: string) {
+    setGunuErtele(false)
+    await islem.uygula(pending, { tur: 'tasi', tarih: hedef })
   }
 
   return (
@@ -99,13 +135,26 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
               {highPriority > 0 ? ` · ${highPriority} yüksek` : ''}
             </p>
           </div>
-          <button
-            onClick={onAddClick}
-            aria-label="Yeni kayıt ekle"
-            className="w-11 h-11 rounded-full bg-gradient-orchid text-white flex items-center justify-center shadow-soft active:scale-90 transition-transform"
-          >
-            <Icon name="Plus" className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={gorunumDegistir}
+              aria-label="Ay görünümü"
+              aria-pressed={gorunum === 'ay'}
+              title={gorunum === 'ay' ? 'Haftaya dön' : 'Ayı göster'}
+              className={`w-11 h-11 rounded-full flex items-center justify-center active:scale-90 transition-all border ${
+                gorunum === 'ay' ? 'bg-orchid-100 border-orchid-200 text-orchid-600' : 'bg-mist-50 border-ink-100 text-ink-400'
+              }`}
+            >
+              <Icon name="CalendarRange" className="w-5 h-5" />
+            </button>
+            <button
+              onClick={onAddClick}
+              aria-label="Yeni kayıt ekle"
+              className="w-11 h-11 rounded-full bg-gradient-orchid text-white flex items-center justify-center shadow-soft active:scale-90 transition-transform"
+            >
+              <Icon name="Plus" className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {allDayRecords.length > 0 && (
@@ -119,6 +168,7 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
           </div>
         )}
 
+        {gorunum === 'hafta' && (
         <div className="flex items-center gap-1 mb-2">
           <button
             onClick={() => setSelectedDate((d) => addDays(d, -1))}
@@ -132,11 +182,14 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
             {weekDays.map((d) => {
               const active = isSameDay(toDateString(d), selectedDate)
               const today = isToday(toDateString(d))
-              const count = kayitlar.filter((k) => isSameDay(k.tarih, d) && k.durum === 'bekliyor').length
+              const count = ozetler.get(toDateString(d))?.bekleyen.length ?? 0
               return (
                 <button
                   key={toDateString(d)}
                   onClick={() => setSelectedDate(d)}
+                  aria-label={`${d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' })}${count > 0 ? `, ${count} plan` : ''}`}
+                  aria-pressed={active}
+                  aria-current={today ? 'date' : undefined}
                   className={`flex flex-col items-center gap-0.5 py-2 px-2.5 rounded-2xl transition-all active:scale-95 min-w-[52px]
                     ${active ? 'bg-gradient-orchid text-white shadow-soft' : 'bg-mist-50 text-ink-400 border border-ink-100'}`}
                 >
@@ -158,19 +211,49 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
             <Icon name="ChevronRight" className="w-4 h-4 text-ink-400" />
           </button>
         </div>
+        )}
 
-        {!isTodayView && (
-          <button
-            onClick={() => setSelectedDate(new Date())}
-            className="text-sm text-orchid-600 font-medium flex items-center gap-1 active:scale-95 transition-transform"
-          >
-            <Icon name="Calendar" className="w-4 h-4" />
-            Bugüne dön
-          </button>
+        {(!isTodayView || pending.length > 1) && (
+          <div className="flex items-center gap-3 min-h-[1.75rem]">
+            {!isTodayView && (
+              <button
+                onClick={() => setSelectedDate(new Date())}
+                className="text-sm text-orchid-600 font-medium flex items-center gap-1 active:scale-95 transition-transform"
+              >
+                <Icon name="Calendar" className="w-4 h-4" />
+                Bugüne dön
+              </button>
+            )}
+            {pending.length > 1 && (
+              <button
+                onClick={() => setGunuErtele(!gunuErtele)}
+                aria-expanded={gunuErtele}
+                className="ml-auto text-sm text-ink-400 font-medium flex items-center gap-1 active:scale-95 transition-transform"
+              >
+                <Icon name="CalendarClock" className="w-4 h-4" />
+                {gunuErtele ? 'Vazgeç' : isPastView ? 'Hepsini taşı' : 'Günü ertele'}
+              </button>
+            )}
+          </div>
+        )}
+
+        {gunuErtele && (
+          <div className="mt-2 rounded-2xl bg-mist-50 border border-ink-100 p-3">
+            <p className="text-xs text-ink-400 mb-2">Bu günün {pending.length} bekleyen planı nereye taşınsın?</p>
+            <ErtelemeSecici tarih={seciliTarih} onSec={(hedef) => void gunuTasi(hedef)} mesgul={islem.mesgul} etiket="Bu günün planları" />
+          </div>
         )}
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 pb-24">
+        {gorunum === 'ay' && (
+          <AyTakvimi kayitlar={kayitlar} secili={seciliTarih} bugun={bugun} onSec={(t) => setSelectedDate(parseLocalDate(t))} />
+        )}
+        {!loading && kacanlar.length > 0 && (
+          <div className="mt-2 mb-6">
+            <KacanlarKarti kayitlar={kacanlar} onRecordClick={onRecordClick} onUygula={(k, i) => void islem.uygula(k, i)} mesgul={islem.mesgul} />
+          </div>
+        )}
         {loading ? (
           <div className="space-y-3 mt-2">
             {[...Array(4)].map((_, i) => (
@@ -203,8 +286,8 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
                       kayit={kayit}
                       onClick={() => onRecordClick(kayit)}
                       onToggle={() => onToggleStatus(kayit.id)}
-                      onReschedule={(d) => handleReschedule(kayit.id, d)}
-                      rescheduling={rescheduling === kayit.id}
+                      onReschedule={(tarih) => void islem.uygula([kayit], { tur: 'tasi', tarih })}
+                      rescheduling={islem.mesgul}
                     />
                   ))}
                 </div>
@@ -220,8 +303,8 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
                       kayit={kayit}
                       onClick={() => onRecordClick(kayit)}
                       onToggle={() => onToggleStatus(kayit.id)}
-                      onReschedule={(d) => handleReschedule(kayit.id, d)}
-                      rescheduling={rescheduling === kayit.id}
+                      onReschedule={(tarih) => void islem.uygula([kayit], { tur: 'tasi', tarih })}
+                      rescheduling={islem.mesgul}
                     />
                   ))}
                 </div>
@@ -240,6 +323,8 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
           </div>
         )}
       </div>
+
+      <GeriAlCubugu sonIslem={islem.sonIslem} onGeriAl={() => void islem.geriAl()} onKapat={islem.kapat} />
     </div>
   )
 }
@@ -257,29 +342,7 @@ function Section({ title, icon, count, children, muted }: { title: string; icon:
   )
 }
 
-function RescheduleBar({ onReschedule, busy }: { onReschedule: (d: Date) => void; busy: boolean }) {
-  const tomorrow = addDays(new Date(), 1)
-  const weekend = addDays(new Date(), 3)
-  const nextWeek = addDays(new Date(), 7)
-  return (
-    <div className="flex gap-1.5 mt-2 animate-fade-in">
-      <button onClick={() => onReschedule(tomorrow)} disabled={busy} className="chip bg-mist-50 text-ink-500 border border-ink-100 active:scale-95 disabled:opacity-50">
-        <Icon name="Calendar" className="w-3.5 h-3.5" />
-        Yarın
-      </button>
-      <button onClick={() => onReschedule(weekend)} disabled={busy} className="chip bg-mist-50 text-ink-500 border border-ink-100 active:scale-95 disabled:opacity-50">
-        <Icon name="Calendar" className="w-3.5 h-3.5" />
-        3 gün sonra
-      </button>
-      <button onClick={() => onReschedule(nextWeek)} disabled={busy} className="chip bg-mist-50 text-ink-500 border border-ink-100 active:scale-95 disabled:opacity-50">
-        <Icon name="Calendar" className="w-3.5 h-3.5" />
-        Haftaya
-      </button>
-    </div>
-  )
-}
-
-function TimelineItem({ kayit, onClick, onToggle, onReschedule, rescheduling }: { kayit: Kayit; onClick: () => void; onToggle: () => void; onReschedule: (d: Date) => void; rescheduling: boolean }) {
+function TimelineItem({ kayit, onClick, onToggle, onReschedule, rescheduling }: { kayit: Kayit; onClick: () => void; onToggle: () => void; onReschedule: (tarih: string) => void; rescheduling: boolean }) {
   const colors = CATEGORY_COLORS[kayit.kategori ?? 'not']
   const timeLabel = formatPlanTime(kayit.saat, kayit.tumGun)
   const durLabel = formatDuration(kayit.sure)
@@ -335,13 +398,17 @@ function TimelineItem({ kayit, onClick, onToggle, onReschedule, rescheduling }: 
           <Icon name="Calendar" className="w-3.5 h-3.5" />
           {showReschedule ? 'Vazgeç' : 'Ertele'}
         </button>
-        {showReschedule && <RescheduleBar onReschedule={onReschedule} busy={rescheduling} />}
+        {showReschedule && kayit.tarih && (
+          <div className="mt-2">
+            <ErtelemeSecici tarih={kayit.tarih} onSec={onReschedule} mesgul={rescheduling} etiket={baslik} />
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
-function UnscheduledItem({ kayit, onClick, onToggle, onReschedule, rescheduling }: { kayit: Kayit; onClick: () => void; onToggle: () => void; onReschedule: (d: Date) => void; rescheduling: boolean }) {
+function UnscheduledItem({ kayit, onClick, onToggle, onReschedule, rescheduling }: { kayit: Kayit; onClick: () => void; onToggle: () => void; onReschedule: (tarih: string) => void; rescheduling: boolean }) {
   const colors = CATEGORY_COLORS[kayit.kategori ?? 'not']
   const [showReschedule, setShowReschedule] = useState(false)
   const baslik = goruntulemeBasligi(kayit)
@@ -380,7 +447,11 @@ function UnscheduledItem({ kayit, onClick, onToggle, onReschedule, rescheduling 
         <Icon name="Calendar" className="w-3.5 h-3.5" />
         {showReschedule ? 'Vazgeç' : 'Ertele'}
       </button>
-      {showReschedule && <RescheduleBar onReschedule={onReschedule} busy={rescheduling} />}
+      {showReschedule && kayit.tarih && (
+        <div className="mt-2">
+          <ErtelemeSecici tarih={kayit.tarih} onSec={onReschedule} mesgul={rescheduling} etiket={baslik} />
+        </div>
+      )}
     </div>
   )
 }

@@ -37,6 +37,14 @@ another address signs in once with their username and password.
   the one who set it up, and a shared "who brings what" list: anyone in the
   group adds what's needed and says they'll bring it
   (`src/components/GrupPlanDetayi.tsx`, `src/sosyal/getirListesi.ts`).
+- **Calendar**: a week strip or a month grid (a dot per plan in its
+  category's colour, red on missed days; the choice is remembered). Missed
+  plans wait on today's page to be brought to today or tomorrow or marked
+  done, one by one or all at once; a whole day's plans move together; and
+  every move can be taken back for a few seconds
+  (`src/components/AyTakvimi.tsx`, `src/components/TakvimIslemleri.tsx`,
+  `src/lib/takvimIzgarasi.ts`, `src/lib/topluIslem.ts`). A plan's day is
+  read as a local date, so it lands on the right day in every time zone.
 - **Calendar import**: `.ics` import and auto-refresh (`src/takvim.ts`,
   `api/takvim.ts`).
 - **Social layer**: accounts, friends, groups, group plans with RSVPs, direct

@@ -2,8 +2,11 @@ import { useMemo } from 'react'
 import { Icon, type IconName } from './Icon'
 import { KayitCard } from './KayitCard'
 import { type Kayit } from '../db'
-import { isToday, isTomorrow, isPast, isUpcoming, sortByTime, sortByPriority, addDays } from '../lib/format'
+import { isToday, isTomorrow, isPast, isUpcoming, parseLocalDate, sortByTime, sortByPriority, addDays } from '../lib/format'
 import { useBugun } from '../hooks/useBugun'
+import { gunEkle } from '../lib/takvimIzgarasi'
+import { useTopluIslem } from '../lib/topluIslem'
+import { GeriAlCubugu } from './TakvimIslemleri'
 
 interface RemindersViewProps {
   kayitlar: Kayit[]
@@ -16,6 +19,7 @@ interface RemindersViewProps {
 export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, onRecordClick }: RemindersViewProps) {
   // Regroup when the date changes, not only when records do.
   const bugun = useBugun()
+  const islem = useTopluIslem()
   const groups = useMemo(() => {
     const pending = kayitlar.filter((k) => k.durum === 'bekliyor')
 
@@ -37,7 +41,7 @@ export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, 
         today.push(k)
       } else if (isTomorrow(k.tarih)) {
         tomorrow.push(k)
-      } else if (isUpcoming(k.tarih) && new Date(k.tarih) <= weekEnd) {
+      } else if (isUpcoming(k.tarih) && parseLocalDate(k.tarih) <= weekEnd) {
         thisWeek.push(k)
       } else {
         later.push(k)
@@ -102,7 +106,48 @@ export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, 
         ) : (
           <>
             {groups.overdue.length > 0 && (
-              <Section title="Kaçtı" icon="AlertCircle" count={groups.overdue.length} accent="rose" kayitlar={groups.overdue} onToggleStatus={onToggleStatus} onDelete={onDelete} onRecordClick={onRecordClick} />
+              <Section
+                title="Kaçtı"
+                icon="AlertCircle"
+                count={groups.overdue.length}
+                accent="rose"
+                kayitlar={groups.overdue}
+                onToggleStatus={onToggleStatus}
+                onDelete={onDelete}
+                onRecordClick={onRecordClick}
+                eylemler={
+                  groups.overdue.length > 1 && (
+                    <div className="flex flex-wrap items-center gap-1.5 mb-3 px-1">
+                      <span className="text-xs text-ink-400 mr-1">Hepsini:</span>
+                      <button
+                        onClick={() => void islem.uygula(groups.overdue, { tur: 'tasi', tarih: bugun })}
+                        disabled={islem.mesgul}
+                        aria-label="Hepsini bugüne al"
+                        className="chip text-xs bg-mist-50 text-ink-500 border border-ink-100 active:scale-95 disabled:opacity-50"
+                      >
+                        Bugüne al
+                      </button>
+                      <button
+                        onClick={() => void islem.uygula(groups.overdue, { tur: 'tasi', tarih: gunEkle(bugun, 1) })}
+                        disabled={islem.mesgul}
+                        aria-label="Hepsini yarına ertele"
+                        className="chip text-xs bg-mist-50 text-ink-500 border border-ink-100 active:scale-95 disabled:opacity-50"
+                      >
+                        Yarına ertele
+                      </button>
+                      <button
+                        onClick={() => void islem.uygula(groups.overdue, { tur: 'yapildi' })}
+                        disabled={islem.mesgul}
+                        aria-label="Hepsini yapıldı say"
+                        className="chip text-xs bg-mist-50 text-ink-500 border border-ink-100 active:scale-95 disabled:opacity-50"
+                      >
+                        <Icon name="CheckCheck" className="w-3.5 h-3.5" />
+                        Yapıldı say
+                      </button>
+                    </div>
+                  )
+                }
+              />
             )}
             {groups.today.length > 0 && (
               <Section title="Bugün" icon="CalendarDays" count={groups.today.length} accent="orchid" kayitlar={groups.today} onToggleStatus={onToggleStatus} onDelete={onDelete} onRecordClick={onRecordClick} />
@@ -122,6 +167,8 @@ export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, 
           </>
         )}
       </div>
+
+      <GeriAlCubugu sonIslem={islem.sonIslem} onGeriAl={() => void islem.geriAl()} onKapat={islem.kapat} />
     </div>
   )
 }
@@ -136,6 +183,7 @@ function Section({
   onRecordClick,
   accent,
   muted,
+  eylemler,
 }: {
   title: string
   icon: IconName
@@ -146,6 +194,8 @@ function Section({
   onRecordClick: (kayit: Kayit) => void
   accent?: 'rose' | 'orchid'
   muted?: boolean
+  // Buttons that act on the whole section, under its title.
+  eylemler?: React.ReactNode
 }) {
   const color = accent === 'rose' ? 'text-rose-500' : accent === 'orchid' ? 'text-orchid-500' : muted ? 'text-ink-300' : 'text-ink-400'
   const textColor = accent === 'rose' ? 'text-rose-600' : accent === 'orchid' ? 'text-orchid-600' : muted ? 'text-ink-300' : 'text-ink-500'
@@ -157,6 +207,7 @@ function Section({
         <h2 className={`text-sm font-semibold ${textColor}`}>{title}</h2>
         <span className={`text-xs ${color}`}>{count}</span>
       </div>
+      {eylemler}
       <div className="space-y-3">
         {kayitlar.map((kayit) => (
           <KayitCard

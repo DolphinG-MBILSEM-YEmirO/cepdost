@@ -223,6 +223,12 @@ export async function linkPlaniniYanitla(
 // follows (in the background; the change here never waits on the network).
 export async function planiGuncelle(kayit: Kayit, degisiklik: Partial<Kayit>): Promise<void> {
   await kayitGuncelle(kayit.id, degisiklik)
+  paylasimlariGuncelle(kayit, degisiklik)
+}
+
+// The link and the Davet invite of a plan changed here take the change too.
+// For writers that change several plans in one transaction first.
+export function paylasimlariGuncelle(kayit: Kayit, degisiklik: Partial<Kayit>): void {
   if (kayit.planLinki) void linkPlaniniGuncelle({ ...kayit, ...degisiklik }).catch(() => {})
   if (kayit.davetLinki) void davetiGuncelle({ ...kayit, ...degisiklik }).catch(() => {})
 }

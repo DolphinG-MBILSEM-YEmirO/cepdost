@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
 import { type Kayit, type Kategori, type Oncelik, kayitGuncelle, kayitDurumDegistir, goruntulemeBasligi } from '../db'
-import { CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_ICON_NAME, PRIORITY_LABELS, PRIORITY_COLORS, CATEGORIES, PRIORITIES, formatDate, formatPlanTime, formatDuration, formatRelativeTime, isPast, mapUrl, toDateString, addDays } from '../lib/format'
+import { CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_ICON_NAME, PRIORITY_LABELS, PRIORITY_COLORS, CATEGORIES, PRIORITIES, formatDate, formatPlanTime, formatDuration, formatRelativeTime, isPast, mapUrl } from '../lib/format'
 import { ConfirmDialog } from './ConfirmDialog'
 import { AniEkleModal } from './AniArsivi'
 import { PaylasimHedefiSheet } from './PlanPaylas'
@@ -12,6 +12,7 @@ import { LinkYanitlari } from './PlanLinkiPaylas'
 import { useGeriIleKapat } from '../lib/geriTusu'
 import { GeriSayimRozeti, HatirlatmaKarti, KatilimcilarKarti, NotlarKarti, YapilacaklarKarti } from './PlanAyrintilari'
 import { GetirListesiKarti } from './GetirListesi'
+import { ErtelemeSecici } from './TakvimIslemleri'
 
 interface RecordDetailProps {
   kayit: Kayit
@@ -356,20 +357,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
         {!editing && kayit.tarih && (
           <div className="mb-4">
             <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2 px-1">Hızlı ertele</p>
-            <div className="flex gap-2">
-              <button onClick={() => handleReschedule(toDateString(addDays(new Date(), 1)))} className="chip bg-mist-50 text-ink-500 border border-ink-100 active:scale-95">
-                <Icon name="Calendar" className="w-4 h-4" />
-                Yarın
-              </button>
-              <button onClick={() => handleReschedule(toDateString(addDays(new Date(), 3)))} className="chip bg-mist-50 text-ink-500 border border-ink-100 active:scale-95">
-                <Icon name="Calendar" className="w-4 h-4" />
-                3 gün
-              </button>
-              <button onClick={() => handleReschedule(toDateString(addDays(new Date(), 7)))} className="chip bg-mist-50 text-ink-500 border border-ink-100 active:scale-95">
-                <Icon name="Calendar" className="w-4 h-4" />
-                Haftaya
-              </button>
-            </div>
+            <ErtelemeSecici tarih={kayit.tarih} onSec={(t) => void handleReschedule(t)} etiket={goruntulemeBasligi(kayit)} />
           </div>
         )}
 
