@@ -10,22 +10,25 @@ import { arkadaslariGetir, profilGuncelle, profilimiGetir, type Profil } from '.
 import { gruplarimiGetir } from '../sosyal/gruplar'
 import { renkAl } from '../lib/kisisellestirme'
 import { UYGULAMA_ADI } from '../../shared/marka'
+import type { Kayit } from '../db'
+import { PlanOzetiKarti } from './PlanIstatistikleri'
 
-// The person themselves: photo, name, username, bio, and who sees their
-// availability and profile. Friends, codes and requests live in the
-// Sohbet tab; the counts here link there.
+// The person themselves: photo, name, username, bio, a summary of their
+// plans, and who sees their availability and profile. Friends, codes and
+// requests live in the Sohbet tab; the counts here link there.
 interface Props {
+  kayitlar: Kayit[]
   onArkadaslar: () => void
 }
 
 // The sign-in gate in App guarantees an account here.
-export function HesabimView({ onArkadaslar }: Props) {
+export function HesabimView({ kayitlar, onArkadaslar }: Props) {
   const { kullanici } = useAuth()
   if (!kullanici) return null
-  return <HesabimIcerik onArkadaslar={onArkadaslar} />
+  return <HesabimIcerik kayitlar={kayitlar} onArkadaslar={onArkadaslar} />
 }
 
-function HesabimIcerik({ onArkadaslar }: Props) {
+function HesabimIcerik({ kayitlar, onArkadaslar }: Props) {
   const [profil, setProfil] = useState<Profil | null>(null)
   const [arkadasSayisi, setArkadasSayisi] = useState(0)
   const [grupSayisi, setGrupSayisi] = useState(0)
@@ -65,15 +68,19 @@ function HesabimIcerik({ onArkadaslar }: Props) {
             <div className="skeleton h-40 rounded-3xl" />
           </div>
         ) : (
-          // Desktop: the profile card on the left, its settings on the right.
+          // Desktop: the profile card and plan summary on the left, the
+          // settings on the right.
           <div className="space-y-6 lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-6 lg:space-y-0 lg:items-start">
-            <ProfilKarti
-              profil={profil}
-              arkadasSayisi={arkadasSayisi}
-              grupSayisi={grupSayisi}
-              onDegisti={tazele}
-              onArkadaslar={onArkadaslar}
-            />
+            <div className="space-y-6">
+              <ProfilKarti
+                profil={profil}
+                arkadasSayisi={arkadasSayisi}
+                grupSayisi={grupSayisi}
+                onDegisti={tazele}
+                onArkadaslar={onArkadaslar}
+              />
+              <PlanOzetiKarti kayitlar={kayitlar} />
+            </div>
             <GizlilikKarti profil={profil} onDegisti={tazele} />
           </div>
         )}

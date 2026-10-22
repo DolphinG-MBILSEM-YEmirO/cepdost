@@ -58,7 +58,7 @@ export function ProfilView({
       </div>
 
       <div className="flex-1 min-h-0">
-        {sekme === 'hesap' && <HesabimView onArkadaslar={onArkadaslar} />}
+        {sekme === 'hesap' && <HesabimView kayitlar={kayitlar} onArkadaslar={onArkadaslar} />}
         {sekme === 'arsiv' && (
           <ArchiveView
             kayitlar={kayitlar}

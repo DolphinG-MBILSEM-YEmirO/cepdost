@@ -45,6 +45,12 @@ another address signs in once with their username and password.
   (`src/components/AyTakvimi.tsx`, `src/components/TakvimIslemleri.tsx`,
   `src/lib/takvimIzgarasi.ts`, `src/lib/topluIslem.ts`). A plan's day is
   read as a local date, so it lands on the right day in every time zone.
+- **Profile numbers**: my profile sums up my plans (this month against
+  the last, weeks in a row with a plan, the split by category, who and
+  where most), and a friend's profile shows what we've done together: how
+  many plans, when we last met, the next one, our usual place
+  (`src/components/PlanIstatistikleri.tsx`, `src/lib/planIstatistikleri.ts`,
+  `src/sosyal/ortakGecmis.ts`). Worked out on the device; only I see them.
 - **Calendar import**: `.ics` import and auto-refresh (`src/takvim.ts`,
   `api/takvim.ts`).
 - **Social layer**: accounts, friends, groups, group plans with RSVPs, direct

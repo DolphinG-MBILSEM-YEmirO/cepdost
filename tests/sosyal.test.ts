@@ -66,6 +66,7 @@ import { CepDostDB, db, kayitOlustur, type Kayit } from '../src/db'
 import { planlariEsitle } from '../src/sosyal/planEsitleme'
 import { planKatilimi, yanitsizlar } from '../src/sosyal/planKatilimi'
 import { getirEkle, getirListesi, getirSil, getiriUstlen } from '../src/sosyal/getirListesi'
+import { arkadasPlandaMi } from '../src/sosyal/ortakGecmis'
 import { TUR } from '../src/sosyal/cekirdek'
 import { linkKanali } from '../src/sosyal/nostr/kanal'
 import { aesAnahtari, base64UrldenBayt, hexe, hmac, jsonCoz, jsonSifrele } from '../src/sosyal/nostr/kodlama'
@@ -459,6 +460,37 @@ test("a group plan's bring list: anyone in the group adds, several can bring one
   assert.deepEqual(await olarak(ali, () => getirListesi(digerPlan)), [])
   await assert.rejects(olarak(ali, () => getirEkle(planId, '   ')), /yaz/)
   await assert.rejects(olarak(ali, () => getirListesi('olmayan-plan')), /bulunamadı/)
+})
+
+test("a friend's profile counts the plans we're both on", async () => {
+  const grupId = (await olarak(ali, () => gruplarimiGetir())).find((g) => g.ad === 'Bowling ekibi')!.id
+  // Ayşe is coming to one group plan and not to the other.
+  const geliyor = await olarak(ali, () => grupPlaniOlustur({ grupId, baslik: 'Sinema', tarih: '2099-07-01' }))
+  const gelmiyor = await olarak(ali, () => grupPlaniOlustur({ grupId, baslik: 'Koşu', tarih: '2099-07-02' }))
+  await esitle(ayse)
+  await olarak(ayse, () => planaYanitVer(geliyor, 'geliyorum'))
+  await olarak(ayse, () => planaYanitVer(gelmiyor, 'gelmiyorum'))
+  // Two invites from Ali: she takes one and turns down the other.
+  const evet = await olarak(ali, () => davetGonder({ alanId: ayse.motor.benimId, baslik: 'Kahve', tarih: '2099-07-03' }))
+  const hayir = await olarak(ali, () => davetGonder({ alanId: ayse.motor.benimId, baslik: 'Müze', tarih: '2099-07-04' }))
+  await esitle(ayse)
+  await olarak(ayse, () => davetYanitla(evet, true))
+  await olarak(ayse, () => davetYanitla(hayir, false))
+  await esitle(ali)
+
+  const alininPlanlari = [
+    plan('Sinema', { tarih: '2099-07-01', grupPlanId: geliyor, grupId }),
+    plan('Koşu', { tarih: '2099-07-02', grupPlanId: gelmiyor, grupId }),
+    plan('Kahve', { tarih: '2099-07-03', arkadasId: ayse.motor.benimId, gidenDavetler: [evet] }),
+    plan('Müze', { tarih: '2099-07-04', arkadasId: ayse.motor.benimId, gidenDavetler: [hayir] }),
+    // From before invites were kept on the plan.
+    plan('Eski kahve', { tarih: '2099-06-20', arkadasId: ayse.motor.benimId }),
+    plan('Yalnız', { tarih: '2099-07-05' }),
+  ]
+  const birlikte = await olarak(ali, () => arkadasPlandaMi(ayse.motor.benimId, alininPlanlari))
+  assert.deepEqual(alininPlanlari.filter(birlikte).map((k) => k.baslik), ['Sinema', 'Kahve', 'Eski kahve'])
+  const canla = await olarak(ali, () => arkadasPlandaMi(can.motor.benimId, alininPlanlari))
+  assert.deepEqual(alininPlanlari.filter(canla).map((k) => k.baslik), [])
 })
 
 test('unfriending ends the friendship and rotates the broadcast key', async () => {

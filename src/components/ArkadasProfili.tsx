@@ -6,6 +6,7 @@ import { AniArsivi } from './AniArsivi'
 import { ArkadasMusaitlik } from './ArkadasMusaitlik'
 import { PlanPaylasSheet } from './PlanPaylas'
 import { ArkadaslaSihirbaz } from './OrtakPlanSihirbazi'
+import { OrtakGecmisSatiri } from './PlanIstatistikleri'
 import { db, goruntulemeBasligi } from '../db'
 import { formatDate, formatPlanTime, localDateString } from '../lib/format'
 import { renkAl } from '../lib/kisisellestirme'
@@ -15,8 +16,9 @@ import { arkadasliktanCik, davetleriGetir, type Profil } from '../sosyal/api'
 import { ortakGruplar, type Grup } from '../sosyal/gruplar'
 
 // A friend's profile: who they are, the two things people usually want
-// (write to them, make a plan), and three tabs: what we share (upcoming
-// plans and groups), their availability, and our memories.
+// (write to them, make a plan), what we've done together, and three tabs:
+// what we share (upcoming plans and groups), their availability, and our
+// memories.
 interface Props {
   arkadas: Profil
   benimId: string
@@ -84,6 +86,7 @@ export function ArkadasProfili({ arkadas, benimId, onClose, onMesaj, onGrupAc, a
               Plan yap
             </button>
           </div>
+          <OrtakGecmisSatiri arkadasId={arkadas.id} />
         </div>
 
         <div className="sticky top-0 z-10 bg-mist-100 flex gap-1.5 px-5 py-3" role="tablist">
