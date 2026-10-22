@@ -23,9 +23,11 @@ import { kayittanIcsIndir } from '../takvim'
 import { bildirimIzniVar } from '../bildirim/planHatirlaticilari'
 import { motorVarMi, useSosyalSurum } from '../sosyal/cekirdek'
 import {
+  durtulecekPlan,
   planKatilimi,
   yanitsizlar,
   yanitsizlariDurt,
+  type DurtulecekPlan,
   type KatilimDurumu,
   type PlanKatilimi,
 } from '../sosyal/planKatilimi'
@@ -43,7 +45,7 @@ function useSimdi(aralikMs: number): Date {
   return simdi
 }
 
-function KartBasligi({ ikon, baslik, sag }: { ikon: IconName; baslik: string; sag?: React.ReactNode }) {
+export function KartBasligi({ ikon, baslik, sag }: { ikon: IconName; baslik: string; sag?: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-3 mb-3">
       <div className="flex items-center gap-2 min-w-0">
@@ -64,7 +66,7 @@ const ROZET_RENKLERI: Record<GeriSayimDurumu, string> = {
   gecti: 'bg-mist-100 text-ink-400',
 }
 
-export function GeriSayimRozeti({ kayit }: { kayit: Kayit }) {
+export function GeriSayimRozeti({ kayit }: { kayit: Pick<Kayit, 'tarih' | 'saat' | 'sure' | 'tumGun'> }) {
   const simdi = useSimdi(30_000)
   const sayim = geriSayim(kayit, simdi)
   if (!sayim) return null
@@ -397,10 +399,6 @@ function ozet(katilim: PlanKatilimi): string {
 export function KatilimcilarKarti({ kayit, onSohbeteGit }: { kayit: Kayit; onSohbeteGit?: (git: string) => void }) {
   const surum = useSosyalSurum()
   const [katilim, setKatilim] = useState<PlanKatilimi | null>(null)
-  const [durtme, setDurtme] = useState<'gonderiliyor' | 'gonderildi' | 'ulasmadi' | null>(null)
-  const [hata, setHata] = useState<string | null>(null)
-  const durtmeAnahtari = kayit.grupPlanId ?? kayit.id
-  const [yakinDaDurttum] = useState(() => Date.now() - (sonDurtmeler()[durtmeAnahtari] ?? 0) < DURTME_ARALIGI_MS)
 
   // Re-read when the plan's links or the social data change, not on every
   // write to the plan (a ticked checklist item).
@@ -419,17 +417,43 @@ export function KatilimcilarKarti({ kayit, onSohbeteGit }: { kayit: Kayit; onSoh
   }, [id, grupPlanId, davetId, tarih, baslik, davetler, surum])
 
   if (!katilim) return null
+  return (
+    <KatilimListesi
+      katilim={katilim}
+      plan={durtulecekPlan(kayit)}
+      durtulebilir={kayit.durum === 'bekliyor'}
+      onSohbeteGit={onSohbeteGit}
+    />
+  )
+}
+
+// Who is coming, with a nudge for the plan's owner and a way to the chat.
+// Used on my plan's page and on a group plan's page.
+export function KatilimListesi({
+  katilim,
+  plan,
+  durtulebilir = true,
+  onSohbeteGit,
+}: {
+  katilim: PlanKatilimi
+  plan: DurtulecekPlan
+  // False once the plan is done or over.
+  durtulebilir?: boolean
+  onSohbeteGit?: (git: string) => void
+}) {
+  const [durtme, setDurtme] = useState<'gonderiliyor' | 'gonderildi' | 'ulasmadi' | null>(null)
+  const [hata, setHata] = useState<string | null>(null)
+  const [yakinDaDurttum] = useState(() => Date.now() - (sonDurtmeler()[plan.anahtar] ?? 0) < DURTME_ARALIGI_MS)
 
   const bekleyenler = yanitsizlar(katilim)
-  const durtebilir = katilim.sahibiyim && !katilim.iptal && bekleyenler.length > 0 && kayit.durum === 'bekliyor'
+  const durtebilir = durtulebilir && katilim.sahibiyim && !katilim.iptal && bekleyenler.length > 0
 
   async function durt() {
-    if (!katilim) return
     setDurtme('gonderiliyor')
     setHata(null)
     try {
-      const ulasan = await yanitsizlariDurt(kayit, katilim)
-      durtmeyiKaydet(durtmeAnahtari)
+      const ulasan = await yanitsizlariDurt(plan, katilim)
+      durtmeyiKaydet(plan.anahtar)
       setDurtme(ulasan > 0 ? 'gonderildi' : 'ulasmadi')
     } catch (err) {
       setDurtme(null)

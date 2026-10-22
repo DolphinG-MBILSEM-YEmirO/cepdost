@@ -75,6 +75,10 @@ export const TUR = {
   uye: 'uye',
   plan: 'plan',
   yanit: 'yanit',
+  // A group plan's "who brings what" list: an item, and someone saying
+  // they'll bring it (see getirListesi.ts).
+  getir: 'getir',
+  ustlen: 'ustlen',
   mesaj: 'mesaj',
   dizin: 'dizin',
   // A plan shared as a link, and the answers of the people who opened it.

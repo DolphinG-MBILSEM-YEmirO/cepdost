@@ -30,6 +30,7 @@ import { MesajKatmanlari, MesajSatiri, MesajYazmaAlani, SohbetUstSeridi } from '
 import { useMesajIslemleri } from './useMesajIslemleri'
 import { TemaSheet } from './SohbetTemaSecici'
 import { GrupPlanKartiSohbet } from './SohbetPlanKarti'
+import { GrupPlanDetayi } from './GrupPlanDetayi'
 import { PlanPaylasSheet } from './PlanPaylas'
 import { useSohbetTemasi } from '../sohbetTema'
 import { grupPlaniYanitla, planGectiMi } from '../lib/planPaylasimi'
@@ -228,6 +229,7 @@ function PlanlarSekmesi({
   const [yanitlar, setYanitlar] = useState<PlanYaniti[]>([])
   const [ekleAcik, setEkleAcik] = useState(false)
   const [sihirbazAcik, setSihirbazAcik] = useState(false)
+  const [acikPlan, setAcikPlan] = useState<GrupPlani | null>(null)
   const [hata, setHata] = useState<string | null>(null)
   const sosyalSurum = useSosyalSurum()
 
@@ -306,7 +308,9 @@ function PlanlarSekmesi({
                 benimId={benimId}
                 yanitlar={yanitlar.filter((y) => y.plan_id === p.id)}
                 adHaritasi={adHaritasi}
+                uyeSayisi={digerUyeler.length + 1}
                 onYanit={(d) => void yanitla(p, d)}
+                onAc={() => setAcikPlan(p)}
               />
             </div>
           ))
@@ -333,6 +337,8 @@ function PlanlarSekmesi({
           onOlusturuldu={tazele}
         />
       )}
+
+      {acikPlan && <GrupPlanDetayi plan={acikPlan} grup={grup} benimId={benimId} onClose={() => setAcikPlan(null)} />}
     </>
   )
 }
@@ -342,16 +348,22 @@ function PlanKarti({
   benimId,
   yanitlar,
   adHaritasi,
+  uyeSayisi,
   onYanit,
+  onAc,
 }: {
   plan: GrupPlani
   benimId: string
   yanitlar: PlanYaniti[]
   adHaritasi: Map<string, string>
+  uyeSayisi: number
   onYanit: (d: YanitDurumu) => void
+  onAc: () => void
 }) {
   const benimYanit = yanitlar.find((y) => y.kullanici_id === benimId)?.durum ?? null
   const gelenler = yanitlar.filter((y) => y.durum === 'geliyorum')
+  const belki = yanitlar.filter((y) => y.durum === 'belki').length
+  const yanitsiz = Math.max(0, uyeSayisi - yanitlar.length)
   const detay = [formatDate(plan.tarih), formatPlanTime(plan.saat, plan.tum_gun), plan.konum]
     .filter(Boolean)
     .join(' · ')
@@ -364,17 +376,28 @@ function PlanKarti({
 
   return (
     <div className="card p-4">
-      <p className="text-sm font-semibold text-ink-700">
-        {plan.emoji && <span aria-hidden="true">{plan.emoji} </span>}
-        {plan.baslik}
-      </p>
-      <p className="text-xs text-ink-500 mt-0.5">{detay}</p>
-      {plan.notlar && <p className="text-xs text-ink-400 mt-1">{plan.notlar}</p>}
+      {/* The plan's own page: everyone's answer and who brings what. */}
+      <button onClick={onAc} className="w-full flex items-start gap-2 text-left active:scale-[0.99] transition-transform">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-ink-700">
+            {plan.emoji && <span aria-hidden="true">{plan.emoji} </span>}
+            {plan.baslik}
+          </p>
+          <p className="text-xs text-ink-500 mt-0.5">{detay}</p>
+          {plan.notlar && <p className="text-xs text-ink-400 mt-1 line-clamp-2">{plan.notlar}</p>}
+        </div>
+        <span className="flex items-center gap-0.5 text-xs font-semibold text-orchid-600 shrink-0 mt-0.5">
+          Ayrıntılar
+          <Icon name="ChevronRight" className="w-4 h-4" />
+        </span>
+      </button>
 
       <p className="text-xs text-ink-400 mt-3 mb-2">
         {gelenler.length > 0
-          ? `${gelenler.map((y) => adHaritasi.get(y.kullanici_id) ?? '?').join(', ')} geliyor`
-          : 'Henüz kimse yanıtlamadı'}
+          ? `Gelenler: ${gelenler.map((y) => (y.kullanici_id === benimId ? 'Sen' : (adHaritasi.get(y.kullanici_id) ?? '?'))).join(', ')}`
+          : 'Henüz gelen yok'}
+        {belki > 0 && ` · ${belki} belki`}
+        {yanitsiz > 0 && !planGectiMi(plan.tarih) && ` · ${yanitsiz} yanıt bekleniyor`}
       </p>
 
       {planGectiMi(plan.tarih) ? (
@@ -576,6 +599,7 @@ function SohbetSekmesi({
   const [hata, setHata] = useState<string | null>(null)
   const [sihirbazAcik, setSihirbazAcik] = useState(false)
   const [paylasAcik, setPaylasAcik] = useState(false)
+  const [acikPlan, setAcikPlan] = useState<GrupPlani | null>(null)
   const [yukleniyor, setYukleniyor] = useState(true)
   const tema = useSohbetTemasi()
   const sonRef = useSonaKaydir([mesajlar.length])
@@ -664,6 +688,7 @@ function SohbetSekmesi({
                       benimId={benimId}
                       adHaritasi={adHaritasi}
                       onYanit={(d) => planaYanit(plan, d)}
+                      onAc={() => setAcikPlan(plan)}
                     />
                   )
                 }
@@ -693,6 +718,8 @@ function SohbetSekmesi({
           onOlusturuldu={tazele}
         />
       )}
+
+      {acikPlan && <GrupPlanDetayi plan={acikPlan} grup={grup} benimId={benimId} onClose={() => setAcikPlan(null)} />}
 
       {paylasAcik && (
         <PlanPaylasSheet

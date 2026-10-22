@@ -32,6 +32,11 @@ another address signs in once with their username and password.
   wake a closed web app for free) and shows as a notification while the app
   is open (`src/components/PlanAyrintilari.tsx`, `src/lib/planAyrintilari.ts`,
   `src/sosyal/planKatilimi.ts`, `src/bildirim/planHatirlaticilari.ts`).
+- **Group plans**: each has its own page (from the group's plans or the
+  plan card in its chat) with my answer, every member's answer, a nudge for
+  the one who set it up, and a shared "who brings what" list: anyone in the
+  group adds what's needed and says they'll bring it
+  (`src/components/GrupPlanDetayi.tsx`, `src/sosyal/getirListesi.ts`).
 - **Calendar import**: `.ics` import and auto-refresh (`src/takvim.ts`,
   `api/takvim.ts`).
 - **Social layer**: accounts, friends, groups, group plans with RSVPs, direct

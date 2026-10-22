@@ -65,6 +65,7 @@ import { bloklariCikar, musaitligiSenkronla } from '../src/sosyal/musaitlikSenkr
 import { CepDostDB, db, kayitOlustur, type Kayit } from '../src/db'
 import { planlariEsitle } from '../src/sosyal/planEsitleme'
 import { planKatilimi, yanitsizlar } from '../src/sosyal/planKatilimi'
+import { getirEkle, getirListesi, getirSil, getiriUstlen } from '../src/sosyal/getirListesi'
 import { TUR } from '../src/sosyal/cekirdek'
 import { linkKanali } from '../src/sosyal/nostr/kanal'
 import { aesAnahtari, base64UrldenBayt, hexe, hmac, jsonCoz, jsonSifrele } from '../src/sosyal/nostr/kodlama'
@@ -425,6 +426,39 @@ test("a plan's page shows who is coming, from the group's answers or the invites
   assert.deepEqual(gelen?.katilimcilar.map((k) => [k.ad, k.durum, k.sahip]), [['Ali', 'geliyor', true], ['Ayşe', 'geliyor', false]])
   assert.deepEqual([gelen?.sohbet, gelen?.sahibiyim], [`dm:${ali.motor.benimId}`, false])
   assert.equal((await olarak(ali, () => planKatilimi(kayit('Kahve', { gidenDavetler: [davetId] }))))?.katilimcilar[1]?.durum, 'geliyor')
+})
+
+test("a group plan's bring list: anyone in the group adds, several can bring one thing, only the adder removes", async () => {
+  const grupId = (await olarak(ali, () => gruplarimiGetir())).find((g) => g.ad === 'Bowling ekibi')!.id
+  const planId = await olarak(ali, () => grupPlaniOlustur({ grupId, baslik: 'Piknik', tarih: '2099-06-10' }))
+  const digerPlan = await olarak(ali, () => grupPlaniOlustur({ grupId, baslik: 'Başka', tarih: '2099-06-11' }))
+  const buz = await olarak(ali, () => getirEkle(planId, '  Buz  '))
+  await esitle(ayse)
+  const hoparlor = await olarak(ayse, () => getirEkle(planId, 'Hoparlör'))
+  await olarak(ayse, () => getiriUstlen(planId, buz, true))
+  await esitle(ali)
+  await olarak(ali, () => getiriUstlen(planId, buz, true))
+  await esitle(ayse)
+  const liste = (await olarak(ayse, () => getirListesi(planId))).map((m) => [m.metin, m.ekleyen, m.getirenler])
+  assert.deepEqual(liste, [
+    ['Buz', ali.motor.benimId, [ayse.motor.benimId, ali.motor.benimId]],
+    ['Hoparlör', ayse.motor.benimId, []],
+  ])
+
+  // Taking it back, and removing: Ayşe's "remove" can't touch Ali's item.
+  await olarak(ayse, () => getiriUstlen(planId, buz, false))
+  await olarak(ayse, () => getirSil(planId, buz))
+  await olarak(ayse, () => getirSil(planId, hoparlor))
+  await esitle(ali)
+  assert.deepEqual(
+    (await olarak(ali, () => getirListesi(planId))).map((m) => [m.metin, m.getirenler]),
+    [['Buz', [ali.motor.benimId]]],
+  )
+
+  // Each plan has its own list; an empty item is refused.
+  assert.deepEqual(await olarak(ali, () => getirListesi(digerPlan)), [])
+  await assert.rejects(olarak(ali, () => getirEkle(planId, '   ')), /yaz/)
+  await assert.rejects(olarak(ali, () => getirListesi('olmayan-plan')), /bulunamadı/)
 })
 
 test('unfriending ends the friendship and rotates the broadcast key', async () => {

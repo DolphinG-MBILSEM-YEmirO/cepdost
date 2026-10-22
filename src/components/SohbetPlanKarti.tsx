@@ -243,12 +243,15 @@ export function GrupPlanKartiSohbet({
   benimId,
   adHaritasi,
   onYanit,
+  onAc,
 }: {
   plan: GrupPlani
   yanitlar: PlanYaniti[]
   benimId: string
   adHaritasi: Map<string, string>
   onYanit: (d: YanitDurumu) => Promise<void>
+  // Opens the plan's own page (everyone's answer, who brings what).
+  onAc?: () => void
 }) {
   const [isleniyor, setIsleniyor] = useState(false)
   const [hata, setHata] = useState<string | null>(null)
@@ -317,6 +320,12 @@ export function GrupPlanKartiSohbet({
           )}
           {hata && <p className="text-[11px] text-rose-600 mt-2">{hata}</p>}
         </>
+      )}
+      {onAc && (
+        <button onClick={onAc} className="mt-2 inline-flex items-center gap-0.5 text-[11px] font-semibold text-orchid-600 hover:text-orchid-700">
+          Ayrıntılar ve kim ne getiriyor
+          <Icon name="ChevronRight" className="w-3.5 h-3.5" />
+        </button>
       )}
     </KartCercevesi>
   )

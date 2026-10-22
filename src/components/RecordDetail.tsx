@@ -11,6 +11,7 @@ import { paylasilabilirPlanlar, planiGuncelle, planiSil } from '../lib/planPayla
 import { LinkYanitlari } from './PlanLinkiPaylas'
 import { useGeriIleKapat } from '../lib/geriTusu'
 import { GeriSayimRozeti, HatirlatmaKarti, KatilimcilarKarti, NotlarKarti, YapilacaklarKarti } from './PlanAyrintilari'
+import { GetirListesiKarti } from './GetirListesi'
 
 interface RecordDetailProps {
   kayit: Kayit
@@ -312,6 +313,8 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
         {!editing && (
           <>
             <KatilimcilarKarti kayit={kayit} onSohbeteGit={onSohbeteGit} />
+            {/* A group plan's shared list, next to my own checklist. */}
+            {kayit.grupPlanId && <GetirListesiKarti planId={kayit.grupPlanId} gecti={past} />}
             <YapilacaklarKarti kayit={kayit} />
             <NotlarKarti kayit={kayit} />
           </>

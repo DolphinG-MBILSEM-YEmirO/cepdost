@@ -84,6 +84,7 @@ test('countdown: timed plans', () => {
   assert.deepEqual(geriSayim(p, an('2099-05-03', '10:00')), { metin: 'Haftaya', durum: 'gelecek' })
   assert.deepEqual(geriSayim(p, an('2099-04-20', '10:00')), { metin: '3 hafta sonra', durum: 'gelecek' })
   assert.deepEqual(geriSayim(p, an('2099-02-10', '10:00')), { metin: '3 ay sonra', durum: 'gelecek' })
+  assert.deepEqual(geriSayim(p, an('2097-05-01', '10:00')), { metin: '2 yıl sonra', durum: 'gelecek' })
   assert.deepEqual(geriSayim(p, an('2099-05-11', '10:00')), { metin: 'Dün', durum: 'gecti' })
   assert.deepEqual(geriSayim(p, an('2099-05-14', '10:00')), { metin: '4 gün önce', durum: 'gecti' })
   assert.equal(geriSayim(plan({ tarih: null }), new Date()), null)

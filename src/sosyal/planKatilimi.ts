@@ -41,7 +41,8 @@ function sirala(liste: Katilimci[]): Katilimci[] {
 const YANITTAN: Record<YanitDurumu, KatilimDurumu> = { geliyorum: 'geliyor', belki: 'belki', gelmiyorum: 'gelmiyor' }
 const DAVETTEN: Record<DavetDurumu, KatilimDurumu> = { kabul: 'geliyor', red: 'gelmiyor', bekliyor: 'bekliyor', iptal: 'gelmiyor' }
 
-async function grupKatilimi(planId: string, benimId: string): Promise<PlanKatilimi | null> {
+// Everyone in the group, by their answer to the plan.
+export async function grupPlaniKatilimi(planId: string, benimId = motor().benimId): Promise<PlanKatilimi | null> {
   const plan = (await planlariIdyeGoreGetir([planId])).get(planId)
   if (!plan) return null
   const [uyeler, yanitlar] = await Promise.all([grupUyeleriGetir(plan.grup_id), planYanitlariGetir([planId])])
@@ -125,7 +126,7 @@ async function gidenDavetKatilimi(davetIdleri: string[], benimId: string): Promi
 
 export async function planKatilimi(kayit: Kayit): Promise<PlanKatilimi | null> {
   const benimId = motor().benimId
-  if (kayit.grupPlanId) return grupKatilimi(kayit.grupPlanId, benimId)
+  if (kayit.grupPlanId) return grupPlaniKatilimi(kayit.grupPlanId, benimId)
   if (kayit.davetId) return gelenDavetKatilimi(kayit.davetId, benimId)
   const davetIdleri = kayit.gidenDavetler?.length ? kayit.gidenDavetler : await eslesenDavetler(kayit)
   return davetIdleri.length ? gidenDavetKatilimi(davetIdleri, benimId) : null
@@ -135,21 +136,31 @@ export function yanitsizlar(katilim: PlanKatilimi): Katilimci[] {
   return katilim.katilimcilar.filter((k) => k.durum === 'bekliyor' && !k.ben)
 }
 
+// The plan a nudge is about: its title, and a key that is the same for
+// everyone looking at the plan (the group plan's id, or my plan's id).
+export interface DurtulecekPlan {
+  baslik: string
+  anahtar: string
+}
+
+export function durtulecekPlan(kayit: Kayit): DurtulecekPlan {
+  return { baslik: goruntulemeBasligi(kayit), anahtar: kayit.grupPlanId ?? kayit.id }
+}
+
 // A gentle push to everyone who hasn't answered yet. Returns how many
 // devices it reached (0: none of them has notifications on).
-export async function yanitsizlariDurt(kayit: Kayit, katilim: PlanKatilimi): Promise<number> {
+export async function yanitsizlariDurt(plan: DurtulecekPlan, katilim: PlanKatilimi): Promise<number> {
   const alicilar = yanitsizlar(katilim).map((k) => k.id)
   if (alicilar.length === 0) return 0
   const benimId = motor().benimId
   const ad = (await benimProfilVerim())?.ad ?? UYGULAMA_ADI
-  const baslik = goruntulemeBasligi(kayit).slice(0, 120)
   // A group plan opens the group; an invite opens the chat with me.
   const git = katilim.tur === 'grup' && katilim.sohbet ? katilim.sohbet : `dm:${benimId}`
   return bildir(alicilar, {
     tur: katilim.tur === 'grup' ? 'grup' : 'davet',
     baslik: ad,
-    govde: `Yanıtını bekliyor: ${baslik}`,
+    govde: `Yanıtını bekliyor: ${plan.baslik.slice(0, 120)}`,
     git,
-    etiket: `durt:${kayit.grupPlanId ?? kayit.id}`,
+    etiket: `durt:${plan.anahtar}`,
   })
 }

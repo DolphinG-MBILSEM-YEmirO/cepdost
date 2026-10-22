@@ -128,7 +128,8 @@ export function geriSayim(plan: ZamanliPlan, simdi = new Date()): GeriSayim | nu
     return { metin: hafta === 1 ? 'Haftaya' : `${hafta} hafta sonra`, durum: 'gelecek' }
   }
   const ay = Math.round(gun / 30)
-  return { metin: ay <= 1 ? '1 ay sonra' : `${ay} ay sonra`, durum: 'gelecek' }
+  if (ay < 12) return { metin: ay <= 1 ? '1 ay sonra' : `${ay} ay sonra`, durum: 'gelecek' }
+  return { metin: `${Math.round(gun / 365)} yıl sonra`, durum: 'gelecek' }
 }
 
 // ---------- reminder ----------
