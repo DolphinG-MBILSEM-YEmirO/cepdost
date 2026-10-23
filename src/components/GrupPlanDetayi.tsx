@@ -3,9 +3,11 @@ import { Icon } from './Icon'
 import { GrupAvatari } from './Avatar'
 import { GeriSayimRozeti, KatilimListesi } from './PlanAyrintilari'
 import { GetirListesiKarti } from './GetirListesi'
+import { PlanAnilariKarti } from './PlanAnilari'
 import { formatDate, formatDuration, formatPlanTime } from '../lib/format'
-import { grupPlaniYanitla, planGectiMi } from '../lib/planPaylasimi'
+import { grupPlaniKaydi, grupPlaniYanitla, planGectiMi } from '../lib/planPaylasimi'
 import { useGeriIleKapat } from '../lib/geriTusu'
+import { kayitGuncelle } from '../db'
 import { planiTakvimeIndir } from '../takvim'
 import { useSosyalSurum } from '../sosyal/cekirdek'
 import { planYanitlariGetir, type Grup, type GrupPlani, type YanitDurumu } from '../sosyal/gruplar'
@@ -13,7 +15,7 @@ import { grupPlaniKatilimi, type PlanKatilimi } from '../sosyal/planKatilimi'
 
 // A group plan's own page, opened from the group's plans or a plan card in
 // its chat: my answer, who is coming (the owner can nudge), and the shared
-// "who brings what" list.
+// "who brings what" list. Once it's over, the photos from that day.
 
 const SECENEKLER: { d: YanitDurumu; etiket: string; renk: string }[] = [
   { d: 'geliyorum', etiket: 'Geliyorum', renk: 'bg-teal-500 text-white' },
@@ -161,6 +163,22 @@ export function GrupPlanDetayi({ plan, grup, benimId, onClose }: Props) {
             )}
           </div>
         </div>
+
+        {gecti && (
+          <PlanAnilariKarti
+            grupId={grup.id}
+            tarih={plan.tarih}
+            konum={plan.konum}
+            planBasligi={plan.baslik}
+            hedefAdi={grup.ad}
+            onEklendi={async () => {
+              // A photo from it means it happened: my copy counts as done,
+              // and the reminder on Planlar doesn't ask again.
+              const kayit = await grupPlaniKaydi(plan.id)
+              if (kayit) await kayitGuncelle(kayit.id, { aniEklendi: true, durum: 'yapildi' })
+            }}
+          />
+        )}
 
         {katilim && (
           <KatilimListesi katilim={katilim} plan={{ baslik: plan.baslik, anahtar: plan.id }} durtulebilir={!gecti} />

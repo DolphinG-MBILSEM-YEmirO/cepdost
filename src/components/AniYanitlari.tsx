@@ -15,7 +15,8 @@ import { adListesi } from '../sosyal/adlar'
 
 // Under a memory in the feed: reactions, "I want to go too" and comments.
 // On Keşfet (`yanitlanabilir` off) only "I want to go too" is there, and it
-// stays on this phone.
+// stays on this phone. On a plan's page, where everyone was there, there's
+// no "I want to go too" (no `onGitmek`).
 
 // Comments shown before "show all".
 const KISA_YORUM = 2
@@ -36,9 +37,9 @@ export function AniYanitlari({
   benimId: string
   yanitlanabilir: boolean
   // I want to go there too (or not any more).
-  onGitmek: (ani: Ani, istiyor: boolean) => Promise<void>
+  onGitmek?: (ani: Ani, istiyor: boolean) => Promise<void>
   // The one who shared it makes it a plan.
-  onPlanla: (ani: Ani) => Promise<void>
+  onPlanla?: (ani: Ani) => Promise<void>
 }) {
   const [secici, setSecici] = useState(false)
   const [yorumlarAcik, setYorumlarAcik] = useState(false)
@@ -116,7 +117,7 @@ export function AniYanitlari({
             Yorum{etkilesim.yorumlar.length > 0 ? ` (${etkilesim.yorumlar.length})` : ''}
           </button>
         )}
-        {!benim && (
+        {!benim && onGitmek && (
           <button
             onClick={() => void calistir('gitmek', () => onGitmek(ani, !gitmekIstiyorum))}
             disabled={isleniyor === 'gitmek'}
@@ -158,7 +159,7 @@ export function AniYanitlari({
           <p className="flex-1 min-w-0 text-xs text-teal-800">
             {isteyenAdlari} {deDa(isteyenAdlari)} {gitmekIstiyorum ? 'seninle gitmek istiyor' : 'gitmek istiyor'}
           </p>
-          {benim && (
+          {benim && onPlanla && (
             <button
               onClick={() => void calistir('planla', () => onPlanla(ani))}
               disabled={isleniyor === 'planla'}

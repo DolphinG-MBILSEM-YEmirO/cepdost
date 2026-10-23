@@ -50,6 +50,12 @@ export function davetKaydi(davetId: string): Promise<Kayit | undefined> {
   return yerelKayit((k) => k.davetId === davetId)
 }
 
+// The calendar entry I got by saying I'm coming to this group plan, if
+// there is one.
+export function grupPlaniKaydi(planId: string): Promise<Kayit | undefined> {
+  return yerelKayit((k) => k.grupPlanId === planId)
+}
+
 export function planGectiMi(tarih: string): boolean {
   return tarih < localDateString()
 }
@@ -166,7 +172,7 @@ export async function planiKur(plan: KurulacakPlan, kitle: PlanKitlesi, sohbetMe
 // doesn't fill my calendar or my shared availability.
 export async function grupPlaniYanitla(plan: GrupPlani, durum: YanitDurumu, grup: Grup): Promise<void> {
   await planaYanitVer(plan.id, durum)
-  const mevcut = await yerelKayit((k) => k.grupPlanId === plan.id)
+  const mevcut = await grupPlaniKaydi(plan.id)
 
   if (durum === 'geliyorum') {
     if (mevcut) return

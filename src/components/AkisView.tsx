@@ -1,16 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Icon } from './Icon'
-import { Avatar } from './Avatar'
-import { AniGorseli } from './AniGorseli'
+import { AkisKarti } from './AkisKarti'
 import { AniYanitlari } from './AniYanitlari'
 import { motor, motorVarMi, useSosyalSurum } from '../sosyal/cekirdek'
 import { akisAnilariGetir, profilleriGetir, type AkisKapsami, type Ani } from '../sosyal/gruplar'
 import { ozettenProfil, type Profil } from '../sosyal/api'
-import { BOS_ETKILESIM, aniEtkilesimleri, gitmekIstiyorum, type AniEtkilesimi } from '../sosyal/aniEtkilesimi'
+import { BOS_ETKILESIM, aniEtkilesimleri, gitmekIstiyorum, yanitlayanlar, type AniEtkilesimi } from '../sosyal/aniEtkilesimi'
 import { anidanPlan } from '../lib/planPaylasimi'
-import { formatDate } from '../lib/format'
 import type { Kayit } from '../db'
-import { UYGULAMA_ADI } from '../../shared/marka'
 
 // "İnsanların ve arkadaşların paylaştıkları" — tek akış, iki kapsam:
 // Arkadaşlar (bana/gruplarıma özel paylaşılanlar) ve Herkes (Keşfet).
@@ -39,14 +36,9 @@ export function AkisView({ onPlanAc }: { onPlanAc: (kayit: Kayit) => void }) {
       const liste = await akisAnilariGetir(kapsam)
       // Answers only exist on the friends feed (see aniEtkilesimi.ts).
       const yanitlar = kapsam === 'arkadaslar' ? await aniEtkilesimleri(liste) : new Map<string, AniEtkilesimi>()
-      const kisiler = [...yanitlar.values()].flatMap((e) => [
-        ...e.tepkiler.map((t) => t.kullanici_id),
-        ...e.gitmekIsteyenler,
-        ...e.yorumlar.map((y) => y.yazar),
-      ])
       setAnilar(liste)
       setEtkilesimler(yanitlar)
-      setProfiller(await profilleriGetir([...liste.map((a) => a.sahip_id), ...kisiler]))
+      setProfiller(await profilleriGetir([...liste.map((a) => a.sahip_id), ...yanitlayanlar(yanitlar)]))
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Akış yüklenemedi')
     }
@@ -173,38 +165,6 @@ export function AkisView({ onPlanAc }: { onPlanAc: (kayit: Kayit) => void }) {
           </div>
         </div>
       )}
-    </div>
-  )
-}
-
-function AkisKarti({ ani, sahip, children }: { ani: Ani; sahip: Profil | null; children?: React.ReactNode }) {
-  // Fotoğrafını herkese açmış ama profili kapalı biri olabilir — o zaman
-  // profili okuyamayız, isim yerine nötr bir etiket gösteriyoruz.
-  const ad = sahip?.ad ?? `${UYGULAMA_ADI} kullanıcısı`
-
-  return (
-    <div className="card overflow-hidden">
-      <div className="flex items-center gap-2.5 p-3">
-        <Avatar ad={ad} foto={sahip?.avatar} emoji={sahip?.emoji} renk={sahip?.renk} boyut="sm" />
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-ink-700 truncate">{ad}</p>
-          {sahip?.kullanici_adi && <p className="text-xs text-ink-400 truncate">@{sahip.kullanici_adi}</p>}
-        </div>
-      </div>
-
-      <div className="aspect-square bg-mist-100">
-        <AniGorseli ani={ani} />
-      </div>
-
-      <div className="p-4">
-        <div className="flex items-center gap-1.5">
-          <Icon name="MapPin" className="w-4 h-4 text-orchid-500 shrink-0" />
-          <p className="text-sm font-semibold text-ink-700 truncate">{ani.mekan_adi}</p>
-        </div>
-        <p className="text-xs text-ink-400 mt-0.5">{formatDate(ani.tarih) ?? ani.tarih}</p>
-        {ani.notlar && <p className="text-sm text-ink-500 mt-2">{ani.notlar}</p>}
-      </div>
-      {children}
     </div>
   )
 }

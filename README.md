@@ -71,6 +71,13 @@ another address signs in once with their username and password.
   answer. Answers travel only on the memory's pair or group channel, so
   public copies on Keşfet take none (`src/sosyal/aniEtkilesimi.ts`,
   `src/components/AniYanitlari.tsx`).
+- **A plan's memories**: once a plan done with a group or a friend is over,
+  its page (and the group plan's page) shows the photos from that day in
+  their archive, plus the place's photos a day or two either side, with who
+  added them. A photo opens large with its reactions and comments, and the
+  arrows step through the day. "Anı ekle" fills in the plan's place and day,
+  and adding one marks the plan done (`src/lib/planAnilari.ts`,
+  `src/components/PlanAnilari.tsx`, `src/components/AniPenceresi.tsx`).
 - **Message actions, WhatsApp style**: right-click or long-press a message
   (or use its options button on desktop) to reply with a quote, react with
   an emoji, copy, forward, pin, star, see who read it, edit it for 15

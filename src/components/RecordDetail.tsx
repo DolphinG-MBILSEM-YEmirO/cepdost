@@ -3,7 +3,7 @@ import { Icon } from './Icon'
 import { type Kayit, type Kategori, type Oncelik, kayitGuncelle, kayitDurumDegistir, goruntulemeBasligi } from '../db'
 import { CATEGORY_LABELS, CATEGORY_COLORS, CATEGORY_ICON_NAME, PRIORITY_LABELS, PRIORITY_COLORS, CATEGORIES, PRIORITIES, formatDate, formatPlanTime, formatDuration, formatRelativeTime, isPast, mapUrl } from '../lib/format'
 import { ConfirmDialog } from './ConfirmDialog'
-import { AniEkleModal } from './AniArsivi'
+import { PlanAnilariKarti } from './PlanAnilari'
 import { PaylasimHedefiSheet } from './PlanPaylas'
 import { EmojiSecici, TumGunAnahtari } from './Seciciler'
 import { ETKINLIK_EMOJILERI } from '../lib/kisisellestirme'
@@ -38,7 +38,6 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
   const [emoji, setEmoji] = useState<string | null>(kayit.emoji ?? null)
   const [saving, setSaving] = useState(false)
   const [showDelete, setShowDelete] = useState(false)
-  const [aniAcik, setAniAcik] = useState(false)
   const [paylasAcik, setPaylasAcik] = useState(false)
 
   // Refresh the form from the record, but never while the user is editing:
@@ -77,11 +76,10 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
   const done = kayit.durum === 'yapildi'
   const baslik = goruntulemeBasligi(kayit)
 
-  // "Anı ekle" çağrısı: plan birlikte yapılmış (grup ya da arkadaş), tarihi
-  // gelmiş/geçmiş ve daha önce anı eklenmemiş olmalı.
+  // A plan done together (with a group or a friend) that is over shows the
+  // photos from that day in their archive, or asks how it went.
   const aniHedefAdi = kayit.grupAdi ?? kayit.arkadasAdi ?? 'arkadaşın'
-  const aniSorulabilir =
-    !kayit.aniEklendi && (!!kayit.grupId || !!kayit.arkadasId) && (past || done)
+  const anilarGosterilir = (!!kayit.grupId || !!kayit.arkadasId) && (past || done)
   // Upcoming plans of my own can go to a friend or a group as a chat card.
   const paylasilabilir = paylasilabilirPlanlar([kayit]).length > 0
 
@@ -311,6 +309,23 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
           </div>
         )}
 
+        {!editing && anilarGosterilir && (
+          <PlanAnilariKarti
+            grupId={kayit.grupId}
+            arkadasId={kayit.arkadasId}
+            tarih={kayit.tarih}
+            konum={kayit.konum}
+            planBasligi={baslik}
+            hedefAdi={aniHedefAdi}
+            onEklendi={async () => {
+              // A photo from it means it happened: it counts as done, and
+              // the reminder on Planlar doesn't ask again.
+              await kayitGuncelle(kayit.id, { aniEklendi: true, durum: 'yapildi' })
+              onUpdated()
+            }}
+          />
+        )}
+
         {!editing && (
           <>
             <KatilimcilarKarti kayit={kayit} onSohbeteGit={onSohbeteGit} />
@@ -367,32 +382,6 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
           </span>
         </div>
 
-        {/* Plan bittiyse ortak hafızaya davet: fotoğraf, gidilen kişinin ya
-            da grubun arşivine düşer. Tek başına planlarda hedef yok, o yüzden
-            yalnızca birlikte yapılan planlarda çıkıyor. */}
-        {aniSorulabilir && (
-          <div className="card p-4 mb-3 bg-orchid-50/70 border-orchid-100">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-orchid-100 flex items-center justify-center shrink-0">
-                <Icon name="Camera" className="w-5 h-5 text-orchid-500" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-ink-700">Nasıl geçti?</p>
-                <p className="text-xs text-ink-500 mt-0.5">
-                  Bir fotoğraf ekle, {aniHedefAdi} arşivinde kalsın.
-                </p>
-                <button
-                  onClick={() => setAniAcik(true)}
-                  className="mt-3 chip bg-gradient-orchid text-white"
-                >
-                  <Icon name="ImageIcon" className="w-4 h-4" />
-                  Fotoğraf ekle
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {paylasilabilir && !editing && (
           <button
             onClick={() => setPaylasAcik(true)}
@@ -420,23 +409,6 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
       )}
 
       {paylasAcik && <PaylasimHedefiSheet kayit={kayit} onKapat={() => setPaylasAcik(false)} />}
-
-      {aniAcik && (
-        <AniEkleModal
-          grupId={kayit.grupId}
-          arkadasId={kayit.arkadasId}
-          hedefAdi={aniHedefAdi}
-          baslangicMekan={kayit.konum}
-          baslangicTarih={kayit.tarih}
-          onClose={() => setAniAcik(false)}
-          onEklendi={async () => {
-            setAniAcik(false)
-            // Aynı plan için tekrar tekrar sorulmasın.
-            await kayitGuncelle(kayit.id, { aniEklendi: true })
-            onUpdated()
-          }}
-        />
-      )}
     </div>
   )
 }

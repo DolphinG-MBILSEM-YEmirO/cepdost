@@ -89,6 +89,15 @@ export async function aniEtkilesimleri(anilar: Ani[]): Promise<Map<string, AniEt
   return harita
 }
 
+// Everyone who answered, for looking up their names.
+export function yanitlayanlar(etkilesimler: Map<string, AniEtkilesimi>): string[] {
+  return [...etkilesimler.values()].flatMap((e) => [
+    ...e.tepkiler.map((t) => t.kullanici_id),
+    ...e.gitmekIsteyenler,
+    ...e.yorumlar.map((y) => y.yazar),
+  ])
+}
+
 async function benimTepkim(kanal: Kanal, aniId: string): Promise<{ emoji: string | null; gitmek: boolean }> {
   const m = motor()
   const k = await m.kayit(kanal, m.benimId, tepkiAnahtari(aniId))

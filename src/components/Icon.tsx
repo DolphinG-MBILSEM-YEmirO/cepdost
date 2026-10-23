@@ -75,6 +75,7 @@ import {
   CalendarRange,
   Lightbulb,
   ChevronUp,
+  ChevronLeft,
 } from 'lucide-react'
 
 const iconMap = {
@@ -154,6 +155,7 @@ const iconMap = {
   CalendarRange,
   Lightbulb,
   ChevronUp,
+  ChevronLeft,
 }
 
 export type IconName = keyof typeof iconMap
