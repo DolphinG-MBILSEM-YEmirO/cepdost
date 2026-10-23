@@ -4,6 +4,8 @@ import { Avatar, GrupAvatari } from './Avatar'
 import { GrupDuzenle } from './GrupDuzenle'
 import { EmojiSecici, TumGunAnahtari } from './Seciciler'
 import { AniArsivi } from './AniArsivi'
+import { SohbetIciArama } from './MesajArama'
+import { useMesajaOdaklan } from './useMesajaOdaklan'
 import {
   grubaUyeEkle,
   grupPlaniOlustur,
@@ -52,14 +54,19 @@ interface Props {
   onAyrildi: () => Promise<void>
   // Desktop: shown in the chat list's side pane instead of over the page.
   gomulu?: boolean
+  // Opened from a search: the chat, with this message in view.
+  odakMesajId?: string | null
 }
 
-export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAyrildi, gomulu = false }: Props) {
+export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAyrildi, gomulu = false, odakMesajId }: Props) {
   useGeriIleKapat(onClose, !gomulu)
   // Desktop: the group sits in the side pane, so only back closes it.
   useGeriAdimi(onClose, gomulu)
-  const [sekme, setSekme] = useState<Sekme>('planlar')
+  const [sekme, setSekme] = useState<Sekme>(odakMesajId ? 'sohbet' : 'planlar')
   const [temaAcik, setTemaAcik] = useState(false)
+  const [aramaAcik, setAramaAcik] = useState(false)
+  // The chat loads its latest messages, or all of them once searched.
+  const [tumMesajlar, setTumMesajlar] = useState(!!odakMesajId)
   const [duzenleAcik, setDuzenleAcik] = useState(false)
   const [uyeler, setUyeler] = useState<GrupUyesi[]>([])
   // Everything in the group (members, plans, answers, messages) is read
@@ -122,6 +129,18 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
             {uyeler.length} üye
           </p>
         </div>
+        {sekme === 'sohbet' && (
+          <button
+            onClick={() => {
+              setTumMesajlar(true)
+              setAramaAcik(true)
+            }}
+            aria-label="Sohbette ara"
+            className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          >
+            <Icon name="Search" className="w-5 h-5 text-ink-400" />
+          </button>
+        )}
         {sekme === 'sohbet' && (
           <button
             onClick={() => setTemaAcik(true)}
@@ -189,6 +208,10 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
           digerUyeler={uyeler
             .filter((u) => u.kullanici_id !== benimId && u.profil)
             .map((u) => u.profil!)}
+          tumu={tumMesajlar}
+          aramaAcik={aramaAcik}
+          onAramaKapat={() => setAramaAcik(false)}
+          odakMesajId={odakMesajId}
         />
       )}
       {sekme === 'anilar' && (
@@ -586,12 +609,20 @@ function SohbetSekmesi({
   adHaritasi,
   benimAdim,
   digerUyeler,
+  tumu,
+  aramaAcik,
+  onAramaKapat,
+  odakMesajId,
 }: {
   grup: Grup
   benimId: string
   adHaritasi: Map<string, string>
   benimAdim: string
   digerUyeler: Profil[]
+  tumu: boolean
+  aramaAcik: boolean
+  onAramaKapat: () => void
+  odakMesajId?: string | null
 }) {
   const [mesajlar, setMesajlar] = useState<GrupMesaji[]>([])
   const [planlar, setPlanlar] = useState<Map<string, GrupPlani>>(new Map())
@@ -617,12 +648,13 @@ function SohbetSekmesi({
   )
   // Reply, react, edit, delete... (see MesajIslemleri.tsx).
   const islemler = useMesajIslemleri({ hedef, benimId, mesajlar, adAl, gonder, onHata: setHata })
+  useMesajaOdaklan(odakMesajId, !yukleniyor, islemler.mesajaGit)
 
   // Messages plus the plans and answers behind plan cards, so a card can be
   // answered right in the chat. Plans are always fetched for the whole list
   // so a reload never drops cards that were already showing.
   const tazele = useCallback(async () => {
-    const liste = await mesajlariGetir(grup.id)
+    const liste = await mesajlariGetir(grup.id, tumu ? Infinity : undefined)
     const idler = liste.map((m) => m.plan_id).filter((x): x is string => !!x)
     const [haritalar, yanitlar] = idler.length
       ? await Promise.all([planlariIdyeGoreGetir(idler), planYanitlariGetir(idler)])
@@ -631,7 +663,7 @@ function SohbetSekmesi({
     setPlanlar(haritalar)
     setPlanYanitlari(yanitlar)
     if (liste.some((m) => m.gonderen_id !== benimId)) void grupOkunduIsaretle(grup.id).catch(() => {})
-  }, [grup.id, benimId])
+  }, [grup.id, benimId, tumu])
 
   async function planaYanit(plan: GrupPlani, durum: YanitDurumu) {
     await grupPlaniYanitla(plan, durum, grup)
@@ -654,6 +686,7 @@ function SohbetSekmesi({
 
   return (
     <>
+      {aramaAcik && <SohbetIciArama mesajlar={mesajlar} onGit={islemler.mesajaGit} onKapat={onAramaKapat} />}
       <SohbetUstSeridi islemler={islemler} />
 
       <SohbetZemini tema={tema} className="px-5 pb-4">

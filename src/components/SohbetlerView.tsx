@@ -1,15 +1,18 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Icon } from './Icon'
 import { Avatar, GrupAvatari } from './Avatar'
 import { DirektSohbet } from './DirektSohbet'
 import { BildirimBandi } from './BildirimAyarlari'
 import { GrupDetay } from './GrupDetay'
+import { MesajSonucuSatiri } from './MesajArama'
 import { useAuth } from '../sosyal/auth'
 import { useSosyalSurum } from '../sosyal/cekirdek'
 import { sohbetleriGetir, type Sohbet } from '../sosyal/mesajlar'
 import { arkadaslariGetir, type Arkadas, type Profil } from '../sosyal/api'
 import type { Grup } from '../sosyal/gruplar'
 import { formatRelativeTime } from '../lib/format'
+import { aramaSorgusu, eslesiyor } from '../lib/arama'
+import { mesajlardaAra, type MesajSonucu } from '../sosyal/mesajArama'
 import { useMasaustu } from '../lib/useMasaustu'
 
 // Arkadaşlarla birebir yazışmalar ve grup sohbetleri tek listede.
@@ -36,7 +39,12 @@ export function SohbetlerView({ onDegisti, ust, onArkadasEkle, acilacak, onAcild
   const [hata, setHata] = useState<string | null>(null)
   const [acikArkadas, setAcikArkadas] = useState<Profil | null>(null)
   const [acikGrup, setAcikGrup] = useState<Grup | null>(null)
+  // The message to bring into view when a chat opens from a search.
+  const [odakMesaj, setOdakMesaj] = useState<string | null>(null)
+  const [arama, setArama] = useState('')
+  const [mesajSonuclari, setMesajSonuclari] = useState<MesajSonucu[] | null>(null)
   const masaustu = useMasaustu()
+  const sorgu = aramaSorgusu(arama)
 
   const tazele = useCallback(async () => {
     setHata(null)
@@ -55,6 +63,29 @@ export function SohbetlerView({ onDegisti, ust, onArkadasEkle, acilacak, onAcild
   useEffect(() => {
     void tazele()
   }, [tazele])
+
+  // Messages are searched a moment after typing stops.
+  useEffect(() => {
+    if (!sorgu || !sohbetler) {
+      setMesajSonuclari(null)
+      return
+    }
+    let iptal = false
+    const t = window.setTimeout(() => {
+      void mesajlardaAra(sorgu, sohbetler)
+        .then((r) => !iptal && setMesajSonuclari(r))
+        .catch(() => !iptal && setMesajSonuclari([]))
+    }, 200)
+    return () => {
+      iptal = true
+      window.clearTimeout(t)
+    }
+  }, [sorgu, sohbetler])
+
+  const eslesenSohbetler = useMemo(
+    () => (sorgu && sohbetler ? sohbetler.filter((s) => eslesiyor(s.ad, sorgu) || (!!s.kullaniciAdi && eslesiyor(s.kullaniciAdi, sorgu))) : []),
+    [sorgu, sohbetler],
+  )
 
   useEffect(() => {
     if (!acilacak || sohbetler === null) return
@@ -76,7 +107,8 @@ export function SohbetlerView({ onDegisti, ust, onArkadasEkle, acilacak, onAcild
   const bos = sohbetler?.filter((s) => !s.sonZaman) ?? []
   const aciksa = (s: Sohbet) => (s.tur === 'grup' ? acikGrup?.id === s.id : acikArkadas?.id === s.id)
 
-  function ac(s: Sohbet) {
+  function ac(s: Sohbet, mesajId: string | null = null) {
+    setOdakMesaj(mesajId)
     if (s.tur === 'grup') {
       setAcikArkadas(null)
       setAcikGrup(s.grup!)
@@ -88,10 +120,11 @@ export function SohbetlerView({ onDegisti, ust, onArkadasEkle, acilacak, onAcild
 
   const sohbetPenceresi = acikArkadas ? (
     <DirektSohbet
-      key={acikArkadas.id}
+      key={`${acikArkadas.id}:${odakMesaj ?? ''}`}
       arkadas={acikArkadas}
       benimId={kullanici.id}
       gomulu={masaustu}
+      odakMesajId={odakMesaj}
       onClose={() => {
         setAcikArkadas(null)
         void tazele()
@@ -99,11 +132,12 @@ export function SohbetlerView({ onDegisti, ust, onArkadasEkle, acilacak, onAcild
     />
   ) : acikGrup ? (
     <GrupDetay
-      key={acikGrup.id}
+      key={`${acikGrup.id}:${odakMesaj ?? ''}`}
       grup={acikGrup}
       benimId={kullanici.id}
       arkadaslar={arkadaslar}
       gomulu={masaustu}
+      odakMesajId={odakMesaj}
       onClose={() => {
         setAcikGrup(null)
         void tazele()
@@ -130,7 +164,31 @@ export function SohbetlerView({ onDegisti, ust, onArkadasEkle, acilacak, onAcild
 
           {sohbetler && sohbetler.length > 0 && <BildirimBandi />}
 
-          {sohbetler === null ? (
+          {sohbetler && sohbetler.length > 0 && (
+            <div className="relative mb-3" role="search">
+              <Icon name="Search" className="w-4 h-4 text-ink-300 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="search"
+                value={arama}
+                onChange={(e) => setArama(e.target.value)}
+                placeholder="Sohbetlerde ara"
+                aria-label="Sohbetlerde ara"
+                enterKeyHint="search"
+                className="input-field pl-10 py-2.5 text-sm"
+              />
+            </div>
+          )}
+
+          {sorgu && sohbetler ? (
+            <AramaSonuclari
+              sorgu={sorgu}
+              sohbetler={eslesenSohbetler}
+              mesajlar={mesajSonuclari}
+              secili={(s) => masaustu && aciksa(s)}
+              onSohbet={(s) => ac(s)}
+              onMesaj={(r) => ac(r.sohbet, r.mesajId)}
+            />
+          ) : sohbetler === null ? (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="skeleton h-16 rounded-2xl" />
@@ -191,6 +249,50 @@ export function SohbetlerView({ onDegisti, ust, onArkadasEkle, acilacak, onAcild
         <section className="flex-1 min-w-0 flex flex-col">{sohbetPenceresi ?? <SohbetSecilmedi />}</section>
       ) : (
         sohbetPenceresi
+      )}
+    </div>
+  )
+}
+
+// While searching: chats whose name matches, then messages, newest first.
+function AramaSonuclari({
+  sorgu,
+  sohbetler,
+  mesajlar,
+  secili,
+  onSohbet,
+  onMesaj,
+}: {
+  sorgu: string
+  sohbetler: Sohbet[]
+  mesajlar: MesajSonucu[] | null
+  secili: (s: Sohbet) => boolean
+  onSohbet: (s: Sohbet) => void
+  onMesaj: (r: MesajSonucu) => void
+}) {
+  const baslik = 'text-xs font-semibold text-ink-300 uppercase tracking-wide pt-2 pb-1 px-1'
+  if (sohbetler.length === 0 && mesajlar?.length === 0) {
+    return <p className="text-sm text-ink-400 text-center py-10">Bir şey bulunamadı.</p>
+  }
+  return (
+    <div className="space-y-2">
+      {sohbetler.length > 0 && (
+        <>
+          <p className={baslik}>Sohbetler</p>
+          {sohbetler.map((s) => (
+            <SohbetSatiri key={`${s.tur}-${s.id}`} sohbet={s} secili={secili(s)} onAc={() => onSohbet(s)} />
+          ))}
+        </>
+      )}
+      <p className={baslik}>Mesajlar</p>
+      {mesajlar === null ? (
+        <div className="flex justify-center py-4">
+          <Icon name="Loader2" className="w-5 h-5 animate-spin text-ink-300" />
+        </div>
+      ) : mesajlar.length === 0 ? (
+        <p className="text-sm text-ink-400 px-1 py-2">Mesajlarda geçmiyor.</p>
+      ) : (
+        mesajlar.map((r) => <MesajSonucuSatiri key={`${r.sohbet.id}-${r.mesajId}`} sonuc={r} sorgu={sorgu} onAc={() => onMesaj(r)} />)
       )}
     </div>
   )

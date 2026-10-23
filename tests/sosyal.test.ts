@@ -93,6 +93,8 @@ import {
 } from '../src/sosyal/planLinki'
 import { DAVET_ADRESI, benimDavetim, davetKaynagi, davetLinkiCoz, planiDavetlePaylas } from '../src/sosyal/davet'
 import { anidanPlan, linkKaydi, linkPlaniniYanitla, planiGuncelle, planiSil } from '../src/lib/planPaylasimi'
+import { mesajlardaAra } from '../src/sosyal/mesajArama'
+import { aramaSorgusu } from '../src/lib/arama'
 import { adresimiKaydet, adresimiSil, bildir, bildirimGondericisiniAyarla } from '../src/sosyal/bildirimler'
 import {
   bendenSil,
@@ -1165,6 +1167,48 @@ test('message actions: reply, react, edit, delete, pin, star, forward and read i
     mock.restoreAll()
     bildirimGondericisiniAyarla(null)
   }
+})
+
+test('searching messages: across friends and groups, newest first, as the chats show them', async () => {
+  const [hale, ilk, jale] = ['hale', 'ilk', 'jale'].map((ad) => kisiOlustur(ad))
+  for (const k of [hale, ilk, jale]) await olarak(k, () => hesabiKur({ ad: k.ad, kullanici_adi: k.ad, gizlilik: 'arkadaslar' }))
+  for (const k of [ilk, jale]) {
+    await olarak(k, () => arkadaslikIsteGonder(hale.motor.benimId, null))
+    await esitle(hale)
+    await olarak(hale, () => arkadaslikYanitla(k.motor.benimId, true))
+    await esitle(hale, k)
+  }
+  const grupId = await olarak(hale, () => grupOlustur('Çay Ekibi', [ilk.motor.benimId, jale.motor.benimId]))
+  await esitle(ilk, jale, hale)
+
+  await olarak(ilk, () => direktMesajGonder(hale.motor.benimId, 'Yarın çay içelim mi?'))
+  await olarak(hale, () => direktMesajGonder(ilk.motor.benimId, 'Olur, Moda’da'))
+  await olarak(jale, () => mesajGonder(grupId, 'ÇAY demlendi ☕'))
+  await olarak(ilk, () => direktMesajGonder(hale.motor.benimId, 'Çaycıya geç kalma'))
+  await esitle(hale)
+  // "Delete for everyone", "delete for me" and edits: search sees what the chat shows.
+  const ilkle: SohbetHedefi = { tur: 'arkadas', id: ilk.motor.benimId }
+  const [, olur] = await olarak(hale, () => direktMesajlariGetir(ilk.motor.benimId))
+  await olarak(hale, () => mesajiDuzenle(ilkle, olur.id, 'Olur, çaya Moda’da'))
+  const [gizlenen] = await olarak(hale, () => direktMesajlariGetir(ilk.motor.benimId))
+  await olarak(hale, () => bendenSil(gizlenen.id))
+  await olarak(hale, () => mesajGonder(grupId, 'çay yok artık'))
+  const [, silinen] = await olarak(hale, () => mesajlariGetir(grupId))
+  await olarak(hale, () => herkestenSil({ tur: 'grup', id: grupId }, silinen.id))
+
+  const sohbetler = await olarak(hale, () => sohbetleriGetir())
+  const sonuclar = await olarak(hale, () => mesajlardaAra(aramaSorgusu('cay')!, sohbetler))
+  assert.deepEqual(
+    sonuclar.map((r) => [r.sohbet.ad, r.gonderenAd, r.metin]),
+    [
+      ['ilk', 'ilk', 'Çaycıya geç kalma'],
+      ['Çay Ekibi', 'jale', 'ÇAY demlendi ☕'],
+      // An edit keeps the message's place in time.
+      ['ilk', 'Sen', 'Olur, çaya Moda’da'],
+    ],
+  )
+  assert.deepEqual(await olarak(hale, () => mesajlardaAra(aramaSorgusu('pizza')!, sohbetler)), [])
+  assert.equal((await olarak(hale, () => mesajlardaAra(aramaSorgusu('a')!, sohbetler, 2))).length, 2)
 })
 
 test('email verification: strangers only see and hear from verified accounts', async () => {

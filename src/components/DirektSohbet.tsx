@@ -9,6 +9,8 @@ import { DavetKartiSohbet } from './SohbetPlanKarti'
 import { PlanPaylasSheet } from './PlanPaylas'
 import { ArkadaslaSihirbaz } from './OrtakPlanSihirbazi'
 import { ArkadasProfili } from './ArkadasProfili'
+import { SohbetIciArama } from './MesajArama'
+import { useMesajaOdaklan } from './useMesajaOdaklan'
 import { useSohbetTemasi } from '../sohbetTema'
 import { davetiYanitla } from '../lib/planPaylasimi'
 import { useSosyalSurum } from '../sosyal/cekirdek'
@@ -31,9 +33,11 @@ interface Props {
   onClose: () => void
   // Desktop: shown in the chat list's side pane instead of over the page.
   gomulu?: boolean
+  // Opened from a search: this message comes into view and flashes.
+  odakMesajId?: string | null
 }
 
-export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Props) {
+export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false, odakMesajId }: Props) {
   const [profilAcik, setProfilAcik] = useState(false)
   useGeriIleKapat(onClose, !gomulu)
   // Desktop: the chat sits in the side pane, so only back closes it.
@@ -50,6 +54,9 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
   const [davetler, setDavetler] = useState<Map<string, PlanDaveti>>(new Map())
   const [paylasAcik, setPaylasAcik] = useState(false)
   const [sihirbazAcik, setSihirbazAcik] = useState(false)
+  const [aramaAcik, setAramaAcik] = useState(false)
+  // The latest messages, or all of them once something is searched for.
+  const [tumu, setTumu] = useState(!!odakMesajId)
   const sosyalSurum = useSosyalSurum()
   const hedef = useMemo<SohbetHedefi>(() => ({ tur: 'arkadas', id: arkadas.id }), [arkadas.id])
   const adAl = useCallback((id: string) => (id === arkadas.id ? arkadas.ad : 'Sen'), [arkadas.id, arkadas.ad])
@@ -59,12 +66,13 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
   )
   // Reply, react, edit, delete... (see MesajIslemleri.tsx).
   const islemler = useMesajIslemleri({ hedef, benimId, mesajlar, adAl, gonder, onHata: setHata })
+  useMesajaOdaklan(odakMesajId, !yukleniyor, islemler.mesajaGit)
 
   useEffect(() => {
     let iptal = false
     void (async () => {
       try {
-        const liste = await direktMesajlariGetir(arkadas.id)
+        const liste = await direktMesajlariGetir(arkadas.id, tumu ? Infinity : undefined)
         if (iptal) return
         setMesajlar(liste)
         if (liste.some((m) => m.gonderen_id === arkadas.id && !m.okundu)) {
@@ -84,7 +92,7 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
     return () => {
       iptal = true
     }
-  }, [arkadas.id, sosyalSurum])
+  }, [arkadas.id, sosyalSurum, tumu])
 
   return (
     <div className={gomulu ? 'flex flex-col h-full min-h-0' : 'panel-tam z-[55]'}>
@@ -106,6 +114,16 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
         </button>
         <div className="flex items-center gap-2 shrink-0">
           <button
+            onClick={() => {
+              setTumu(true)
+              setAramaAcik(true)
+            }}
+            aria-label="Sohbette ara"
+            className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform"
+          >
+            <Icon name="Search" className="w-5 h-5 text-ink-400" />
+          </button>
+          <button
             onClick={() => setTemaAcik(true)}
             aria-label="Sohbet temasını değiştir"
             className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform"
@@ -121,6 +139,8 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false }: Prop
           </button>
         </div>
       </div>
+
+      {aramaAcik && <SohbetIciArama mesajlar={mesajlar} onGit={islemler.mesajaGit} onKapat={() => setAramaAcik(false)} />}
 
       {temaAcik && <TemaSheet onKapat={() => setTemaAcik(false)} />}
 

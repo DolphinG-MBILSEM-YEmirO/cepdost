@@ -77,6 +77,12 @@ another address signs in once with their username and password.
   minutes, or delete it for everyone or just for yourself; swipe right on a
   phone to reply (`src/sosyal/mesajIslemleri.ts`,
   `src/components/MesajIslemleri.tsx`).
+- **Chat search**: the chat list's search box finds chats by name and
+  messages in every chat (newest first, the match highlighted); a result
+  opens its chat on that message, even one older than the first 100. Inside
+  a chat, the search button steps through its matches. Turkish letters match
+  their plain forms, so "cay" finds "Çay" (`src/lib/arama.ts`,
+  `src/sosyal/mesajArama.ts`, `src/components/MesajArama.tsx`).
 - **Back button**: on a phone (and in the browser), back closes the open
   sheet, menu or chat, steps back through a wizard, returns from a
   sub-section and then from any tab to Planlar, and only then leaves the
