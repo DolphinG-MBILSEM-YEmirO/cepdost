@@ -69,7 +69,7 @@ import { CepDostDB, db, kayitOlustur, type Kayit } from '../src/db'
 import { planlariEsitle } from '../src/sosyal/planEsitleme'
 import { planKatilimi, yanitsizlar } from '../src/sosyal/planKatilimi'
 import { getirEkle, getirListesi, getirSil, getiriUstlen } from '../src/sosyal/getirListesi'
-import { arkadasPlandaMi } from '../src/sosyal/ortakGecmis'
+import { arkadasPlandaMi, plandakiArkadaslar } from '../src/sosyal/ortakGecmis'
 import {
   aniEtkilesimleri,
   aniYorumunuSil,
@@ -503,6 +503,10 @@ test("a friend's profile counts the plans we're both on", async () => {
   assert.deepEqual(alininPlanlari.filter(birlikte).map((k) => k.baslik), ['Sinema', 'Kahve', 'Eski kahve'])
   const canla = await olarak(ali, () => arkadasPlandaMi(can.motor.benimId, alininPlanlari))
   assert.deepEqual(alininPlanlari.filter(canla).map((k) => k.baslik), [])
+  // The friends list asks about everyone at once, from one read.
+  const herkes = await olarak(ali, () => plandakiArkadaslar(alininPlanlari))
+  assert.deepEqual(alininPlanlari.filter(herkes(ayse.motor.benimId)).map((k) => k.baslik), ['Sinema', 'Kahve', 'Eski kahve'])
+  assert.deepEqual(alininPlanlari.filter(herkes(can.motor.benimId)).map((k) => k.baslik), [])
 })
 
 test('memories: friends react, say they want to go too, and comment; strangers on Keşfet cannot', async () => {

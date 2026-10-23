@@ -19,18 +19,25 @@ import {
   type Profil,
 } from '../sosyal/api'
 import { GrupDetay } from './GrupDetay'
-import { OrtakPlanSihirbazi } from './OrtakPlanSihirbazi'
-import { grupOlustur, gruplarimiGetir, type Grup } from '../sosyal/gruplar'
+import { KisilerleSihirbaz, OrtakPlanSihirbazi } from './OrtakPlanSihirbazi'
+import { useArkadasOzetleri } from './useArkadasOzetleri'
+import { grupOlustur, gruplarimiGetir, type Grup, type GrupPlani } from '../sosyal/gruplar'
 import { davetiYanitla, planGectiMi } from '../lib/planPaylasimi'
 import { formatDate, formatPlanTime } from '../lib/format'
 import { GRUP_ACIKLAMA_MAKS, GRUP_EMOJILERI } from '../lib/kisisellestirme'
 import { EmojiSecici, RenkSecici } from './Seciciler'
 import { useGeriIleKapat } from '../lib/geriTusu'
+import { gorusulmeyenler, neKadarOnce, uzunAraVar, type OrtakGecmis } from '../lib/planIstatistikleri'
+import { goreceGun } from '../lib/takvimIzgarasi'
+import { useBugun } from '../hooks/useBugun'
 import { UYGULAMA_ADI } from '../../shared/marka'
 
 // Everything about friends, in the Sohbet tab: what needs an answer
 // (requests, plan invites), adding people (search plus my own username),
-// and my friends and groups. The profile itself is HesabimView.
+// and my friends and groups. Each friend shows our next plan or when we
+// last met, each group its next plan, and friends not seen for a month or
+// more come first with a way to plan something. The profile itself is
+// HesabimView.
 interface Props {
   // Set when the app was opened from an invite link (?ekle=CODE): that
   // person is looked up straight away.
@@ -67,6 +74,9 @@ function ArkadaslarIcerik({
   const [seciliGrup, setSeciliGrup] = useState<Grup | null>(null)
   const [grupKurAcik, setGrupKurAcik] = useState(false)
   const [sihirbazAcik, setSihirbazAcik] = useState(false)
+  // A friend from the "long time no see" card, planning with them.
+  const [planlanacak, setPlanlanacak] = useState<Profil | null>(null)
+  const bugun = useBugun()
 
   const tazele = useCallback(async () => {
     setHata(null)
@@ -108,6 +118,13 @@ function ArkadaslarIcerik({
   const gelenIstekler = arkadaslar.filter((a) => a.durum === 'bekliyor' && a.yon === 'gelen')
   const gidenIstekler = arkadaslar.filter((a) => a.durum === 'bekliyor' && a.yon === 'giden')
   const yanitBekleyen = gelenDavetler.length > 0 || gelenIstekler.length > 0
+  const ozetler = useArkadasOzetleri(
+    kabulEdilmis.map((a) => a.profil.id),
+    gruplar.map((g) => g.id),
+  )
+  const uzunAradakiler = ozetler
+    ? gorusulmeyenler(ozetler.gecmisler).flatMap((id) => kabulEdilmis.find((a) => a.profil.id === id) ?? [])
+    : []
 
   return (
     <div className="flex flex-col h-full">
@@ -194,6 +211,15 @@ function ArkadaslarIcerik({
             </div>
 
             <div className="space-y-6 lg:col-start-2">
+              {ozetler && uzunAradakiler.length > 0 && (
+                <UzunAraKarti
+                  arkadaslar={uzunAradakiler}
+                  gecmisler={ozetler.gecmisler}
+                  onAc={setSecili}
+                  onPlanla={setPlanlanacak}
+                />
+              )}
+
               <Bolum baslik="Arkadaşların" ikon="Users" sayi={kabulEdilmis.length}>
                 {kabulEdilmis.length === 0 ? (
                   <div className="card p-5 text-center">
@@ -207,6 +233,8 @@ function ArkadaslarIcerik({
                       <ArkadasKarti
                         key={a.arkadaslikId}
                         arkadas={a}
+                        gecmis={ozetler?.gecmisler.get(a.profil.id)}
+                        bugun={bugun}
                         onAc={() => setSecili(a)}
                         onCikar={tazele}
                       />
@@ -226,7 +254,7 @@ function ArkadaslarIcerik({
                       <GrupAvatari grup={g} boyut="sm" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-ink-700 truncate">{g.ad}</p>
-                        {g.aciklama && <p className="text-xs text-ink-400 truncate">{g.aciklama}</p>}
+                        <GrupAltSatiri grup={g} siradaki={ozetler?.siradakiler.get(g.id)} bugun={bugun} />
                       </div>
                       <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />
                     </button>
@@ -315,6 +343,10 @@ function ArkadaslarIcerik({
             await tazele()
           }}
         />
+      )}
+
+      {planlanacak && (
+        <KisilerleSihirbaz kisiler={[planlanacak]} onKapat={() => setPlanlanacak(null)} onOlusturuldu={tazele} />
       )}
 
       {sihirbazAcik && (
@@ -756,14 +788,20 @@ function IstekKarti({ arkadas, onYanit }: { arkadas: Arkadas; onYanit: () => Pro
 
 function ArkadasKarti({
   arkadas,
+  gecmis,
+  bugun,
   onAc,
   onCikar,
 }: {
   arkadas: Arkadas
+  gecmis?: OrtakGecmis
+  bugun: string
   onAc: () => void
   onCikar: () => Promise<void>
 }) {
   const [onay, setOnay] = useState(false)
+  const siradaki = gecmis?.siradaki
+  const son = gecmis?.sonBulusma
 
   return (
     <div className="card p-4 flex items-center gap-3">
@@ -774,6 +812,19 @@ function ArkadasKarti({
           <p className="text-xs text-ink-400 truncate">
             {arkadas.profil.kullanici_adi ? `@${arkadas.profil.kullanici_adi}` : 'Profilini gör'}
           </p>
+          {siradaki ? (
+            <p className="flex items-center gap-1 text-xs text-orchid-600 mt-0.5 min-w-0">
+              <Icon name="CalendarClock" className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">
+                {goreceGun(siradaki.tarih, bugun)}
+                {siradaki.saat ? ` ${formatPlanTime(siradaki.saat, false)}` : ''} · {siradaki.baslik}
+              </span>
+            </p>
+          ) : son ? (
+            <p className={`text-xs mt-0.5 truncate ${uzunAraVar(gecmis!) ? 'text-amber-700' : 'text-ink-400'}`}>
+              Son buluşma: {neKadarOnce(son.gunOnce).toLocaleLowerCase('tr-TR')}
+            </p>
+          ) : null}
         </div>
         <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />
       </button>
@@ -806,6 +857,74 @@ function ArkadasKarti({
       )}
     </div>
   )
+}
+
+// Friends not seen for a month or more with nothing planned, with a way to
+// find a time together.
+function UzunAraKarti({
+  arkadaslar,
+  gecmisler,
+  onAc,
+  onPlanla,
+}: {
+  arkadaslar: Arkadas[]
+  gecmisler: Map<string, OrtakGecmis>
+  onAc: (arkadas: Arkadas) => void
+  onPlanla: (profil: Profil) => void
+}) {
+  return (
+    <section className="card p-4" aria-label="Uzun zamandır görüşmediklerin">
+      <div className="flex items-center gap-2 mb-3">
+        <Icon name="CalendarHeart" className="w-4 h-4 text-amber-600" />
+        <h2 className="text-sm font-semibold text-ink-600">Uzun zamandır görüşmediklerin</h2>
+      </div>
+      <div className="space-y-3">
+        {arkadaslar.map((a) => {
+          const son = gecmisler.get(a.profil.id)?.sonBulusma
+          return (
+            <div key={a.arkadaslikId} className="flex items-center gap-3">
+              <button onClick={() => onAc(a)} className="flex items-center gap-3 flex-1 min-w-0 text-left active:scale-[0.98] transition-transform">
+                <Avatar ad={a.profil.ad} foto={a.profil.avatar} emoji={a.profil.emoji} renk={a.profil.renk} boyut="sm" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-ink-700 truncate">{a.profil.ad}</p>
+                  {son && (
+                    <p className="text-xs text-amber-700 truncate">
+                      {neKadarOnce(son.gunOnce)} · {son.baslik}
+                    </p>
+                  )}
+                </div>
+              </button>
+              <button
+                onClick={() => onPlanla(a.profil)}
+                aria-label={`${a.profil.ad} ile plan yap`}
+                className="chip bg-orchid-50 text-orchid-600 border border-orchid-100 text-xs shrink-0 active:scale-95"
+              >
+                <Icon name="CalendarPlus" className="w-3.5 h-3.5" />
+                Plan yap
+              </button>
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+// Under a group's name: its next plan, else its description.
+function GrupAltSatiri({ grup, siradaki, bugun }: { grup: Grup; siradaki?: GrupPlani; bugun: string }) {
+  if (siradaki) {
+    const saat = formatPlanTime(siradaki.saat, siradaki.tum_gun)
+    return (
+      <p className="flex items-center gap-1 text-xs text-orchid-600 min-w-0">
+        <Icon name="CalendarClock" className="w-3.5 h-3.5 shrink-0" />
+        <span className="truncate">
+          {goreceGun(siradaki.tarih, bugun)}
+          {saat ? ` ${saat}` : ''} · {siradaki.baslik}
+        </span>
+      </p>
+    )
+  }
+  return grup.aciklama ? <p className="text-xs text-ink-400 truncate">{grup.aciklama}</p> : null
 }
 
 function DavetKarti({

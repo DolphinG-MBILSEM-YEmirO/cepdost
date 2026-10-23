@@ -162,3 +162,16 @@ export function neKadarOnce(gun: number): string {
 
 // A month or more since we last met and nothing planned: time to nudge.
 export const UZUN_ARA_GUN = 30
+
+export function uzunAraVar(gecmis: OrtakGecmis): boolean {
+  return !!gecmis.sonBulusma && gecmis.sonBulusma.gunOnce >= UZUN_ARA_GUN && !gecmis.siradaki
+}
+
+// The friends to nudge about, the longest gap first.
+export function gorusulmeyenler(gecmisler: Map<string, OrtakGecmis>, adet = ILK_UC): string[] {
+  return [...gecmisler]
+    .filter(([, g]) => uzunAraVar(g))
+    .sort(([, a], [, b]) => b.sonBulusma!.gunOnce - a.sonBulusma!.gunOnce)
+    .slice(0, adet)
+    .map(([id]) => id)
+}

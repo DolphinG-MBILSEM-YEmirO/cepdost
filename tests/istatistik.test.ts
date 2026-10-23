@@ -7,7 +7,16 @@ import 'fake-indexeddb/auto'
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { Kayit } from '../src/db'
-import { haftaBasi, neKadarOnce, ortakGecmis, planOzeti, yerAnahtari } from '../src/lib/planIstatistikleri'
+import {
+  gorusulmeyenler,
+  haftaBasi,
+  neKadarOnce,
+  ortakGecmis,
+  planOzeti,
+  uzunAraVar,
+  yerAnahtari,
+  type OrtakGecmis,
+} from '../src/lib/planIstatistikleri'
 
 function plan(ek: Partial<Kayit> = {}): Kayit {
   return {
@@ -107,6 +116,30 @@ test('a friend and me: how many plans, the last time we met, the next one', () =
     enSikYer: 'Moda',
   })
   assert.deepEqual(ortakGecmis([], benimle, BUGUN), { toplam: 0, sonBulusma: null, siradaki: null, enSikYer: null })
+})
+
+test('friends not seen in a long while, the longest gap first', () => {
+  const gecmis = (gunOnce: number | null, siradaki = false): OrtakGecmis => ({
+    toplam: 1,
+    sonBulusma: gunOnce === null ? null : { tarih: '2026-09-01', baslik: 'Kahve', gunOnce },
+    siradaki: siradaki ? { tarih: '2026-10-30', saat: null, baslik: 'Sinema' } : null,
+    enSikYer: null,
+  })
+  assert.equal(uzunAraVar(gecmis(45)), true)
+  assert.equal(uzunAraVar(gecmis(29)), false)
+  // Something already planned, or never met: nothing to nudge about.
+  assert.equal(uzunAraVar(gecmis(45, true)), false)
+  assert.equal(uzunAraVar(gecmis(null)), false)
+
+  const gecmisler = new Map([
+    ['ayse', gecmis(40)],
+    ['can', gecmis(90)],
+    ['ece', gecmis(10)],
+    ['deniz', gecmis(60, true)],
+    ['mert', gecmis(31)],
+  ])
+  assert.deepEqual(gorusulmeyenler(gecmisler), ['can', 'ayse', 'mert'])
+  assert.deepEqual(gorusulmeyenler(gecmisler, 2), ['can', 'ayse'])
 })
 
 test('how long ago, in words', () => {

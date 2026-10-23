@@ -74,6 +74,12 @@ another address signs in once with their username and password.
   screen, so taking it back loses nothing, a plan's link and invite
   included (`src/components/ArchiveView.tsx`, `src/lib/arsivListesi.ts`,
   `src/lib/topluIslem.ts`).
+- **Friends list**: under each friend, our next plan or when we last met;
+  under each group, its next plan. Friends not seen for a month or more,
+  with nothing planned, sit on a card at the top with "Plan yap", which
+  opens the shared-time planner with them already in it
+  (`src/components/ArkadaslarView.tsx`, `src/components/useArkadasOzetleri.ts`,
+  `src/sosyal/ortakGecmis.ts`).
 - **Calendar import**: `.ics` import and auto-refresh (`src/takvim.ts`,
   `api/takvim.ts`).
 - **Social layer**: accounts, friends, groups, group plans with RSVPs, direct

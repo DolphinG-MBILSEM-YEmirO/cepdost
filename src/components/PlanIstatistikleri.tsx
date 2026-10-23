@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { Icon } from './Icon'
 import { db, type Kayit } from '../db'
 import { CATEGORY_LABELS, CATEGORY_MARK_COLORS, CATEGORIES, parseLocalDate } from '../lib/format'
-import { UZUN_ARA_GUN, neKadarOnce, ortakGecmis, planOzeti, type OrtakGecmis } from '../lib/planIstatistikleri'
+import { neKadarOnce, ortakGecmis, planOzeti, uzunAraVar, type OrtakGecmis } from '../lib/planIstatistikleri'
 import { goreceGun } from '../lib/takvimIzgarasi'
 import { useBugun } from '../hooks/useBugun'
 import { useSosyalSurum } from '../sosyal/cekirdek'
@@ -153,7 +153,7 @@ export function OrtakGecmisSatiri({ arkadasId }: { arkadasId: string }) {
   }, [arkadasId, kayitlar, bugun, surum])
 
   if (!gecmis || gecmis.toplam === 0) return null
-  const uzunAra = gecmis.sonBulusma && gecmis.sonBulusma.gunOnce >= UZUN_ARA_GUN && !gecmis.siradaki
+  const uzunAra = uzunAraVar(gecmis)
 
   return (
     <section className="mt-5 max-w-sm mx-auto" aria-label="Ortak geçmiş">
