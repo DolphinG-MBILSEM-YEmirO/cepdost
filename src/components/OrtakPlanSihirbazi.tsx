@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Icon } from './Icon'
 import { Avatar } from './Avatar'
-import { davetGonder, type Arkadas, type Profil } from '../sosyal/api'
-import { grupPlaniOlustur, mesajGonder, planaYanitVer, type Grup } from '../sosyal/gruplar'
+import { profilimiGetir, type Arkadas, type Profil } from '../sosyal/api'
+import type { Grup } from '../sosyal/gruplar'
 import { gunleriUret, ortakPlanOner, type BosAralik, type OnerilenPlan } from '../sosyal/ortakPlan'
-import { kayitOlustur } from '../db'
+import { planiKur } from '../lib/planPaylasimi'
 import { formatDate } from '../lib/format'
+import { useGeriAdimi, useGeriIleKapat } from '../lib/geriTusu'
 
 // F16 — "herkese uyan plan" sihirbazı.
 //
@@ -22,8 +23,10 @@ interface Props {
   grup?: Grup
   grupUyeleri?: Profil[]
   arkadaslar?: Arkadas[]
-  // Grup modunda: plan oluşturulunca grup sohbetine de kart olarak düşsün.
-  sohbetePaylas?: boolean
+  // Opened from a one-to-one chat: the people are fixed, no picking step.
+  sabitKisiler?: Profil[]
+  // What to do, already written in (an idea's title, say).
+  baslangicIstegi?: string
   onKapat: () => void
   onOlusturuldu: () => void | Promise<void>
 }
@@ -36,24 +39,38 @@ const GUN_SECENEKLERI = [
 
 const SURE_SECENEKLERI = [60, 90, 120, 180]
 
+function dakikaFarki(baslangic: string, bitis: string): number {
+  const dakika = (s: string) => {
+    const [h, m] = s.split(':').map(Number)
+    return h * 60 + m
+  }
+  return Math.max(0, dakika(bitis) - dakika(baslangic))
+}
+
 export function OrtakPlanSihirbazi({
   benimAdim,
   grup,
   grupUyeleri,
   arkadaslar,
-  sohbetePaylas = false,
+  sabitKisiler,
+  baslangicIstegi,
   onKapat,
   onOlusturuldu,
 }: Props) {
+  useGeriIleKapat(onKapat)
   const grupModu = !!grup
   const secilebilir = useMemo(
     () => (arkadaslar ?? []).filter((a) => a.durum === 'kabul').map((a) => a.profil),
     [arkadaslar],
   )
 
-  const [asama, setAsama] = useState<Asama>(grupModu ? 'istek' : 'kisiler')
+  const kisilerSabit = grupModu || !!sabitKisiler
+  const [asama, setAsama] = useState<Asama>(kisilerSabit ? 'istek' : 'kisiler')
+  // One back step per wizard step, like its own back buttons.
+  useGeriAdimi(() => setAsama('kisiler'), !kisilerSabit && asama !== 'kisiler')
+  useGeriAdimi(() => setAsama('istek'), asama === 'oneri')
   const [secili, setSecili] = useState<string[]>([])
-  const [istek, setIstek] = useState('')
+  const [istek, setIstek] = useState(baslangicIstegi ?? '')
   const [gunSayisi, setGunSayisi] = useState(7)
   const [sure, setSure] = useState(90)
   const [yukleniyor, setYukleniyor] = useState(false)
@@ -66,7 +83,7 @@ export function OrtakPlanSihirbazi({
 
   const katilimcilar = grupModu
     ? (grupUyeleri ?? [])
-    : secilebilir.filter((p) => secili.includes(p.id))
+    : (sabitKisiler ?? secilebilir.filter((p) => secili.includes(p.id)))
 
   async function oneriAl() {
     if (!istek.trim()) {
@@ -101,70 +118,14 @@ export function OrtakPlanSihirbazi({
     setYukleniyor(true)
     setHata(null)
     try {
-      let grupPlanId: string | null = null
-
-      if (grupModu && grup) {
-        const planId = await grupPlaniOlustur({
-          grupId: grup.id,
-          baslik: plan.baslik,
-          tarih: plan.tarih,
-          saat: plan.saat,
-          sure: plan.sure,
-          konum: plan.konum,
-          notlar: plan.gerekce,
-        })
-        grupPlanId = planId
-        // Planı öneren zaten geliyor — grupta da öyle görünsün.
-        await planaYanitVer(planId, 'geliyorum')
-
-        if (sohbetePaylas) {
-          // Sohbete kart olarak düşür. Sohbet mesajı gönderilemese bile plan
-          // oluştu — bu yüzden hata kullanıcıyı bloklamıyor, sadece not.
-          try {
-            await mesajGonder(grup.id, `${benimAdim} bir plan önerdi 👇`, planId)
-          } catch {
-            /* plan zaten oluştu, kart paylaşımı isteğe bağlı bir ekstra */
-          }
-        }
-      } else {
-        // Her katılımcıya ayrı davet — kabul eden kendi takvimine ekler.
-        for (const p of katilimcilar) {
-          await davetGonder({
-            alanId: p.id,
-            baslik: plan.baslik,
-            tarih: plan.tarih,
-            saat: plan.saat,
-            sure: plan.sure,
-            konum: plan.konum,
-            mesaj: plan.gerekce,
-          })
-        }
-      }
-
-      // Planı öneren kişi zaten geliyor sayılır — kendi takvimine hemen düşsün.
-      await kayitOlustur({
-        kategori: 'etkinlik',
-        baslik: grupModu && grup ? `${plan.baslik} (${grup.ad})` : plan.baslik,
-        tarih: plan.tarih,
-        saat: plan.saat,
-        konum: plan.konum,
-        oncelik: 'orta',
-        sure: plan.sure,
-        ozetNot: plan.gerekce,
-        mekanOnerisi: null,
-        yakinOneriler: null,
-        kaynakTipi: 'metin',
-        hamBaslik: '',
-        hamMetin: '',
-        hamLink: '',
-        gorseller: [],
-        grupId: grupModu ? (grup?.id ?? null) : null,
-        grupAdi: grupModu ? (grup?.ad ?? null) : null,
-        // Yanıtı sonradan değiştirirsem bu kayıt mükerrer açılmasın/silinebilsin.
-        grupPlanId,
-        arkadasId: !grupModu && katilimcilar.length === 1 ? katilimcilar[0].id : null,
-        arkadasAdi: !grupModu && katilimcilar.length === 1 ? katilimcilar[0].ad : null,
-      })
+      // The plan always lands in the chat as a card (the group's, or ours
+      // with each friend), wherever the wizard was opened from, and goes in
+      // my calendar: whoever suggests it is coming.
+      await planiKur(
+        { ...plan, not: plan.gerekce, emoji: null },
+        grupModu && grup ? { tur: 'grup', grup } : { tur: 'arkadaslar', kisiler: katilimcilar },
+        grupModu ? `${benimAdim} bir plan önerdi 👇` : undefined,
+      )
 
       setGonderildi(true)
       await onOlusturuldu()
@@ -189,10 +150,8 @@ export function OrtakPlanSihirbazi({
             </p>
             <p className="text-sm text-ink-500">
               {grupModu
-                ? sohbetePaylas
-                  ? 'Plan grup sohbetine düştü. "Geliyorum" diyen herkesin takvimine eklenecek.'
-                  : 'Grup planı oluşturuldu. "Geliyorum" diyen herkesin takvimine düşecek.'
-                : `${katilimcilar.length} kişiye davet gönderildi. Kabul edenlerin takvimine düşecek.`}
+                ? 'Plan grup sohbetine düştü. "Geliyorum" diyen herkesin takvimine eklenecek.'
+                : `${katilimcilar.length} kişiye davet gönderildi ve sohbetinize düştü. Kabul edenlerin takvimine eklenecek.`}
             </p>
           </div>
           <button onClick={onKapat} className="btn-primary w-full mt-4">
@@ -241,10 +200,10 @@ export function OrtakPlanSihirbazi({
                         )
                       }
                       className={`w-full flex items-center gap-3 rounded-2xl p-3 border transition-all active:scale-[0.98] ${
-                        isaretli ? 'bg-coral-50 border-coral-200' : 'bg-cream-100 border-ink-100/40'
+                        isaretli ? 'bg-orchid-50 border-orchid-200' : 'bg-mist-100 border-ink-100'
                       }`}
                     >
-                      <Avatar ad={p.ad} avatarYol={p.avatar_yol} boyut="sm" />
+                      <Avatar ad={p.ad} foto={p.avatar} emoji={p.emoji} renk={p.renk} boyut="sm" />
                       <div className="flex-1 min-w-0 text-left">
                         <p className="text-sm font-medium text-ink-700 truncate">{p.ad}</p>
                         {!p.musaitlik_paylas && (
@@ -253,7 +212,7 @@ export function OrtakPlanSihirbazi({
                       </div>
                       <div
                         className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${
-                          isaretli ? 'bg-coral-500' : 'bg-cream-50 border border-ink-200'
+                          isaretli ? 'bg-orchid-500' : 'bg-mist-50 border border-ink-200'
                         }`}
                       >
                         {isaretli && <Icon name="Check" className="w-3.5 h-3.5 text-white" />}
@@ -287,7 +246,7 @@ export function OrtakPlanSihirbazi({
               {katilimcilar.slice(0, 6).map((p) => (
                 <span
                   key={p.id}
-                  className="chip bg-cream-100 text-ink-500 border border-ink-100/40 text-xs"
+                  className="chip bg-mist-100 text-ink-500 border border-ink-100 text-xs"
                 >
                   {p.ad}
                 </span>
@@ -318,8 +277,8 @@ export function OrtakPlanSihirbazi({
                     onClick={() => setGunSayisi(s.gun)}
                     className={`chip flex-1 justify-center ${
                       gunSayisi === s.gun
-                        ? 'bg-coral-500 text-white'
-                        : 'bg-cream-100 text-ink-500 border border-ink-100/40'
+                        ? 'bg-gradient-orchid text-white'
+                        : 'bg-mist-100 text-ink-500 border border-ink-100'
                     }`}
                   >
                     {s.etiket}
@@ -337,8 +296,8 @@ export function OrtakPlanSihirbazi({
                     onClick={() => setSure(s)}
                     className={`chip flex-1 justify-center ${
                       sure === s
-                        ? 'bg-coral-500 text-white'
-                        : 'bg-cream-100 text-ink-500 border border-ink-100/40'
+                        ? 'bg-gradient-orchid text-white'
+                        : 'bg-mist-100 text-ink-500 border border-ink-100'
                     }`}
                   >
                     {s >= 60 ? `${s / 60} sa` : `${s} dk`}
@@ -359,7 +318,7 @@ export function OrtakPlanSihirbazi({
               {yukleniyor ? 'Takvimlere bakıyorum...' : 'Uygun saati bul'}
             </button>
 
-            {!grupModu && (
+            {!kisilerSabit && (
               <button onClick={() => setAsama('kisiler')} className="btn-ghost w-full text-sm">
                 Kişileri değiştir
               </button>
@@ -373,8 +332,8 @@ export function OrtakPlanSihirbazi({
               <>
                 <div className="card p-5">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="w-9 h-9 rounded-xl bg-coral-100 flex items-center justify-center shrink-0">
-                      <Icon name="Wand2" className="w-4.5 h-4.5 text-coral-500" />
+                    <div className="w-9 h-9 rounded-xl bg-orchid-100 flex items-center justify-center shrink-0">
+                      <Icon name="Wand2" className="w-[18px] h-[18px] text-orchid-500" />
                     </div>
                     <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide">
                       Herkese uyan öneri
@@ -394,12 +353,12 @@ export function OrtakPlanSihirbazi({
                   </div>
                   {plan.konum && (
                     <p className="flex items-center gap-1.5 text-sm text-ink-500 mb-3">
-                      <Icon name="MapPin" className="w-4 h-4 text-coral-500" />
+                      <Icon name="MapPin" className="w-4 h-4 text-orchid-500" />
                       {plan.konum}
                     </p>
                   )}
                   {plan.gerekce && (
-                    <p className="text-sm text-ink-400 bg-cream-100 rounded-2xl px-4 py-3">
+                    <p className="text-sm text-ink-400 bg-mist-100 rounded-2xl px-4 py-3">
                       {plan.gerekce}
                     </p>
                   )}
@@ -442,9 +401,15 @@ export function OrtakPlanSihirbazi({
                         <button
                           key={i}
                           onClick={() =>
-                            setPlan({ ...plan, tarih: b.tarih, saat: b.baslangic })
+                            // Keep the plan inside the slot it was moved to.
+                            setPlan({
+                              ...plan,
+                              tarih: b.tarih,
+                              saat: b.baslangic,
+                              sure: Math.min(plan.sure, dakikaFarki(b.baslangic, b.bitis)),
+                            })
                           }
-                          className="chip bg-cream-100 text-ink-500 border border-ink-100/40 text-xs active:scale-95"
+                          className="chip bg-mist-100 text-ink-500 border border-ink-100 text-xs active:scale-95"
                         >
                           {formatDate(b.tarih) ?? b.tarih} {b.baslangic}
                         </button>
@@ -463,10 +428,10 @@ export function OrtakPlanSihirbazi({
                     className={`w-4 h-4 ${yukleniyor ? 'animate-spin' : ''}`}
                   />
                   {grupModu
-                    ? sohbetePaylas
-                      ? 'Planı grupla paylaş'
-                      : 'Grup planı olarak ekle'
-                    : `${katilimcilar.length} kişiye gönder`}
+                    ? 'Planı grupla paylaş'
+                    : katilimcilar.length === 1
+                      ? `${katilimcilar[0].ad} ile paylaş`
+                      : `${katilimcilar.length} kişiye gönder`}
                 </button>
               </>
             ) : (
@@ -493,6 +458,42 @@ export function OrtakPlanSihirbazi({
   )
 }
 
+// The planner for chosen friends (one from a chat or their profile, or the
+// people behind an idea). My own name goes into the plan message, so it
+// waits for my profile.
+export function KisilerleSihirbaz({
+  kisiler,
+  baslangicIstegi,
+  onKapat,
+  onOlusturuldu = () => {},
+}: {
+  kisiler: Profil[]
+  baslangicIstegi?: string
+  onKapat: () => void
+  onOlusturuldu?: () => void | Promise<void>
+}) {
+  const [benimAdim, setBenimAdim] = useState<string | null>(null)
+  useEffect(() => {
+    void profilimiGetir()
+      .then((p) => setBenimAdim(p?.ad ?? 'Ben'))
+      .catch(() => setBenimAdim('Ben'))
+  }, [])
+  if (!benimAdim) return null
+  return (
+    <OrtakPlanSihirbazi
+      benimAdim={benimAdim}
+      sabitKisiler={kisiler}
+      baslangicIstegi={baslangicIstegi}
+      onKapat={onKapat}
+      onOlusturuldu={onOlusturuldu}
+    />
+  )
+}
+
+export function ArkadaslaSihirbaz({ arkadas, onKapat }: { arkadas: Profil; onKapat: () => void }) {
+  return <KisilerleSihirbaz kisiler={[arkadas]} onKapat={onKapat} />
+}
+
 function Kabuk({
   baslik,
   onKapat,
@@ -503,8 +504,8 @@ function Kabuk({
   children: React.ReactNode
 }) {
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-cream-100/95 backdrop-blur-md animate-slide-up">
-      <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-4 border-b border-ink-100/40 shrink-0">
+    <div className="panel-tam z-[60]">
+      <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-4 border-b border-ink-100 shrink-0">
         <h2 className="font-display text-base font-bold text-ink-700 truncate">{baslik}</h2>
         <button
           onClick={onKapat}

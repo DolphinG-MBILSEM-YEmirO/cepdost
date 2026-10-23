@@ -3,6 +3,7 @@ import { Icon } from './Icon'
 import { kayitOlustur, type Kategori } from '../db'
 import { siniflandirOnizleme, type SiniflandirmaSonucu } from '../classify'
 import { CATEGORIES, CATEGORY_ICON_NAME, CATEGORY_LABELS } from '../lib/format'
+import { useGeriIleKapat } from '../lib/geriTusu'
 
 // F22 — arşive elle link ekleme.
 //
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export function LinkEkleModal({ onClose, onEklendi }: Props) {
+  useGeriIleKapat(onClose)
   const [link, setLink] = useState('')
   const [yukleniyor, setYukleniyor] = useState(false)
   const [hata, setHata] = useState<string | null>(null)
@@ -76,8 +78,13 @@ export function LinkEkleModal({ onClose, onEklendi }: Props) {
         mekanOnerisi: null,
         yakinOneriler: null,
       })
+      // Clear everything a previous link may have filled in, or its date and
+      // place would be saved with this one.
       setBaslik('')
       setKategori('not')
+      setTarih('')
+      setSaat('')
+      setKonum('')
     } finally {
       setYukleniyor(false)
     }
@@ -127,8 +134,8 @@ export function LinkEkleModal({ onClose, onEklendi }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2.5 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-coral-100 flex items-center justify-center shrink-0">
-            <Icon name="LinkIcon" className="w-5 h-5 text-coral-500" />
+          <div className="w-10 h-10 rounded-xl bg-orchid-100 flex items-center justify-center shrink-0">
+            <Icon name="LinkIcon" className="w-5 h-5 text-orchid-500" />
           </div>
           <div className="min-w-0">
             <h3 className="font-semibold text-ink-700">Link ekle</h3>
@@ -173,8 +180,8 @@ export function LinkEkleModal({ onClose, onEklendi }: Props) {
                     onClick={() => setKategori(c)}
                     className={`chip ${
                       kategori === c
-                        ? 'bg-coral-500 text-white'
-                        : 'bg-cream-100 text-ink-500 border border-ink-100/40'
+                        ? 'bg-gradient-orchid text-white'
+                        : 'bg-mist-100 text-ink-500 border border-ink-100'
                     }`}
                   >
                     <Icon name={CATEGORY_ICON_NAME[c]} className="w-4 h-4" />
@@ -230,7 +237,7 @@ export function LinkEkleModal({ onClose, onEklendi }: Props) {
           <button
             onClick={sonuc ? () => setSonuc(null) : onClose}
             disabled={yukleniyor}
-            className="btn-ghost flex-1 border border-ink-100/40 disabled:opacity-50"
+            className="btn-ghost flex-1 border border-ink-100 disabled:opacity-50"
           >
             {sonuc ? 'Geri' : 'Vazgeç'}
           </button>

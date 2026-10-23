@@ -1,13 +1,13 @@
 import { db, type Kayit, type TakvimEtkinligi } from '../db'
-import { sb } from './supabase'
+import { TUR, kanalDurumu, motor, simdiMs, type MusaitlikVerisi } from './cekirdek'
+import { planAyarlari } from '../lib/planAyarlari'
 
-// F10: yerel planlardan SADECE zaman bilgisini sunucuya taşır.
+// Shares ONLY time ranges from local plans with friends and groups.
 //
-// Buradan çıkan nesnede başlık, konum, kategori, not YOKTUR ve olmamalıdır —
-// arkadaşın göreceği tek şey "bu aralık dolu". Sunucudaki tabloda zaten bu
-// alanlar tanımlı değil (bkz. musaitlik_bloklari migration'ı), yani bir
-// hata yapılsa bile detay sızamaz. Bu, tek katmana güvenmemek için bilinçli
-// bir çift savunma.
+// The published blocks have no title, place, category or notes, and must
+// never get them: all a friend sees is "this range is busy". The record is
+// built from these blocks alone (see musaitligiSenkronla), so a slip
+// elsewhere can't leak plan details.
 
 const VARSAYILAN_SURE_DK = 60
 
@@ -23,16 +23,30 @@ function tarihStr(d: Date): string {
   return `${y}-${m}-${g}`
 }
 
-function saatEkle(saat: string, dakika: number): string {
-  const [s, d] = saat.split(':').map(Number)
-  if (Number.isNaN(s) || Number.isNaN(d)) return '23:59'
-  const toplam = s * 60 + d + dakika
-  // Gece yarısını aşan planlar için günü bölmek yerine 23:59'a sabitliyoruz —
-  // müsaitlik göstermek için bu yeterli, veri modelini karmaşıklaştırmıyor.
-  if (toplam >= 24 * 60) return '23:59'
-  const ss = String(Math.floor(toplam / 60)).padStart(2, '0')
-  const dd = String(toplam % 60).padStart(2, '0')
-  return `${ss}:${dd}`
+function saatStr(dakika: number): string {
+  return `${String(Math.floor(dakika / 60)).padStart(2, '0')}:${String(dakika % 60).padStart(2, '0')}`
+}
+
+function ertesiGun(tarih: string): string {
+  const [y, a, g] = tarih.split('-').map(Number)
+  return tarihStr(new Date(y, a - 1, g + 1))
+}
+
+// A plan as one or two busy ranges: one that runs past midnight ("22:00,
+// 4 hours") also fills the start of the next day. Days end at 23:59, the
+// same convention the calendar import uses.
+function plandanBloklar(tarih: string, baslangic: string, sureDk: number): Array<Omit<Blok, 'yerel_kayit_id'>> {
+  const [s, d] = baslangic.split(':').map(Number)
+  if (Number.isNaN(s) || Number.isNaN(d)) return []
+  const bas = s * 60 + d
+  const bit = bas + sureDk
+  const GUN = 24 * 60
+  if (bit < GUN) return [{ tarih, baslangic, bitis: saatStr(bit) }]
+  const bloklar = [{ tarih, baslangic, bitis: '23:59' }]
+  // Longer than a day is not a meeting worth blocking a second day for.
+  const tasan = Math.min(bit - GUN, GUN - 1)
+  if (tasan > 0) bloklar.push({ tarih: ertesiGun(tarih), baslangic: '00:00', bitis: saatStr(tasan) })
+  return bloklar
 }
 
 interface Blok {
@@ -44,7 +58,8 @@ interface Blok {
 
 // Yalnızca tarihi VE saati olan, henüz yapılmamış, tarih penceresindeki
 // kayıtlar müsaitliğe dönüşür. Saatsiz bir plan ("bir ara kitapçıya
-// uğra") kimseyi meşgul göstermemeli.
+// uğra") kimseyi meşgul göstermemeli. The exception is a plan marked
+// "all day": the person said the day is taken, so all of it is busy.
 export function bloklariCikar(
   kayitlar: Kayit[],
   bugun = new Date(),
@@ -61,19 +76,23 @@ export function bloklariCikar(
   const bloklar: Blok[] = []
   for (const k of kayitlar) {
     if (k.durum === 'yapildi') continue
-    if (!k.tarih || !k.saat) continue
+    if (!k.tarih) continue
     if (k.tarih < altStr || k.tarih > ustStr) continue
+    if (k.tumGun) {
+      bloklar.push({ yerel_kayit_id: k.id, tarih: k.tarih, baslangic: '00:00', bitis: '23:59' })
+      continue
+    }
+    if (!k.saat) continue
 
-    const baslangic = k.saat.length === 5 ? k.saat : k.saat.slice(0, 5)
-    const bitis = saatEkle(baslangic, k.sure && k.sure > 0 ? k.sure : VARSAYILAN_SURE_DK)
-    if (bitis <= baslangic) continue
-
-    bloklar.push({ yerel_kayit_id: k.id, tarih: k.tarih, baslangic, bitis })
+    const baslangic = k.saat.slice(0, 5)
+    for (const b of plandanBloklar(k.tarih, baslangic, k.sure && k.sure > 0 ? k.sure : VARSAYILAN_SURE_DK)) {
+      if (b.bitis > b.baslangic) bloklar.push({ yerel_kayit_id: k.id, ...b })
+    }
   }
 
   // F15: telefon takviminden içe aktarılanlar da "dolu" sayılır. Buradan da
   // yalnızca saat aralığı çıkıyor — etkinliğin başlığı/konumu sunucuya
-  // GİTMİYOR, tıpkı CepDost planlarında olduğu gibi.
+  // GİTMİYOR, tıpkı uygulamadaki planlarda olduğu gibi.
   for (const e of takvimEtkinlikleri) {
     // Tüm gün etkinlikleri (doğum günü, bayram, "izinliyim") kişiyi bütün
     // gün meşgul göstermemeli — bunlar bilgi amaçlı kayıtlar.
@@ -92,81 +111,43 @@ export function bloklariCikar(
   return bloklar
 }
 
-// Yerel durumu sunucuya yansıtır: eklenenleri yazar, silinen/artık uygun
-// olmayanları sunucudan kaldırır. Tekilleştirme yerel_kayit_id üzerinden,
-// böylece aynı plan iki kez blok oluşturmaz.
+// How long an unchanged copy may go without a refresh. The refresh moves
+// `guncelleme`, which friends see as "updated N hours ago".
+const TAZELEME_MS = 12 * 60 * 60 * 1000
+
+// Publishes my busy ranges and usual hours on my broadcast channel
+// (friends); the sync copies them into each group. Re-published when
+// something changed, or to confirm an unchanged copy is still current.
 //
-// paylasimAcik=false ise sunucudaki TÜM bloklar silinir — "paylaşmayı
-// kapattım" demek "verim orada durmasın" demek olmalı, sadece gizlenmesi
-// değil.
-export async function musaitligiSenkronla(kullaniciId: string, paylasimAcik: boolean): Promise<void> {
-  const istemci = sb()
-
-  const { data: mevcutSatirlar, error: okumaHata } = await istemci
-    .from('musaitlik_bloklari')
-    .select('id, yerel_kayit_id, tarih, baslangic, bitis')
-    .eq('kullanici_id', kullaniciId)
-  if (okumaHata) throw new Error(okumaHata.message)
-
-  const mevcut = (mevcutSatirlar ?? []) as Array<{
-    id: string
-    yerel_kayit_id: string | null
-    tarih: string
-    baslangic: string
-    bitis: string
-  }>
+// paylasimAcik=false deletes the shared copy: turning sharing off should
+// mean the data is gone, not just hidden.
+export async function musaitligiSenkronla(_kullaniciId: string, paylasimAcik: boolean): Promise<void> {
+  const m = motor()
+  const durum = await kanalDurumu()
+  if (!durum.yayin) return
+  const mevcut = await m.kayit(durum.yayin, m.benimId, 'musaitlik')
 
   if (!paylasimAcik) {
-    if (mevcut.length > 0) {
-      const { error } = await istemci
-        .from('musaitlik_bloklari')
-        .delete()
-        .eq('kullanici_id', kullaniciId)
-      if (error) throw new Error(error.message)
-    }
+    if (mevcut && mevcut.veri !== null) await m.yayinla(durum.yayin, TUR.musaitlik, 'musaitlik', null)
     return
   }
 
-  const [kayitlar, takvim] = await Promise.all([
-    db.kayitlar.toArray(),
-    db.takvimEtkinlikleri.toArray(),
-  ])
-  const istenen = bloklariCikar(kayitlar, new Date(), takvim)
-  const istenenHarita = new Map(istenen.map((b) => [b.yerel_kayit_id, b]))
+  const [kayitlar, takvim] = await Promise.all([db.kayitlar.toArray(), db.takvimEtkinlikleri.toArray()])
+  const bloklar = bloklariCikar(kayitlar, new Date(), takvim)
+    .map(({ tarih, baslangic, bitis }) => ({ tarih, baslangic, bitis }))
+    .sort((a, b) => (a.tarih + a.baslangic).localeCompare(b.tarih + b.baslangic))
 
-  const silinecekIdler: string[] = []
-  const mevcutHarita = new Map<string, (typeof mevcut)[number]>()
-
-  for (const satir of mevcut) {
-    if (!satir.yerel_kayit_id || !istenenHarita.has(satir.yerel_kayit_id)) {
-      silinecekIdler.push(satir.id)
-    } else {
-      mevcutHarita.set(satir.yerel_kayit_id, satir)
-    }
-  }
-
-  if (silinecekIdler.length > 0) {
-    const { error } = await istemci.from('musaitlik_bloklari').delete().in('id', silinecekIdler)
-    if (error) throw new Error(error.message)
-  }
-
-  // Yalnızca gerçekten değişmiş/yeni olanları yaz — her açılışta tüm
-  // tabloyu yeniden yazmak gereksiz yazma trafiği demek.
-  const yazilacak = istenen.filter((b) => {
-    const eski = mevcutHarita.get(b.yerel_kayit_id)
-    if (!eski) return true
-    return (
-      eski.tarih !== b.tarih ||
-      eski.baslangic.slice(0, 5) !== b.baslangic ||
-      eski.bitis.slice(0, 5) !== b.bitis
-    )
-  })
-
-  if (yazilacak.length > 0) {
-    const { error } = await istemci.from('musaitlik_bloklari').upsert(
-      yazilacak.map((b) => ({ ...b, kullanici_id: kullaniciId })),
-      { onConflict: 'kullanici_id,yerel_kayit_id' },
-    )
-    if (error) throw new Error(error.message)
-  }
+  const pencere = planAyarlari().pencere
+  const onceki = mevcut?.veri as MusaitlikVerisi | null | undefined
+  const ayni =
+    onceki &&
+    JSON.stringify(onceki.bloklar) === JSON.stringify(bloklar) &&
+    JSON.stringify(onceki.pencere ?? null) === JSON.stringify(pencere)
+  if (ayni && simdiMs() - (onceki.guncelleme ?? 0) < TAZELEME_MS) return
+  await m.yayinla(durum.yayin, TUR.musaitlik, 'musaitlik', {
+    bloklar,
+    guncelleme: simdiMs(),
+    pencere,
+  } satisfies MusaitlikVerisi)
+  void m.esitle().catch(() => {})
 }

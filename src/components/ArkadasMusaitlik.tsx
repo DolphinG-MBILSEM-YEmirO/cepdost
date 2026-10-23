@@ -1,26 +1,25 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Icon } from './Icon'
-import { Avatar } from './Avatar'
-import { AniArsivi } from './AniArsivi'
-import { arkadasMusaitligi, davetGonder, type MusaitlikBlogu, type Profil } from '../sosyal/api'
-import { direktMesajGonder } from '../sosyal/mesajlar'
-import { addDays, toDateString, formatDate } from '../lib/format'
+import { arkadasTakvimi, type ArkadasTakvimi, type MusaitlikBlogu, type Profil } from '../sosyal/api'
+import { addDays, toDateString, formatDate, formatRelativeTime } from '../lib/format'
+import { ETKINLIK_EMOJILERI } from '../lib/kisisellestirme'
+import { planiKur } from '../lib/planPaylasimi'
+import { EmojiSecici, TumGunAnahtari } from './Seciciler'
+import { useGeriIleKapat } from '../lib/geriTusu'
+
+// The Müsaitlik tab of a friend's profile (ArkadasProfili): their busy
+// ranges for the coming week, and a quick invite for any day.
 
 // Kaç günlük müsaitlik gösterilsin. Bir haftalık pencere, "bu hafta ne
 // zaman buluşabiliriz" sorusunun doğal kapsamı.
 const GUN_SAYISI = 7
 
-interface Props {
-  arkadas: Profil
-  benimId: string
-  onClose: () => void
-}
+// Older than this, the screen says the calendar may have changed since.
+const ESKI_TAKVIM_MS = 3 * 24 * 60 * 60 * 1000
 
-type Sekme = 'musaitlik' | 'anilar'
-
-export function ArkadasMusaitlik({ arkadas, benimId, onClose }: Props) {
-  const [sekme, setSekme] = useState<Sekme>('musaitlik')
-  const [bloklar, setBloklar] = useState<MusaitlikBlogu[] | null>(null)
+export function ArkadasMusaitlik({ arkadas }: { arkadas: Profil }) {
+  // null while loading.
+  const [takvim, setTakvim] = useState<ArkadasTakvimi | null>(null)
   const [hata, setHata] = useState<string | null>(null)
   const [davetGunu, setDavetGunu] = useState<string | null>(null)
 
@@ -31,12 +30,12 @@ export function ArkadasMusaitlik({ arkadas, benimId, onClose }: Props) {
 
   useEffect(() => {
     let iptal = false
-    setBloklar(null)
+    setTakvim(null)
     setHata(null)
 
-    arkadasMusaitligi(arkadas.id, gunler[0], gunler[gunler.length - 1])
+    arkadasTakvimi(arkadas.id, gunler[0], gunler[gunler.length - 1])
       .then((sonuc) => {
-        if (!iptal) setBloklar(sonuc)
+        if (!iptal) setTakvim(sonuc)
       })
       .catch((err) => {
         if (!iptal) setHata(err instanceof Error ? err.message : 'Müsaitlik alınamadı')
@@ -50,110 +49,90 @@ export function ArkadasMusaitlik({ arkadas, benimId, onClose }: Props) {
   const gunBazli = useMemo(() => {
     const harita = new Map<string, MusaitlikBlogu[]>()
     for (const g of gunler) harita.set(g, [])
-    for (const b of bloklar ?? []) {
+    for (const b of takvim?.bloklar ?? []) {
       harita.get(b.tarih)?.push(b)
     }
     return harita
-  }, [bloklar, gunler])
+  }, [takvim, gunler])
 
   // Paylaşımı kapatmış bir arkadaşta hiç blok gelmez — bunu "tamamen boş"
-  // gibi göstermek yanıltıcı olur, ayrıca belirtiyoruz.
+  // gibi göstermek yanıltıcı olur, ayrıca belirtiyoruz. Paylaşımı açık ama
+  // takvimi bu cihaza henüz ulaşmamış biri de aynı şekilde "bilinmiyor".
   const paylasimKapali = !arkadas.musaitlik_paylas
+  const henuzGelmedi = !paylasimKapali && takvim !== null && takvim.bloklar === null
 
   return (
-    <div className="fixed inset-0 z-[55] flex flex-col bg-cream-100/95 backdrop-blur-md animate-slide-up">
-      <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-4 border-b border-ink-100/40 shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
-          <Avatar ad={arkadas.ad} avatarYol={arkadas.avatar_yol} />
-          <div className="min-w-0">
-            <h2 className="font-display text-base font-bold text-ink-700 leading-tight truncate">
-              {arkadas.ad}
-            </h2>
-            <p className="text-xs text-ink-400 truncate">
-              {arkadas.kullanici_adi ? `@${arkadas.kullanici_adi}` : 'Müsaitlik takvimi'}
-            </p>
-          </div>
+    <div className="px-5 pt-1 pb-8 space-y-3">
+      {hata && (
+        <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3">
+          <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+          <p className="text-sm text-rose-700">{hata}</p>
         </div>
-        <button
-          onClick={onClose}
-          className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
-        >
-          <Icon name="X" className="w-5 h-5 text-ink-500" />
-        </button>
-      </div>
+      )}
 
-      <div className="flex gap-1.5 px-5 pb-3 shrink-0">
-        {([
-          { id: 'musaitlik' as const, etiket: 'Müsaitlik', ikon: 'CalendarClock' as const },
-          { id: 'anilar' as const, etiket: 'Anılar', ikon: 'ImageIcon' as const },
-        ]).map((s) => (
-          <button
-            key={s.id}
-            onClick={() => setSekme(s.id)}
-            className={`chip ${
-              sekme === s.id ? 'bg-coral-500 text-white' : 'bg-cream-50 text-ink-400 border border-ink-100/40'
-            }`}
-          >
-            <Icon name={s.ikon} className="w-4 h-4" />
-            {s.etiket}
-          </button>
-        ))}
-      </div>
+      {paylasimKapali && (
+        <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3">
+          <Icon name="Info" className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-800">
+            {arkadas.ad} müsaitlik paylaşımını kapatmış. Yine de plan daveti gönderebilirsin.
+          </p>
+        </div>
+      )}
 
-      {sekme === 'anilar' ? (
-        <div className="flex-1 overflow-y-auto px-5 pb-8">
-          <AniArsivi arkadasId={arkadas.id} benimId={benimId} baslik={arkadas.ad} />
+      {henuzGelmedi && (
+        <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3">
+          <Icon name="Info" className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-800">
+            {arkadas.ad} takvimini paylaşıyor ama henüz bu cihaza ulaşmadı. Yine de plan daveti gönderebilirsin.
+          </p>
+        </div>
+      )}
+
+      {takvim?.bloklar && <TakvimDurumu takvim={takvim} />}
+
+      {takvim === null && !hata ? (
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="skeleton h-20 rounded-3xl" />
+          ))}
         </div>
       ) : (
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
-        {hata && (
-          <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3">
-            <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
-            <p className="text-sm text-rose-700">{hata}</p>
-          </div>
-        )}
-
-        {paylasimKapali && (
-          <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3">
-            <Icon name="Info" className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-            <p className="text-sm text-amber-800">
-              {arkadas.ad} müsaitlik paylaşımını kapatmış. Yine de plan daveti gönderebilirsin.
-            </p>
-          </div>
-        )}
-
-        {bloklar === null && !hata ? (
-          <div className="space-y-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="skeleton h-20 rounded-3xl" />
-            ))}
-          </div>
-        ) : (
-          gunler.map((gun) => (
-            <GunSatiri
-              key={gun}
-              tarih={gun}
-              bloklar={gunBazli.get(gun) ?? []}
-              paylasimKapali={paylasimKapali}
-              onDavet={() => setDavetGunu(gun)}
-            />
-          ))
-        )}
-
-        <p className="text-[11px] text-ink-300 text-center pt-2 leading-relaxed">
-          Sadece dolu saat aralıkları görünür — {arkadas.ad} o saatte ne yaptığını paylaşmıyor.
-        </p>
-      </div>
+        gunler.map((gun) => (
+          <GunSatiri
+            key={gun}
+            tarih={gun}
+            bloklar={gunBazli.get(gun) ?? []}
+            paylasimKapali={paylasimKapali}
+            bilinmiyor={henuzGelmedi}
+            onDavet={() => setDavetGunu(gun)}
+          />
+        ))
       )}
 
-      {davetGunu && (
-        <DavetModal
-          arkadas={arkadas}
-          tarih={davetGunu}
-          onClose={() => setDavetGunu(null)}
-        />
-      )}
+      <p className="text-[11px] text-ink-300 text-center pt-2 leading-relaxed">
+        Sadece dolu saat aralıkları görünür — {arkadas.ad} o saatte ne yaptığını paylaşmıyor.
+      </p>
+
+      {davetGunu && <DavetModal arkadas={arkadas} tarih={davetGunu} onClose={() => setDavetGunu(null)} />}
     </div>
+  )
+}
+
+// How current the shared calendar is, and the hours they're usually free.
+function TakvimDurumu({ takvim }: { takvim: ArkadasTakvimi }) {
+  const { guncelleme, pencere } = takvim
+  const eski = guncelleme !== null && Date.now() - guncelleme > ESKI_TAKVIM_MS
+  const ne = guncelleme === null ? null : formatRelativeTime(guncelleme)
+  const parcalar = [
+    ne && `Takvimi ${ne === 'şimdi' ? 'az önce' : ne} güncellendi${eski ? '; o zamandan beri değişmiş olabilir' : ''}`,
+    pencere && `genelde ${pencere.baslangic}–${pencere.bitis} arası müsait`,
+  ].filter(Boolean)
+  if (parcalar.length === 0) return null
+  return (
+    <p className={`flex items-center gap-1.5 text-xs ${eski ? 'text-amber-700' : 'text-ink-400'}`}>
+      <Icon name={eski ? 'AlertCircle' : 'RefreshCw'} className="w-3.5 h-3.5 shrink-0" />
+      {parcalar.join(' · ')}
+    </p>
   )
 }
 
@@ -161,13 +140,16 @@ function GunSatiri({
   tarih,
   bloklar,
   paylasimKapali,
+  bilinmiyor,
   onDavet,
 }: {
   tarih: string
   bloklar: MusaitlikBlogu[]
   paylasimKapali: boolean
+  bilinmiyor: boolean
   onDavet: () => void
 }) {
+  const bilgiYok = paylasimKapali || bilinmiyor
   const bos = bloklar.length === 0
   const etiket = formatDate(tarih) ?? tarih
 
@@ -176,7 +158,7 @@ function GunSatiri({
       <div className="flex items-center justify-between mb-2.5">
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-ink-700">{etiket}</span>
-          {!paylasimKapali && (
+          {!bilgiYok && (
             <span
               className={`chip text-xs py-1 ${
                 bos ? 'bg-teal-100 text-teal-700' : 'bg-amber-100 text-amber-700'
@@ -188,14 +170,16 @@ function GunSatiri({
         </div>
         <button
           onClick={onDavet}
-          className="text-xs font-semibold text-coral-600 active:scale-95 transition-transform shrink-0"
+          className="text-xs font-semibold text-orchid-600 active:scale-95 transition-transform shrink-0"
         >
           Davet et
         </button>
       </div>
 
-      {paylasimKapali ? (
-        <p className="text-xs text-ink-300">Müsaitlik bilgisi paylaşılmıyor</p>
+      {bilgiYok ? (
+        <p className="text-xs text-ink-300">
+          {paylasimKapali ? 'Müsaitlik bilgisi paylaşılmıyor' : 'Müsaitlik bilgisi henüz yok'}
+        </p>
       ) : bos ? (
         <p className="text-xs text-ink-400">Bu gün için kayıtlı planı yok</p>
       ) : (
@@ -203,10 +187,12 @@ function GunSatiri({
           {bloklar.map((b) => (
             <span
               key={b.id}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-cream-100 border border-ink-100/40 px-2.5 py-1.5 text-xs font-medium text-ink-500"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-mist-100 border border-ink-100 px-2.5 py-1.5 text-xs font-medium text-ink-500"
             >
               <Icon name="Clock" className="w-3.5 h-3.5 text-ink-300" />
-              {b.baslangic.slice(0, 5)} – {b.bitis.slice(0, 5)}
+              {b.baslangic.slice(0, 5) === '00:00' && b.bitis.slice(0, 5) >= '23:59'
+                ? 'Bütün gün'
+                : `${b.baslangic.slice(0, 5)} – ${b.bitis.slice(0, 5)}`}
             </span>
           ))}
         </div>
@@ -224,11 +210,14 @@ function DavetModal({
   tarih: string
   onClose: () => void
 }) {
+  useGeriIleKapat(onClose)
   const [baslik, setBaslik] = useState('')
   const [saat, setSaat] = useState('')
   const [sure, setSure] = useState('')
+  const [tumGun, setTumGun] = useState(false)
   const [konum, setKonum] = useState('')
   const [mesaj, setMesaj] = useState('')
+  const [emoji, setEmoji] = useState<string | null>(null)
   const [gonderiliyor, setGonderiliyor] = useState(false)
   const [hata, setHata] = useState<string | null>(null)
   const [basarili, setBasarili] = useState(false)
@@ -241,21 +230,19 @@ function DavetModal({
     setGonderiliyor(true)
     setHata(null)
     try {
-      const davetId = await davetGonder({
-        alanId: arkadas.id,
-        baslik: baslik.trim(),
-        tarih,
-        saat: saat || null,
-        sure: sure ? Number(sure) : null,
-        konum: konum.trim() || null,
-        mesaj: mesaj.trim() || null,
-      })
-      // Davet sohbette de kart olarak görünsün.
-      try {
-        await direktMesajGonder(arkadas.id, 'Bir plan önerdim 👇', davetId)
-      } catch {
-        /* davet gitti; sohbet kartı isteğe bağlı bir ekstra */
-      }
+      await planiKur(
+        {
+          baslik: baslik.trim(),
+          tarih,
+          saat: saat || null,
+          sure: sure ? Number(sure) : null,
+          tumGun,
+          konum: konum.trim() || null,
+          not: mesaj.trim() || null,
+          emoji,
+        },
+        { tur: 'arkadaslar', kisiler: [arkadas] },
+      )
       setBasarili(true)
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Davet gönderilemedi')
@@ -273,7 +260,7 @@ function DavetModal({
           </div>
           <p className="font-display text-lg font-bold text-ink-700 mb-1">Davet gönderildi</p>
           <p className="text-sm text-ink-400 mb-5">
-            {arkadas.ad} kabul ederse ikinizin de planına eklenecek.
+            Plan takvimine eklendi. {arkadas.ad} kabul ederse onun takvimine de düşecek.
           </p>
           <button onClick={onClose} className="btn-primary w-full">
             Tamam
@@ -293,8 +280,8 @@ function DavetModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2.5 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-coral-100 flex items-center justify-center shrink-0">
-            <Icon name="CalendarClock" className="w-5 h-5 text-coral-500" />
+          <div className="w-10 h-10 rounded-xl bg-orchid-100 flex items-center justify-center shrink-0">
+            <Icon name="CalendarClock" className="w-5 h-5 text-orchid-500" />
           </div>
           <div className="min-w-0">
             <h3 className="font-semibold text-ink-700 truncate">{arkadas.ad} davet et</h3>
@@ -311,22 +298,32 @@ function DavetModal({
           autoFocus
         />
 
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div>
-            <FieldLabel>Saat</FieldLabel>
-            <input type="time" value={saat} onChange={(e) => setSaat(e.target.value)} className="input-field" />
+        <FieldLabel>Simge</FieldLabel>
+        <div className="mb-4">
+          <EmojiSecici secenekler={ETKINLIK_EMOJILERI} secili={emoji} onSec={setEmoji} />
+        </div>
+
+        {!tumGun && (
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <FieldLabel>Saat</FieldLabel>
+              <input type="time" value={saat} onChange={(e) => setSaat(e.target.value)} className="input-field" />
+            </div>
+            <div>
+              <FieldLabel>Süre (dk)</FieldLabel>
+              <input
+                type="number"
+                value={sure}
+                onChange={(e) => setSure(e.target.value)}
+                placeholder="90"
+                min="0"
+                className="input-field"
+              />
+            </div>
           </div>
-          <div>
-            <FieldLabel>Süre (dk)</FieldLabel>
-            <input
-              type="number"
-              value={sure}
-              onChange={(e) => setSure(e.target.value)}
-              placeholder="90"
-              min="0"
-              className="input-field"
-            />
-          </div>
+        )}
+        <div className="mb-4">
+          <TumGunAnahtari acik={tumGun} onDegistir={setTumGun} />
         </div>
 
         <FieldLabel>Nerede</FieldLabel>
@@ -354,7 +351,7 @@ function DavetModal({
         )}
 
         <div className="flex gap-3">
-          <button onClick={onClose} className="btn-ghost flex-1 border border-ink-100/40" disabled={gonderiliyor}>
+          <button onClick={onClose} className="btn-ghost flex-1 border border-ink-100" disabled={gonderiliyor}>
             Vazgeç
           </button>
           <button

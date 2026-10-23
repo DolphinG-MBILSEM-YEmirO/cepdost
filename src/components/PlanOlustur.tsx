@@ -1,28 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Icon, type IconName } from './Icon'
-import { Avatar } from './Avatar'
-import { kayitOlustur, type Kategori, type YakinOneri } from '../db'
+import { Avatar, GrupAvatari } from './Avatar'
+import { type Kategori, type YakinOneri } from '../db'
 import { siniflandirOnizleme } from '../classify'
 import { useAuth } from '../sosyal/auth'
 import {
   arkadaslariGetir,
-  arkadasMusaitligi,
-  davetGonder,
+  arkadasTakvimi,
   type Arkadas,
-  type MusaitlikBlogu,
+  type ArkadasTakvimi,
   type Profil,
 } from '../sosyal/api'
-import {
-  grupPlaniOlustur,
-  gruplarimiGetir,
-  grupUyeleriGetir,
-  mesajGonder,
-  planaYanitVer,
-  type Grup,
-} from '../sosyal/gruplar'
-import { direktMesajGonder } from '../sosyal/mesajlar'
-import { ortakPlanOner } from '../sosyal/ortakPlan'
-import { addDays, formatDate, toDateString } from '../lib/format'
+import { gruplarimiGetir, grupUyeleriGetir, type Grup } from '../sosyal/gruplar'
+import { kendiBloklarim, ortakPlanOner } from '../sosyal/ortakPlan'
+import { addDays, formatBusyRanges, formatDate, toDateString } from '../lib/format'
+import { useGeriAdimi, useGeriIleKapat } from '../lib/geriTusu'
+import { planiKur, type PlanKitlesi } from '../lib/planPaylasimi'
+import { ETKINLIK_EMOJILERI } from '../lib/kisisellestirme'
+import { EmojiSecici, TumGunAnahtari } from './Seciciler'
 
 // F19 — "+" akışı yeniden tasarlandı (2026-08-08).
 //
@@ -41,23 +36,23 @@ interface Props {
 
 interface Etkinlik {
   ad: string
-  ikon: IconName
   kategori: Kategori
+  emoji: string
   // Tipik süre — kullanıcı değiştirebiliyor ama makul bir başlangıç.
   sure: number
 }
 
 const ETKINLIKLER: Etkinlik[] = [
-  { ad: 'Kahve', ikon: 'UtensilsCrossed', kategori: 'mekan', sure: 90 },
-  { ad: 'Yemek', ikon: 'UtensilsCrossed', kategori: 'mekan', sure: 120 },
-  { ad: 'Sinema', ikon: 'ImageIcon', kategori: 'etkinlik', sure: 150 },
-  { ad: 'Yürüyüş', ikon: 'MapPin', kategori: 'etkinlik', sure: 60 },
-  { ad: 'Spor', ikon: 'Flame', kategori: 'etkinlik', sure: 90 },
-  { ad: 'Ders / çalışma', ikon: 'ListChecks', kategori: 'etkinlik', sure: 120 },
-  { ad: 'Oyun', ikon: 'Sparkles', kategori: 'etkinlik', sure: 120 },
-  { ad: 'Konser', ikon: 'CalendarHeart', kategori: 'etkinlik', sure: 180 },
-  { ad: 'Alışveriş', ikon: 'ShoppingBag', kategori: 'urun', sure: 90 },
-  { ad: 'Tarif dene', ikon: 'UtensilsCrossed', kategori: 'tarif', sure: 90 },
+  { ad: 'Kahve', kategori: 'mekan', emoji: '☕', sure: 90 },
+  { ad: 'Yemek', kategori: 'mekan', emoji: '🍽️', sure: 120 },
+  { ad: 'Sinema', kategori: 'etkinlik', emoji: '🎬', sure: 150 },
+  { ad: 'Yürüyüş', kategori: 'etkinlik', emoji: '🏃', sure: 60 },
+  { ad: 'Spor', kategori: 'etkinlik', emoji: '⚽', sure: 90 },
+  { ad: 'Ders / çalışma', kategori: 'etkinlik', emoji: '📚', sure: 120 },
+  { ad: 'Oyun', kategori: 'etkinlik', emoji: '🎮', sure: 120 },
+  { ad: 'Konser', kategori: 'etkinlik', emoji: '🎵', sure: 180 },
+  { ad: 'Alışveriş', kategori: 'urun', emoji: '🛍️', sure: 90 },
+  { ad: 'Tarif dene', kategori: 'tarif', emoji: '🍽️', sure: 90 },
 ]
 
 const SURELER = [60, 90, 120, 180]
@@ -81,9 +76,13 @@ function dakikaya(saat: string): number {
 }
 
 export function PlanOlustur({ onClose, onSaved }: Props) {
+  useGeriIleKapat(onClose)
   const { kullanici } = useAuth()
 
   const [adim, setAdim] = useState<Adim>('kiminle')
+  // One back step per wizard step, like its own Geri button.
+  useGeriAdimi(() => setAdim('kiminle'), adim !== 'kiminle')
+  useGeriAdimi(() => setAdim('detay'), adim === 'ozet')
   const [kapsam, setKapsam] = useState<Kapsam>('tek')
 
   const [arkadaslar, setArkadaslar] = useState<Arkadas[]>([])
@@ -94,6 +93,8 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
 
   const [etkinlik, setEtkinlik] = useState<Etkinlik | null>(null)
   const [serbestBaslik, setSerbestBaslik] = useState('')
+  // Follows the picked activity until the person chooses one themselves.
+  const [emoji, setEmoji] = useState<string | null>(null)
   const [konum, setKonum] = useState('')
   const [yakinOneriler, setYakinOneriler] = useState<YakinOneri[] | null>(null)
   const [konumAraniyor, setKonumAraniyor] = useState(false)
@@ -101,8 +102,10 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
   const [tarih, setTarih] = useState(toDateString(new Date()))
   const [saat, setSaat] = useState('')
   const [sure, setSure] = useState(90)
+  const [tumGun, setTumGun] = useState(false)
 
-  const [musaitlik, setMusaitlik] = useState<Map<string, MusaitlikBlogu[]>>(new Map())
+  const [musaitlik, setMusaitlik] = useState<Map<string, ArkadasTakvimi>>(new Map())
+  const [benimBloklarim, setBenimBloklarim] = useState<Array<{ baslangic: string; bitis: string }>>([])
   const [musaitlikYukleniyor, setMusaitlikYukleniyor] = useState(false)
   const [saatAraniyor, setSaatAraniyor] = useState(false)
 
@@ -137,8 +140,8 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
     grupUyeleriGetir(seciliGrup.id)
       .then((uyeler) => {
         if (iptal) return
-        // Profili okunamayan üyeler (arkadaşım olmayanlar) listeye giremiyor;
-        // müsaitliklerini zaten RLS döndürmezdi.
+        // Members whose profile hasn't reached this device yet can't be
+        // listed; there would be no availability to show for them either.
         setGrupUyeProfilleri(
           uyeler.filter((u) => u.kullanici_id !== kullanici?.id && u.profil).map((u) => u.profil!),
         )
@@ -165,12 +168,12 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
     }
     setMusaitlikYukleniyor(true)
     try {
-      const harita = new Map<string, MusaitlikBlogu[]>()
+      const harita = new Map<string, ArkadasTakvimi>()
       await Promise.all(
         katilimcilar.map(async (p) => {
           if (!p.musaitlik_paylas) return
           try {
-            harita.set(p.id, await arkadasMusaitligi(p.id, tarih, tarih))
+            harita.set(p.id, await arkadasTakvimi(p.id, tarih, tarih))
           } catch {
             /* tek kişinin müsaitliği alınamazsa diğerleri yine gösterilsin */
           }
@@ -186,22 +189,43 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
     if (adim === 'detay') void musaitligiYukle()
   }, [adim, musaitligiYukle])
 
+  // My own busy ranges that day, so a clash with my other plans shows too.
+  useEffect(() => {
+    if (adim === 'kiminle' || !tarih) return
+    let iptal = false
+    kendiBloklarim([tarih])
+      .then((b) => !iptal && setBenimBloklarim(b))
+      .catch(() => !iptal && setBenimBloklarim([]))
+    return () => {
+      iptal = true
+    }
+  }, [adim, tarih])
+
   const baslik = etkinlik ? (serbestBaslik.trim() || etkinlik.ad) : serbestBaslik.trim()
   const kategori: Kategori = etkinlik?.kategori ?? 'etkinlik'
 
-  // Seçilen saat kimseyle çakışıyor mu?
+  // Seçilen saat kimseyle çakışıyor mu? An all-day plan clashes with
+  // anything busy that day.
   const cakisanlar = useMemo(() => {
-    if (!saat) return []
-    const bas = dakikaya(saat)
-    const bit = bas + sure
+    if (!saat && !tumGun) return []
+    const bas = tumGun ? 0 : dakikaya(saat)
+    const bit = tumGun ? 24 * 60 : bas + sure
     return katilimcilar.filter((p) =>
-      (musaitlik.get(p.id) ?? []).some((b) => {
+      (musaitlik.get(p.id)?.bloklar ?? []).some((b) => {
         const bBas = dakikaya(b.baslangic.slice(0, 5))
         const bBit = dakikaya(b.bitis.slice(0, 5))
         return bas < bBit && bit > bBas
       }),
     )
-  }, [saat, sure, katilimcilar, musaitlik])
+  }, [saat, sure, tumGun, katilimcilar, musaitlik])
+
+  const benimCakismam = useMemo(() => {
+    if (tumGun) return benimBloklarim.length > 0
+    if (!saat) return false
+    const bas = dakikaya(saat)
+    const bit = bas + sure
+    return benimBloklarim.some((b) => bas < dakikaya(b.bitis) && bit > dakikaya(b.baslangic))
+  }, [saat, sure, tumGun, benimBloklarim])
 
   async function yakindaAra() {
     setKonumAraniyor(true)
@@ -239,6 +263,7 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
         enAzDakika: sure,
       })
       if (sonuc.plan) {
+        setTumGun(false)
         setSaat(sonuc.plan.saat)
         setSure(sonuc.plan.sure)
       } else {
@@ -259,69 +284,29 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
     setKaydediliyor(true)
     setHata(null)
     try {
-      if (kapsam === 'grup' && seciliGrup) {
-        const planId = await grupPlaniOlustur({
-          grupId: seciliGrup.id,
+      const kitle: PlanKitlesi =
+        kapsam === 'grup' && seciliGrup
+          ? { tur: 'grup', grup: seciliGrup }
+          : kapsam === 'arkadas'
+            ? { tur: 'arkadaslar', kisiler: katilimcilar }
+            : { tur: 'tek' }
+      // Sends the group plan or the invites (with chat cards) and puts the
+      // plan in my calendar, linked to them.
+      await planiKur(
+        {
           baslik,
           tarih,
-          saat: saat || null,
-          sure,
+          saat: tumGun ? null : saat || null,
+          sure: tumGun ? null : sure,
+          tumGun,
           konum: konum.trim() || null,
-          notlar: null,
-        })
-        // Planı kuran zaten geliyor.
-        await planaYanitVer(planId, 'geliyorum')
-        try {
-          await mesajGonder(seciliGrup.id, 'Yeni bir plan 👇', planId)
-        } catch {
-          /* plan oluştu; sohbet kartı isteğe bağlı bir ekstra */
-        }
-      } else if (kapsam === 'arkadas') {
-        for (const p of katilimcilar) {
-          const davetId = await davetGonder({
-            alanId: p.id,
-            baslik,
-            tarih,
-            saat: saat || null,
-            sure,
-            konum: konum.trim() || null,
-            mesaj: null,
-          })
-          // Davet, o kişiyle olan sohbete de kart olarak düşsün — böylece
-          // "bir yerde bir davet var" diye aramak gerekmiyor.
-          try {
-            await direktMesajGonder(p.id, 'Bir plan önerdim 👇', davetId)
-          } catch {
-            /* davet zaten gitti; sohbet kartı isteğe bağlı bir ekstra */
-          }
-        }
-      }
-
-      // Her durumda kendi takvimime düşsün.
-      await kayitOlustur({
-        kategori,
-        baslik: kapsam === 'grup' && seciliGrup ? `${baslik} (${seciliGrup.ad})` : baslik,
-        tarih,
-        saat: saat || null,
-        konum: konum.trim() || null,
-        oncelik: 'orta',
-        sure,
-        ozetNot: null,
-        mekanOnerisi: null,
-        yakinOneriler,
-        kaynakTipi: 'metin',
-        hamBaslik: '',
-        hamMetin: '',
-        hamLink: '',
-        gorseller: [],
-        // Tarihi geçince "anı ekle" çağrısını doğru arşive yönlendirmek için.
-        grupId: kapsam === 'grup' ? (seciliGrup?.id ?? null) : null,
-        grupAdi: kapsam === 'grup' ? (seciliGrup?.ad ?? null) : null,
-        // Tek kişilik planlarda anı doğrudan o arkadaşın arşivine gidebilir;
-        // kalabalık planlarda hedef belirsiz olurdu, o yüzden boş bırakılıyor.
-        arkadasId: kapsam === 'arkadas' && katilimcilar.length === 1 ? katilimcilar[0].id : null,
-        arkadasAdi: kapsam === 'arkadas' && katilimcilar.length === 1 ? katilimcilar[0].ad : null,
-      })
+          not: null,
+          emoji,
+          kategori,
+          yakinOneriler,
+        },
+        kitle,
+      )
 
       onSaved()
       onClose()
@@ -338,7 +323,7 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
     (kapsam === 'grup' && !!seciliGrup)
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-cream-100/95 backdrop-blur-md animate-slide-up">
+    <div className="panel-tam z-50">
       <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-3 shrink-0">
         <div className="min-w-0">
           <h2 className="font-display text-xl font-bold text-ink-700">
@@ -387,9 +372,12 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
             etkinlik={etkinlik}
             onEtkinlik={(e) => {
               setEtkinlik(e)
+              setEmoji(e.emoji)
               setSure(e.sure)
               setYakinOneriler(null)
             }}
+            emoji={emoji}
+            onEmoji={setEmoji}
             serbestBaslik={serbestBaslik}
             onSerbestBaslik={setSerbestBaslik}
             konum={konum}
@@ -403,10 +391,13 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
             onSaat={setSaat}
             sure={sure}
             onSure={setSure}
+            tumGun={tumGun}
+            onTumGun={setTumGun}
             katilimcilar={katilimcilar}
             musaitlik={musaitlik}
             musaitlikYukleniyor={musaitlikYukleniyor}
             cakisanlar={cakisanlar}
+            benimCakismam={benimCakismam}
             saatAraniyor={saatAraniyor}
             onUygunSaatiBul={() => void uygunSaatiBul()}
           />
@@ -415,24 +406,27 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
         {adim === 'ozet' && (
           <OzetAdimi
             baslik={baslik}
+            emoji={emoji}
             tarih={tarih}
             saat={saat}
             sure={sure}
+            tumGun={tumGun}
             konum={konum}
             kapsam={kapsam}
             grup={seciliGrup}
             katilimcilar={katilimcilar}
             cakisanlar={cakisanlar}
+            benimCakismam={benimCakismam}
           />
         )}
       </div>
 
-      <div className="px-5 pb-[calc(1rem+var(--safe-bottom))] pt-3 border-t border-ink-100/40 safe-x shrink-0 flex gap-3">
+      <div className="px-5 pb-[calc(1rem+var(--safe-bottom))] pt-3 border-t border-ink-100 safe-x shrink-0 flex gap-3">
         {adim !== 'kiminle' && (
           <button
             onClick={() => setAdim(adim === 'ozet' ? 'detay' : 'kiminle')}
             disabled={kaydediliyor}
-            className="btn-ghost border border-ink-100/40 px-6"
+            className="btn-ghost border border-ink-100 px-6"
           >
             Geri
           </button>
@@ -529,12 +523,12 @@ function KiminleAdimi({
               key={s.id}
               onClick={() => onKapsam(s.id)}
               className={`w-full flex items-center gap-3 rounded-2xl p-4 border text-left transition-all active:scale-[0.98] ${
-                aktif ? 'bg-coral-50 border-coral-200' : 'bg-cream-50 border-ink-100/40'
+                aktif ? 'bg-orchid-50 border-orchid-200' : 'bg-mist-50 border-ink-100'
               }`}
             >
               <div
                 className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${
-                  aktif ? 'bg-coral-500 text-white' : 'bg-cream-100 text-ink-400'
+                  aktif ? 'bg-gradient-orchid text-white' : 'bg-mist-100 text-ink-400'
                 }`}
               >
                 <Icon name={s.ikon} className="w-5 h-5" />
@@ -543,7 +537,7 @@ function KiminleAdimi({
                 <p className="text-sm font-semibold text-ink-700">{s.ad}</p>
                 <p className="text-xs text-ink-400">{s.aciklama}</p>
               </div>
-              {aktif && <Icon name="Check" className="w-5 h-5 text-coral-500 shrink-0" />}
+              {aktif && <Icon name="Check" className="w-5 h-5 text-orchid-500 shrink-0" />}
             </button>
           )
         })}
@@ -557,7 +551,7 @@ function KiminleAdimi({
           {arkadaslar.length === 0 ? (
             <div className="card p-5 text-center">
               <p className="text-sm text-ink-400">
-                Henüz arkadaşın yok. Profil sekmesinden arkadaş kodunla ekleyebilirsin.
+                Henüz arkadaşın yok. Sohbet → Arkadaşlar'dan kullanıcı adıyla ekleyebilirsin.
               </p>
             </div>
           ) : (
@@ -569,10 +563,10 @@ function KiminleAdimi({
                     key={a.profil.id}
                     onClick={() => onArkadasDegistir(a.profil.id)}
                     className={`w-full flex items-center gap-3 rounded-2xl p-3 border transition-all active:scale-[0.98] ${
-                      secili ? 'bg-coral-50 border-coral-200' : 'bg-cream-50 border-ink-100/40'
+                      secili ? 'bg-orchid-50 border-orchid-200' : 'bg-mist-50 border-ink-100'
                     }`}
                   >
-                    <Avatar ad={a.profil.ad} avatarYol={a.profil.avatar_yol} boyut="sm" />
+                    <Avatar ad={a.profil.ad} foto={a.profil.avatar} emoji={a.profil.emoji} renk={a.profil.renk} boyut="sm" />
                     <div className="flex-1 min-w-0 text-left">
                       <p className="text-sm font-medium text-ink-700 truncate">{a.profil.ad}</p>
                       {!a.profil.musaitlik_paylas && (
@@ -581,7 +575,7 @@ function KiminleAdimi({
                     </div>
                     <div
                       className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${
-                        secili ? 'bg-coral-500' : 'bg-cream-100 border border-ink-200'
+                        secili ? 'bg-orchid-500' : 'bg-mist-100 border border-ink-200'
                       }`}
                     >
                       {secili && <Icon name="Check" className="w-3.5 h-3.5 text-white" />}
@@ -602,7 +596,7 @@ function KiminleAdimi({
           {gruplar.length === 0 ? (
             <div className="card p-5 text-center">
               <p className="text-sm text-ink-400">
-                Henüz grubun yok. Profil sekmesinden grup kurabilirsin.
+                Henüz grubun yok. Sohbet → Arkadaşlar'dan grup kurabilirsin.
               </p>
             </div>
           ) : (
@@ -614,18 +608,16 @@ function KiminleAdimi({
                     key={g.id}
                     onClick={() => onGrupSec(secili ? null : g)}
                     className={`w-full flex items-center gap-3 rounded-2xl p-3 border transition-all active:scale-[0.98] ${
-                      secili ? 'bg-coral-50 border-coral-200' : 'bg-cream-50 border-ink-100/40'
+                      secili ? 'bg-orchid-50 border-orchid-200' : 'bg-mist-50 border-ink-100'
                     }`}
                   >
-                    <div className="w-9 h-9 rounded-2xl bg-sky-100 flex items-center justify-center shrink-0">
-                      <Icon name="Users" className="w-4.5 h-4.5 text-sky-600" />
-                    </div>
+                    <GrupAvatari grup={g} boyut="sm" />
                     <p className="flex-1 min-w-0 text-sm font-medium text-ink-700 truncate text-left">
                       {g.ad}
                     </p>
                     <div
                       className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
-                        secili ? 'bg-coral-500' : 'bg-cream-100 border border-ink-200'
+                        secili ? 'bg-orchid-500' : 'bg-mist-100 border border-ink-200'
                       }`}
                     >
                       {secili && <Icon name="Check" className="w-3.5 h-3.5 text-white" />}
@@ -646,6 +638,8 @@ function KiminleAdimi({
 function DetayAdimi(p: {
   etkinlik: Etkinlik | null
   onEtkinlik: (e: Etkinlik) => void
+  emoji: string | null
+  onEmoji: (e: string | null) => void
   serbestBaslik: string
   onSerbestBaslik: (v: string) => void
   konum: string
@@ -659,10 +653,13 @@ function DetayAdimi(p: {
   onSaat: (v: string) => void
   sure: number
   onSure: (v: number) => void
+  tumGun: boolean
+  onTumGun: (v: boolean) => void
   katilimcilar: Profil[]
-  musaitlik: Map<string, MusaitlikBlogu[]>
+  musaitlik: Map<string, ArkadasTakvimi>
   musaitlikYukleniyor: boolean
   cakisanlar: Profil[]
+  benimCakismam: boolean
   saatAraniyor: boolean
   onUygunSaatiBul: () => void
 }) {
@@ -686,11 +683,11 @@ function DetayAdimi(p: {
                 onClick={() => p.onEtkinlik(e)}
                 className={`chip ${
                   secili
-                    ? 'bg-coral-500 text-white'
-                    : 'bg-cream-100 text-ink-500 border border-ink-100/40'
+                    ? 'bg-gradient-orchid text-white'
+                    : 'bg-mist-100 text-ink-500 border border-ink-100'
                 }`}
               >
-                <Icon name={e.ikon} className="w-4 h-4" />
+                <span aria-hidden="true">{e.emoji}</span>
                 {e.ad}
               </button>
             )
@@ -700,8 +697,10 @@ function DetayAdimi(p: {
           value={p.serbestBaslik}
           onChange={(e) => p.onSerbestBaslik(e.target.value)}
           placeholder={p.etkinlik ? `${p.etkinlik.ad} — istersen kendi başlığını yaz` : 'Ya da kendin yaz...'}
-          className="input-field"
+          className="input-field mb-3"
         />
+        <FieldLabel>Simge</FieldLabel>
+        <EmojiSecici secenekler={ETKINLIK_EMOJILERI} secili={p.emoji} onSec={p.onEmoji} />
       </Bolum>
 
       <Bolum baslik="Nerede?" ikon="MapPin">
@@ -714,7 +713,7 @@ function DetayAdimi(p: {
         <button
           onClick={p.onYakindaAra}
           disabled={p.konumAraniyor}
-          className="btn-ghost w-full border border-ink-100/40 text-sm py-2.5 flex items-center justify-center gap-2 disabled:opacity-50"
+          className="btn-ghost w-full border border-ink-100 text-sm py-2.5 flex items-center justify-center gap-2 disabled:opacity-50"
         >
           <Icon
             name={p.konumAraniyor ? 'Loader2' : 'MapPin'}
@@ -730,7 +729,7 @@ function DetayAdimi(p: {
                 <button
                   key={i}
                   onClick={() => p.onKonum(o.isim)}
-                  className="shrink-0 text-left bg-cream-100 border border-ink-100/40 rounded-2xl px-3.5 py-2.5 active:scale-95 transition-transform min-w-[160px]"
+                  className="shrink-0 text-left bg-mist-100 border border-ink-100 rounded-2xl px-3.5 py-2.5 active:scale-95 transition-transform min-w-[160px]"
                 >
                   <p className="text-sm font-semibold text-ink-700 truncate">{o.isim}</p>
                   <p className="text-xs text-ink-400 mt-0.5">
@@ -758,8 +757,8 @@ function DetayAdimi(p: {
               onClick={() => p.onTarih(g.deger)}
               className={`chip flex-1 justify-center ${
                 p.tarih === g.deger
-                  ? 'bg-coral-500 text-white'
-                  : 'bg-cream-100 text-ink-500 border border-ink-100/40'
+                  ? 'bg-gradient-orchid text-white'
+                  : 'bg-mist-100 text-ink-500 border border-ink-100'
               }`}
             >
               {g.etiket}
@@ -767,7 +766,7 @@ function DetayAdimi(p: {
           ))}
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className={`grid gap-3 mb-3 ${p.tumGun ? 'grid-cols-1' : 'grid-cols-2'}`}>
           <div>
             <FieldLabel>Tarih</FieldLabel>
             <input
@@ -777,48 +776,67 @@ function DetayAdimi(p: {
               className="input-field"
             />
           </div>
-          <div>
-            <FieldLabel>Saat</FieldLabel>
-            <input
-              type="time"
-              value={p.saat}
-              onChange={(e) => p.onSaat(e.target.value)}
-              className="input-field"
-            />
-          </div>
+          {!p.tumGun && (
+            <div>
+              <FieldLabel>Saat</FieldLabel>
+              <input
+                type="time"
+                value={p.saat}
+                onChange={(e) => p.onSaat(e.target.value)}
+                className="input-field"
+              />
+            </div>
+          )}
         </div>
 
-        <FieldLabel>Ne kadar sürsün?</FieldLabel>
-        <div className="flex gap-2">
-          {SURELER.map((s) => (
-            <button
-              key={s}
-              onClick={() => p.onSure(s)}
-              className={`chip flex-1 justify-center ${
-                p.sure === s
-                  ? 'bg-coral-500 text-white'
-                  : 'bg-cream-100 text-ink-500 border border-ink-100/40'
-              }`}
-            >
-              {s >= 60 ? `${s / 60} sa` : `${s} dk`}
-            </button>
-          ))}
+        <div className="mb-3">
+          <TumGunAnahtari acik={p.tumGun} onDegistir={p.onTumGun} />
         </div>
+
+        {!p.tumGun && (
+          <>
+            <FieldLabel>Ne kadar sürsün?</FieldLabel>
+            <div className="flex gap-2">
+              {SURELER.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => p.onSure(s)}
+                  className={`chip flex-1 justify-center ${
+                    p.sure === s
+                      ? 'bg-gradient-orchid text-white'
+                      : 'bg-mist-100 text-ink-500 border border-ink-100'
+                  }`}
+                >
+                  {s >= 60 ? `${s / 60} sa` : `${s} dk`}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {p.benimCakismam && (
+          <p className="flex items-start gap-2 text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3 mt-3">
+            <Icon name="AlertTriangle" className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            {p.tumGun ? 'O gün başka bir planın var.' : 'Bu saatte başka bir planın var.'}
+          </p>
+        )}
       </Bolum>
 
       {p.katilimcilar.length > 0 && (
         <Bolum baslik="Müsaitlik" ikon="CalendarClock">
-          <button
-            onClick={p.onUygunSaatiBul}
-            disabled={p.saatAraniyor}
-            className="btn-ghost w-full border border-ink-100/40 text-sm py-2.5 flex items-center justify-center gap-2 disabled:opacity-50 mb-3"
-          >
-            <Icon
-              name={p.saatAraniyor ? 'Loader2' : 'Wand2'}
-              className={`w-4 h-4 ${p.saatAraniyor ? 'animate-spin' : ''}`}
-            />
-            {p.saatAraniyor ? 'Bakıyorum...' : 'Bu gün için herkese uyan saati bul'}
-          </button>
+          {!p.tumGun && (
+            <button
+              onClick={p.onUygunSaatiBul}
+              disabled={p.saatAraniyor}
+              className="btn-ghost w-full border border-ink-100 text-sm py-2.5 flex items-center justify-center gap-2 disabled:opacity-50 mb-3"
+            >
+              <Icon
+                name={p.saatAraniyor ? 'Loader2' : 'Wand2'}
+                className={`w-4 h-4 ${p.saatAraniyor ? 'animate-spin' : ''}`}
+              />
+              {p.saatAraniyor ? 'Bakıyorum...' : 'Bu gün için herkese uyan saati bul'}
+            </button>
+          )}
 
           {p.musaitlikYukleniyor ? (
             <div className="space-y-2">
@@ -828,16 +846,17 @@ function DetayAdimi(p: {
           ) : (
             <div className="space-y-2">
               {p.katilimcilar.map((k) => {
-                const bloklar = p.musaitlik.get(k.id) ?? []
+                const takvim = p.musaitlik.get(k.id)
+                const bloklar = takvim?.bloklar ?? []
                 const cakisiyor = p.cakisanlar.some((c) => c.id === k.id)
                 return (
                   <div
                     key={k.id}
                     className={`flex items-center gap-3 rounded-2xl p-3 border ${
-                      cakisiyor ? 'bg-amber-50 border-amber-200' : 'bg-cream-50 border-ink-100/40'
+                      cakisiyor ? 'bg-amber-50 border-amber-200' : 'bg-mist-50 border-ink-100'
                     }`}
                   >
-                    <Avatar ad={k.ad} avatarYol={k.avatar_yol} boyut="sm" />
+                    <Avatar ad={k.ad} foto={k.avatar} emoji={k.emoji} renk={k.renk} boyut="sm" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-ink-700 truncate">{k.ad}</p>
                       <p
@@ -845,11 +864,11 @@ function DetayAdimi(p: {
                       >
                         {!k.musaitlik_paylas
                           ? 'Müsaitlik paylaşmıyor'
-                          : bloklar.length === 0
+                          : !takvim?.bloklar
+                            ? 'Takvimi henüz gelmedi'
+                            : bloklar.length === 0
                             ? 'Bu gün tamamen müsait'
-                            : bloklar
-                                .map((b) => `${b.baslangic.slice(0, 5)}–${b.bitis.slice(0, 5)}`)
-                                .join(', ') + ' dolu'}
+                            : formatBusyRanges(bloklar)}
                       </p>
                     </div>
                     {cakisiyor && (
@@ -865,8 +884,9 @@ function DetayAdimi(p: {
             <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3 mt-3">
               <Icon name="AlertTriangle" className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
               <p className="text-sm text-amber-800">
-                Seçtiğin saat {p.cakisanlar.map((c) => c.ad).join(', ')} için dolu. Yine de davet
-                gönderebilirsin ama başka bir saat daha kolay olabilir.
+                {p.tumGun
+                  ? `O gün ${p.cakisanlar.map((c) => c.ad).join(', ')} için dolu saatler var. Yine de davet gönderebilirsin.`
+                  : `Seçtiğin saat ${p.cakisanlar.map((c) => c.ad).join(', ')} için dolu. Yine de davet gönderebilirsin ama başka bir saat daha kolay olabilir.`}
               </p>
             </div>
           )}
@@ -884,44 +904,58 @@ function DetayAdimi(p: {
 
 function OzetAdimi({
   baslik,
+  emoji,
   tarih,
   saat,
   sure,
+  tumGun,
   konum,
   kapsam,
   grup,
   katilimcilar,
   cakisanlar,
+  benimCakismam,
 }: {
   baslik: string
+  emoji: string | null
   tarih: string
   saat: string
   sure: number
+  tumGun: boolean
   konum: string
   kapsam: Kapsam
   grup: Grup | null
   katilimcilar: Profil[]
   cakisanlar: Profil[]
+  benimCakismam: boolean
 }) {
   return (
     <>
       <div className="card p-5">
-        <p className="font-display text-lg font-bold text-ink-700 mb-2">{baslik}</p>
+        <p className="font-display text-lg font-bold text-ink-700 mb-2">
+          {emoji && <span aria-hidden="true">{emoji} </span>}
+          {baslik}
+        </p>
 
         <div className="space-y-1.5 text-sm text-ink-500">
           <p className="flex items-center gap-2">
             <Icon name="CalendarDays" className="w-4 h-4 text-ink-300 shrink-0" />
             {formatDate(tarih) ?? tarih}
-            {saat && ` · ${saat}`}
-            {` · ${sure} dk`}
+            {tumGun ? ' · Tüm gün' : `${saat ? ` · ${saat}` : ''} · ${sure} dk`}
           </p>
           {konum.trim() && (
             <p className="flex items-center gap-2">
-              <Icon name="MapPin" className="w-4 h-4 text-coral-500 shrink-0" />
+              <Icon name="MapPin" className="w-4 h-4 text-orchid-500 shrink-0" />
               {konum.trim()}
             </p>
           )}
-          {!saat && (
+          {benimCakismam && (
+            <p className="flex items-center gap-2 text-amber-700">
+              <Icon name="AlertTriangle" className="w-4 h-4 shrink-0" />
+              {tumGun ? 'O gün başka bir planın var.' : 'Bu saatte başka bir planın var.'}
+            </p>
+          )}
+          {!saat && !tumGun && (
             <p className="flex items-center gap-2 text-amber-700">
               <Icon name="Info" className="w-4 h-4 shrink-0" />
               Saat belirtmedin — plan gün içinde serbest kalacak.
@@ -938,9 +972,7 @@ function OzetAdimi({
           <>
             {kapsam === 'grup' && grup && (
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-xl bg-sky-100 flex items-center justify-center shrink-0">
-                  <Icon name="Users" className="w-4 h-4 text-sky-600" />
-                </div>
+                <GrupAvatari grup={grup} boyut="sm" />
                 <p className="text-sm font-medium text-ink-700">{grup.ad}</p>
               </div>
             )}
@@ -951,7 +983,7 @@ function OzetAdimi({
                   className={`chip text-xs ${
                     cakisanlar.some((c) => c.id === k.id)
                       ? 'bg-amber-100 text-amber-800'
-                      : 'bg-cream-100 text-ink-500 border border-ink-100/40'
+                      : 'bg-mist-100 text-ink-500 border border-ink-100'
                   }`}
                 >
                   {k.ad}
@@ -990,7 +1022,7 @@ function Bolum({
   return (
     <div className="card p-5">
       <div className="flex items-center gap-2 mb-3">
-        <Icon name={ikon} className="w-4 h-4 text-coral-500" />
+        <Icon name={ikon} className="w-4 h-4 text-orchid-500" />
         <p className="text-sm font-semibold text-ink-700">{baslik}</p>
       </div>
       {children}

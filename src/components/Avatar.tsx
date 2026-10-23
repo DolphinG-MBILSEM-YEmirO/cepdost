@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
-import { avatarUrlleri } from '../sosyal/avatar'
+import { Icon } from './Icon'
+import { renkAl } from '../lib/kisisellestirme'
 
-// Profil fotoğrafı yoksa ada göre sabit renkli baş harf. Fotoğraf varsa
-// imzalı URL ile gösteriliyor (kova özel — bkz. sosyal/avatar.ts).
+// Profile photo when there is one; otherwise the person's emoji or the
+// first letter of their name, on their chosen colour (or one derived from
+// the name).
 
 const OLCULER = {
+  xs: 'w-6 h-6 text-[11px]',
   sm: 'w-9 h-9 text-sm',
   md: 'w-11 h-11 text-base',
   lg: 'w-20 h-20 text-2xl',
@@ -12,76 +14,59 @@ const OLCULER = {
 
 export type AvatarBoyut = keyof typeof OLCULER
 
-const PALETLER = [
-  'bg-coral-100 text-coral-700',
-  'bg-teal-100 text-teal-700',
-  'bg-sky-100 text-sky-700',
-  'bg-amber-100 text-amber-700',
-  'bg-rose-100 text-rose-700',
-]
-
-function adaGoreRenk(ad: string): string {
-  let toplam = 0
-  for (let i = 0; i < ad.length; i++) toplam += ad.charCodeAt(i)
-  return PALETLER[toplam % PALETLER.length]
-}
-
-// İmzalı URL'i çözer. avatarUrlleri kendi içinde önbellekli ve aynı yolu
-// isteyen eşzamanlı çağrıları tek isteğe indiriyor — bu yüzden her satırda
-// ayrı ayrı çağırmak sorun değil.
-export function useAvatarUrl(yol: string | null | undefined): string | null {
-  const [url, setUrl] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!yol) {
-      setUrl(null)
-      return
-    }
-    let iptal = false
-    avatarUrlleri([yol])
-      .then((harita) => {
-        if (!iptal) setUrl(harita.get(yol) ?? null)
-      })
-      .catch(() => {
-        // İmza alınamadıysa baş harfe düşüyoruz — hata göstermeye değmez.
-        if (!iptal) setUrl(null)
-      })
-    return () => {
-      iptal = true
-    }
-  }, [yol])
-
-  return url
-}
-
 interface Props {
   ad: string
-  avatarYol?: string | null
+  // Data URL of the photo.
+  foto?: string | null
+  emoji?: string | null
+  renk?: string | null
   boyut?: AvatarBoyut
 }
 
-export function Avatar({ ad, avatarYol, boyut = 'md' }: Props) {
-  const url = useAvatarUrl(avatarYol)
-  const harf = (ad.trim()[0] ?? '?').toLocaleUpperCase('tr-TR')
+export function Avatar({ ad, foto, emoji, renk, boyut = 'md' }: Props) {
   const olcu = OLCULER[boyut]
 
-  if (url) {
-    return (
-      // Avatarlar 256px/~2 KB — loading="lazy" burada kazanç sağlamıyor,
-      // sadece görünürlüğe bağlı bir yükleme riski ekliyor.
-      <img
-        src={url}
-        alt={ad}
-        className={`${olcu} rounded-2xl object-cover shrink-0 bg-cream-100`}
-      />
-    )
+  if (foto) {
+    return <img src={foto} alt={ad} className={`${olcu} rounded-2xl object-cover shrink-0 bg-mist-100`} />
   }
 
+  const harf = (ad.trim()[0] ?? '?').toLocaleUpperCase('tr-TR')
   return (
     <div
-      className={`${olcu} ${adaGoreRenk(ad)} rounded-2xl flex items-center justify-center font-bold shrink-0`}
+      className={`${olcu} ${renkAl(renk, ad).yumusak} rounded-2xl flex items-center justify-center font-bold shrink-0`}
+      aria-label={ad}
     >
-      {harf}
+      {emoji || harf}
+    </div>
+  )
+}
+
+const IKON_OLCULERI: Record<AvatarBoyut, string> = {
+  xs: 'w-3.5 h-3.5',
+  sm: 'w-[18px] h-[18px]',
+  md: 'w-5 h-5',
+  lg: 'w-9 h-9',
+}
+
+// A group's picture: its emoji (or a people icon) on its colour, so a
+// group looks the same in the chat list, its own screen and every picker.
+export function GrupAvatari({
+  grup,
+  boyut = 'md',
+}: {
+  grup: { ad: string; emoji: string | null; renk: string | null }
+  boyut?: AvatarBoyut
+}) {
+  return (
+    <div
+      className={`${OLCULER[boyut]} ${renkAl(grup.renk, grup.ad).yumusak} rounded-2xl flex items-center justify-center shrink-0`}
+      aria-label={grup.ad}
+    >
+      {grup.emoji ? (
+        <span className={boyut === 'lg' ? 'text-4xl' : 'text-lg'}>{grup.emoji}</span>
+      ) : (
+        <Icon name="Users" className={IKON_OLCULERI[boyut]} />
+      )}
     </div>
   )
 }

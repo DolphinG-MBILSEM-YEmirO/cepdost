@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie'
+import type { YapilacakMaddesi } from './lib/planAyrintilari'
 
 // Veri modeli — bkz. proje planı Bölüm 4 + "Hallet" tasarım taşıması
 // (2026-08-05). F2 (otomatik sınıflandırma) kategori/baslik/tarih/saat/
@@ -38,6 +39,9 @@ export interface Kayit {
   baslik: string | null
   tarih: string | null // YYYY-MM-DD
   saat: string | null // HH:MM
+  // Takes the whole day (a trip, a festival, moving house): no time or
+  // duration, and the day counts as busy for friends.
+  tumGun?: boolean
   konum: string | null
   oncelik: Oncelik
   sure: number | null // dakika
@@ -55,6 +59,11 @@ export interface Kayit {
 
   durum: Durum
   olusturulmaTarihi: number
+  // When this copy was last written (ms). Set by the database on every add
+  // and update (see CepDostDB), so devices can tell which version of a plan
+  // is newer (see sosyal/planEsitleme.ts). Missing on records from before
+  // plan sync; kayitSurumu() falls back to the creation time.
+  guncellenme?: number
 
   // F20: bu plan kiminle yapıldı. Tarihi geçince "anı ekle" çağrısını doğru
   // arşive (gruba ya da arkadaşa) yönlendirmek için tutuluyor. Opsiyonel —
@@ -66,11 +75,35 @@ export interface Kayit {
   // Bu kayıt hangi grup planından geldi. Aynı plana ikinci bir kayıt
   // açılmasın ve yanıt "geliyorum"dan çıkınca kayıt kaldırılabilsin diye.
   grupPlanId?: string | null
+  // Same for a friend's plan invite: set when I accepted it, so declining
+  // later (or the sender cancelling) can take it off my calendar.
+  davetId?: string | null
+  // The emoji picked for the plan (☕, 🎬...), shown before its title here
+  // and on the cards friends see.
+  emoji?: string | null
   // Anı eklendiyse tekrar tekrar sorulmasın.
   aniEklendi?: boolean
+  // My plan shared as a link: the link's key (base64url), so my other
+  // devices can show the answers and keep the shared copy up to date.
+  planLinki?: string | null
+  // The same, for a plan shared as a Davet invite (sosyal/davet.ts): the
+  // invite's secret (base64url, 16 bytes). Newer links are all Davet ones.
+  davetLinki?: string | null
+  // A plan I said I'm coming to from someone's link: that link's key (or
+  // Davet secret) and its host, so changing my answer finds this entry.
+  linkAnahtari?: string | null
+  linkSahibi?: string | null
+  // My own checklist for the plan (what to buy, book, bring). Follows me to
+  // my other devices; never shared with the others on the plan.
+  yapilacaklar?: YapilacakMaddesi[]
+  // Remind me this many minutes before the start (see lib/planAyrintilari):
+  // the alarm in the phone calendar export and an in-app notification.
+  hatirlatma?: number | null
+  // The invites I sent for this plan, so its page can show who is coming.
+  gidenDavetler?: string[]
 }
 
-// F15 — telefon takviminden içe aktarılan etkinlikler. CepDost kayıtlarından
+// F15 — telefon takviminden içe aktarılan etkinlikler. Uygulamanın kendi kayıtlarından
 // ayrı bir tabloda duruyorlar: kullanıcının yazdığı planlar ile dışarıdan
 // gelen veriyi karıştırmak istemiyoruz — "takvim bağlantısını kaldır"
 // dendiğinde tek seferde silinebilmeli ve arşivde plan gibi görünmemeli.
@@ -88,12 +121,12 @@ export interface TakvimEtkinligi {
   iceAktarma: number
 }
 
-class CepDostDB extends Dexie {
+export class CepDostDB extends Dexie {
   kayitlar!: Table<Kayit, string>
   takvimEtkinlikleri!: Table<TakvimEtkinligi, string>
 
-  constructor() {
-    super('cepdost')
+  constructor(ad = 'cepdost') {
+    super(ad)
     // Sadece sorgulanacak/filtrelenecek alanlar indekslenir; id primary key.
     this.version(1).stores({
       kayitlar: 'id, olusturulmaTarihi, kategori, durum, tarih',
@@ -101,6 +134,18 @@ class CepDostDB extends Dexie {
     this.version(2).stores({
       kayitlar: 'id, olusturulmaTarihi, kategori, durum, tarih',
       takvimEtkinlikleri: 'id, tarih',
+    })
+
+    // Every write stamps the record with a version, whichever screen made
+    // it. A write that brings its own stamp (a newer copy from another
+    // device) keeps it. A new stamp is always above the old one, even when
+    // this device's clock is behind the device that wrote the old one.
+    this.kayitlar.hook('creating', (_id, kayit) => {
+      if (kayit.guncellenme === undefined) kayit.guncellenme = Date.now()
+    })
+    this.kayitlar.hook('updating', (degisiklik, _id, kayit) => {
+      if ('guncellenme' in degisiklik) return undefined
+      return { guncellenme: Math.max(Date.now(), kayitSurumu(kayit) + 1) }
     })
   }
 }
@@ -170,12 +215,28 @@ export async function kayitOlustur(girdi: YeniTamKayit): Promise<Kayit> {
   return kayit
 }
 
+// The version of a record: its last write, or for records from before plan
+// sync, its creation.
+export function kayitSurumu(kayit: Kayit): number {
+  return kayit.guncellenme ?? kayit.olusturulmaTarihi
+}
+
 export async function tumKayitlar(): Promise<Kayit[]> {
   return db.kayitlar.orderBy('olusturulmaTarihi').reverse().toArray()
 }
 
 export async function kayitGuncelle(id: string, degisiklik: Partial<Kayit>): Promise<void> {
   await db.kayitlar.update(id, degisiklik)
+}
+
+// A change worked out from the record as it is now, read and written in one
+// transaction, so quick taps (ticking several checklist items) don't undo
+// each other.
+export async function kayitDegistir(id: string, degistir: (kayit: Kayit) => Partial<Kayit>): Promise<void> {
+  await db.transaction('rw', db.kayitlar, async () => {
+    const kayit = await db.kayitlar.get(id)
+    if (kayit) await db.kayitlar.update(id, degistir(kayit))
+  })
 }
 
 export async function kayitSil(id: string): Promise<void> {

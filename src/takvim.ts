@@ -1,4 +1,6 @@
 import { db, type Kayit, type TakvimEtkinligi } from './db'
+import { UYGULAMA_ADI } from '../shared/marka'
+import { icsTetikleyici } from './lib/planAyrintilari'
 
 // F15 — telefon takvimi entegrasyonu.
 //
@@ -6,7 +8,7 @@ import { db, type Kayit, type TakvimEtkinligi } from './db'
 // YOK (iOS'ta da Android'de de). Bu yüzden erişim, kullanıcının kendi
 // takviminden aldığı iCalendar (.ics) bağlantısıyla veya dosyayla oluyor —
 // izni kullanıcı bilerek ve açıkça veriyor, istediğinde tek dokunuşla geri
-// alıyor. Tersi yön (CepDost planını telefona ekleme) .ics indirmesiyle
+// alıyor. Tersi yön (uygulamadaki planı telefona ekleme) .ics indirmesiyle
 // çalışıyor; bu her platformda destekleniyor.
 
 const AYAR_ANAHTARI = 'cepdost_takvim'
@@ -162,7 +164,10 @@ const GUN_KODLARI: Record<string, number> = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4,
 // destekleniyor: günlük/haftalık/aylık/yıllık + INTERVAL + COUNT/UNTIL +
 // haftalıkta BYDAY. Desteklenmeyen bir kural varsa etkinlik yalnızca ilk
 // tarihiyle içe aktarılır — eksik göstermek, yanlış göstermekten iyidir.
-function tekrarlariUret(etkinlik: HamEtkinlik, pencereSonu: Date): Date[] {
+// Occurrences before `windowStart` are still walked (COUNT counts from the
+// first occurrence) but not returned, so a series that began years ago still
+// yields its upcoming dates instead of running out of room in the past.
+function tekrarlariUret(etkinlik: HamEtkinlik, pencereSonu: Date, windowStart: Date): Date[] {
   const ilk = etkinlik.baslangic!
   if (!etkinlik.rrule) return [ilk]
 
@@ -192,25 +197,39 @@ function tekrarlariUret(etkinlik: HamEtkinlik, pencereSonu: Date): Date[] {
   const sonuc: Date[] = []
   // Sonsuz döngüye karşı sert üst sınır — bozuk bir RRULE tarayıcıyı kilitlemesin.
   const AZAMI = 400
+  // Separate cap on steps walked, so old series can reach the window
+  // (a daily event from ten years ago is ~3650 steps).
+  const MAX_STEPS = 20000
+  let occurrences = 0
+
+  // Returns false once COUNT is used up.
+  const add = (tarih: Date): boolean => {
+    occurrences++
+    if (tarih >= windowStart) sonuc.push(tarih)
+    return !(sayi && occurrences >= sayi)
+  }
 
   if (sıklık === 'WEEKLY' && gunler.length > 0) {
     const haftaBasi = new Date(ilk)
     haftaBasi.setDate(haftaBasi.getDate() - haftaBasi.getDay())
-    for (let h = 0; sonuc.length < AZAMI; h += aralik) {
+    let devam = true
+    for (let h = 0, step = 0; devam && sonuc.length < AZAMI && step < MAX_STEPS; h += aralik, step++) {
       const hafta = new Date(haftaBasi)
       hafta.setDate(hafta.getDate() + h * 7)
       if (hafta > son) break
-      for (const g of gunler) {
+      for (const g of [...gunler].sort((a, b) => a - b)) {
         const tarih = new Date(hafta)
         tarih.setDate(tarih.getDate() + g)
         tarih.setHours(ilk.getHours(), ilk.getMinutes(), 0, 0)
-        if (tarih >= ilk && tarih <= son) sonuc.push(tarih)
-        if (sayi && sonuc.length >= sayi) break
+        if (tarih < ilk || tarih > son) continue
+        if (!add(tarih)) {
+          devam = false
+          break
+        }
       }
-      if (sayi && sonuc.length >= sayi) break
     }
   } else {
-    for (let i = 0; sonuc.length < AZAMI; i++) {
+    for (let i = 0; sonuc.length < AZAMI && i < MAX_STEPS; i++) {
       const tarih = new Date(ilk)
       if (sıklık === 'DAILY') tarih.setDate(tarih.getDate() + i * aralik)
       else if (sıklık === 'WEEKLY') tarih.setDate(tarih.getDate() + i * aralik * 7)
@@ -218,12 +237,15 @@ function tekrarlariUret(etkinlik: HamEtkinlik, pencereSonu: Date): Date[] {
       else tarih.setFullYear(tarih.getFullYear() + i * aralik)
 
       if (tarih > son) break
-      sonuc.push(tarih)
-      if (sayi && sonuc.length >= sayi) break
+      // RFC 5545: an occurrence that would fall on a day the month does not
+      // have (the 31st in November, 29 February) is skipped, not moved to
+      // the next month.
+      if ((sıklık === 'MONTHLY' || sıklık === 'YEARLY') && tarih.getDate() !== ilk.getDate()) continue
+      if (!add(tarih)) break
     }
   }
 
-  return sonuc.length > 0 ? sonuc.sort((a, b) => a.getTime() - b.getTime()) : [ilk]
+  return sonuc.sort((a, b) => a.getTime() - b.getTime())
 }
 
 // ---------- içe aktarma ----------
@@ -231,6 +253,8 @@ function tekrarlariUret(etkinlik: HamEtkinlik, pencereSonu: Date): Date[] {
 // Geçmişi almanın faydası yok; çok uzak gelecek de gereksiz veri.
 const GECMIS_GUN = 1
 const GELECEK_GUN = 90
+// Upper bound for how many days one timed event may cover.
+const AZAMI_GUN_SAYISI = 31
 
 function tarihStr(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -261,25 +285,50 @@ export function icsiEtkinliklereCevir(ics: string, bugun = new Date()): TakvimEt
         ? ham.bitis.getTime() - ham.baslangic.getTime()
         : 60 * 60 * 1000
 
-    for (const baslangic of tekrarlariUret(ham, ust)) {
+    for (const baslangic of tekrarlariUret(ham, ust, alt)) {
       if (baslangic < alt || baslangic > ust) continue
 
       const bitis = new Date(baslangic.getTime() + sureMs)
-      // Gece yarısını aşanları güne sabitliyoruz — müsaitlik göstermek için
-      // yeterli, veri modelini bölmeye değmez (musaitlikSenkron ile aynı yaklaşım).
-      const ayniGun = tarihStr(bitis) === tarihStr(baslangic)
-
       const anahtar = `takvim:${ham.uid || ham.ozet}:${baslangic.getTime()}`
-      sonuc.set(anahtar, {
-        id: anahtar,
-        baslik: ham.ozet || 'Takvim etkinliği',
-        tarih: tarihStr(baslangic),
-        baslangic: ham.tumGun ? '00:00' : saatStr(baslangic),
-        bitis: ham.tumGun ? '23:59' : ayniGun ? saatStr(bitis) : '23:59',
-        konum: ham.konum,
-        tumGun: ham.tumGun,
-        iceAktarma: simdi,
-      })
+
+      if (ham.tumGun) {
+        sonuc.set(anahtar, {
+          id: anahtar,
+          baslik: ham.ozet || 'Takvim etkinliği',
+          tarih: tarihStr(baslangic),
+          baslangic: '00:00',
+          bitis: '23:59',
+          konum: ham.konum,
+          tumGun: true,
+          iceAktarma: simdi,
+        })
+        continue
+      }
+
+      // A timed event that runs past midnight becomes one row per day, so
+      // every day it covers counts as busy (a weekend trip blocks Saturday
+      // too, not just Friday evening).
+      const gun = new Date(baslangic)
+      gun.setHours(0, 0, 0, 0)
+      for (let i = 0; i < AZAMI_GUN_SAYISI && gun <= bitis; i++, gun.setDate(gun.getDate() + 1)) {
+        const tarih = tarihStr(gun)
+        const ilkGun = tarih === tarihStr(baslangic)
+        const sonGun = tarih === tarihStr(bitis)
+        const bas = ilkGun ? saatStr(baslangic) : '00:00'
+        const bit = sonGun ? saatStr(bitis) : '23:59'
+        if (bit <= bas || gun < alt || gun > ust) continue
+        const id = ilkGun ? anahtar : `${anahtar}:${tarih}`
+        sonuc.set(id, {
+          id,
+          baslik: ham.ozet || 'Takvim etkinliği',
+          tarih,
+          baslangic: bas,
+          bitis: bit,
+          konum: ham.konum,
+          tumGun: false,
+          iceAktarma: simdi,
+        })
+      }
     }
   }
 
@@ -287,7 +336,7 @@ export function icsiEtkinliklereCevir(ics: string, bugun = new Date()): TakvimEt
 }
 
 // Dosyadan ya da URL'den gelen ICS metnini yerel tabloya yazar. Tam
-// değiştirme: takvimden silinen bir etkinlik CepDost'ta da kalmamalı.
+// değiştirme: takvimden silinen bir etkinlik uygulamada da kalmamalı.
 export async function icsiIceAktar(ics: string): Promise<number> {
   const etkinlikler = icsiEtkinliklereCevir(ics)
   await db.transaction('rw', db.takvimEtkinlikleri, async () => {
@@ -297,15 +346,27 @@ export async function icsiIceAktar(ics: string): Promise<number> {
   return etkinlikler.length
 }
 
-// Tarayıcı, başka bir sitedeki .ics dosyasını CORS yüzünden okuyamaz — bu
-// yüzden çekme işi edge function'a yaptırılıyor (bkz. supabase/functions/takvim).
+// The browser cannot read an .ics file on another site because of CORS, so
+// the server fetches it (see api/takvim.ts). The server's errors are
+// user-facing Turkish (e.g. "not a calendar file") and never contain the
+// secret URL, so they are shown as they are.
 export async function icsUrldenIceAktar(url: string): Promise<number> {
-  const { sb, sosyalAktif } = await import('./sosyal/supabase')
-  if (!sosyalAktif) throw new Error('Sunucu bağlantısı yapılandırılmamış.')
+  const genelHata = 'Takvim alınamadı — bağlantıyı kontrol et.'
 
-  const { data, error } = await sb().functions.invoke('takvim', { body: { url } })
-  if (error) throw new Error('Takvim alınamadı — bağlantıyı kontrol et.')
-  const ics = (data as { ics?: string })?.ics
+  let res: Response
+  try {
+    res = await fetch('/api/takvim', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    })
+  } catch {
+    throw new Error(genelHata)
+  }
+
+  const data = (await res.json().catch(() => null)) as { ics?: string; error?: string } | null
+  if (!res.ok) throw new Error(data?.error || genelHata)
+  const ics = data?.ics
   if (!ics) throw new Error('Bu bağlantıdan takvim verisi gelmedi.')
   return icsiIceAktar(ics)
 }
@@ -337,15 +398,31 @@ export function planIcsOlustur(plan: {
   sure?: number | null
   konum?: string | null
   notlar?: string | null
+  // The same plan exported again replaces its earlier copy in the phone
+  // calendar instead of adding a second one.
+  uid?: string
+  // An alarm this many minutes before the start (see lib/planAyrintilari).
+  hatirlatmaDk?: number | null
 }): string {
   const baslangic = icsZaman(plan.tarih, plan.saat ?? null)
+  const alarm =
+    plan.hatirlatmaDk != null
+      ? [
+          'BEGIN:VALARM',
+          'ACTION:DISPLAY',
+          `DESCRIPTION:${icsKacir(plan.baslik)}`,
+          icsTetikleyici({ tarih: plan.tarih, saat: plan.saat ?? null, sure: plan.sure ?? null, tumGun: !plan.saat }, plan.hatirlatmaDk),
+          'END:VALARM',
+        ]
+      : []
 
   let bitis: string
   if (plan.saat) {
-    const [ss, dd] = plan.saat.split(':').map(Number)
-    const b = new Date(2000, 0, 1, ss, dd)
+    // Use the plan's real date so a plan that runs past midnight ends on the
+    // next day instead of before it starts.
+    const b = new Date(`${plan.tarih}T${plan.saat.slice(0, 5)}:00`)
     b.setMinutes(b.getMinutes() + (plan.sure && plan.sure > 0 ? plan.sure : 60))
-    bitis = icsZaman(plan.tarih, `${String(b.getHours()).padStart(2, '0')}:${String(b.getMinutes()).padStart(2, '0')}`)
+    bitis = icsZaman(tarihStr(b), saatStr(b))
   } else {
     // Saatsiz plan = tüm gün etkinliği; DTEND ertesi gün olmalı.
     const g = new Date(`${plan.tarih}T00:00:00`)
@@ -356,16 +433,17 @@ export function planIcsOlustur(plan: {
   const satirlar = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//CepDost//TR',
+    `PRODID:-//${UYGULAMA_ADI}//TR`,
     'CALSCALE:GREGORIAN',
     'BEGIN:VEVENT',
-    `UID:${crypto.randomUUID()}@cepdost`,
+    `UID:${plan.uid ?? crypto.randomUUID()}@cepdost`,
     `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}`,
     plan.saat ? `DTSTART:${baslangic}` : `DTSTART;VALUE=DATE:${baslangic}`,
     plan.saat ? `DTEND:${bitis}` : `DTEND;VALUE=DATE:${bitis}`,
     `SUMMARY:${icsKacir(plan.baslik)}`,
     plan.konum ? `LOCATION:${icsKacir(plan.konum)}` : null,
     plan.notlar ? `DESCRIPTION:${icsKacir(plan.notlar)}` : null,
+    ...alarm,
     'END:VEVENT',
     'END:VCALENDAR',
   ].filter((s): s is string => s !== null)
@@ -383,17 +461,22 @@ export function planiTakvimeIndir(plan: Parameters<typeof planIcsOlustur>[0]): v
   document.body.appendChild(a)
   a.click()
   a.remove()
-  URL.revokeObjectURL(url)
+  // Some browsers (iOS Safari, older Firefox) start the download after
+  // click() returns; revoking right away can cancel it.
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 // Kayıt tipinden .ics'e köprü — çağrı yerlerinde alan eşlemesi tekrarlanmasın.
 export function kayittanIcsIndir(kayit: Kayit): void {
   planiTakvimeIndir({
-    baslik: kayit.baslik ?? kayit.hamBaslik ?? 'CepDost planı',
+    // hamBaslik is '' (not null) for shared items, so ?? would keep it.
+    baslik: kayit.baslik || kayit.hamBaslik || `${UYGULAMA_ADI} planı`,
     tarih: kayit.tarih!,
-    saat: kayit.saat,
+    saat: kayit.tumGun ? null : kayit.saat,
     sure: kayit.sure,
     konum: kayit.konum,
     notlar: kayit.ozetNot,
+    uid: kayit.id,
+    hatirlatmaDk: kayit.hatirlatma ?? null,
   })
 }

@@ -1,302 +1,94 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Icon } from './Icon'
-import { KodKutulari } from './KodKutulari'
 import { useAuth } from '../sosyal/auth'
-import { girisSaglayicilariniGetir, type GirisSaglayicilari } from '../sosyal/supabase'
+import { useGeriAdimi } from '../lib/geriTusu'
+import { SLOGAN, UYGULAMA_ADI } from '../../shared/marka'
 
-// Supabase'in OTP uzunluğu proje ayarında (Email OTP Length) belirleniyor.
-// Kutu sayısı buradan geliyor; ayar değişirse tek yeri güncellemek yeter.
-const KOD_UZUNLUK = 6
-
-// Üç aşama: şifreyle giriş (dönen kullanıcı), kod isteme (yeni kullanıcı
-// veya şifresini unutan), kod girme.
-type Asama = 'sifre' | 'kodIstek' | 'kodGir'
+// The gate before the app. A new account is created on the spot (no email,
+// no waiting for a code); returning users sign in with username + password,
+// or with their recovery code if they forgot the password.
+type Asama = 'karsilama' | 'sifre' | 'kod'
 
 interface Props {
   baslik?: string
   altBaslik?: string
   tanitimBaslik?: string
   tanitimMetin?: string
-  // Uygulama girişinde (kapıda) gösterilirken "istersen giriş yapmadan
-  // devam et" demek yanlış olur — o metin duruma göre değişmeli.
   altNot?: string
 }
 
 export function GirisEkrani({
-  baslik = 'Arkadaşlar',
-  altBaslik = 'Birlikte plan yapmak için',
-  tanitimBaslik = 'Arkadaşlarınla planla',
-  tanitimMetin = 'Arkadaşlarının hangi saatlerinin dolu olduğunu gör, müsait oldukları bir ana plan daveti gönder.',
-  altNot = 'Giriş yapmadan da CepDost\'un tamamını kullanmaya devam edebilirsin — hesap sadece arkadaşlık özellikleri için gerekiyor.',
+  baslik = 'Aramıza hoş geldin',
+  altBaslik = `${UYGULAMA_ADI} için bir hesap aç ya da giriş yap`,
+  tanitimBaslik = SLOGAN,
+  tanitimMetin = 'Paylaştığın linkleri ve görselleri plana çevirir, arkadaşlarınla herkese uyan zamanı bulmanı sağlar.',
+  altNot = 'Hesabın plan detaylarını telefonundan çıkarmaz. Arkadaşlarınla paylaştıkların uçtan uca şifrelenir.',
 }: Props = {}) {
-  const { girisGoogle, girisSifre, girisEposta, kodDogrula } = useAuth()
-  const [asama, setAsama] = useState<Asama>('sifre')
-  const [eposta, setEposta] = useState('')
+  const { hesapOlustur, girisSifre, girisKod, eskiHesapVardi } = useAuth()
+  const [asama, setAsama] = useState<Asama>('karsilama')
+  const [kullaniciAdi, setKullaniciAdi] = useState('')
   const [sifre, setSifre] = useState('')
   const [kod, setKod] = useState('')
-  const [yukleniyor, setYukleniyor] = useState<'google' | 'sifre' | 'kodGonder' | 'kodDogrula' | null>(
-    null,
-  )
+  const [yukleniyor, setYukleniyor] = useState(false)
   const [hata, setHata] = useState<string | null>(null)
-  const [saglayicilar, setSaglayicilar] = useState<GirisSaglayicilari | null>(null)
 
-  useEffect(() => {
-    let iptal = false
-    girisSaglayicilariniGetir().then((s) => {
-      if (!iptal) setSaglayicilar(s)
-    })
-    return () => {
-      iptal = true
-    }
-  }, [])
-
-  async function googleTikla() {
+  async function calistir(is: () => Promise<void>) {
     setHata(null)
-    setYukleniyor('google')
+    setYukleniyor(true)
     try {
-      await girisGoogle()
+      // On success the gate moves on and this screen goes away.
+      await is()
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Giriş başarısız')
-      setYukleniyor(null)
+      setYukleniyor(false)
     }
   }
 
-  async function sifreyleGir(e: React.FormEvent) {
-    e.preventDefault()
-    if (!eposta.trim() || !sifre) return
+  function geri() {
+    setAsama('karsilama')
     setHata(null)
-    setYukleniyor('sifre')
-    try {
-      // Başarılıysa oturum açılır ve bu ekran kaldırılır.
-      await girisSifre(eposta, sifre)
-    } catch (err) {
-      setHata(err instanceof Error ? err.message : 'Giriş başarısız')
-      setYukleniyor(null)
-    }
   }
+  useGeriAdimi(geri, asama !== 'karsilama')
 
-  async function kodGonder() {
-    if (!eposta.trim()) {
-      setHata('Önce e-posta adresini gir.')
-      return
-    }
-    setHata(null)
-    setYukleniyor('kodGonder')
-    try {
-      await girisEposta(eposta)
-      setKod('')
-      setAsama('kodGir')
-    } catch (err) {
-      setHata(err instanceof Error ? err.message : 'Kod gönderilemedi')
-    } finally {
-      setYukleniyor(null)
-    }
-  }
+  const hataKutusu = hata && (
+    <div className="mt-4 flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3 animate-fade-in">
+      <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+      <p className="text-sm text-rose-700">{hata}</p>
+    </div>
+  )
 
-  async function kodDogrulaVeGir(tamKod: string) {
-    setHata(null)
-    setYukleniyor('kodDogrula')
-    try {
-      await kodDogrula(eposta, tamKod)
-    } catch (err) {
-      setHata(err instanceof Error ? err.message : 'Doğrulama başarısız')
-      setYukleniyor(null)
-    }
-  }
-
-  // ---------- kod girme ----------
-  if (asama === 'kodGir') {
+  if (asama === 'sifre') {
     return (
-      <div className="flex flex-col h-full">
-        <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3">
-          <h1 className="font-display text-2xl font-bold text-ink-700">Kodu gir</h1>
-          <p className="text-sm text-ink-400 mt-0.5">E-postana bir giriş kodu gönderdim</p>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-5 pb-24">
-          <div className="card p-5 mb-5 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-teal-100 flex items-center justify-center mx-auto mb-3">
-              <Icon name="Mail" className="w-7 h-7 text-teal-600" />
-            </div>
-            <p className="text-sm text-ink-400">
-              <strong className="text-ink-600 break-all">{eposta}</strong> adresine gönderildi.
-            </p>
+      <Cerceve baslik="Giriş yap" altBaslik="Kullanıcı adın ve şifrenle" onGeri={geri}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (kullaniciAdi.trim() && sifre) void calistir(() => girisSifre(kullaniciAdi, sifre))
+          }}
+          className="space-y-3"
+        >
+          <label htmlFor="giris-kullanici" className="sr-only">
+            Kullanıcı adı
+          </label>
+          <div className="flex items-center bg-mist-50 border border-ink-100 rounded-2xl px-4">
+            <span className="text-ink-300">@</span>
+            <input
+              id="giris-kullanici"
+              value={kullaniciAdi}
+              onChange={(e) => setKullaniciAdi(e.target.value)}
+              placeholder="kullaniciadi"
+              autoComplete="username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              autoFocus
+              className="flex-1 bg-transparent py-3 px-1 text-ink-700 placeholder:text-ink-300 focus:outline-none"
+            />
           </div>
-
-          <KodKutulari
-            uzunluk={KOD_UZUNLUK}
-            deger={kod}
-            onDegisim={setKod}
-            onTamamlandi={(tam) => void kodDogrulaVeGir(tam)}
-            devreDisi={yukleniyor === 'kodDogrula'}
-          />
-
-          {yukleniyor === 'kodDogrula' && (
-            <div className="flex items-center justify-center gap-2 mt-4 text-sm text-ink-400">
-              <Icon name="Loader2" className="w-4 h-4 animate-spin" />
-              Doğrulanıyor...
-            </div>
-          )}
-
-          {hata && (
-            <div className="mt-5 flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3 animate-fade-in">
-              <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
-              <p className="text-sm text-rose-700">{hata}</p>
-            </div>
-          )}
-
-          <div className="flex flex-col items-center gap-2 mt-6">
-            <button
-              onClick={() => void kodGonder()}
-              disabled={yukleniyor !== null}
-              className="text-sm font-medium text-coral-600 disabled:opacity-50"
-            >
-              Kod gelmedi, tekrar gönder
-            </button>
-            <button
-              onClick={() => {
-                setAsama('sifre')
-                setKod('')
-                setHata(null)
-              }}
-              className="text-xs text-ink-400"
-            >
-              Geri dön
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // ---------- kod isteme ----------
-  if (asama === 'kodIstek') {
-    return (
-      <div className="flex flex-col h-full">
-        <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3">
-          <h1 className="font-display text-2xl font-bold text-ink-700">Kod ile giriş</h1>
-          <p className="text-sm text-ink-400 mt-0.5">Şifre gerekmez</p>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-5 pb-24">
-          <p className="text-sm text-ink-400 mb-4 leading-relaxed">
-            E-posta adresine tek kullanımlık bir kod göndereceğim. İlk kez giriyorsan hesabın bu
-            adımda oluşur.
-          </p>
-
+          <label htmlFor="giris-sifre" className="sr-only">
+            Şifre
+          </label>
           <input
-            type="email"
-            value={eposta}
-            onChange={(e) => setEposta(e.target.value)}
-            placeholder="ornek@eposta.com"
-            autoComplete="email"
-            autoFocus
-            className="input-field mb-3"
-          />
-
-          <button
-            onClick={() => void kodGonder()}
-            disabled={yukleniyor !== null || !eposta.trim()}
-            className="w-full btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {yukleniyor === 'kodGonder' ? (
-              <>
-                <Icon name="Loader2" className="w-5 h-5 animate-spin" />
-                Gönderiliyor...
-              </>
-            ) : (
-              <>
-                <Icon name="Mail" className="w-5 h-5" />
-                Kod gönder
-              </>
-            )}
-          </button>
-
-          {hata && (
-            <div className="mt-4 flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3">
-              <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
-              <p className="text-sm text-rose-700">{hata}</p>
-            </div>
-          )}
-
-          <button
-            onClick={() => {
-              setAsama('sifre')
-              setHata(null)
-            }}
-            className="w-full text-sm text-ink-400 mt-5"
-          >
-            Şifremle giriş yapacağım
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // ---------- şifreyle giriş (varsayılan) ----------
-  return (
-    <div className="flex flex-col h-full">
-      <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3">
-        <h1 className="font-display text-2xl font-bold text-ink-700">{baslik}</h1>
-        <p className="text-sm text-ink-400 mt-0.5">{altBaslik}</p>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-5 pb-24">
-        <div className="card p-5 mb-5">
-          <div className="w-14 h-14 rounded-2xl bg-coral-100 flex items-center justify-center mb-4">
-            <Icon name="Users" className="w-7 h-7 text-coral-500" />
-          </div>
-          <h2 className="font-display text-lg font-bold text-ink-700 mb-2">{tanitimBaslik}</h2>
-          <p className="text-sm text-ink-400 leading-relaxed">{tanitimMetin}</p>
-        </div>
-
-        {/* Gizlilik vaadi giriş yapmadan ÖNCE söyleniyor. */}
-        <div className="card p-4 mb-6 bg-teal-50/60 border-teal-100">
-          <div className="flex items-start gap-2.5">
-            <Icon name="ShieldCheck" className="w-5 h-5 text-teal-600 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-teal-800 mb-1">Planların sende kalır</p>
-              <p className="text-xs text-teal-700/90 leading-relaxed">
-                Arkadaşların sadece <strong>dolu saatlerini</strong> görür — ne yaptığını, nereye
-                gittiğini, notlarını değil. Bunlar hiçbir zaman telefonundan çıkmıyor.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {saglayicilar?.google && (
-          <>
-            <button
-              onClick={googleTikla}
-              disabled={yukleniyor !== null}
-              className="w-full bg-cream-50 border border-ink-100/60 text-ink-700 font-semibold rounded-2xl px-5 py-3.5 flex items-center justify-center gap-3 active:scale-[0.97] transition-all disabled:opacity-50 shadow-soft"
-            >
-              {yukleniyor === 'google' ? (
-                <Icon name="Loader2" className="w-5 h-5 animate-spin" />
-              ) : (
-                <GoogleLogo />
-              )}
-              Google ile devam et
-            </button>
-
-            <div className="flex items-center gap-3 my-5">
-              <div className="flex-1 h-px bg-ink-100" />
-              <span className="text-xs text-ink-300 font-medium">veya</span>
-              <div className="flex-1 h-px bg-ink-100" />
-            </div>
-          </>
-        )}
-
-        <form onSubmit={sifreyleGir} className="space-y-3">
-          <input
-            type="email"
-            value={eposta}
-            onChange={(e) => setEposta(e.target.value)}
-            placeholder="ornek@eposta.com"
-            autoComplete="email"
-            className="input-field"
-          />
-          <input
+            id="giris-sifre"
             type="password"
             value={sifre}
             onChange={(e) => setSifre(e.target.value)}
@@ -306,62 +98,168 @@ export function GirisEkrani({
           />
           <button
             type="submit"
-            disabled={yukleniyor !== null || !eposta.trim() || !sifre}
+            disabled={yukleniyor || !kullaniciAdi.trim() || !sifre}
             className="w-full btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            {yukleniyor === 'sifre' ? (
+            {yukleniyor ? (
               <>
                 <Icon name="Loader2" className="w-5 h-5 animate-spin" />
-                Giriş yapılıyor...
+                Hesabın açılıyor...
               </>
             ) : (
               'Giriş yap'
             )}
           </button>
         </form>
-
-        {hata && (
-          <div className="mt-4 flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3 animate-fade-in">
-            <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
-            <p className="text-sm text-rose-700">{hata}</p>
-          </div>
-        )}
-
+        {hataKutusu}
         <button
           onClick={() => {
-            setAsama('kodIstek')
+            setAsama('kod')
             setHata(null)
           }}
-          className="w-full mt-5 text-sm font-semibold text-coral-600"
+          className="w-full mt-5 text-sm font-semibold text-orchid-600"
         >
-          İlk kez mi giriyorsun ya da şifreni mi unuttun? Kod ile devam et
+          Şifreni mi unuttun? Kurtarma koduyla gir
         </button>
+      </Cerceve>
+    )
+  }
 
-        <p className="text-xs text-ink-300 text-center mt-6 leading-relaxed">{altNot}</p>
+  if (asama === 'kod') {
+    return (
+      <Cerceve baslik="Kurtarma koduyla gir" altBaslik="Ayarlar'da sakladığın kod" onGeri={geri}>
+        <div className="card p-4 mb-4 bg-mist-50">
+          <p className="text-xs text-ink-500 leading-relaxed">
+            Kurtarma kodu <strong>nsec1</strong> ile başlayan uzun bir koddur. Hesabını açtığın
+            telefonda <strong>Profil → Ayarlar → Hesap güvenliği</strong> bölümünde bulunur.
+          </p>
+        </div>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (kod.trim()) void calistir(() => girisKod(kod))
+          }}
+          className="space-y-3"
+        >
+          <label htmlFor="giris-kod" className="sr-only">
+            Kurtarma kodu
+          </label>
+          <textarea
+            id="giris-kod"
+            value={kod}
+            onChange={(e) => setKod(e.target.value)}
+            placeholder="nsec1..."
+            rows={3}
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            autoFocus
+            className="input-field resize-none font-mono text-sm"
+          />
+          <button
+            type="submit"
+            disabled={yukleniyor || !kod.trim()}
+            className="w-full btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {yukleniyor ? <Icon name="Loader2" className="w-5 h-5 animate-spin" /> : 'Giriş yap'}
+          </button>
+        </form>
+        {hataKutusu}
+      </Cerceve>
+    )
+  }
+
+  return (
+    <Cerceve baslik={baslik} altBaslik={altBaslik}>
+      <div className="card p-5 mb-5">
+        <div className="w-14 h-14 rounded-2xl bg-orchid-100 flex items-center justify-center mb-4">
+          <Icon name="Users" className="w-7 h-7 text-orchid-500" />
+        </div>
+        <h2 className="font-display text-lg font-bold text-ink-700 mb-2">{tanitimBaslik}</h2>
+        <p className="text-sm text-ink-400 leading-relaxed">{tanitimMetin}</p>
       </div>
-    </div>
+
+      {/* The privacy promise comes before signing up. */}
+      <div className="card p-4 mb-6 bg-teal-50/60 border-teal-100">
+        <div className="flex items-start gap-2.5">
+          <Icon name="ShieldCheck" className="w-5 h-5 text-teal-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-teal-800 mb-1">Planların sende kalır</p>
+            <p className="text-xs text-teal-700/90 leading-relaxed">
+              Arkadaşların sadece <strong>dolu saatlerini</strong> görür — ne yaptığını, nereye
+              gittiğini, notlarını değil. Bunlar hiçbir zaman telefonundan çıkmıyor.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {eskiHesapVardi && (
+        <div className="card p-4 mb-6 bg-amber-50/70 border-amber-100">
+          <div className="flex items-start gap-2.5">
+            <Icon name="Info" className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-800 leading-relaxed">
+              {UYGULAMA_ADI} hesapları yenilendi: sosyal veriler artık şifreli saklanıyor ve giriş
+              kullanıcı adı ile şifreyle yapılıyor. Planların ve arşivin bu telefonda duruyor; arkadaşlarını yeni hesabınla
+              tekrar eklemen yeterli.
+            </p>
+          </div>
+        </div>
+      )}
+
+      <button
+        onClick={() => void calistir(async () => hesapOlustur())}
+        disabled={yukleniyor}
+        className="w-full btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
+      >
+        <Icon name="Sparkles" className="w-5 h-5" />
+        Hesap oluştur
+      </button>
+      <button
+        onClick={() => {
+          setAsama('sifre')
+          setHata(null)
+        }}
+        disabled={yukleniyor}
+        className="w-full mt-3 btn-ghost border border-ink-100 disabled:opacity-50"
+      >
+        Zaten hesabım var
+      </button>
+      {hataKutusu}
+
+      <p className="text-xs text-ink-300 text-center mt-6 leading-relaxed">{altNot}</p>
+    </Cerceve>
   )
 }
 
-function GoogleLogo() {
+function Cerceve({
+  baslik,
+  altBaslik,
+  onGeri,
+  children,
+}: {
+  baslik: string
+  altBaslik: string
+  onGeri?: () => void
+  children: React.ReactNode
+}) {
   return (
-    <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        fill="#4285F4"
-        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1Z"
-      />
-      <path
-        fill="#34A853"
-        d="M12 23c2.97 0 5.46-.98 7.28-2.65l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M5.84 14.11a6.6 6.6 0 0 1 0-4.22V7.05H2.18a11 11 0 0 0 0 9.9l3.66-2.84Z"
-      />
-      <path
-        fill="#EA4335"
-        d="M12 4.75c1.62 0 3.06.56 4.21 1.65l3.15-3.15C17.45 1.46 14.97.5 12 .5A11 11 0 0 0 2.18 7.05l3.66 2.84c.87-2.6 3.3-4.14 6.16-4.14Z"
-      />
-    </svg>
+    <div className="flex flex-col h-full">
+      <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3 flex items-start gap-3">
+        {onGeri && (
+          <button
+            onClick={onGeri}
+            aria-label="Geri"
+            className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          >
+            <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />
+          </button>
+        )}
+        <div>
+          <h1 className="font-display text-2xl font-bold text-ink-700">{baslik}</h1>
+          <p className="text-sm text-ink-400 mt-0.5">{altBaslik}</p>
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto px-5 pb-24">{children}</div>
+    </div>
   )
 }

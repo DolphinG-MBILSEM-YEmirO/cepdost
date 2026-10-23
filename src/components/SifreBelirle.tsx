@@ -1,12 +1,21 @@
 import { useState } from 'react'
 import { Icon } from './Icon'
-import { SIFRE_MIN, useAuth } from '../sosyal/auth'
-import { profilGuncelle } from '../sosyal/api'
+import { useAuth } from '../sosyal/auth'
+import { SIFRE_MIN } from '../sosyal/hesap'
 
-// E-posta kodla doğrulandıktan sonraki adım: hesaba bir şifre atanıyor.
-// Böylece sonraki girişlerde her seferinde kod beklemek gerekmiyor.
-// Kod yolu yedek olarak duruyor (şifre unutulursa).
-export function SifreBelirle({ onTamamlandi }: { onTamamlandi: () => Promise<void> }) {
+// Second setup step: a password that encrypts the account key, so the
+// user can sign in on another phone with username + password. The
+// recovery code (Settings) is the fallback if the password is forgotten.
+// Also used from Settings to change the password (`degistir`).
+export function SifreBelirle({
+  onTamamlandi,
+  degistir = false,
+  onVazgec,
+}: {
+  onTamamlandi: () => Promise<void>
+  degistir?: boolean
+  onVazgec?: () => void
+}) {
   const { sifreBelirle } = useAuth()
   const [sifre, setSifre] = useState('')
   const [tekrar, setTekrar] = useState('')
@@ -30,11 +39,9 @@ export function SifreBelirle({ onTamamlandi }: { onTamamlandi: () => Promise<voi
     setKaydediliyor(true)
     setHata(null)
     try {
+      // Also marks the profile, but only after the backup is published:
+      // in the other order a failed upload would leave no password.
       await sifreBelirle(sifre)
-      // Bayrağı ancak şifre gerçekten atandıktan sonra işaretle — sıra
-      // ters olsaydı, şifre atanamadığında kullanıcı bir daha
-      // sorulmadan şifresiz kalırdı.
-      await profilGuncelle({ sifre_belirlendi: true })
       await onTamamlandi()
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Şifre kaydedilemedi')
@@ -45,9 +52,20 @@ export function SifreBelirle({ onTamamlandi }: { onTamamlandi: () => Promise<voi
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3">
-        <h1 className="font-display text-2xl font-bold text-ink-700">Şifre belirle</h1>
-        <p className="text-sm text-ink-400 mt-0.5">Bundan sonra bununla gireceksin</p>
+      <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3 flex items-start gap-3">
+        {onVazgec && (
+          <button
+            onClick={onVazgec}
+            aria-label="Geri"
+            className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          >
+            <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />
+          </button>
+        )}
+        <div>
+          <h1 className="font-display text-2xl font-bold text-ink-700">{degistir ? 'Şifreni değiştir' : 'Şifre belirle'}</h1>
+          <p className="text-sm text-ink-400 mt-0.5">Başka bir telefondan bununla gireceksin</p>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 pb-24">
@@ -55,8 +73,9 @@ export function SifreBelirle({ onTamamlandi }: { onTamamlandi: () => Promise<voi
           <div className="flex items-start gap-2.5">
             <Icon name="ShieldCheck" className="w-5 h-5 text-teal-600 shrink-0 mt-0.5" />
             <p className="text-xs text-teal-800 leading-relaxed">
-              E-postan doğrulandı. Şifre belirledikten sonra her girişte kod beklemene gerek
-              kalmayacak — şifreni unutursan kod ile giriş yolu yine duruyor.
+              Başka bir cihazda kullanıcı adın ve bu şifreyle girersin. Şifren telefonundan çıkmaz;
+              sadece hesabının şifreli yedeğini açar. Unutursan Ayarlar'daki kurtarma koduyla
+              girebilirsin.
             </p>
           </div>
         </div>
@@ -78,7 +97,7 @@ export function SifreBelirle({ onTamamlandi }: { onTamamlandi: () => Promise<voi
             <button
               type="button"
               onClick={() => setGorunur((g) => !g)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-coral-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-orchid-600"
             >
               {gorunur ? 'Gizle' : 'Göster'}
             </button>

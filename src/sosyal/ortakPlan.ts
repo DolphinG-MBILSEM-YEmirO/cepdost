@@ -1,11 +1,11 @@
-import { sb } from './supabase'
-import { arkadasMusaitligi, type Profil } from './api'
+import { arkadasTakvimi, type Profil } from './api'
 import { bloklariCikar } from './musaitlikSenkron'
 import { db } from '../db'
+import { planAyarlari } from '../lib/planAyarlari'
 
-// F16 — yapay zekâ ile ortak plan. Katılımcıların dolu saatlerini toplayıp
-// sunucuya gönderir; sunucu uygun boşlukları hesaplayıp modelden bir öneri
-// alır (bkz. supabase/functions/ortak-plan).
+// Joint planning with AI. Collects everyone's busy ranges and sends them to
+// the server, which finds the shared free slots and asks the model for a
+// suggestion (see api/ortak-plan.ts).
 //
 // Buradan çıkan veride yine SADECE saat aralıkları var — arkadaşların
 // planlarının başlığı/konumu bu istemcide zaten yok, sunucudan da hiç
@@ -50,7 +50,7 @@ export function gunleriUret(gunSayisi: number, baslangic = new Date()): string[]
 // Kendi dolu saatlerim: yerel planlar + (izin verilmişse) içe aktarılmış
 // takvim. Sunucudaki kopyayı okumak yerine yereli kullanıyoruz — müsaitlik
 // paylaşımını kapatmış biri de kendi planını yapabilmeli.
-async function kendiBloklarim(gunler: string[]): Promise<Array<{ tarih: string; baslangic: string; bitis: string }>> {
+export async function kendiBloklarim(gunler: string[]): Promise<Array<{ tarih: string; baslangic: string; bitis: string }>> {
   const [kayitlar, takvim] = await Promise.all([
     db.kayitlar.toArray(),
     db.takvimEtkinlikleri.toArray(),
@@ -77,33 +77,32 @@ export async function ortakPlanOner(girdi: OrtakPlanIstegi): Promise<OrtakPlanYa
   const ilkGun = girdi.gunler[0]
   const sonGun = girdi.gunler[girdi.gunler.length - 1]
 
+  const ayar = planAyarlari()
   const [benim, ...digerleri] = await Promise.all([
     kendiBloklarim(girdi.gunler),
-    ...girdi.katilimcilar.map(async (p) => {
-      // Müsaitliğini paylaşmayanlar için sunucu zaten satır döndürmez;
-      // boş liste "bilinmiyor" demek, "boş" demek değil (sunucu tarafında
-      // bu ayrım kullanıcıya ayrıca gösteriliyor).
-      if (!p.musaitlik_paylas) return []
-      try {
-        const bloklar = await arkadasMusaitligi(p.id, ilkGun, sonGun)
-        return bloklar.map((b) => ({
+    ...girdi.katilimcilar.map((p) =>
+      p.musaitlik_paylas ? arkadasTakvimi(p.id, ilkGun, sonGun).catch(() => null) : Promise.resolve(null),
+    ),
+  ])
+
+  // Someone whose calendar is unknown (sharing off, or not on this device
+  // yet) arrives with no blocks and `paylasiyor: false`: "unknown", not
+  // "free". The server shows that difference to the user.
+  const katilimcilar = [
+    { ad: girdi.benimAdim, bloklar: benim, paylasiyor: true, pencere: ayar.pencere },
+    ...girdi.katilimcilar.map((p, i) => {
+      const takvim = digerleri[i]
+      return {
+        ad: p.ad,
+        bloklar: (takvim?.bloklar ?? []).map((b) => ({
           tarih: b.tarih,
           baslangic: b.baslangic.slice(0, 5),
           bitis: b.bitis.slice(0, 5),
-        }))
-      } catch {
-        return []
+        })),
+        paylasiyor: Boolean(takvim?.bloklar),
+        pencere: takvim?.pencere ?? null,
       }
     }),
-  ])
-
-  const katilimcilar = [
-    { ad: girdi.benimAdim, bloklar: benim, paylasiyor: true },
-    ...girdi.katilimcilar.map((p, i) => ({
-      ad: p.ad,
-      bloklar: digerleri[i] ?? [],
-      paylasiyor: p.musaitlik_paylas,
-    })),
   ]
 
   // Sunucu UTC çalışıyor; "bugün geçmiş saatleri önerme" kontrolü için
@@ -113,29 +112,34 @@ export async function ortakPlanOner(girdi: OrtakPlanIstegi): Promise<OrtakPlanYa
   // Normalde 1-2 saniye sürüyor, ama canlı testte Gemini'nin bir kez 80+
   // saniye takıldığı görüldü. Zaman aşımı olmadan kullanıcı sonsuza kadar
   // "bakıyorum" ekranında kalıyordu.
-  const cagri = sb().functions.invoke('ortak-plan', {
-    body: {
-      istek: girdi.istek,
-      katilimcilar,
-      gunler: girdi.gunler,
-      enErken: girdi.enErken,
-      enGec: girdi.enGec,
-      enAzDakika: girdi.enAzDakika,
-      simdiTarih: tarihStr(simdi),
-      simdiSaat: `${String(simdi.getHours()).padStart(2, '0')}:${String(simdi.getMinutes()).padStart(2, '0')}`,
-    },
-  })
+  let res: Response
+  try {
+    res = await fetch('/api/ortak-plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        istek: girdi.istek,
+        katilimcilar,
+        gunler: girdi.gunler,
+        enErken: girdi.enErken,
+        enGec: girdi.enGec,
+        enAzDakika: girdi.enAzDakika,
+        yolPayiDk: ayar.yolPayiDk,
+        simdiTarih: tarihStr(simdi),
+        simdiSaat: `${String(simdi.getHours()).padStart(2, '0')}:${String(simdi.getMinutes()).padStart(2, '0')}`,
+      }),
+      signal: AbortSignal.timeout(ZAMAN_ASIMI_MS),
+    })
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'TimeoutError') {
+      throw new Error('Öneri gecikti — tekrar dener misin?')
+    }
+    throw new Error('Öneri alınamadı — birazdan tekrar dene.')
+  }
 
-  const { data, error } = await Promise.race([
-    cagri,
-    new Promise<never>((_, red) =>
-      setTimeout(() => red(new Error('Öneri gecikti — tekrar dener misin?')), ZAMAN_ASIMI_MS),
-    ),
-  ])
-
-  if (error) throw new Error('Öneri alınamadı — birazdan tekrar dene.')
-  const yanit = data as OrtakPlanYaniti & { error?: string }
+  const yanit = (await res.json().catch(() => null)) as (OrtakPlanYaniti & { error?: string }) | null
   if (yanit?.error) throw new Error(yanit.error)
+  if (!res.ok) throw new Error('Öneri alınamadı — birazdan tekrar dene.')
 
   const secenekler = yanit?.secenekler?.length
     ? yanit.secenekler

@@ -1,17 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Icon, type IconName } from './Icon'
-import { Avatar } from './Avatar'
+import { Avatar, GrupAvatari } from './Avatar'
+import { GrupDuzenle } from './GrupDuzenle'
+import { EmojiSecici, TumGunAnahtari } from './Seciciler'
 import { AniArsivi } from './AniArsivi'
+import { SohbetIciArama } from './MesajArama'
+import { useMesajaOdaklan } from './useMesajaOdaklan'
 import {
   grubaUyeEkle,
   grupPlaniOlustur,
   grupPlanlariGetir,
   grupUyeleriGetir,
+  gruplarimiGetir,
   gruptanAyril,
+  grupOkunduIsaretle,
   mesajGonder,
-  mesajlariDinle,
   mesajlariGetir,
-  planaYanitVer,
   planlariIdyeGoreGetir,
   planYanitlariGetir,
   type Grup,
@@ -23,35 +27,81 @@ import {
 } from '../sosyal/gruplar'
 import type { Arkadas, Profil } from '../sosyal/api'
 import { OrtakPlanSihirbazi } from './OrtakPlanSihirbazi'
-import {
-  Baloncuk,
-  GonderButonu,
-  SohbetZemini,
-  useSonaKaydir,
-  useYeniMesajEsigi,
-} from './SohbetGovde'
+import { SohbetZemini, useSonaKaydir, useYeniMesajEsigi } from './SohbetGovde'
+import { MesajKatmanlari, MesajSatiri, MesajYazmaAlani, SohbetUstSeridi } from './MesajIslemleri'
+import { useMesajIslemleri } from './useMesajIslemleri'
 import { TemaSheet } from './SohbetTemaSecici'
+import { GrupPlanKartiSohbet } from './SohbetPlanKarti'
+import { GrupPlanDetayi } from './GrupPlanDetayi'
+import { GrupOzetKarti } from './GrupOzeti'
+import { GrupUyesiKarti } from './GrupUyesiKarti'
+import { ArkadasProfili } from './ArkadasProfili'
+import { DirektSohbet } from './DirektSohbet'
+import { PlanPaylasSheet } from './PlanPaylas'
 import { useSohbetTemasi } from '../sohbetTema'
-import { db, kayitOlustur, kayitSil } from '../db'
-import { formatDate, formatTime, toDateString } from '../lib/format'
+import { grupPlaniYanitla, planGectiMi } from '../lib/planPaylasimi'
+import { formatDate, formatPlanTime, toDateString } from '../lib/format'
+import { useSosyalSurum } from '../sosyal/cekirdek'
+import { useGeriAdimi, useGeriIleKapat } from '../lib/geriTusu'
+import type { MesajGonderimEki } from '../sosyal/mesajOrtak'
+import type { SohbetHedefi } from '../sosyal/mesajIslemleri'
+import { ETKINLIK_EMOJILERI, renkAl } from '../lib/kisisellestirme'
+import { UYGULAMA_ADI } from '../../shared/marka'
 
 type Sekme = 'planlar' | 'sohbet' | 'anilar' | 'uyeler'
 
 interface Props {
   grup: Grup
   benimId: string
+  // My friends and pending requests, either way.
   arkadaslar: Arkadas[]
   onClose: () => void
   onAyrildi: () => Promise<void>
+  // Desktop: shown in the chat list's side pane instead of over the page.
+  gomulu?: boolean
+  // Opened from a search: the chat, with this message in view.
+  odakMesajId?: string | null
 }
 
-export function GrupDetay({ grup, benimId, arkadaslar, onClose, onAyrildi }: Props) {
-  const [sekme, setSekme] = useState<Sekme>('planlar')
+export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAyrildi, gomulu = false, odakMesajId }: Props) {
+  useGeriIleKapat(onClose, !gomulu)
+  // Desktop: the group sits in the side pane, so only back closes it.
+  useGeriAdimi(onClose, gomulu)
+  const [sekme, setSekme] = useState<Sekme>(odakMesajId ? 'sohbet' : 'planlar')
+  const [temaAcik, setTemaAcik] = useState(false)
+  const [aramaAcik, setAramaAcik] = useState(false)
+  // The chat loads its latest messages, or all of them once searched.
+  const [tumMesajlar, setTumMesajlar] = useState(!!odakMesajId)
+  const [duzenleAcik, setDuzenleAcik] = useState(false)
   const [uyeler, setUyeler] = useState<GrupUyesi[]>([])
+  // A member's profile (a friend's full one, or the card they keep in the
+  // group), and a chat opened from it.
+  const [acikUye, setAcikUye] = useState<GrupUyesi | null>(null)
+  const [mesajKisisi, setMesajKisisi] = useState<Profil | null>(null)
+  // Everything in the group (members, plans, answers, messages) is read
+  // from the local copy and reloads when social data changes.
+  const sosyalSurum = useSosyalSurum()
+
+  // The caller hands over the group as it was when opened; a new name,
+  // emoji or colour (mine or another member's) arrives through sync.
+  const [guncelGrup, setGuncelGrup] = useState<Grup | null>(null)
+  useEffect(() => {
+    let iptal = false
+    void gruplarimiGetir().then((liste) => {
+      const g = liste.find((x) => x.id === acilanGrup.id)
+      if (!iptal && g) setGuncelGrup(g)
+    })
+    return () => {
+      iptal = true
+    }
+  }, [acilanGrup.id, sosyalSurum])
+  const grup = guncelGrup?.id === acilanGrup.id ? guncelGrup : acilanGrup
+  const zemin = renkAl(grup.renk, grup.ad).zemin
 
   const uyeleriTazele = useCallback(async () => {
     setUyeler(await grupUyeleriGetir(grup.id))
-  }, [grup.id])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [grup.id, sosyalSurum])
 
   useEffect(() => {
     void uyeleriTazele()
@@ -59,7 +109,7 @@ export function GrupDetay({ grup, benimId, arkadaslar, onClose, onAyrildi }: Pro
 
   const adHaritasi = useMemo(() => {
     const m = new Map<string, string>()
-    for (const u of uyeler) m.set(u.kullanici_id, u.profil?.ad ?? 'CepDost kullanıcısı')
+    for (const u of uyeler) m.set(u.kullanici_id, u.profil?.ad ?? `${UYGULAMA_ADI} kullanıcısı`)
     return m
   }, [uyeler])
 
@@ -71,27 +121,72 @@ export function GrupDetay({ grup, benimId, arkadaslar, onClose, onAyrildi }: Pro
   ]
 
   return (
-    <div className="fixed inset-0 z-[55] flex flex-col bg-cream-100/95 backdrop-blur-md animate-slide-up">
-      <div className="flex items-center gap-3 px-5 pt-[calc(1rem+var(--safe-top))] pb-3 shrink-0">
+    <div className={gomulu ? 'flex flex-col h-full min-h-0' : 'panel-tam z-[55]'}>
+      <div className={`flex items-center gap-3 px-5 pt-[calc(1rem+var(--safe-top))] pb-3 shrink-0 ${zemin}`}>
         <button
           onClick={onClose}
-          className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          aria-label="Geri"
+          className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:scale-90 transition-transform shrink-0"
         >
           <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />
         </button>
+        <GrupAvatari grup={grup} boyut="sm" />
         <div className="min-w-0 flex-1">
           <h2 className="font-display text-base font-bold text-ink-700 truncate">{grup.ad}</h2>
-          <p className="text-xs text-ink-400">{uyeler.length} üye</p>
+          <p className="text-xs text-ink-400 truncate">
+            {grup.aciklama ? `${grup.aciklama} · ` : ''}
+            {uyeler.length} üye
+          </p>
         </div>
+        {sekme === 'sohbet' && (
+          <button
+            onClick={() => {
+              setTumMesajlar(true)
+              setAramaAcik(true)
+            }}
+            aria-label="Sohbette ara"
+            className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          >
+            <Icon name="Search" className="w-5 h-5 text-ink-400" />
+          </button>
+        )}
+        {sekme === 'sohbet' && (
+          <button
+            onClick={() => setTemaAcik(true)}
+            aria-label="Sohbet temasını değiştir"
+            className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          >
+            <Icon name="Palette" className="w-5 h-5 text-ink-400" />
+          </button>
+        )}
+        <button
+          onClick={() => setDuzenleAcik(true)}
+          aria-label="Grubu düzenle"
+          className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+        >
+          <Icon name="Pencil" className="w-4 h-4 text-ink-400" />
+        </button>
       </div>
 
-      <div className="flex gap-1.5 px-5 pb-3 shrink-0 overflow-x-auto no-scrollbar">
+      {temaAcik && <TemaSheet onKapat={() => setTemaAcik(false)} />}
+      {duzenleAcik && (
+        <GrupDuzenle
+          grup={grup}
+          onKapat={() => setDuzenleAcik(false)}
+          onKaydedildi={() => {
+            setDuzenleAcik(false)
+            void gruplarimiGetir().then((liste) => setGuncelGrup(liste.find((x) => x.id === grup.id) ?? null))
+          }}
+        />
+      )}
+
+      <div className={`flex gap-1.5 px-5 pb-3 shrink-0 overflow-x-auto no-scrollbar ${zemin}`}>
         {sekmeler.map((s) => (
           <button
             key={s.id}
             onClick={() => setSekme(s.id)}
             className={`chip shrink-0 ${
-              sekme === s.id ? 'bg-coral-500 text-white' : 'bg-cream-50 text-ink-400 border border-ink-100/40'
+              sekme === s.id ? 'bg-gradient-orchid text-white' : 'bg-mist-50 text-ink-400 border border-ink-100'
             }`}
           >
             <Icon name={s.ikon} className="w-4 h-4" />
@@ -104,10 +199,12 @@ export function GrupDetay({ grup, benimId, arkadaslar, onClose, onAyrildi }: Pro
         <PlanlarSekmesi
           grup={grup}
           benimId={benimId}
+          uyeler={uyeler}
+          onUyeler={() => setSekme('uyeler')}
           adHaritasi={adHaritasi}
           benimAdim={adHaritasi.get(benimId) ?? 'Ben'}
-          // Profili okunamayan üyeler (arkadaşım olmayanlar) listeye
-          // giremiyor — müsaitliklerini zaten RLS döndürmezdi.
+          // Every member publishes a card with their name to the group, so
+          // a missing profile only means the card hasn't synced yet.
           digerUyeler={uyeler
             .filter((u) => u.kullanici_id !== benimId && u.profil)
             .map((u) => u.profil!)}
@@ -122,6 +219,10 @@ export function GrupDetay({ grup, benimId, arkadaslar, onClose, onAyrildi }: Pro
           digerUyeler={uyeler
             .filter((u) => u.kullanici_id !== benimId && u.profil)
             .map((u) => u.profil!)}
+          tumu={tumMesajlar}
+          aramaAcik={aramaAcik}
+          onAramaKapat={() => setAramaAcik(false)}
+          odakMesajId={odakMesajId}
         />
       )}
       {sekme === 'anilar' && (
@@ -135,70 +236,69 @@ export function GrupDetay({ grup, benimId, arkadaslar, onClose, onAyrildi }: Pro
           benimId={benimId}
           uyeler={uyeler}
           arkadaslar={arkadaslar}
+          onUyeAc={setAcikUye}
           onDegisti={uyeleriTazele}
           onAyrildi={onAyrildi}
         />
       )}
+
+      {acikUye && (
+        <UyeProfili
+          uye={acikUye}
+          grupAdi={grup.ad}
+          benimId={benimId}
+          arkadaslar={arkadaslar}
+          onKapat={() => setAcikUye(null)}
+          onMesaj={setMesajKisisi}
+        />
+      )}
+      {mesajKisisi && <DirektSohbet arkadas={mesajKisisi} benimId={benimId} onClose={() => setMesajKisisi(null)} />}
     </div>
   )
 }
 
-// ---------------- planlar ----------------
-
-// Grup planına yanıt + kişisel takvimi yanıta göre eşitleme.
-//
-// Hem Planlar sekmesi hem sohbetteki plan kartı bunu çağırıyor; mantık iki
-// yerde kopyalansaydı biri düzeltilip diğeri unutulurdu.
-//
-// Ölçüt "önceki yanıt ne idi" DEĞİL, "bu plana ait yerel kayıt var mı":
-// önceki duruma bakan sürümde geliyorum → belki → geliyorum turu ikinci bir
-// kayıt açıyordu (canlı testte yakalandı). Yanıt "geliyorum"dan çıkarsa kayıt
-// siliniyor — gitmeyeceğin bir plan takvimini ve müsaitliğini kirletmemeli.
-async function grupPlaniYanitla(
-  plan: GrupPlani,
-  durum: YanitDurumu,
-  grup: Grup,
-): Promise<void> {
-  await planaYanitVer(plan.id, durum)
-
-  const mevcut = (await db.kayitlar.toArray()).find((k) => k.grupPlanId === plan.id)
-
-  if (durum === 'geliyorum') {
-    if (mevcut) return
-    await kayitOlustur({
-      kategori: 'etkinlik',
-      baslik: `${plan.baslik} (${grup.ad})`,
-      tarih: plan.tarih,
-      saat: plan.saat ? plan.saat.slice(0, 5) : null,
-      konum: plan.konum,
-      oncelik: 'orta',
-      sure: plan.sure,
-      ozetNot: plan.notlar,
-      mekanOnerisi: null,
-      yakinOneriler: null,
-      kaynakTipi: 'metin',
-      hamBaslik: '',
-      hamMetin: '',
-      hamLink: '',
-      gorseller: [],
-      grupId: grup.id,
-      grupAdi: grup.ad,
-      grupPlanId: plan.id,
-    })
-  } else if (mevcut) {
-    await kayitSil(mevcut.id)
+// A friend opens their full profile; anyone else, the card they keep in
+// the group with a friend request.
+function UyeProfili({
+  uye,
+  grupAdi,
+  benimId,
+  arkadaslar,
+  onKapat,
+  onMesaj,
+}: {
+  uye: GrupUyesi
+  grupAdi: string
+  benimId: string
+  arkadaslar: Arkadas[]
+  onKapat: () => void
+  onMesaj: (kisi: Profil) => void
+}) {
+  const iliski = arkadaslar.find((a) => a.profil.id === uye.kullanici_id) ?? null
+  // Which one is decided when it opens: accepting a request on the card
+  // keeps the card, rather than swapping it for the profile.
+  const [arkadasti] = useState(iliski?.durum === 'kabul')
+  if (arkadasti && iliski) {
+    return <ArkadasProfili arkadas={iliski.profil} benimId={benimId} onClose={onKapat} onMesaj={() => onMesaj(iliski.profil)} />
   }
+  return <GrupUyesiKarti uye={uye} grupAdi={grupAdi} iliski={iliski} onKapat={onKapat} />
 }
+
+// ---------------- planlar ----------------
 
 function PlanlarSekmesi({
   grup,
   benimId,
+  uyeler,
+  onUyeler,
   adHaritasi,
   benimAdim,
   digerUyeler,
 }: {
   grup: Grup
   benimId: string
+  uyeler: GrupUyesi[]
+  onUyeler: () => void
   adHaritasi: Map<string, string>
   benimAdim: string
   digerUyeler: Profil[]
@@ -207,7 +307,9 @@ function PlanlarSekmesi({
   const [yanitlar, setYanitlar] = useState<PlanYaniti[]>([])
   const [ekleAcik, setEkleAcik] = useState(false)
   const [sihirbazAcik, setSihirbazAcik] = useState(false)
+  const [acikPlan, setAcikPlan] = useState<GrupPlani | null>(null)
   const [hata, setHata] = useState<string | null>(null)
+  const sosyalSurum = useSosyalSurum()
 
   const tazele = useCallback(async () => {
     setHata(null)
@@ -218,15 +320,20 @@ function PlanlarSekmesi({
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Planlar alınamadı')
     }
-  }, [grup.id])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [grup.id, sosyalSurum])
 
   useEffect(() => {
     void tazele()
   }, [tazele])
 
   async function yanitla(plan: GrupPlani, durum: YanitDurumu) {
-    await grupPlaniYanitla(plan, durum, grup)
-    await tazele()
+    try {
+      await grupPlaniYanitla(plan, durum, grup)
+      await tazele()
+    } catch (err) {
+      setHata(err instanceof Error ? err.message : 'Yanıt gönderilemedi')
+    }
   }
 
   return (
@@ -239,6 +346,18 @@ function PlanlarSekmesi({
           </div>
         )}
 
+        {planlar && (
+          <GrupOzetKarti
+            grup={grup}
+            benimId={benimId}
+            uyeler={uyeler}
+            planlar={planlar}
+            yanitlar={yanitlar}
+            onPlanAc={setAcikPlan}
+            onUyeler={onUyeler}
+          />
+        )}
+
         <button
           onClick={() => setSihirbazAcik(true)}
           className="w-full btn-primary flex items-center justify-center gap-2 text-sm py-3"
@@ -249,7 +368,7 @@ function PlanlarSekmesi({
 
         <button
           onClick={() => setEkleAcik(true)}
-          className="w-full btn-ghost border border-ink-100/40 flex items-center justify-center gap-2 text-sm py-3"
+          className="w-full btn-ghost border border-ink-100 flex items-center justify-center gap-2 text-sm py-3"
         >
           <Icon name="Plus" className="w-4 h-4" />
           Kendim plan oluştur
@@ -265,22 +384,32 @@ function PlanlarSekmesi({
             <p className="text-sm text-ink-400">Henüz grup planı yok. İlkini sen oluştur.</p>
           </div>
         ) : (
-          planlar.map((p) => (
-            <PlanKarti
-              key={p.id}
-              plan={p}
-              benimId={benimId}
-              yanitlar={yanitlar.filter((y) => y.plan_id === p.id)}
-              adHaritasi={adHaritasi}
-              onYanit={(d) => void yanitla(p, d)}
-            />
+          // Upcoming plans first; past ones below, most recent first.
+          [
+            ...planlar.filter((p) => !planGectiMi(p.tarih)),
+            ...planlar.filter((p) => planGectiMi(p.tarih)).reverse(),
+          ].map((p, i, liste) => (
+            <div key={p.id}>
+              {planGectiMi(p.tarih) && (i === 0 || !planGectiMi(liste[i - 1].tarih)) && (
+                <p className="text-xs font-semibold text-ink-300 uppercase tracking-wide mt-2 mb-3 px-1">Geçmiş planlar</p>
+              )}
+              <PlanKarti
+                plan={p}
+                benimId={benimId}
+                yanitlar={yanitlar.filter((y) => y.plan_id === p.id)}
+                adHaritasi={adHaritasi}
+                uyeSayisi={digerUyeler.length + 1}
+                onYanit={(d) => void yanitla(p, d)}
+                onAc={() => setAcikPlan(p)}
+              />
+            </div>
           ))
         )}
       </div>
 
       {ekleAcik && (
         <PlanEkleModal
-          grupId={grup.id}
+          grup={grup}
           onClose={() => setEkleAcik(false)}
           onEklendi={async () => {
             setEkleAcik(false)
@@ -298,6 +427,8 @@ function PlanlarSekmesi({
           onOlusturuldu={tazele}
         />
       )}
+
+      {acikPlan && <GrupPlanDetayi plan={acikPlan} grup={grup} benimId={benimId} onClose={() => setAcikPlan(null)} />}
     </>
   )
 }
@@ -307,17 +438,23 @@ function PlanKarti({
   benimId,
   yanitlar,
   adHaritasi,
+  uyeSayisi,
   onYanit,
+  onAc,
 }: {
   plan: GrupPlani
   benimId: string
   yanitlar: PlanYaniti[]
   adHaritasi: Map<string, string>
+  uyeSayisi: number
   onYanit: (d: YanitDurumu) => void
+  onAc: () => void
 }) {
   const benimYanit = yanitlar.find((y) => y.kullanici_id === benimId)?.durum ?? null
   const gelenler = yanitlar.filter((y) => y.durum === 'geliyorum')
-  const detay = [formatDate(plan.tarih), plan.saat ? formatTime(plan.saat.slice(0, 5)) : null, plan.konum]
+  const belki = yanitlar.filter((y) => y.durum === 'belki').length
+  const yanitsiz = Math.max(0, uyeSayisi - yanitlar.length)
+  const detay = [formatDate(plan.tarih), formatPlanTime(plan.saat, plan.tum_gun), plan.konum]
     .filter(Boolean)
     .join(' · ')
 
@@ -329,48 +466,70 @@ function PlanKarti({
 
   return (
     <div className="card p-4">
-      <p className="text-sm font-semibold text-ink-700">{plan.baslik}</p>
-      <p className="text-xs text-ink-500 mt-0.5">{detay}</p>
-      {plan.notlar && <p className="text-xs text-ink-400 mt-1">{plan.notlar}</p>}
+      {/* The plan's own page: everyone's answer and who brings what. */}
+      <button onClick={onAc} className="w-full flex items-start gap-2 text-left active:scale-[0.99] transition-transform">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-ink-700">
+            {plan.emoji && <span aria-hidden="true">{plan.emoji} </span>}
+            {plan.baslik}
+          </p>
+          <p className="text-xs text-ink-500 mt-0.5">{detay}</p>
+          {plan.notlar && <p className="text-xs text-ink-400 mt-1 line-clamp-2">{plan.notlar}</p>}
+        </div>
+        <span className="flex items-center gap-0.5 text-xs font-semibold text-orchid-600 shrink-0 mt-0.5">
+          Ayrıntılar
+          <Icon name="ChevronRight" className="w-4 h-4" />
+        </span>
+      </button>
 
       <p className="text-xs text-ink-400 mt-3 mb-2">
         {gelenler.length > 0
-          ? `${gelenler.map((y) => adHaritasi.get(y.kullanici_id) ?? '?').join(', ')} geliyor`
-          : 'Henüz kimse yanıtlamadı'}
+          ? `Gelenler: ${gelenler.map((y) => (y.kullanici_id === benimId ? 'Sen' : (adHaritasi.get(y.kullanici_id) ?? '?'))).join(', ')}`
+          : 'Henüz gelen yok'}
+        {belki > 0 && ` · ${belki} belki`}
+        {yanitsiz > 0 && !planGectiMi(plan.tarih) && ` · ${yanitsiz} yanıt bekleniyor`}
       </p>
 
-      <div className="flex gap-2">
-        {secenekler.map((s) => (
-          <button
-            key={s.d}
-            onClick={() => onYanit(s.d)}
-            className={`flex-1 rounded-xl py-2 text-xs font-semibold active:scale-95 transition-all ${
-              benimYanit === s.d ? s.renk : 'bg-cream-100 text-ink-400 border border-ink-100/40'
-            }`}
-          >
-            {s.etiket}
-          </button>
-        ))}
-      </div>
+      {planGectiMi(plan.tarih) ? (
+        <p className="text-xs font-semibold text-ink-300">Bu plan geçti</p>
+      ) : (
+        <div className="flex gap-2">
+          {secenekler.map((s) => (
+            <button
+              key={s.d}
+              onClick={() => onYanit(s.d)}
+              aria-pressed={benimYanit === s.d}
+              className={`flex-1 rounded-xl py-2 text-xs font-semibold active:scale-95 transition-all ${
+                benimYanit === s.d ? s.renk : 'bg-mist-100 text-ink-400 border border-ink-100'
+              }`}
+            >
+              {s.etiket}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
 
 function PlanEkleModal({
-  grupId,
+  grup,
   onClose,
   onEklendi,
 }: {
-  grupId: string
+  grup: Grup
   onClose: () => void
   onEklendi: () => Promise<void>
 }) {
+  useGeriIleKapat(onClose)
   const [baslik, setBaslik] = useState('')
   const [tarih, setTarih] = useState(toDateString(new Date()))
   const [saat, setSaat] = useState('')
   const [sure, setSure] = useState('')
+  const [tumGun, setTumGun] = useState(false)
   const [konum, setKonum] = useState('')
   const [notlar, setNotlar] = useState('')
+  const [emoji, setEmoji] = useState<string | null>(null)
   const [kaydediliyor, setKaydediliyor] = useState(false)
   const [hata, setHata] = useState<string | null>(null)
 
@@ -383,21 +542,27 @@ function PlanEkleModal({
     setHata(null)
     try {
       const planId = await grupPlaniOlustur({
-        grupId,
+        grupId: grup.id,
         baslik: baslik.trim(),
         tarih,
-        saat: saat || null,
-        sure: sure ? Number(sure) : null,
+        saat: tumGun ? null : saat || null,
+        sure: tumGun ? null : sure ? Number(sure) : null,
+        tumGun,
         konum: konum.trim() || null,
         notlar: notlar.trim() || null,
+        emoji,
       })
       // Hangi yoldan oluşturulursa oluşturulsun plan sohbete düşsün —
       // yoksa üyeler Planlar sekmesine bakmadan haberdar olmuyor.
       try {
-        await mesajGonder(grupId, 'Yeni bir plan 👇', planId)
+        await mesajGonder(grup.id, 'Yeni bir plan 👇', planId)
       } catch {
         /* plan oluştu; sohbet kartı isteğe bağlı bir ekstra */
       }
+      // Whoever sets up the plan is coming, and it goes in their calendar,
+      // the same as a plan made from the "+" button.
+      const plan = (await planlariIdyeGoreGetir([planId])).get(planId)
+      if (plan) await grupPlaniYanitla(plan, 'geliyorum', grup)
       await onEklendi()
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Oluşturulamadı')
@@ -412,6 +577,9 @@ function PlanEkleModal({
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Grup planı"
         className="card w-full max-w-sm mx-4 mb-4 sm:mb-0 p-5 animate-slide-up max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
@@ -426,29 +594,41 @@ function PlanEkleModal({
           autoFocus
         />
 
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <FieldLabel>Simge</FieldLabel>
+        <div className="mb-4">
+          <EmojiSecici secenekler={ETKINLIK_EMOJILERI} secili={emoji} onSec={setEmoji} />
+        </div>
+
+        <div className={`grid gap-3 mb-3 ${tumGun ? 'grid-cols-1' : 'grid-cols-2'}`}>
           <div>
             <FieldLabel>Tarih</FieldLabel>
             <input type="date" value={tarih} onChange={(e) => setTarih(e.target.value)} className="input-field" />
           </div>
-          <div>
-            <FieldLabel>Saat</FieldLabel>
-            <input type="time" value={saat} onChange={(e) => setSaat(e.target.value)} className="input-field" />
-          </div>
+          {!tumGun && (
+            <div>
+              <FieldLabel>Saat</FieldLabel>
+              <input type="time" value={saat} onChange={(e) => setSaat(e.target.value)} className="input-field" />
+            </div>
+          )}
+        </div>
+        <div className="mb-4">
+          <TumGunAnahtari acik={tumGun} onDegistir={setTumGun} />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div>
-            <FieldLabel>Süre (dk)</FieldLabel>
-            <input
-              type="number"
-              value={sure}
-              onChange={(e) => setSure(e.target.value)}
-              placeholder="120"
-              min="0"
-              className="input-field"
-            />
-          </div>
+        <div className={`grid gap-3 mb-4 ${tumGun ? 'grid-cols-1' : 'grid-cols-2'}`}>
+          {!tumGun && (
+            <div>
+              <FieldLabel>Süre (dk)</FieldLabel>
+              <input
+                type="number"
+                value={sure}
+                onChange={(e) => setSure(e.target.value)}
+                placeholder="120"
+                min="0"
+                className="input-field"
+              />
+            </div>
+          )}
           <div>
             <FieldLabel>Nerede</FieldLabel>
             <input value={konum} onChange={(e) => setKonum(e.target.value)} placeholder="Moda" className="input-field" />
@@ -472,7 +652,7 @@ function PlanEkleModal({
         )}
 
         <div className="flex gap-3">
-          <button onClick={onClose} disabled={kaydediliyor} className="btn-ghost flex-1 border border-ink-100/40">
+          <button onClick={onClose} disabled={kaydediliyor} className="btn-ghost flex-1 border border-ink-100">
             Vazgeç
           </button>
           <button
@@ -496,49 +676,66 @@ function SohbetSekmesi({
   adHaritasi,
   benimAdim,
   digerUyeler,
+  tumu,
+  aramaAcik,
+  onAramaKapat,
+  odakMesajId,
 }: {
   grup: Grup
   benimId: string
   adHaritasi: Map<string, string>
   benimAdim: string
   digerUyeler: Profil[]
+  tumu: boolean
+  aramaAcik: boolean
+  onAramaKapat: () => void
+  odakMesajId?: string | null
 }) {
   const [mesajlar, setMesajlar] = useState<GrupMesaji[]>([])
   const [planlar, setPlanlar] = useState<Map<string, GrupPlani>>(new Map())
   const [planYanitlari, setPlanYanitlari] = useState<PlanYaniti[]>([])
-  const [girdi, setGirdi] = useState('')
-  const [gonderiliyor, setGonderiliyor] = useState(false)
   const [hata, setHata] = useState<string | null>(null)
   const [sihirbazAcik, setSihirbazAcik] = useState(false)
-  const [temaAcik, setTemaAcik] = useState(false)
+  const [paylasAcik, setPaylasAcik] = useState(false)
+  const [acikPlan, setAcikPlan] = useState<GrupPlani | null>(null)
   const [yukleniyor, setYukleniyor] = useState(true)
   const tema = useSohbetTemasi()
   const sonRef = useSonaKaydir([mesajlar.length])
   const yeniMi = useYeniMesajEsigi(mesajlar, !yukleniyor)
 
-  // Sohbette plan kartı olan mesajlar için planları ve yanıtları çek —
-  // kart doğrudan sohbetten yanıtlanabiliyor, "kim geliyor" da orada.
-  const planlariYukle = useCallback(async (liste: GrupMesaji[]) => {
+  const sosyalSurum = useSosyalSurum()
+  const hedef = useMemo<SohbetHedefi>(() => ({ tur: 'grup', id: grup.id }), [grup.id])
+  const adAl = useCallback(
+    (id: string) => adHaritasi.get(id) ?? `${UYGULAMA_ADI} kullanıcısı`,
+    [adHaritasi],
+  )
+  const gonder = useCallback(
+    (metin: string, ek: MesajGonderimEki) => mesajGonder(grup.id, metin, null, ek),
+    [grup.id],
+  )
+  // Reply, react, edit, delete... (see MesajIslemleri.tsx).
+  const islemler = useMesajIslemleri({ hedef, benimId, mesajlar, adAl, gonder, onHata: setHata })
+  useMesajaOdaklan(odakMesajId, !yukleniyor, islemler.mesajaGit)
+
+  // Messages plus the plans and answers behind plan cards, so a card can be
+  // answered right in the chat. Plans are always fetched for the whole list
+  // so a reload never drops cards that were already showing.
+  const tazele = useCallback(async () => {
+    const liste = await mesajlariGetir(grup.id, tumu ? Infinity : undefined)
     const idler = liste.map((m) => m.plan_id).filter((x): x is string => !!x)
-    if (idler.length === 0) return
-    const [haritalar, yanitlar] = await Promise.all([
-      planlariIdyeGoreGetir(idler),
-      planYanitlariGetir(idler),
-    ])
+    const [haritalar, yanitlar] = idler.length
+      ? await Promise.all([planlariIdyeGoreGetir(idler), planYanitlariGetir(idler)])
+      : [new Map<string, GrupPlani>(), [] as PlanYaniti[]]
+    setMesajlar(liste)
     setPlanlar(haritalar)
     setPlanYanitlari(yanitlar)
-  }, [])
+    if (liste.some((m) => m.gonderen_id !== benimId)) void grupOkunduIsaretle(grup.id).catch(() => {})
+  }, [grup.id, benimId, tumu])
 
   async function planaYanit(plan: GrupPlani, durum: YanitDurumu) {
     await grupPlaniYanitla(plan, durum, grup)
-    await planlariYukle(mesajlar)
+    await tazele()
   }
-
-  const tazele = useCallback(async () => {
-    const m = await mesajlariGetir(grup.id)
-    setMesajlar(m)
-    await planlariYukle(m)
-  }, [grup.id, planlariYukle])
 
   useEffect(() => {
     let iptal = false
@@ -549,40 +746,16 @@ function SohbetSekmesi({
       .finally(() => {
         if (!iptal) setYukleniyor(false)
       })
-
-    // Realtime: başkasının mesajı anında düşsün. Kendi mesajımı zaten
-    // gönderdikten sonra listeye ekliyorum, çift göstermemek için filtre.
-    const durdur = mesajlariDinle(grup.id, (m) => {
-      if (m.gonderen_id === benimId) return
-      setMesajlar((eski) => (eski.some((x) => x.id === m.id) ? eski : [...eski, m]))
-      if (m.plan_id) void planlariYukle([m])
-    })
-
     return () => {
       iptal = true
-      durdur()
     }
-  }, [grup.id, benimId, tazele, planlariYukle])
-
-  async function gonder() {
-    const metin = girdi.trim()
-    if (!metin || gonderiliyor) return
-    setGirdi('')
-    setGonderiliyor(true)
-    setHata(null)
-    try {
-      await mesajGonder(grup.id, metin)
-      await tazele()
-    } catch (err) {
-      setHata(err instanceof Error ? err.message : 'Gönderilemedi')
-      setGirdi(metin)
-    } finally {
-      setGonderiliyor(false)
-    }
-  }
+  }, [tazele, sosyalSurum])
 
   return (
     <>
+      {aramaAcik && <SohbetIciArama mesajlar={mesajlar} onGit={islemler.mesajaGit} onKapat={onAramaKapat} />}
+      <SohbetUstSeridi islemler={islemler} />
+
       <SohbetZemini tema={tema} className="px-5 pb-4">
         <div className="space-y-2 pt-2">
           {mesajlar.length === 0 && (
@@ -590,7 +763,7 @@ function SohbetSekmesi({
               <p className="text-sm text-ink-400 mb-3">Sohbet boş. İlk mesajı sen yaz.</p>
               <button
                 onClick={() => setSihirbazAcik(true)}
-                className="chip bg-coral-100 text-coral-700 mx-auto"
+                className="chip bg-orchid-100 text-orchid-700 mx-auto"
               >
                 <Icon name="Wand2" className="w-4 h-4" />
                 Yapay zekâdan plan iste
@@ -601,24 +774,25 @@ function SohbetSekmesi({
           {mesajlar.map((m) => {
             const plan = m.plan_id ? planlar.get(m.plan_id) : null
             return (
-              <Baloncuk
+              <MesajSatiri
                 key={m.id}
-                benim={m.gonderen_id === benimId}
+                mesaj={m}
+                islemler={islemler}
                 yeni={yeniMi(m.olusturulma)}
-                gonderenAd={adHaritasi.get(m.gonderen_id) ?? 'CepDost kullanıcısı'}
-                zaman={formatTime(m.olusturulma) ?? undefined}
-              >
-                {m.metin}
-                {plan && (
-                  <SohbetPlanKarti
-                    plan={plan}
-                    yanitlar={planYanitlari.filter((y) => y.plan_id === plan.id)}
-                    benimId={benimId}
-                    adHaritasi={adHaritasi}
-                    onYanit={(d) => void planaYanit(plan, d)}
-                  />
-                )}
-              </Baloncuk>
+                gonderenAd={adAl(m.gonderen_id)}
+                ek={
+                  plan && (
+                    <GrupPlanKartiSohbet
+                      plan={plan}
+                      yanitlar={planYanitlari.filter((y) => y.plan_id === plan.id)}
+                      benimId={benimId}
+                      adHaritasi={adHaritasi}
+                      onYanit={(d) => planaYanit(plan, d)}
+                      onAc={() => setAcikPlan(plan)}
+                    />
+                  )
+                }
+              />
             )
           })}
 
@@ -632,126 +806,32 @@ function SohbetSekmesi({
         </div>
       </SohbetZemini>
 
-      <div className="px-5 pb-[calc(1rem+var(--safe-bottom))] pt-3 border-t border-ink-100/40 safe-x shrink-0 bg-cream-100">
-        <div className="flex items-end gap-2">
-          <button
-            onClick={() => setTemaAcik(true)}
-            aria-label="Sohbet temasını değiştir"
-            className="w-11 h-11 rounded-full bg-ink-50 text-ink-400 flex items-center justify-center active:scale-90 transition-transform shrink-0"
-          >
-            <Icon name="Palette" className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => setSihirbazAcik(true)}
-            aria-label="Yapay zekâdan plan iste"
-            className="w-11 h-11 rounded-full bg-coral-100 text-coral-600 flex items-center justify-center active:scale-90 transition-transform shrink-0"
-          >
-            <Icon name="Wand2" className="w-5 h-5" />
-          </button>
-          <textarea
-            value={girdi}
-            onChange={(e) => setGirdi(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                void gonder()
-              }
-            }}
-            placeholder="Mesaj yaz..."
-            rows={1}
-            className="flex-1 bg-cream-50 border border-ink-100/40 rounded-2xl px-4 py-3 text-ink-700 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-coral-200 transition-all resize-none max-h-32"
-          />
-          <GonderButonu
-            onClick={() => void gonder()}
-            gonderiliyor={gonderiliyor}
-            pasif={!girdi.trim()}
-          />
-        </div>
-      </div>
+      <MesajYazmaAlani islemler={islemler} onPlanPaylas={() => setPaylasAcik(true)} />
+      <MesajKatmanlari islemler={islemler} />
 
       {sihirbazAcik && (
         <OrtakPlanSihirbazi
           benimAdim={benimAdim}
           grup={grup}
           grupUyeleri={digerUyeler}
-          // Sohbetten açıldığında plan otomatik olarak sohbete de düşsün —
-          // "gruba paylaş" bu akışın doğal sonu.
-          sohbetePaylas
           onKapat={() => setSihirbazAcik(false)}
           onOlusturuldu={tazele}
         />
       )}
 
-      {temaAcik && <TemaSheet onKapat={() => setTemaAcik(false)} />}
-    </>
-  )
-}
+      {acikPlan && <GrupPlanDetayi plan={acikPlan} grup={grup} benimId={benimId} onClose={() => setAcikPlan(null)} />}
 
-// Sohbetteki plan kartı. Baloncuğun içinde durduğu için kendi rengini
-// baloncuktan bağımsız tutuyoruz — koyu temada da okunur kalsın.
-// Yanıt doğrudan burada veriliyor: kullanıcıyı Planlar sekmesine göndermek
-// gereksiz bir adımdı (birebir sohbetteki davet kartı da böyle çalışıyor).
-function SohbetPlanKarti({
-  plan,
-  yanitlar,
-  benimId,
-  adHaritasi,
-  onYanit,
-}: {
-  plan: GrupPlani
-  yanitlar: PlanYaniti[]
-  benimId: string
-  adHaritasi: Map<string, string>
-  onYanit: (d: YanitDurumu) => void
-}) {
-  const benimYanit = yanitlar.find((y) => y.kullanici_id === benimId)?.durum ?? null
-  const gelenler = yanitlar.filter((y) => y.durum === 'geliyorum')
-
-  const secenekler: { d: YanitDurumu; etiket: string; renk: string }[] = [
-    { d: 'geliyorum', etiket: 'Geliyorum', renk: 'bg-teal-500 text-white' },
-    { d: 'belki', etiket: 'Belki', renk: 'bg-amber-400 text-amber-900' },
-    { d: 'gelmiyorum', etiket: 'Yokum', renk: 'bg-ink-200 text-ink-600' },
-  ]
-
-  return (
-    <div className="mt-2 rounded-xl bg-cream-50 border border-ink-100/50 p-3 text-ink-700">
-      <div className="flex items-center gap-1.5 mb-1.5">
-        <Icon name="CalendarClock" className="w-3.5 h-3.5 text-coral-500 shrink-0" />
-        <span className="text-[10px] font-bold uppercase tracking-wide text-coral-600">Plan</span>
-      </div>
-      <p className="text-sm font-semibold leading-snug">{plan.baslik}</p>
-      <p className="text-xs text-ink-400 mt-0.5">
-        {formatDate(plan.tarih) ?? plan.tarih}
-        {plan.saat && ` · ${plan.saat.slice(0, 5)}`}
-        {plan.sure ? ` · ${plan.sure} dk` : ''}
-      </p>
-      {plan.konum && (
-        <p className="flex items-center gap-1 text-xs text-ink-500 mt-1">
-          <Icon name="MapPin" className="w-3 h-3 text-coral-500 shrink-0" />
-          {plan.konum}
-        </p>
+      {paylasAcik && (
+        <PlanPaylasSheet
+          hedef={{ tur: 'grup', grup }}
+          onKapat={() => setPaylasAcik(false)}
+          onUygunSaat={() => {
+            setPaylasAcik(false)
+            setSihirbazAcik(true)
+          }}
+        />
       )}
-
-      <p className="text-[11px] text-ink-400 mt-2 mb-2">
-        {gelenler.length > 0
-          ? `${gelenler.map((y) => adHaritasi.get(y.kullanici_id) ?? '?').join(', ')} geliyor`
-          : 'Henüz kimse yanıtlamadı'}
-      </p>
-
-      <div className="flex gap-1.5">
-        {secenekler.map((s) => (
-          <button
-            key={s.d}
-            onClick={() => onYanit(s.d)}
-            className={`flex-1 rounded-lg py-1.5 text-[11px] font-semibold active:scale-95 transition-all ${
-              benimYanit === s.d ? s.renk : 'bg-cream-100 text-ink-400 border border-ink-100/40'
-            }`}
-          >
-            {s.etiket}
-          </button>
-        ))}
-      </div>
-    </div>
+    </>
   )
 }
 
@@ -762,6 +842,7 @@ function UyelerSekmesi({
   benimId,
   uyeler,
   arkadaslar,
+  onUyeAc,
   onDegisti,
   onAyrildi,
 }: {
@@ -769,6 +850,7 @@ function UyelerSekmesi({
   benimId: string
   uyeler: GrupUyesi[]
   arkadaslar: Arkadas[]
+  onUyeAc: (uye: GrupUyesi) => void
   onDegisti: () => Promise<void>
   onAyrildi: () => Promise<void>
 }) {
@@ -788,18 +870,39 @@ function UyelerSekmesi({
       )}
 
       <div className="space-y-3">
-        {uyeler.map((u) => (
-          <div key={u.kullanici_id} className="card p-4 flex items-center gap-3">
-            <Avatar ad={u.profil?.ad ?? '?'} avatarYol={u.profil?.avatar_yol} boyut="sm" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-ink-700 truncate">
-                {u.profil?.ad ?? 'CepDost kullanıcısı'}
-                {u.kullanici_id === benimId && <span className="text-ink-300 font-normal"> (sen)</span>}
-              </p>
-              <p className="text-xs text-ink-400">{u.rol === 'yonetici' ? 'Yönetici' : 'Üye'}</p>
+        {uyeler.map((u) => {
+          const ben = u.kullanici_id === benimId
+          const iliski = arkadaslar.find((a) => a.profil.id === u.kullanici_id)
+          const rol = u.rol === 'yonetici' ? 'Yönetici' : 'Üye'
+          const bag = iliski?.durum === 'kabul' ? 'Arkadaşın' : iliski?.yon === 'giden' ? 'İstek gönderildi' : null
+          const icerik = (
+            <>
+              <Avatar ad={u.profil?.ad ?? '?'} foto={u.profil?.avatar} emoji={u.profil?.emoji} renk={u.profil?.renk} boyut="sm" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-ink-700 truncate">
+                  {u.profil?.ad ?? `${UYGULAMA_ADI} kullanıcısı`}
+                  {ben && <span className="text-ink-300 font-normal"> (sen)</span>}
+                </p>
+                <p className="text-xs text-ink-400">{bag ? `${rol} · ${bag}` : rol}</p>
+              </div>
+            </>
+          )
+          // My own row is just a row; anyone else's opens their profile.
+          return ben ? (
+            <div key={u.kullanici_id} className="card p-4 flex items-center gap-3">
+              {icerik}
             </div>
-          </div>
-        ))}
+          ) : (
+            <button
+              key={u.kullanici_id}
+              onClick={() => onUyeAc(u)}
+              className="w-full card p-4 flex items-center gap-3 text-left active:scale-[0.99] transition-transform lg:hover:border-orchid-200"
+            >
+              {icerik}
+              <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />
+            </button>
+          )
+        })}
       </div>
 
       {eklenebilir.length > 0 && (
@@ -808,7 +911,7 @@ function UyelerSekmesi({
           <div className="space-y-3">
             {eklenebilir.map((a) => (
               <div key={a.profil.id} className="card p-4 flex items-center gap-3">
-                <Avatar ad={a.profil.ad} avatarYol={a.profil.avatar_yol} boyut="sm" />
+                <Avatar ad={a.profil.ad} foto={a.profil.avatar} emoji={a.profil.emoji} renk={a.profil.renk} boyut="sm" />
                 <p className="flex-1 min-w-0 text-sm font-medium text-ink-700 truncate">{a.profil.ad}</p>
                 <button
                   onClick={async () => {
@@ -841,7 +944,7 @@ function UyelerSekmesi({
           await onAyrildi()
         }}
         className={`w-full rounded-2xl py-3 text-sm font-semibold transition-all active:scale-[0.97] ${
-          ayrilOnay ? 'bg-rose-500 text-white' : 'bg-cream-50 text-rose-600 border border-rose-100'
+          ayrilOnay ? 'bg-rose-500 text-white' : 'bg-mist-50 text-rose-600 border border-rose-100'
         }`}
       >
         {ayrilOnay ? 'Emin misin? Dokun ve ayrıl' : 'Gruptan ayrıl'}

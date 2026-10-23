@@ -16,10 +16,25 @@
     text-size-adjust: 100%;
   }
 
+  /* iOS Safari zooms into any focused field smaller than 16px. Pinch zoom
+     stays allowed (no maximum-scale in the viewport tag), so fields are kept
+     at 16px on iOS instead. */
+  @supports (-webkit-touch-callout: none) {
+    input,
+    textarea,
+    select {
+      font-size: max(16px, 1em);
+    }
+  }
+
   body {
-    @apply bg-cream-100 text-ink-700 font-sans antialiased;
+    @apply bg-mist-100 text-ink-700 font-sans antialiased;
     margin: 0;
     overscroll-behavior-y: none;
+  }
+
+  ::selection {
+    @apply bg-orchid-200 text-ink-800;
   }
 
   input,
@@ -41,18 +56,33 @@
     padding-right: var(--safe-right);
   }
 
+  /* The app's backdrop: cool mist with soft blue and violet light at the
+     top, so screens don't sit on a flat grey. */
+  .bg-uygulama {
+    @apply bg-mist-100;
+    background-image:
+      radial-gradient(56rem 28rem at 100% -6rem, rgba(123, 92, 245, 0.10), transparent 70%),
+      radial-gradient(48rem 26rem at -12% -4rem, rgba(47, 107, 255, 0.10), transparent 70%);
+    background-repeat: no-repeat;
+  }
+
   .glass {
-    @apply bg-cream-50/80 backdrop-blur-xl border border-ink-100/50;
+    @apply bg-white/75 backdrop-blur-xl border border-ink-100/70;
   }
 
   .card {
-    @apply bg-cream-50 rounded-3xl shadow-card border border-ink-100/40;
+    @apply bg-mist-50 rounded-3xl shadow-card border border-ink-100/70;
   }
 
   .btn-primary {
-    @apply bg-coral-500 text-white font-semibold rounded-2xl px-5 py-3.5
+    @apply bg-gradient-orchid text-white font-semibold rounded-2xl px-5 py-3.5
            active:scale-[0.97] transition-all duration-150
-           shadow-soft hover:bg-coral-600;
+           shadow-brand hover:brightness-110;
+  }
+
+  /* Brand-coloured text for titles and highlights. */
+  .text-gradient-orchid {
+    @apply bg-gradient-orchid bg-clip-text text-transparent;
   }
 
   .btn-ghost {
@@ -68,9 +98,10 @@
   }
 
   .input-field {
-    @apply w-full bg-cream-100 border border-ink-100/40 rounded-xl px-3 py-2.5
+    @apply w-full bg-mist-100 border border-ink-100 rounded-xl px-3 py-2.5
            text-ink-700 font-medium placeholder:text-ink-300
-           focus:outline-none focus:ring-2 focus:ring-coral-200 transition-all;
+           focus:outline-none focus:bg-white focus:border-orchid-300 focus:ring-4 focus:ring-orchid-100
+           transition-all;
   }
 
   .skeleton {
@@ -83,6 +114,39 @@
     );
     background-size: 200% 100%;
     animation: shimmer 1.8s linear infinite;
+  }
+
+  /* Full-screen sheet on phones. On desktop it becomes a centred window
+     over the dimmed page (the 100vmax shadow is the backdrop), so the
+     sidebar and the page under it stay in place. */
+  .panel-tam {
+    @apply fixed inset-0 flex flex-col bg-mist-100/95 backdrop-blur-md animate-slide-up;
+  }
+  @media (min-width: 1024px) {
+    .panel-tam {
+      inset: max(1.5rem, calc(50% - 28rem)) max(1.5rem, calc(50% - 22.5rem));
+      @apply rounded-3xl overflow-hidden bg-mist-100;
+      box-shadow:
+        0 0 0 100vmax rgba(11, 14, 29, 0.40),
+        0 24px 64px -12px rgba(11, 14, 29, 0.40);
+    }
+  }
+
+  /* A quoted message inside a chat bubble. Tinted from the text colour, so
+     it reads on light and dark bubbles in every chat theme. */
+  .mesaj-alinti {
+    background: color-mix(in srgb, currentColor 10%, transparent);
+    border-left: 3px solid color-mix(in srgb, currentColor 45%, transparent);
+  }
+
+  /* Phones: a long-press opens the message menu, not text selection or
+     the system's link callout (Kopyala in the menu copies the text). */
+  @media (hover: none) and (pointer: coarse) {
+    .mesaj-satiri {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
   }
 
   .no-scrollbar::-webkit-scrollbar {

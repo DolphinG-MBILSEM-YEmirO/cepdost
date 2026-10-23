@@ -1,19 +1,22 @@
 import { useState } from 'react'
 import { Icon, type IconName } from './Icon'
-import { ArkadaslarView } from './ArkadaslarView'
+import { HesabimView } from './HesabimView'
 import { ArchiveView } from './ArchiveView'
 import { SettingsView } from './SettingsView'
 import type { Kayit } from '../db'
+import { useGeriAdimi } from '../lib/geriTusu'
 
 // Alt barda ayrı sekme tutmak yerine hesapla ilgili her şey burada:
-// profil/arkadaşlar/gruplar + kayıt arşivi + uygulama ayarları.
+// profil + kayıt arşivi + uygulama ayarları. Arkadaşlar, kod ve istekler
+// Sohbet sekmesinde (ArkadaslarView); profil sadece kişinin kendisi.
 type Sekme = 'hesap' | 'arsiv' | 'ayarlar'
 
 interface Props {
   kayitlar: Kayit[]
   loading: boolean
-  baslangicKodu?: string | null
   onDegisti?: () => void
+  // Opens Sohbet → Arkadaşlar (from the friend and group counts).
+  onArkadaslar: () => void
   onRecordClick: (kayit: Kayit) => void
   onToggleStatus: (id: string) => void
   onDelete: (id: string) => void
@@ -28,13 +31,14 @@ const sekmeler: { id: Sekme; etiket: string; ikon: IconName }[] = [
 export function ProfilView({
   kayitlar,
   loading,
-  baslangicKodu,
   onDegisti,
+  onArkadaslar,
   onRecordClick,
   onToggleStatus,
   onDelete,
 }: Props) {
   const [sekme, setSekme] = useState<Sekme>('hesap')
+  useGeriAdimi(() => setSekme('hesap'), sekme !== 'hesap')
 
   return (
     <div className="flex flex-col h-full">
@@ -44,7 +48,7 @@ export function ProfilView({
             key={s.id}
             onClick={() => setSekme(s.id)}
             className={`chip ${
-              sekme === s.id ? 'bg-coral-500 text-white' : 'bg-cream-50 text-ink-400 border border-ink-100/40'
+              sekme === s.id ? 'bg-gradient-orchid text-white' : 'bg-mist-50 text-ink-400 border border-ink-100'
             }`}
           >
             <Icon name={s.ikon} className="w-4 h-4" />
@@ -54,9 +58,7 @@ export function ProfilView({
       </div>
 
       <div className="flex-1 min-h-0">
-        {sekme === 'hesap' && (
-          <ArkadaslarView kayitlar={kayitlar} baslangicKodu={baslangicKodu} onDegisti={onDegisti} />
-        )}
+        {sekme === 'hesap' && <HesabimView kayitlar={kayitlar} onArkadaslar={onArkadaslar} />}
         {sekme === 'arsiv' && (
           <ArchiveView
             kayitlar={kayitlar}

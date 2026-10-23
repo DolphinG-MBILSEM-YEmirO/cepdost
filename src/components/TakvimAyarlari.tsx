@@ -11,6 +11,7 @@ import {
   type TakvimAyari,
 } from '../takvim'
 import { formatRelativeTime } from '../lib/format'
+import { UYGULAMA_ADI } from '../../shared/marka'
 
 // F15 — takvim erişimi. İzin açıkça kullanıcıdan alınıyor: anahtar kapalıyken
 // hiçbir adres saklanmıyor, hiçbir etkinlik içe aktarılmıyor, kapatıldığında
@@ -54,7 +55,9 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
     setBilgi(null)
     try {
       const sayi = await kaynak()
-      kaydet({ ...ayar, izin: true, sonSenkron: Date.now(), sonHata: null })
+      // Re-read the stored settings: the caller may have just saved a new
+      // calendar URL, and the `ayar` captured by this closure predates it.
+      kaydet({ ...takvimAyariOku(), izin: true, sonSenkron: Date.now(), sonHata: null })
       setBilgi(
         sayi === 0
           ? 'Takvim okundu ama önümüzdeki 90 günde etkinlik yok.'
@@ -64,7 +67,7 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
     } catch (err) {
       const mesaj = err instanceof Error ? err.message : 'Takvim alınamadı'
       setHata(mesaj)
-      kaydet({ ...ayar, sonHata: mesaj })
+      kaydet({ ...takvimAyariOku(), sonHata: mesaj })
     } finally {
       setCalisiyor(false)
     }
@@ -80,7 +83,7 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
       </div>
 
       <p className="text-sm text-ink-400 mb-4">
-        Takvimini bağlarsan CepDost dolu saatlerini bilir: arkadaşların müsaitliğine
+        Takvimini bağlarsan {UYGULAMA_ADI} dolu saatlerini bilir: arkadaşların müsaitliğine
         doğru görünürsün ve yapay zekâ ortak plan yaparken derse/işe denk gelen
         saatleri önermez.
       </p>
@@ -92,7 +95,7 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
       >
         <div
           className={`w-11 h-6 rounded-full transition-colors shrink-0 relative ${
-            ayar.izin ? 'bg-teal-500' : 'bg-ink-200'
+            ayar.izin ? 'bg-gradient-orchid' : 'bg-ink-200'
           }`}
         >
           <div
@@ -113,7 +116,7 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
 
       {ayar.izin && (
         <div className="space-y-3">
-          <div className="bg-cream-100 rounded-2xl p-4">
+          <div className="bg-mist-100 rounded-2xl p-4">
             {/* Etikette ".ics" yazmıyor: uppercase + Türkçe yerelde "i"
                 "İ"ye dönüşüp ".İCS" gibi görünüyordu. */}
             <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
@@ -161,7 +164,7 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
           <button
             onClick={() => dosyaRef.current?.click()}
             disabled={calisiyor}
-            className="btn-ghost w-full border border-ink-100/40 text-sm py-2.5 flex items-center justify-center gap-2 disabled:opacity-50"
+            className="btn-ghost w-full border border-ink-100 text-sm py-2.5 flex items-center justify-center gap-2 disabled:opacity-50"
           >
             <Icon name="Download" className="w-4 h-4" />
             .ics dosyası seç
@@ -206,7 +209,7 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
 
       <p className="text-[11px] text-ink-300 mt-4 leading-relaxed">
         Etkinlikler yalnızca telefonunda saklanır. Arkadaşlarına giden tek şey, tıpkı
-        CepDost planlarında olduğu gibi, dolu saat aralıkları — etkinliğin adı ya da
+        {UYGULAMA_ADI} planlarında olduğu gibi, dolu saat aralıkları — etkinliğin adı ya da
         yeri asla gönderilmez.
       </p>
     </div>

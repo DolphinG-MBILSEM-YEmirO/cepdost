@@ -1,4 +1,5 @@
 import { Icon } from './Icon'
+import { useGeriIleKapat } from '../lib/geriTusu'
 
 interface ConfirmDialogProps {
   title: string
@@ -17,6 +18,7 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  useGeriIleKapat(onCancel)
   return (
     <div
       className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink-900/40 backdrop-blur-sm animate-fade-in"
@@ -36,7 +38,7 @@ export function ConfirmDialog({
           </div>
         </div>
         <div className="flex gap-3">
-          <button onClick={onCancel} className="btn-ghost flex-1 border border-ink-100/40">
+          <button onClick={onCancel} className="btn-ghost flex-1 border border-ink-100">
             {cancelLabel}
           </button>
           <button

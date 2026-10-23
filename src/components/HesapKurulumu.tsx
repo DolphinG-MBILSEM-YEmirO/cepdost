@@ -1,34 +1,39 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
-import { profilGuncelle, type Gizlilik, type Profil } from '../sosyal/api'
+import { DogrulanmisEposta, EpostaDogrulama } from './EpostaDogrulama'
+import type { Gizlilik, Profil } from '../sosyal/api'
+import { epostaDogrulamasiGerekli, type EpostaOnayi } from '../sosyal/epostaImzacisi'
+import { hesabiKur, kullaniciAdiHatasi } from '../sosyal/hesap'
+import { UYGULAMA_ADI } from '../../shared/marka'
 
-// Giriş yaptıktan sonraki ilk adım: isim + kullanıcı adı + hesap gizliliği.
-// Kullanıcı adı boşsa bu ekran gösterilir, yani kurulumu tamamlamadan
-// sosyal katmana geçilemiyor (Instagram/TikTok akışı).
-//
-// E-posta doğrulaması ayrıca istenmiyor: sihirli linke tıklamadan ya da
-// Google ile giriş yapmadan buraya gelinemiyor — hesap zaten doğrulanmış
-// oluyor.
+// First step of a new account: name, username, a verified email (keeps
+// bots out) and who can see the profile. Shown while the account has no
+// username, so the social features can't be used before setup is done
+// (Instagram/TikTok style).
 interface Props {
-  profil: Profil
+  profil: Profil | null
   onTamamlandi: () => Promise<void>
 }
 
 export function HesapKurulumu({ profil, onTamamlandi }: Props) {
-  const [ad, setAd] = useState(profil.ad)
+  const [ad, setAd] = useState(profil?.ad ?? '')
   const [kullaniciAdi, setKullaniciAdi] = useState('')
   const [gizlilik, setGizlilik] = useState<Gizlilik>('arkadaslar')
   const [kaydediliyor, setKaydediliyor] = useState(false)
   const [hata, setHata] = useState<string | null>(null)
+  // undefined while asking the server whether emails are verified here.
+  const [epostaGerekli, setEpostaGerekli] = useState<boolean>()
+  const [eposta, setEposta] = useState<{ adres: string; onay: EpostaOnayi } | null>(null)
+  const [epostaDegisiyor, setEpostaDegisiyor] = useState(false)
 
-  // Sunucudaki CHECK ile aynı kural — kullanıcıyı sunucuya gidip hata
-  // almadan önce uyaralım. Nokta serbest ama başta/sonda ve arka arkaya
-  // olamaz (taklit edilebilir adları önlemek için).
+  useEffect(() => {
+    void epostaDogrulamasiGerekli().then(setEpostaGerekli)
+  }, [])
+
+  // Dots are allowed but not at the ends or twice in a row, so names can't
+  // easily imitate each other.
   const temizKullaniciAdi = kullaniciAdi.trim().toLocaleLowerCase('tr-TR').replace(/^@/, '')
-  const kullaniciAdiGecerli =
-    /^[a-z0-9_](\.?[a-z0-9_])*$/.test(temizKullaniciAdi) &&
-    temizKullaniciAdi.length >= 3 &&
-    temizKullaniciAdi.length <= 20
+  const kullaniciAdiGecerli = kullaniciAdiHatasi(temizKullaniciAdi) === null
 
   async function kaydet() {
     if (!ad.trim()) {
@@ -39,10 +44,20 @@ export function HesapKurulumu({ profil, onTamamlandi }: Props) {
       setHata('Kullanıcı adı 3-20 karakter olmalı; küçük harf, rakam, _ ve nokta kullanabilirsin.')
       return
     }
+    if (epostaGerekli && !eposta) {
+      setHata('E-posta adresini doğrula; gelen kodu yazman yeterli.')
+      return
+    }
     setKaydediliyor(true)
     setHata(null)
     try {
-      await profilGuncelle({ ad: ad.trim(), kullanici_adi: temizKullaniciAdi, gizlilik })
+      await hesabiKur({
+        ad: ad.trim(),
+        kullanici_adi: temizKullaniciAdi,
+        gizlilik,
+        eposta: eposta?.adres ?? null,
+        onay: eposta?.onay ?? null,
+      })
       await onTamamlandi()
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Kaydedilemedi')
@@ -74,7 +89,7 @@ export function HesapKurulumu({ profil, onTamamlandi }: Props) {
           <label className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
             Kullanıcı adın
           </label>
-          <div className="flex items-center bg-cream-100 border border-ink-100/40 rounded-xl px-3 mb-2">
+          <div className="flex items-center bg-mist-100 border border-ink-100 rounded-xl px-3 mb-2">
             <span className="text-ink-300">@</span>
             <input
               value={kullaniciAdi}
@@ -96,6 +111,29 @@ export function HesapKurulumu({ profil, onTamamlandi }: Props) {
           </p>
         </div>
 
+        {epostaGerekli && (
+          <div className="card p-5 mb-4">
+            <label className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
+              E-posta adresin
+            </label>
+            {eposta && !epostaDegisiyor ? (
+              <DogrulanmisEposta eposta={eposta.adres} onDegistir={() => setEpostaDegisiyor(true)} />
+            ) : (
+              <EpostaDogrulama
+                baslangic={eposta?.adres}
+                onDogrulandi={(adres, onay) => {
+                  setEposta({ adres, onay })
+                  setEpostaDegisiyor(false)
+                  setHata(null)
+                }}
+              />
+            )}
+            <p className="text-xs text-ink-400 mt-3">
+              Botları uzak tutmak için gerekli. Adresin profilinde görünmez, kimseyle paylaşılmaz.
+            </p>
+          </div>
+        )}
+
         <div className="card p-5 mb-4">
           <label className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-3">
             Hesabın kime görünsün?
@@ -112,12 +150,12 @@ export function HesapKurulumu({ profil, onTamamlandi }: Props) {
               secili={gizlilik === 'herkes'}
               onSec={() => setGizlilik('herkes')}
               baslik="Herkes"
-              aciklama="Profilin CepDost'taki diğer kullanıcılara açık olur; istersen fotoğraflarını Keşfet'te paylaşabilirsin."
+              aciklama={`Profilin diğer ${UYGULAMA_ADI} kullanıcılarına açık olur; istersen fotoğraflarını Keşfet'te paylaşabilirsin.`}
               ikon="Users"
             />
           </div>
           <p className="text-xs text-ink-300 mt-3">
-            Bunu daha sonra Arkadaşlar sekmesinden değiştirebilirsin.
+            Bunu daha sonra Hesabım sekmesinden değiştirebilirsin.
           </p>
         </div>
 
@@ -130,7 +168,7 @@ export function HesapKurulumu({ profil, onTamamlandi }: Props) {
 
         <button
           onClick={() => void kaydet()}
-          disabled={kaydediliyor}
+          disabled={kaydediliyor || epostaGerekli === undefined}
           className="w-full btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
         >
           {kaydediliyor ? (
@@ -167,23 +205,23 @@ function GizlilikSecenegi({
     <button
       onClick={onSec}
       className={`w-full text-left rounded-2xl p-3.5 border transition-all active:scale-[0.98] flex gap-3 ${
-        secili ? 'bg-coral-50 border-coral-200' : 'bg-cream-100 border-ink-100/40'
+        secili ? 'bg-orchid-50 border-orchid-200' : 'bg-mist-100 border-ink-100'
       }`}
     >
       <Icon
         name={ikon}
-        className={`w-5 h-5 shrink-0 mt-0.5 ${secili ? 'text-coral-600' : 'text-ink-300'}`}
+        className={`w-5 h-5 shrink-0 mt-0.5 ${secili ? 'text-orchid-600' : 'text-ink-300'}`}
       />
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-semibold ${secili ? 'text-coral-800' : 'text-ink-600'}`}>{baslik}</p>
+        <p className={`text-sm font-semibold ${secili ? 'text-orchid-800' : 'text-ink-600'}`}>{baslik}</p>
         <p className="text-xs text-ink-400 mt-0.5 leading-relaxed">{aciklama}</p>
       </div>
       <div
         className={`w-5 h-5 rounded-full border-2 shrink-0 mt-0.5 flex items-center justify-center ${
-          secili ? 'border-coral-500' : 'border-ink-200'
+          secili ? 'border-orchid-500' : 'border-ink-200'
         }`}
       >
-        {secili && <div className="w-2.5 h-2.5 rounded-full bg-coral-500" />}
+        {secili && <div className="w-2.5 h-2.5 rounded-full bg-orchid-500" />}
       </div>
     </button>
   )
