@@ -45,6 +45,13 @@ another address signs in once with their username and password.
   (`src/components/AyTakvimi.tsx`, `src/components/TakvimIslemleri.tsx`,
   `src/lib/takvimIzgarasi.ts`, `src/lib/topluIslem.ts`). A plan's day is
   read as a local date, so it lands on the right day in every time zone.
+- **Ideas (Fikirler)**: plans with no day yet, such as a place saved from a
+  friend's memory, have their own list under Planlar (under the reminders
+  on desktop). Each says which friends have been there or want to go,
+  takes a day in one tap (with undo), and "Birlikte planla" opens the
+  shared-time planner with those friends, the plan it makes taking the
+  idea's place (`src/components/FikirlerView.tsx`, `src/lib/fikirler.ts`,
+  `src/sosyal/fikirBaglami.ts`).
 - **Profile numbers**: my profile sums up my plans (this month against
   the last, weeks in a row with a plan, the split by category, who and
   where most), and a friend's profile shows what we've done together: how

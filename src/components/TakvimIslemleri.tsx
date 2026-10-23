@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Icon } from './Icon'
 import { type Kayit, goruntulemeBasligi } from '../db'
 import { formatPlanTime } from '../lib/format'
-import { ertelemeSecenekleri, goreceGun, gunEkle, gunFarki } from '../lib/takvimIzgarasi'
+import { ertelemeSecenekleri, goreceGun, gunEkle, gunFarki, gunSecenekleri } from '../lib/takvimIzgarasi'
 import type { GeriAlinabilir, TopluIslem } from '../lib/topluIslem'
 import { useBugun } from '../hooks/useBugun'
 import { tiklanabilir } from '../lib/a11y'
@@ -13,14 +13,15 @@ import { tiklanabilir } from '../lib/a11y'
 
 const CHIP = 'chip bg-mist-50 text-ink-500 border border-ink-100 active:scale-95 disabled:opacity-50'
 
-// Where a plan (or a day's plans) on `tarih` can go, plus any date.
+// Where a plan (or a day's plans) on `tarih` can go, plus any date. A plan
+// with no day yet (`tarih` null) is offered its first one.
 export function ErtelemeSecici({
   tarih,
   onSec,
   mesgul = false,
   etiket,
 }: {
-  tarih: string
+  tarih: string | null
   onSec: (hedef: string) => void
   mesgul?: boolean
   // Names what moves, for screen readers ("Spor", "Bu günün planları").
@@ -41,8 +42,8 @@ export function ErtelemeSecici({
   }, [tarihSec])
 
   return (
-    <div className="flex flex-wrap gap-1.5 animate-fade-in" role="group" aria-label={etiket ? `${etiket}: taşı` : 'Taşı'}>
-      {ertelemeSecenekleri(tarih, bugun).map((s) => (
+    <div className="flex flex-wrap gap-1.5 animate-fade-in" role="group" aria-label={`${etiket ? `${etiket}: ` : ''}${tarih ? 'taşı' : 'gün seç'}`}>
+      {(tarih ? ertelemeSecenekleri(tarih, bugun) : gunSecenekleri(bugun)).map((s) => (
         <button key={s.tarih} onClick={() => onSec(s.tarih)} disabled={mesgul} className={CHIP}>
           <Icon name="Calendar" className="w-3.5 h-3.5" />
           {s.etiket}

@@ -25,6 +25,8 @@ interface Props {
   arkadaslar?: Arkadas[]
   // Opened from a one-to-one chat: the people are fixed, no picking step.
   sabitKisiler?: Profil[]
+  // What to do, already written in (an idea's title, say).
+  baslangicIstegi?: string
   onKapat: () => void
   onOlusturuldu: () => void | Promise<void>
 }
@@ -51,6 +53,7 @@ export function OrtakPlanSihirbazi({
   grupUyeleri,
   arkadaslar,
   sabitKisiler,
+  baslangicIstegi,
   onKapat,
   onOlusturuldu,
 }: Props) {
@@ -67,7 +70,7 @@ export function OrtakPlanSihirbazi({
   useGeriAdimi(() => setAsama('kisiler'), !kisilerSabit && asama !== 'kisiler')
   useGeriAdimi(() => setAsama('istek'), asama === 'oneri')
   const [secili, setSecili] = useState<string[]>([])
-  const [istek, setIstek] = useState('')
+  const [istek, setIstek] = useState(baslangicIstegi ?? '')
   const [gunSayisi, setGunSayisi] = useState(7)
   const [sure, setSure] = useState(90)
   const [yukleniyor, setYukleniyor] = useState(false)
@@ -455,9 +458,20 @@ export function OrtakPlanSihirbazi({
   )
 }
 
-// The planner for just one friend (from a chat or their profile). My own
-// name goes into the plan message, so it waits for my profile.
-export function ArkadaslaSihirbaz({ arkadas, onKapat }: { arkadas: Profil; onKapat: () => void }) {
+// The planner for chosen friends (one from a chat or their profile, or the
+// people behind an idea). My own name goes into the plan message, so it
+// waits for my profile.
+export function KisilerleSihirbaz({
+  kisiler,
+  baslangicIstegi,
+  onKapat,
+  onOlusturuldu = () => {},
+}: {
+  kisiler: Profil[]
+  baslangicIstegi?: string
+  onKapat: () => void
+  onOlusturuldu?: () => void | Promise<void>
+}) {
   const [benimAdim, setBenimAdim] = useState<string | null>(null)
   useEffect(() => {
     void profilimiGetir()
@@ -465,7 +479,19 @@ export function ArkadaslaSihirbaz({ arkadas, onKapat }: { arkadas: Profil; onKap
       .catch(() => setBenimAdim('Ben'))
   }, [])
   if (!benimAdim) return null
-  return <OrtakPlanSihirbazi benimAdim={benimAdim} sabitKisiler={[arkadas]} onKapat={onKapat} onOlusturuldu={() => {}} />
+  return (
+    <OrtakPlanSihirbazi
+      benimAdim={benimAdim}
+      sabitKisiler={kisiler}
+      baslangicIstegi={baslangicIstegi}
+      onKapat={onKapat}
+      onOlusturuldu={onOlusturuldu}
+    />
+  )
+}
+
+export function ArkadaslaSihirbaz({ arkadas, onKapat }: { arkadas: Profil; onKapat: () => void }) {
+  return <KisilerleSihirbaz kisiler={[arkadas]} onKapat={onKapat} />
 }
 
 function Kabuk({

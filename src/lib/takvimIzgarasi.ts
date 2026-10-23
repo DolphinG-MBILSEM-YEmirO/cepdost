@@ -89,3 +89,11 @@ export function ertelemeSecenekleri(tarih: string, bugun: string): ErtelemeSecen
   const hedefler = tarih < bugun ? [bugun, gunEkle(bugun, 1), gunEkle(bugun, 7)] : [1, 3, 7].map((n) => gunEkle(tarih, n))
   return hedefler.map((hedef) => ({ etiket: goreceGun(hedef, bugun), tarih: hedef }))
 }
+
+// Days for a plan that has none yet: today, tomorrow, the coming Saturday
+// (when it isn't one of those) and a week from today.
+export function gunSecenekleri(bugun: string): ErtelemeSecenegi[] {
+  const cumartesiye = (6 - parseLocalDate(bugun).getDay() + 7) % 7
+  const hedefler = [bugun, gunEkle(bugun, 1), ...(cumartesiye >= 2 ? [gunEkle(bugun, cumartesiye)] : []), gunEkle(bugun, 7)]
+  return hedefler.map((hedef) => ({ etiket: goreceGun(hedef, bugun), tarih: hedef }))
+}

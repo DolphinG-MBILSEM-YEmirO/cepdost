@@ -48,6 +48,8 @@ export async function geriAl(onceki: OncekiHal[]): Promise<void> {
 export function islemMesaji(kayitlar: Kayit[], islem: TopluIslem, bugun: string): string {
   const ozne = kayitlar.length === 1 ? `“${goruntulemeBasligi(kayitlar[0])}”` : `${kayitlar.length} plan`
   if (islem.tur === 'yapildi') return `${ozne} yapıldı olarak işaretlendi`
+  // Ideas get their first day rather than being moved.
+  if (kayitlar.every((k) => !k.tarih)) return `${ozne} için gün seçildi: ${goreceGun(islem.tarih, bugun)}`
   if (islem.tarih === bugun) return `${ozne} bugüne alındı`
   if (islem.tarih === gunEkle(bugun, 1)) return `${ozne} yarına ertelendi`
   return `${ozne} taşındı: ${goreceGun(islem.tarih, bugun)}`

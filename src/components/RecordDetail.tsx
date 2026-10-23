@@ -354,9 +354,9 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
 
         {!editing && kayit.tarih && <HatirlatmaKarti kayit={kayit} />}
 
-        {!editing && kayit.tarih && (
+        {!editing && (kayit.tarih || kayit.durum === 'bekliyor') && (
           <div className="mb-4">
-            <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2 px-1">Hızlı ertele</p>
+            <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2 px-1">{kayit.tarih ? 'Hızlı ertele' : 'Gün seç'}</p>
             <ErtelemeSecici tarih={kayit.tarih} onSec={(t) => void handleReschedule(t)} etiket={goruntulemeBasligi(kayit)} />
           </div>
         )}

@@ -14,9 +14,12 @@ interface RemindersViewProps {
   onDelete: (id: string) => void
   onAddClick: () => void
   onRecordClick: (kayit: Kayit) => void
+  // Plans with no day live in Fikirler; on a phone this leads there (on
+  // desktop the list sits right below).
+  onFikirler?: () => void
 }
 
-export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, onRecordClick }: RemindersViewProps) {
+export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, onRecordClick, onFikirler }: RemindersViewProps) {
   // Regroup when the date changes, not only when records do.
   const bugun = useBugun()
   const islem = useTopluIslem()
@@ -65,7 +68,7 @@ export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kayitlar, bugun])
 
-  const totalCount = groups.overdue.length + groups.today.length + groups.tomorrow.length + groups.thisWeek.length + groups.later.length + groups.noDate.length
+  const totalCount = groups.overdue.length + groups.today.length + groups.tomorrow.length + groups.thisWeek.length + groups.later.length
   const hasAny = kayitlar.length > 0
 
   if (!hasAny) {
@@ -161,10 +164,22 @@ export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, 
             {groups.later.length > 0 && (
               <Section title="Daha sonra" icon="CalendarHeart" count={groups.later.length} kayitlar={groups.later} onToggleStatus={onToggleStatus} onDelete={onDelete} onRecordClick={onRecordClick} muted />
             )}
-            {groups.noDate.length > 0 && (
-              <Section title="Tarihsiz" icon="Archive" count={groups.noDate.length} kayitlar={groups.noDate.slice(0, 10)} onToggleStatus={onToggleStatus} onDelete={onDelete} onRecordClick={onRecordClick} muted />
-            )}
           </>
+        )}
+        {onFikirler && groups.noDate.length > 0 && (
+          <button
+            onClick={onFikirler}
+            className="w-full card px-4 py-3 flex items-center gap-3 text-left active:scale-[0.99] transition-transform"
+          >
+            <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+              <Icon name="Lightbulb" className="w-[18px] h-[18px] text-amber-600" />
+            </div>
+            <span className="flex-1 min-w-0">
+              <span className="block text-sm font-semibold text-ink-600">Fikirler</span>
+              <span className="block text-xs text-ink-400">Günü belli olmayan {groups.noDate.length} plan</span>
+            </span>
+            <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />
+          </button>
         )}
       </div>
 

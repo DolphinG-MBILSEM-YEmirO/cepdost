@@ -11,6 +11,7 @@ import {
   type AniEtkilesimi,
 } from '../sosyal/aniEtkilesimi'
 import { deDa, formatRelativeTime } from '../lib/format'
+import { adListesi } from '../sosyal/adlar'
 
 // Under a memory in the feed: reactions, "I want to go too" and comments.
 // On Keşfet (`yanitlanabilir` off) only "I want to go too" is there, and it
@@ -19,11 +20,6 @@ import { deDa, formatRelativeTime } from '../lib/format'
 // Comments shown before "show all".
 const KISA_YORUM = 2
 
-function adlar(idler: string[], benimId: string, profiller: Map<string, Profil>): string {
-  const isimler = idler.map((id) => (id === benimId ? 'Sen' : (profiller.get(id)?.ad ?? 'Bir arkadaşın')))
-  if (isimler.length <= 2) return isimler.join(' ve ')
-  return `${isimler.slice(0, 2).join(', ')} ve ${isimler.length - 2} kişi daha`
-}
 
 export function AniYanitlari({
   ani,
@@ -59,7 +55,7 @@ export function AniYanitlari({
     kimler: etkilesim.tepkiler.filter((t) => t.emoji === emoji).map((t) => t.kullanici_id),
   })).filter((t) => t.kimler.length > 0)
   const gorunenYorumlar = yorumlarAcik ? etkilesim.yorumlar : etkilesim.yorumlar.slice(-KISA_YORUM)
-  const isteyenAdlari = adlar(digerIsteyenler, benimId, profiller)
+  const isteyenAdlari = adListesi(digerIsteyenler, profiller, benimId)
 
   async function calistir(anahtar: string, is: () => Promise<unknown>) {
     setIsleniyor(anahtar)
@@ -88,7 +84,7 @@ export function AniYanitlari({
           {ozet.map((t) => (
             <li
               key={t.emoji}
-              aria-label={`${t.emoji} ${adlar(t.kimler, benimId, profiller)}`}
+              aria-label={`${t.emoji} ${adListesi(t.kimler, profiller, benimId)}`}
               className="chip text-xs py-0.5 bg-mist-100 text-ink-500 border border-ink-100"
             >
               <span aria-hidden="true">{t.emoji}</span>
