@@ -86,6 +86,7 @@ test('names in a sentence', () => {
   const profiller = new Map([['ali', { ad: 'Ali' }], ['ayse', { ad: 'Ayşe' }], ['can', { ad: 'Can' }]]) as unknown as Map<string, Profil>
   assert.equal(adListesi(['ali'], profiller), 'Ali')
   assert.equal(adListesi(['ali', 'ben'], profiller, 'ben'), 'Ali ve Sen')
+  assert.equal(adListesi(['ali', 'ayse', 'ben'], profiller, 'ben'), 'Ali, Ayşe ve Sen')
   assert.equal(adListesi(['ali', 'ayse', 'can', 'x'], profiller), 'Ali, Ayşe ve 2 kişi daha')
   assert.equal(adListesi(['x'], profiller), 'Bir arkadaşın')
 })

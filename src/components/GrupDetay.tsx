@@ -33,6 +33,10 @@ import { useMesajIslemleri } from './useMesajIslemleri'
 import { TemaSheet } from './SohbetTemaSecici'
 import { GrupPlanKartiSohbet } from './SohbetPlanKarti'
 import { GrupPlanDetayi } from './GrupPlanDetayi'
+import { GrupOzetKarti } from './GrupOzeti'
+import { GrupUyesiKarti } from './GrupUyesiKarti'
+import { ArkadasProfili } from './ArkadasProfili'
+import { DirektSohbet } from './DirektSohbet'
 import { PlanPaylasSheet } from './PlanPaylas'
 import { useSohbetTemasi } from '../sohbetTema'
 import { grupPlaniYanitla, planGectiMi } from '../lib/planPaylasimi'
@@ -49,6 +53,7 @@ type Sekme = 'planlar' | 'sohbet' | 'anilar' | 'uyeler'
 interface Props {
   grup: Grup
   benimId: string
+  // My friends and pending requests, either way.
   arkadaslar: Arkadas[]
   onClose: () => void
   onAyrildi: () => Promise<void>
@@ -69,6 +74,10 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
   const [tumMesajlar, setTumMesajlar] = useState(!!odakMesajId)
   const [duzenleAcik, setDuzenleAcik] = useState(false)
   const [uyeler, setUyeler] = useState<GrupUyesi[]>([])
+  // A member's profile (a friend's full one, or the card they keep in the
+  // group), and a chat opened from it.
+  const [acikUye, setAcikUye] = useState<GrupUyesi | null>(null)
+  const [mesajKisisi, setMesajKisisi] = useState<Profil | null>(null)
   // Everything in the group (members, plans, answers, messages) is read
   // from the local copy and reloads when social data changes.
   const sosyalSurum = useSosyalSurum()
@@ -190,6 +199,8 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
         <PlanlarSekmesi
           grup={grup}
           benimId={benimId}
+          uyeler={uyeler}
+          onUyeler={() => setSekme('uyeler')}
           adHaritasi={adHaritasi}
           benimAdim={adHaritasi.get(benimId) ?? 'Ben'}
           // Every member publishes a card with their name to the group, so
@@ -225,12 +236,52 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
           benimId={benimId}
           uyeler={uyeler}
           arkadaslar={arkadaslar}
+          onUyeAc={setAcikUye}
           onDegisti={uyeleriTazele}
           onAyrildi={onAyrildi}
         />
       )}
+
+      {acikUye && (
+        <UyeProfili
+          uye={acikUye}
+          grupAdi={grup.ad}
+          benimId={benimId}
+          arkadaslar={arkadaslar}
+          onKapat={() => setAcikUye(null)}
+          onMesaj={setMesajKisisi}
+        />
+      )}
+      {mesajKisisi && <DirektSohbet arkadas={mesajKisisi} benimId={benimId} onClose={() => setMesajKisisi(null)} />}
     </div>
   )
+}
+
+// A friend opens their full profile; anyone else, the card they keep in
+// the group with a friend request.
+function UyeProfili({
+  uye,
+  grupAdi,
+  benimId,
+  arkadaslar,
+  onKapat,
+  onMesaj,
+}: {
+  uye: GrupUyesi
+  grupAdi: string
+  benimId: string
+  arkadaslar: Arkadas[]
+  onKapat: () => void
+  onMesaj: (kisi: Profil) => void
+}) {
+  const iliski = arkadaslar.find((a) => a.profil.id === uye.kullanici_id) ?? null
+  // Which one is decided when it opens: accepting a request on the card
+  // keeps the card, rather than swapping it for the profile.
+  const [arkadasti] = useState(iliski?.durum === 'kabul')
+  if (arkadasti && iliski) {
+    return <ArkadasProfili arkadas={iliski.profil} benimId={benimId} onClose={onKapat} onMesaj={() => onMesaj(iliski.profil)} />
+  }
+  return <GrupUyesiKarti uye={uye} grupAdi={grupAdi} iliski={iliski} onKapat={onKapat} />
 }
 
 // ---------------- planlar ----------------
@@ -238,12 +289,16 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
 function PlanlarSekmesi({
   grup,
   benimId,
+  uyeler,
+  onUyeler,
   adHaritasi,
   benimAdim,
   digerUyeler,
 }: {
   grup: Grup
   benimId: string
+  uyeler: GrupUyesi[]
+  onUyeler: () => void
   adHaritasi: Map<string, string>
   benimAdim: string
   digerUyeler: Profil[]
@@ -289,6 +344,18 @@ function PlanlarSekmesi({
             <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
             <p className="text-sm text-rose-700">{hata}</p>
           </div>
+        )}
+
+        {planlar && (
+          <GrupOzetKarti
+            grup={grup}
+            benimId={benimId}
+            uyeler={uyeler}
+            planlar={planlar}
+            yanitlar={yanitlar}
+            onPlanAc={setAcikPlan}
+            onUyeler={onUyeler}
+          />
         )}
 
         <button
@@ -775,6 +842,7 @@ function UyelerSekmesi({
   benimId,
   uyeler,
   arkadaslar,
+  onUyeAc,
   onDegisti,
   onAyrildi,
 }: {
@@ -782,6 +850,7 @@ function UyelerSekmesi({
   benimId: string
   uyeler: GrupUyesi[]
   arkadaslar: Arkadas[]
+  onUyeAc: (uye: GrupUyesi) => void
   onDegisti: () => Promise<void>
   onAyrildi: () => Promise<void>
 }) {
@@ -801,18 +870,39 @@ function UyelerSekmesi({
       )}
 
       <div className="space-y-3">
-        {uyeler.map((u) => (
-          <div key={u.kullanici_id} className="card p-4 flex items-center gap-3">
-            <Avatar ad={u.profil?.ad ?? '?'} foto={u.profil?.avatar} emoji={u.profil?.emoji} renk={u.profil?.renk} boyut="sm" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-ink-700 truncate">
-                {u.profil?.ad ?? `${UYGULAMA_ADI} kullanıcısı`}
-                {u.kullanici_id === benimId && <span className="text-ink-300 font-normal"> (sen)</span>}
-              </p>
-              <p className="text-xs text-ink-400">{u.rol === 'yonetici' ? 'Yönetici' : 'Üye'}</p>
+        {uyeler.map((u) => {
+          const ben = u.kullanici_id === benimId
+          const iliski = arkadaslar.find((a) => a.profil.id === u.kullanici_id)
+          const rol = u.rol === 'yonetici' ? 'Yönetici' : 'Üye'
+          const bag = iliski?.durum === 'kabul' ? 'Arkadaşın' : iliski?.yon === 'giden' ? 'İstek gönderildi' : null
+          const icerik = (
+            <>
+              <Avatar ad={u.profil?.ad ?? '?'} foto={u.profil?.avatar} emoji={u.profil?.emoji} renk={u.profil?.renk} boyut="sm" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-ink-700 truncate">
+                  {u.profil?.ad ?? `${UYGULAMA_ADI} kullanıcısı`}
+                  {ben && <span className="text-ink-300 font-normal"> (sen)</span>}
+                </p>
+                <p className="text-xs text-ink-400">{bag ? `${rol} · ${bag}` : rol}</p>
+              </div>
+            </>
+          )
+          // My own row is just a row; anyone else's opens their profile.
+          return ben ? (
+            <div key={u.kullanici_id} className="card p-4 flex items-center gap-3">
+              {icerik}
             </div>
-          </div>
-        ))}
+          ) : (
+            <button
+              key={u.kullanici_id}
+              onClick={() => onUyeAc(u)}
+              className="w-full card p-4 flex items-center gap-3 text-left active:scale-[0.99] transition-transform lg:hover:border-orchid-200"
+            >
+              {icerik}
+              <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />
+            </button>
+          )
+        })}
       </div>
 
       {eklenebilir.length > 0 && (

@@ -51,9 +51,14 @@ function buyukHarfler(metin: string): number {
 }
 
 function enCokYerler(kayitlar: Kayit[], adet = ILK_UC): EnCokYer[] {
+  return yerleriSay(kayitlar.map((k) => k.konum), adet)
+}
+
+// The places named most, each however it was written most.
+export function yerleriSay(yerler: (string | null | undefined)[], adet = ILK_UC): EnCokYer[] {
   const sayac = new Map<string, { sayi: number; yazimlar: Map<string, number> }>()
-  for (const k of kayitlar) {
-    const yazim = k.konum?.trim().replace(/\s+/g, ' ')
+  for (const yer of yerler) {
+    const yazim = yer?.trim().replace(/\s+/g, ' ')
     if (!yazim) continue
     const kayit = sayac.get(yerAnahtari(yazim)) ?? { sayi: 0, yazimlar: new Map() }
     kayit.sayi++

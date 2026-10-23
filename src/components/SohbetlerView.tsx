@@ -51,7 +51,8 @@ export function SohbetlerView({ onDegisti, ust, onArkadasEkle, acilacak, onAcild
     try {
       const [liste, ark] = await Promise.all([sohbetleriGetir(), arkadaslariGetir()])
       setSohbetler(liste)
-      setArkadaslar(ark.filter((a) => a.durum === 'kabul'))
+      // With pending requests too: a group's members show where each stands.
+      setArkadaslar(ark)
       onDegisti?.()
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Sohbetler alınamadı')

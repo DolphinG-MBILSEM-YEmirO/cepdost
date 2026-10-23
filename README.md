@@ -37,6 +37,13 @@ another address signs in once with their username and password.
   the one who set it up, and a shared "who brings what" list: anyone in the
   group adds what's needed and says they'll bring it
   (`src/components/GrupPlanDetayi.tsx`, `src/sosyal/getirListesi.ts`).
+- **A group's page**: opens on an overview of who's in it, the next plan
+  (with who's coming, and whether I still owe an answer), the last memory,
+  and what the group has done together (plans, memories, the place it goes
+  most). Each part opens what it's about. Tapping a member opens a friend's
+  full profile, or for anyone else the card they keep in the group, with a
+  friend request or accepting theirs (`src/lib/grupOzeti.ts`,
+  `src/components/GrupOzeti.tsx`, `src/components/GrupUyesiKarti.tsx`).
 - **Calendar**: a week strip or a month grid (a dot per plan in its
   category's colour, red on missed days; the choice is remembered). Missed
   plans wait on today's page to be brought to today or tomorrow or marked

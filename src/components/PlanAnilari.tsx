@@ -1,12 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Icon } from './Icon'
 import { AniGorseli } from './AniGorseli'
 import { AniEkleModal } from './AniArsivi'
 import { AniPenceresi } from './AniPenceresi'
-import { motor, motorVarMi, useSosyalSurum } from '../sosyal/cekirdek'
-import { anilariGetir, profilleriGetir, type Ani } from '../sosyal/gruplar'
-import { aniEtkilesimleri, yanitlayanlar, type AniEtkilesimi } from '../sosyal/aniEtkilesimi'
-import type { Profil } from '../sosyal/api'
+import { useArsivAnilari } from './useArsivAnilari'
+import { motor, motorVarMi } from '../sosyal/cekirdek'
 import { adListesi } from '../sosyal/adlar'
 import { aniSahipleri, planAnilari } from '../lib/planAnilari'
 
@@ -27,46 +25,21 @@ interface Props {
   onEklendi?: () => Promise<void> | void
 }
 
-interface Durum {
-  anilar: Ani[]
-  etkilesimler: Map<string, AniEtkilesimi>
-  profiller: Map<string, Profil>
-}
-
 export function PlanAnilariKarti({ grupId, arkadasId, tarih, konum, planBasligi, hedefAdi, onEklendi }: Props) {
-  const [durum, setDurum] = useState<Durum | null>(null)
-  // The archive can't be read (say, no longer friends): nothing to show or add.
-  const [ulasilamaz, setUlasilamaz] = useState(false)
+  // Photos and answers friends add show up after the next sync.
+  const { arsiv, ulasilamaz, tazele } = useArsivAnilari(grupId, arkadasId)
   const [acikId, setAcikId] = useState<string | null>(null)
   const [ekleAcik, setEkleAcik] = useState(false)
-  // Photos and answers friends add show up after the next sync.
-  const sosyalSurum = useSosyalSurum()
   const benimId = motorVarMi() ? motor().benimId : ''
-
-  const tazele = useCallback(async () => {
-    try {
-      const anilar = planAnilari(await anilariGetir({ grupId, arkadasId }), { tarih, konum })
-      const etkilesimler = await aniEtkilesimleri(anilar)
-      const profiller = await profilleriGetir([...anilar.map((a) => a.sahip_id), ...yanitlayanlar(etkilesimler)])
-      setDurum({ anilar, etkilesimler, profiller })
-      setUlasilamaz(false)
-    } catch {
-      setUlasilamaz(true)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [grupId, arkadasId, tarih, konum, sosyalSurum])
-
-  useEffect(() => {
-    void tazele()
-  }, [tazele])
+  const anilar = useMemo(() => (arsiv ? planAnilari(arsiv.anilar, { tarih, konum }) : []), [arsiv, tarih, konum])
 
   const kapat = useCallback(() => setAcikId(null), [])
 
+  // The archive can't be read (say, no longer friends): nothing to show or add.
   if (ulasilamaz) return null
-  if (!durum) return <div className="skeleton h-40 rounded-3xl mb-4" />
+  if (!arsiv) return <div className="skeleton h-40 rounded-3xl mb-4" />
 
-  const { anilar } = durum
-  const ekleyenler = adListesi(aniSahipleri(anilar), durum.profiller, benimId)
+  const ekleyenler = adListesi(aniSahipleri(anilar), arsiv.profiller, benimId)
 
   return (
     <>
@@ -107,9 +80,9 @@ export function PlanAnilariKarti({ grupId, arkadasId, tarih, konum, planBasligi,
 
           <ul className="flex gap-2 mt-3 -mx-1 px-1 overflow-x-auto no-scrollbar">
             {anilar.map((a) => {
-              const e = durum.etkilesimler.get(a.id)
+              const e = arsiv.etkilesimler.get(a.id)
               const yanit = (e?.tepkiler.length ?? 0) + (e?.yorumlar.length ?? 0)
-              const kim = a.sahip_id === benimId ? 'Sen' : (durum.profiller.get(a.sahip_id)?.ad ?? 'Bir arkadaşın')
+              const kim = a.sahip_id === benimId ? 'Sen' : (arsiv.profiller.get(a.sahip_id)?.ad ?? 'Bir arkadaşın')
               return (
                 <li key={a.id} className="shrink-0">
                   <button
@@ -140,8 +113,8 @@ export function PlanAnilariKarti({ grupId, arkadasId, tarih, konum, planBasligi,
           anilar={anilar}
           baslangicId={acikId}
           baslik={planBasligi}
-          etkilesimler={durum.etkilesimler}
-          profiller={durum.profiller}
+          etkilesimler={arsiv.etkilesimler}
+          profiller={arsiv.profiller}
           benimId={benimId}
           onKapat={kapat}
         />
