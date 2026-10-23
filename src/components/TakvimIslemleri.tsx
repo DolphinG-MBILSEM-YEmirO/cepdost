@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Icon } from './Icon'
+import { Icon, type IconName } from './Icon'
 import { type Kayit, goruntulemeBasligi } from '../db'
 import { formatPlanTime } from '../lib/format'
 import { ertelemeSecenekleri, goreceGun, gunEkle, gunFarki, gunSecenekleri } from '../lib/takvimIzgarasi'
@@ -69,8 +69,18 @@ export function ErtelemeSecici({
   )
 }
 
-// A few seconds to take back the last move.
-export function GeriAlCubugu({ sonIslem, onGeriAl, onKapat }: { sonIslem: GeriAlinabilir | null; onGeriAl: () => void; onKapat: () => void }) {
+// A few seconds to take back the last move (or delete).
+export function GeriAlCubugu({
+  sonIslem,
+  onGeriAl,
+  onKapat,
+  ikon = 'CheckCircle2',
+}: {
+  sonIslem: Pick<GeriAlinabilir, 'mesaj'> | null
+  onGeriAl: () => void
+  onKapat: () => void
+  ikon?: IconName
+}) {
   if (!sonIslem) return null
   return (
     <div
@@ -78,7 +88,7 @@ export function GeriAlCubugu({ sonIslem, onGeriAl, onKapat }: { sonIslem: GeriAl
       className="fixed z-[45] inset-x-4 mx-auto max-w-sm bottom-[calc(10.5rem+var(--safe-bottom))] lg:bottom-6 animate-fade-in"
     >
       <div className="flex items-center gap-3 rounded-2xl bg-ink-800/95 text-white shadow-float pl-4 pr-2 py-2.5">
-        <Icon name="CheckCircle2" className="w-4 h-4 text-teal-300 shrink-0" />
+        <Icon name={ikon} className="w-4 h-4 text-teal-300 shrink-0" />
         <span className="flex-1 text-sm leading-snug">{sonIslem.mesaj}</span>
         <button onClick={onGeriAl} className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold text-orchid-200 hover:bg-white/10 active:scale-95">
           Geri al

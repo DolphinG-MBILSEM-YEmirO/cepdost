@@ -2,13 +2,29 @@ import { useMemo, useState } from 'react'
 import { Icon, type IconName } from './Icon'
 import { KayitCard } from './KayitCard'
 import { LinkEkleModal } from './LinkEkleModal'
-import { type Kayit, type Kategori, goruntulemeBasligi } from '../db'
+import { GeriAlCubugu } from './TakvimIslemleri'
+import type { Kayit, Kategori } from '../db'
 import { CATEGORY_LABELS, CATEGORY_ICON_NAME, CATEGORIES } from '../lib/format'
 import { useGeriIleKapat } from '../lib/geriTusu'
+import { aramaSorgusu } from '../lib/arama'
+import {
+  arsivBolumleri,
+  durumSayilari,
+  kayitDurumu,
+  kayitEslesiyor,
+  type DurumSuzgeci,
+  type Siralama,
+} from '../lib/arsivListesi'
+import { useGeriAlinabilirSilme, useTopluIslem } from '../lib/topluIslem'
+import { useBugun } from '../hooks/useBugun'
 
 // Not: eskiden bir `onAddClick` prop'u vardı ve plan sihirbazını açıyordu.
 // Arşivde "yeni plan" yanlış işti — alt bardaki + zaten onu yapıyor. Burada
 // arşive ait olan iş var: link ekleme (LinkEkleModal).
+// The list is searched with Turkish letters folded (the match highlighted),
+// filtered by category and by where a record stands, and cut into sections
+// for the chosen order. "Seç" picks several to mark done or delete at once,
+// each with a few seconds to take it back.
 interface ArchiveViewProps {
   kayitlar: Kayit[]
   loading: boolean
@@ -18,107 +34,173 @@ interface ArchiveViewProps {
 }
 
 type Filter = 'all' | Kategori
-type SortMode = 'recent' | 'date' | 'category'
+
+const sortLabels: Record<Siralama, string> = {
+  recent: 'En yeni',
+  date: 'Tarihe göre',
+  category: 'Kategori',
+}
+
+const DURUMLAR: { id: DurumSuzgeci; etiket: string }[] = [
+  { id: 'hepsi', etiket: 'Hepsi' },
+  { id: 'bekleyen', etiket: 'Bekleyen' },
+  { id: 'yapildi', etiket: 'Yapıldı' },
+  { id: 'kacti', etiket: 'Kaçtı' },
+]
 
 export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRecordClick }: ArchiveViewProps) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
-  const [sortMode, setSortMode] = useState<SortMode>('recent')
+  const [durum, setDurum] = useState<DurumSuzgeci>('hepsi')
+  const [sortMode, setSortMode] = useState<Siralama>('recent')
   const [showSortMenu, setShowSortMenu] = useState(false)
   useGeriIleKapat(() => setShowSortMenu(false), showSortMenu)
   const [linkEkleAcik, setLinkEkleAcik] = useState(false)
+  // The picked records' ids; null outside selection mode.
+  const [secilenler, setSecilenler] = useState<Set<string> | null>(null)
+  useGeriIleKapat(() => setSecilenler(null), secilenler !== null)
+  const islem = useTopluIslem()
+  const silme = useGeriAlinabilirSilme()
+  const bugun = useBugun()
+  const sorgu = aramaSorgusu(search)
 
-  const filtered = useMemo(() => {
-    let result = kayitlar
-
-    if (filter !== 'all') {
-      result = result.filter((k) => k.kategori === filter)
-    }
-
-    if (search.trim()) {
-      const q = search.trim().toLocaleLowerCase('tr-TR')
-      result = result.filter((k) => {
-        const alanlar = [goruntulemeBasligi(k), k.hamMetin, k.hamLink, k.ozetNot ?? '', k.konum ?? '']
-        return alanlar.some((a) => a.toLocaleLowerCase('tr-TR').includes(q))
-      })
-    }
-
-    const sorted = [...result]
-    if (sortMode === 'recent') {
-      sorted.sort((a, b) => b.olusturulmaTarihi - a.olusturulmaTarihi)
-    } else if (sortMode === 'date') {
-      sorted.sort((a, b) => {
-        const aDate = a.tarih ? new Date(a.tarih).getTime() : Infinity
-        const bDate = b.tarih ? new Date(b.tarih).getTime() : Infinity
-        return aDate - bDate
-      })
-    } else if (sortMode === 'category') {
-      sorted.sort((a, b) => (a.kategori ?? '').localeCompare(b.kategori ?? ''))
-    }
-
-    return sorted
-  }, [kayitlar, filter, search, sortMode])
+  // Records waiting out a delete's "Geri al" are already gone from here.
+  const gorunen = useMemo(() => kayitlar.filter((k) => !silme.gizli.has(k.id)), [kayitlar, silme.gizli])
 
   const counts = useMemo(() => {
-    const c: Record<string, number> = { all: kayitlar.length }
+    const c: Record<string, number> = { all: gorunen.length }
     for (const cat of CATEGORIES) {
-      c[cat] = kayitlar.filter((k) => k.kategori === cat).length
+      c[cat] = gorunen.filter((k) => k.kategori === cat).length
     }
     return c
-  }, [kayitlar])
+  }, [gorunen])
 
-  const sortLabels: Record<SortMode, string> = {
-    recent: 'En yeni',
-    date: 'Tarihe göre',
-    category: 'Kategori',
+  // The status counts follow the search and the category picked.
+  const kategoride = useMemo(
+    () =>
+      gorunen.filter(
+        (k) => (filter === 'all' || k.kategori === filter) && (!sorgu || kayitEslesiyor(k, sorgu)),
+      ),
+    [gorunen, filter, sorgu],
+  )
+  const durumlar = useMemo(() => durumSayilari(kategoride, bugun), [kategoride, bugun])
+  const filtered = useMemo(
+    () => (durum === 'hepsi' ? kategoride : kategoride.filter((k) => kayitDurumu(k, bugun) === durum)),
+    [kategoride, durum, bugun],
+  )
+  const bolumler = useMemo(() => arsivBolumleri(filtered, sortMode), [filtered, sortMode])
+
+  // Only what's on screen is acted on, whatever was picked before a filter.
+  const secilenKayitlar = secilenler ? filtered.filter((k) => secilenler.has(k.id)) : []
+  const hepsiSecili = filtered.length > 0 && secilenKayitlar.length === filtered.length
+
+  function sec(id: string) {
+    setSecilenler((onceki) => {
+      const yeni = new Set(onceki)
+      if (yeni.has(id)) yeni.delete(id)
+      else yeni.add(id)
+      return yeni
+    })
+  }
+
+  async function topluYapildi() {
+    silme.kapat()
+    await islem.uygula(secilenKayitlar, { tur: 'yapildi' })
+    setSecilenler(null)
+  }
+
+  function topluSil() {
+    islem.kapat()
+    silme.baslat(secilenKayitlar)
+    setSecilenler(null)
   }
 
   return (
     <div className="flex flex-col h-full">
       <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="font-display text-2xl font-bold text-ink-700">Arşiv</h1>
-            <p className="text-sm text-ink-400 mt-0.5">{kayitlar.length} kayıt</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
+        {secilenler ? (
+          <div className="flex items-center mb-4">
+            <div className="flex items-center gap-2 min-w-0">
               <button
-                onClick={() => setShowSortMenu(!showSortMenu)}
-                className="w-11 h-11 rounded-full bg-mist-50 border border-ink-100 flex items-center justify-center active:scale-90 transition-transform"
+                onClick={() => setSecilenler(null)}
+                aria-label="Seçimi bitir"
+                className="w-11 h-11 rounded-full bg-mist-50 border border-ink-100 flex items-center justify-center active:scale-90 transition-transform shrink-0"
               >
-                <Icon name="Filter" className="w-5 h-5 text-ink-400" />
+                <Icon name="X" className="w-5 h-5 text-ink-400" />
               </button>
-              {showSortMenu && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setShowSortMenu(false)} />
-                  <div className="absolute right-0 top-12 z-20 card p-1 w-40 animate-scale-in">
-                    {(['recent', 'date', 'category'] as SortMode[]).map((mode) => (
-                      <button
-                        key={mode}
-                        onClick={() => { setSortMode(mode); setShowSortMenu(false) }}
-                        className={`w-full px-3 py-2.5 rounded-xl text-sm font-medium text-left flex items-center justify-between transition-colors
-                          ${sortMode === mode ? 'bg-orchid-50 text-orchid-600' : 'text-ink-500 hover:bg-ink-50'}`}
-                      >
-                        {sortLabels[mode]}
-                        {sortMode === mode && <Icon name="Check" className="w-4 h-4" />}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
+              <div className="min-w-0">
+                <h1 className="font-display text-xl font-bold text-ink-700" aria-live="polite">
+                  {secilenKayitlar.length} seçili
+                </h1>
+                <button
+                  onClick={() => setSecilenler(hepsiSecili ? new Set() : new Set(filtered.map((k) => k.id)))}
+                  disabled={filtered.length === 0}
+                  className="text-xs font-semibold text-orchid-600 disabled:text-ink-300"
+                >
+                  {hepsiSecili ? 'Seçimi kaldır' : 'Tümünü seç'}
+                </button>
+              </div>
             </div>
-            {/* Arşivde "+" plan oluşturmayı açıyordu; alt bardaki + zaten
-                bunu yapıyor. Burada arşive ait olan iş var: link ekleme. */}
-            <button
-              onClick={() => setLinkEkleAcik(true)}
-              aria-label="Arşive link ekle"
-              className="w-11 h-11 rounded-full bg-gradient-orchid text-white flex items-center justify-center shadow-soft active:scale-90 transition-transform"
-            >
-              <Icon name="LinkIcon" className="w-5 h-5" />
-            </button>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="font-display text-2xl font-bold text-ink-700">Arşiv</h1>
+              <p className="text-sm text-ink-400 mt-0.5">{gorunen.length} kayıt</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {gorunen.length > 0 && (
+                <button
+                  onClick={() => {
+                    setShowSortMenu(false)
+                    setSecilenler(new Set())
+                  }}
+                  aria-label="Seç"
+                  className="w-11 h-11 rounded-full bg-mist-50 border border-ink-100 flex items-center justify-center active:scale-90 transition-transform"
+                >
+                  <Icon name="ListChecks" className="w-5 h-5 text-ink-400" />
+                </button>
+              )}
+              <div className="relative">
+                <button
+                  onClick={() => setShowSortMenu(!showSortMenu)}
+                  aria-label={`Sırala: ${sortLabels[sortMode]}`}
+                  aria-expanded={showSortMenu}
+                  className="w-11 h-11 rounded-full bg-mist-50 border border-ink-100 flex items-center justify-center active:scale-90 transition-transform"
+                >
+                  <Icon name="Filter" className="w-5 h-5 text-ink-400" />
+                </button>
+                {showSortMenu && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setShowSortMenu(false)} />
+                    <div className="absolute right-0 top-12 z-20 card p-1 w-40 animate-scale-in">
+                      {(['recent', 'date', 'category'] as Siralama[]).map((mode) => (
+                        <button
+                          key={mode}
+                          onClick={() => { setSortMode(mode); setShowSortMenu(false) }}
+                          className={`w-full px-3 py-2.5 rounded-xl text-sm font-medium text-left flex items-center justify-between transition-colors
+                            ${sortMode === mode ? 'bg-orchid-50 text-orchid-600' : 'text-ink-500 hover:bg-ink-50'}`}
+                        >
+                          {sortLabels[mode]}
+                          {sortMode === mode && <Icon name="Check" className="w-4 h-4" />}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+              {/* Arşivde "+" plan oluşturmayı açıyordu; alt bardaki + zaten
+                  bunu yapıyor. Burada arşive ait olan iş var: link ekleme. */}
+              <button
+                onClick={() => setLinkEkleAcik(true)}
+                aria-label="Arşive link ekle"
+                className="w-11 h-11 rounded-full bg-gradient-orchid text-white flex items-center justify-center shadow-soft active:scale-90 transition-transform"
+              >
+                <Icon name="LinkIcon" className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="relative">
           <Icon name="Search" className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-300" />
@@ -126,8 +208,38 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Ara..."
-            className="w-full bg-mist-50 border border-ink-100 rounded-2xl pl-11 pr-4 py-3 text-ink-700 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-orchid-200 transition-all"
+            aria-label="Arşivde ara"
+            className="w-full bg-mist-50 border border-ink-100 rounded-2xl pl-11 pr-11 py-3 text-ink-700 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-orchid-200 transition-all"
           />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              aria-label="Aramayı temizle"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-ink-300 hover:bg-ink-50"
+            >
+              <Icon name="X" className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        <div className="flex gap-1 mt-3 p-1 bg-mist-100 rounded-2xl" role="group" aria-label="Duruma göre süz">
+          {DURUMLAR.map((d) => {
+            const secili = durum === d.id
+            const sayi = durumlar[d.id]
+            return (
+              <button
+                key={d.id}
+                onClick={() => setDurum(d.id)}
+                aria-pressed={secili}
+                className={`flex-1 min-w-0 rounded-xl py-1.5 text-xs font-semibold transition-colors ${
+                  secili ? 'bg-mist-50 text-ink-700 shadow-card' : 'text-ink-400'
+                }`}
+              >
+                {d.etiket}{' '}
+                <span className={d.id === 'kacti' && sayi > 0 ? 'text-rose-500' : secili ? 'text-ink-400' : 'text-ink-300'}>{sayi}</span>
+              </button>
+            )
+          })}
         </div>
 
         <div className="flex gap-2 mt-3 overflow-x-auto no-scrollbar pb-1">
@@ -145,7 +257,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 pb-24 lg:pb-10">
+      <div className={`flex-1 overflow-y-auto px-5 ${secilenler ? 'pb-64 lg:pb-28' : 'pb-24 lg:pb-10'}`}>
         {loading ? (
           <div className="space-y-3 mt-2 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
             {[...Array(4)].map((_, i) => (
@@ -162,21 +274,65 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <EmptyState search={search} filter={filter} onLinkEkle={() => setLinkEkleAcik(true)} />
+          <EmptyState search={search} filter={filter} durum={durum} onLinkEkle={() => setLinkEkleAcik(true)} />
         ) : (
-          <div className="space-y-3 mt-2 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0 lg:items-start">
-            {filtered.map((kayit) => (
-              <KayitCard
-                key={kayit.id}
-                kayit={kayit}
-                onToggleStatus={() => onToggleStatus(kayit.id)}
-                onDelete={() => onDelete(kayit.id)}
-                onClick={() => onRecordClick(kayit)}
-              />
+          <div className="space-y-5 mt-2">
+            {bolumler.map((bolum) => (
+              <section key={bolum.anahtar} aria-label={bolum.baslik}>
+                <h2 className="text-xs font-semibold text-ink-400 uppercase tracking-wide px-1 mb-2">
+                  {bolum.baslik}
+                  <span className="ml-1.5 text-ink-300 font-normal">{bolum.kayitlar.length}</span>
+                </h2>
+                <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0 lg:items-start">
+                  {bolum.kayitlar.map((kayit) => (
+                    <KayitCard
+                      key={kayit.id}
+                      kayit={kayit}
+                      sorgu={sorgu}
+                      onToggleStatus={() => onToggleStatus(kayit.id)}
+                      onDelete={() => onDelete(kayit.id)}
+                      onClick={() => onRecordClick(kayit)}
+                      secim={secilenler ? { secili: secilenler.has(kayit.id), onSec: () => sec(kayit.id) } : undefined}
+                    />
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         )}
       </div>
+
+      {/* The actions stay in reach however far the list is scrolled. */}
+      {secilenler && (
+        <div
+          role="toolbar"
+          aria-label="Seçilenler"
+          className="fixed z-[45] inset-x-4 mx-auto max-w-sm bottom-[calc(10.5rem+var(--safe-bottom))] lg:bottom-6 animate-fade-in"
+        >
+          <div className="flex items-center gap-1 rounded-2xl bg-ink-800/95 text-white shadow-float p-1.5">
+            <span className="pl-3 pr-1 text-sm text-white/70 shrink-0">{secilenKayitlar.length} seçili</span>
+            <button
+              onClick={() => void topluYapildi()}
+              disabled={secilenKayitlar.length === 0 || islem.mesgul}
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold text-teal-200 hover:bg-white/10 active:scale-95 disabled:opacity-40"
+            >
+              <Icon name="CheckCircle2" className="w-4 h-4" />
+              Yapıldı
+            </button>
+            <button
+              onClick={topluSil}
+              disabled={secilenKayitlar.length === 0}
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold text-rose-200 hover:bg-white/10 active:scale-95 disabled:opacity-40"
+            >
+              <Icon name="Trash2" className="w-4 h-4" />
+              Sil
+            </button>
+          </div>
+        </div>
+      )}
+
+      <GeriAlCubugu sonIslem={islem.sonIslem} onGeriAl={() => void islem.geriAl()} onKapat={islem.kapat} />
+      <GeriAlCubugu sonIslem={silme.bekleyen} onGeriAl={silme.geriAl} onKapat={silme.kapat} ikon="Trash2" />
 
       {linkEkleAcik && (
         <LinkEkleModal onClose={() => setLinkEkleAcik(false)} onEklendi={() => {}} />
@@ -201,14 +357,16 @@ function FilterChip({ label, count, active, onClick, icon }: { label: string; co
 function EmptyState({
   search,
   filter,
+  durum,
   onLinkEkle,
 }: {
   search: string
   filter: Filter
+  durum: DurumSuzgeci
   onLinkEkle: () => void
 }) {
   const hasSearch = search.trim().length > 0
-  const hasFilter = filter !== 'all'
+  const hasFilter = filter !== 'all' || durum !== 'hepsi'
 
   if (hasSearch || hasFilter) {
     return (
@@ -217,7 +375,7 @@ function EmptyState({
           <Icon name="Search" className="w-8 h-8 text-ink-300" />
         </div>
         <p className="font-semibold text-ink-500 mb-1">Sonuç bulunamadı</p>
-        <p className="text-sm text-ink-400">{hasSearch ? 'Başka bir kelime dene.' : 'Bu kategoride kayıt yok.'}</p>
+        <p className="text-sm text-ink-400">{hasSearch ? 'Başka bir kelime dene.' : durum !== 'hepsi' ? 'Bu süzgeçte kayıt yok.' : 'Bu kategoride kayıt yok.'}</p>
       </div>
     )
   }

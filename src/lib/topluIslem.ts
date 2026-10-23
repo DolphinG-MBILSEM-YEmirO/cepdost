@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { type Kayit, db, goruntulemeBasligi } from '../db'
 import { localDateString } from './format'
-import { paylasimlariGuncelle } from './planPaylasimi'
+import { paylasimlariGuncelle, planiSil } from './planPaylasimi'
 import { goreceGun, gunEkle } from './takvimIzgarasi'
+import { silmeMesaji } from './arsivListesi'
 
 // Moving several plans to another day, or marking them done, in one go,
 // with a short window to take it back.
@@ -90,4 +91,54 @@ export function useTopluIslem() {
   }
 
   return { uygula, mesgul, sonIslem, geriAl: sonIslemiGeriAl, kapat: () => setSonIslem(null) }
+}
+
+interface BekleyenSilme {
+  mesaj: string
+  kayitlar: Kayit[]
+}
+
+// Deleting several records waits out the "Geri al" window: until then they
+// are only hidden, so taking it back loses nothing (a plan's link and
+// invite included). Closing the bar, a new delete or leaving the screen
+// deletes them at once.
+export function useGeriAlinabilirSilme() {
+  const [bekleyen, setBekleyen] = useState<BekleyenSilme | null>(null)
+  const bekleyenRef = useRef<BekleyenSilme | null>(null)
+
+  const tamamla = useCallback(() => {
+    const silinecek = bekleyenRef.current
+    if (!silinecek) return
+    bekleyenRef.current = null
+    setBekleyen(null)
+    for (const k of silinecek.kayitlar) void planiSil(k)
+  }, [])
+
+  const baslat = useCallback(
+    (kayitlar: Kayit[]) => {
+      if (kayitlar.length === 0) return
+      tamamla()
+      const yeni = { mesaj: silmeMesaji(kayitlar), kayitlar }
+      bekleyenRef.current = yeni
+      setBekleyen(yeni)
+    },
+    [tamamla],
+  )
+
+  const geriAl = useCallback(() => {
+    bekleyenRef.current = null
+    setBekleyen(null)
+  }, [])
+
+  useEffect(() => {
+    if (!bekleyen) return
+    const zamanlayici = setTimeout(tamamla, GERI_AL_MS)
+    return () => clearTimeout(zamanlayici)
+  }, [bekleyen, tamamla])
+
+  // Leaving the screen keeps the delete.
+  useEffect(() => tamamla, [tamamla])
+
+  const gizli = useMemo(() => new Set(bekleyen?.kayitlar.map((k) => k.id)), [bekleyen])
+  return { bekleyen, gizli, baslat, geriAl, kapat: tamamla }
 }

@@ -65,6 +65,15 @@ another address signs in once with their username and password.
   many plans, when we last met, the next one, our usual place
   (`src/components/PlanIstatistikleri.tsx`, `src/lib/planIstatistikleri.ts`,
   `src/sosyal/ortakGecmis.ts`). Worked out on the device; only I see them.
+- **Archive**: under Profil, every saved record in sections (by the month it
+  was saved, by its plan's month, or by category). The search folds Turkish
+  letters and marks the match, showing the line from the note when that's
+  where it matched. A filter splits pending, done and missed ones (counts
+  follow the search and category), and "Seç" picks several to mark done or
+  delete together. A bulk delete only hides them while "Geri al" is on
+  screen, so taking it back loses nothing, a plan's link and invite
+  included (`src/components/ArchiveView.tsx`, `src/lib/arsivListesi.ts`,
+  `src/lib/topluIslem.ts`).
 - **Calendar import**: `.ics` import and auto-refresh (`src/takvim.ts`,
   `api/takvim.ts`).
 - **Social layer**: accounts, friends, groups, group plans with RSVPs, direct

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from './Icon'
 import { Avatar, GrupAvatari } from './Avatar'
-import { aramaSorgusu, eslesiyor, eslesmeOzeti, eslesmeParcalari } from '../lib/arama'
+import { Vurgulu } from './Vurgulu'
+import { aramaSorgusu, eslesiyor, eslesmeOzeti } from '../lib/arama'
 import { formatRelativeTime } from '../lib/format'
 import { useGeriIleKapat } from '../lib/geriTusu'
 import type { MesajSonucu } from '../sosyal/mesajArama'
@@ -9,23 +10,6 @@ import type { MesajSonucu } from '../sosyal/mesajArama'
 // Searching messages: the matched words highlighted, a result row for the
 // chat list's search, and the bar that steps through matches in an open
 // chat.
-
-export function Vurgulu({ metin, sorgu }: { metin: string; sorgu: string | null }) {
-  if (!sorgu) return <>{metin}</>
-  return (
-    <>
-      {eslesmeParcalari(metin, sorgu).map((p, i) =>
-        p.eslesme ? (
-          <mark key={i} className="bg-amber-100 text-ink-700 rounded px-0.5">
-            {p.metin}
-          </mark>
-        ) : (
-          <span key={i}>{p.metin}</span>
-        ),
-      )}
-    </>
-  )
-}
 
 export function MesajSonucuSatiri({ sonuc, sorgu, onAc }: { sonuc: MesajSonucu; sorgu: string; onAc: () => void }) {
   const { sohbet } = sonuc
