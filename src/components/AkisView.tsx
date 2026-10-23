@@ -1,21 +1,44 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Icon } from './Icon'
 import { AkisKarti } from './AkisKarti'
 import { AniYanitlari } from './AniYanitlari'
 import { motor, motorVarMi, useSosyalSurum } from '../sosyal/cekirdek'
-import { akisAnilariGetir, profilleriGetir, type AkisKapsami, type Ani } from '../sosyal/gruplar'
+import { akisAnilariGetir, gruplarimiGetir, profilleriGetir, type AkisKapsami, type Ani, type Grup } from '../sosyal/gruplar'
 import { ozettenProfil, type Profil } from '../sosyal/api'
 import { BOS_ETKILESIM, aniEtkilesimleri, gitmekIstiyorum, yanitlayanlar, type AniEtkilesimi } from '../sosyal/aniEtkilesimi'
 import { anidanPlan } from '../lib/planPaylasimi'
 import type { Kayit } from '../db'
+import { akisSecenekleri, secimdekiler, yeniMi, type AkisSecimi } from '../lib/akisSuzgeci'
 
 // "İnsanların ve arkadaşların paylaştıkları" — tek akış, iki kapsam:
 // Arkadaşlar (bana/gruplarıma özel paylaşılanlar) ve Herkes (Keşfet).
 // Friends answer a memory with a reaction or a comment; anyone can say
-// they want to go there too, which puts the place in their calendar.
+// they want to go there too, which puts the place in their calendar. The
+// friends feed narrows to one person or group, and marks what came in
+// since the last look on this device.
 
 // How long "added to your plans" stays on screen.
 const EKLENDI_MS = 6000
+
+const SON_BAKIS_ANAHTARI = 'cepdost_akis_son_bakis'
+
+// When I last opened the feed on this device.
+function sonBakisiOku(benimId: string): string | null {
+  try {
+    return localStorage.getItem(`${SON_BAKIS_ANAHTARI}:${benimId}`)
+  } catch {
+    // Private mode: nothing is marked new.
+    return null
+  }
+}
+
+function sonBakisiYaz(benimId: string) {
+  try {
+    localStorage.setItem(`${SON_BAKIS_ANAHTARI}:${benimId}`, new Date().toISOString())
+  } catch {
+    // Private mode: see above.
+  }
+}
 
 export function AkisView({ onPlanAc }: { onPlanAc: (kayit: Kayit) => void }) {
   const [kapsam, setKapsam] = useState<AkisKapsami>('arkadaslar')
@@ -24,8 +47,16 @@ export function AkisView({ onPlanAc }: { onPlanAc: (kayit: Kayit) => void }) {
   const [etkilesimler, setEtkilesimler] = useState<Map<string, AniEtkilesimi>>(new Map())
   const [eklenen, setEklenen] = useState<Kayit | null>(null)
   const [hata, setHata] = useState<string | null>(null)
+  const [gruplar, setGruplar] = useState<Map<string, Grup>>(new Map())
+  const [secim, setSecim] = useState<AkisSecimi | null>(null)
   const sosyalSurum = useSosyalSurum()
   const benimId = motorVarMi() ? motor().benimId : ''
+  // Read once when the feed opens, then this visit becomes the last look;
+  // posts arriving while it's open are new too.
+  const [sonBakis] = useState(() => (benimId ? sonBakisiOku(benimId) : null))
+  useEffect(() => {
+    if (benimId) sonBakisiYaz(benimId)
+  }, [benimId])
   // The friends feed is read from the local copy, so it follows every sync;
   // Keşfet asks the relays, so it only reloads when opened.
   const surumBagimliligi = kapsam === 'arkadaslar' ? sosyalSurum : 0
@@ -36,8 +67,10 @@ export function AkisView({ onPlanAc }: { onPlanAc: (kayit: Kayit) => void }) {
       const liste = await akisAnilariGetir(kapsam)
       // Answers only exist on the friends feed (see aniEtkilesimi.ts).
       const yanitlar = kapsam === 'arkadaslar' ? await aniEtkilesimleri(liste) : new Map<string, AniEtkilesimi>()
+      const grupListesi = kapsam === 'arkadaslar' ? await gruplarimiGetir() : []
       setAnilar(liste)
       setEtkilesimler(yanitlar)
+      setGruplar(new Map(grupListesi.map((g) => [g.id, g])))
       setProfiller(await profilleriGetir([...liste.map((a) => a.sahip_id), ...yanitlayanlar(yanitlar)]))
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Akış yüklenemedi')
@@ -72,14 +105,36 @@ export function AkisView({ onPlanAc }: { onPlanAc: (kayit: Kayit) => void }) {
   function kapsamSec(yeni: AkisKapsami) {
     if (yeni === kapsam) return
     setAnilar(null)
+    setSecim(null)
     setKapsam(yeni)
   }
+
+  const arkadasAkisi = kapsam === 'arkadaslar'
+  const secenekler = useMemo(
+    () =>
+      arkadasAkisi && anilar
+        ? akisSecenekleri(
+            anilar,
+            benimId,
+            (id) => profiller.get(id)?.ad ?? null,
+            (id) => gruplar.get(id)?.ad ?? null,
+          )
+        : [],
+    [arkadasAkisi, anilar, benimId, profiller, gruplar],
+  )
+  // A choice that's gone from the list (its posts deleted) stops filtering.
+  const gecerliSecim = secim && secenekler.some((s) => s.tur === secim.tur && s.id === secim.id) ? secim : null
+  const gorunenler = anilar ? secimdekiler(anilar, gecerliSecim) : null
+  const yeniSayisi = arkadasAkisi && anilar ? anilar.filter((a) => yeniMi(a, benimId, sonBakis)).length : 0
 
   return (
     <div className="flex flex-col h-full">
       <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3">
         <h1 className="font-display text-2xl font-bold text-ink-700">Akış</h1>
-        <p className="text-sm text-ink-400 mt-0.5">Paylaşılan mekanlar</p>
+        <p className="text-sm text-ink-400 mt-0.5">
+          Paylaşılan mekanlar
+          {yeniSayisi > 0 && <span className="text-orchid-600 font-medium"> · {yeniSayisi} yeni</span>}
+        </p>
       </div>
 
       <div className="flex gap-1.5 px-5 pb-3 shrink-0">
@@ -99,6 +154,30 @@ export function AkisView({ onPlanAc }: { onPlanAc: (kayit: Kayit) => void }) {
           </button>
         ))}
       </div>
+
+      {secenekler.length > 0 && (
+        <div
+          className="flex gap-1.5 px-5 pb-3 shrink-0 overflow-x-auto no-scrollbar"
+          role="group"
+          aria-label="Kişiye ya da gruba göre süz"
+        >
+          {[null, ...secenekler].map((s) => {
+            const secili = s ? gecerliSecim?.tur === s.tur && gecerliSecim.id === s.id : !gecerliSecim
+            return (
+              <button
+                key={s ? `${s.tur}:${s.id}` : 'hepsi'}
+                onClick={() => setSecim(s && { tur: s.tur, id: s.id })}
+                aria-pressed={secili}
+                className={`chip text-xs shrink-0 ${secili ? 'bg-ink-700 text-mist-50' : 'bg-mist-50 text-ink-500 border border-ink-100'}`}
+              >
+                {s?.tur === 'grup' && <Icon name="Users" className="w-3.5 h-3.5" />}
+                {s ? s.ad : 'Hepsi'}
+                <span className={secili ? 'text-mist-200' : 'text-ink-300'}>{s ? s.sayi : anilar?.length}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {/* On a phone the last card scrolls clear of the bottom bar and the
           assistant button, so its comment box and buttons stay tappable. */}
@@ -128,11 +207,13 @@ export function AkisView({ onPlanAc }: { onPlanAc: (kayit: Kayit) => void }) {
             </p>
           </div>
         ) : (
-          anilar?.map((a) => (
+          gorunenler?.map((a) => (
             <AkisKarti
               key={a.id}
               ani={a}
               sahip={profiller.get(a.sahip_id) ?? (a.sahip ? ozettenProfil(a.sahip_id, a.sahip) : null)}
+              grupAdi={a.grup_id ? gruplar.get(a.grup_id)?.ad : null}
+              yeni={arkadasAkisi && yeniMi(a, benimId, sonBakis)}
             >
               <AniYanitlari
                 ani={a}

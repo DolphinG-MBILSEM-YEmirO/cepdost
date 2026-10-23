@@ -6,10 +6,24 @@ import type { Profil } from '../sosyal/api'
 import { formatDate } from '../lib/format'
 import { UYGULAMA_ADI } from '../../shared/marka'
 
-// A memory as a card: who shared it, the photo, the place, the day and the
-// note. Its answers go in as children.
+// A memory as a card: who shared it (and in which group), the photo, the
+// place, the day and the note. Its answers go in as children.
 
-export function AkisKarti({ ani, sahip, children }: { ani: Ani; sahip: Profil | null; children?: React.ReactNode }) {
+export function AkisKarti({
+  ani,
+  sahip,
+  grupAdi,
+  yeni = false,
+  children,
+}: {
+  ani: Ani
+  sahip: Profil | null
+  // The group it was shared in, when it was.
+  grupAdi?: string | null
+  // Shared since I last looked at the feed.
+  yeni?: boolean
+  children?: React.ReactNode
+}) {
   // Fotoğrafını herkese açmış ama profili kapalı biri olabilir — o zaman
   // profili okuyamayız, isim yerine nötr bir etiket gösteriyoruz.
   const ad = sahip?.ad ?? `${UYGULAMA_ADI} kullanıcısı`
@@ -20,8 +34,13 @@ export function AkisKarti({ ani, sahip, children }: { ani: Ani; sahip: Profil | 
         <Avatar ad={ad} foto={sahip?.avatar} emoji={sahip?.emoji} renk={sahip?.renk} boyut="sm" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-ink-700 truncate">{ad}</p>
-          {sahip?.kullanici_adi && <p className="text-xs text-ink-400 truncate">@{sahip.kullanici_adi}</p>}
+          {(sahip?.kullanici_adi || grupAdi) && (
+            <p className="text-xs text-ink-400 truncate">
+              {[sahip?.kullanici_adi && `@${sahip.kullanici_adi}`, grupAdi].filter(Boolean).join(' · ')}
+            </p>
+          )}
         </div>
+        {yeni && <span className="chip bg-orchid-100 text-orchid-700 text-[11px] font-semibold shrink-0">Yeni</span>}
       </div>
 
       <div className="aspect-square bg-mist-100">

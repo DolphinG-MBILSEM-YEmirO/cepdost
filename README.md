@@ -86,6 +86,12 @@ another address signs in once with their username and password.
   and group messages, a feed of memories, profile photos. Free and serverless:
   records are end-to-end encrypted and stored on public Nostr relays (see
   below).
+- **Feed (Akış)**: the friends feed narrows to one person or one group
+  (the busiest first, my own posts as "Sen"), each card says which group
+  it was shared in, and posts from others since my last look on this
+  device are marked "Yeni" with a count at the top. The last look is kept
+  per account in this browser's storage (`src/components/AkisView.tsx`,
+  `src/lib/akisSuzgeci.ts`).
 - **Answers on memories**: friends react to a memory in the feed, comment
   on it, or tap "Ben de gitmek istiyorum", which puts the place in their
   own calendar as an idea with no day yet; the one who shared it sees who
