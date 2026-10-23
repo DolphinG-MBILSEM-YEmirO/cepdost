@@ -1,15 +1,20 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { Icon } from './Icon'
 import { AniGorseli } from './AniGorseli'
-import { useSosyalSurum } from '../sosyal/cekirdek'
-import { aniEkle, aniSil, anilariGetir, type Ani } from '../sosyal/gruplar'
-import type { Gizlilik } from '../sosyal/api'
+import { AniPenceresi } from './AniPenceresi'
+import { useArsivAnilari } from './useArsivAnilari'
+import { aniEkle, aniSil, type Ani } from '../sosyal/gruplar'
+import type { Gizlilik, Profil } from '../sosyal/api'
+import type { AniEtkilesimi } from '../sosyal/aniEtkilesimi'
+import { arsivYerleri, aylaraBol, yerdekiAnilar } from '../lib/aniArsivi'
 import { formatDate, toDateString } from '../lib/format'
 import { useGeriIleKapat } from '../lib/geriTusu'
 import { UYGULAMA_ADI } from '../../shared/marka'
 
 // "Gidilen mekana özel foto yükleyip gidilen kişi veya grubun arşivine
 // ekleme" — ortak hafıza. Bir grubun ya da bir arkadaşın arşivine bağlanır.
+// Laid out by month, filterable by place; a photo opens large with its
+// reactions and comments, and the arrows step through what's shown.
 interface Props {
   grupId?: string | null
   arkadasId?: string | null
@@ -18,25 +23,20 @@ interface Props {
 }
 
 export function AniArsivi({ grupId, arkadasId, benimId, baslik }: Props) {
-  const [anilar, setAnilar] = useState<Ani[] | null>(null)
-  const [hata, setHata] = useState<string | null>(null)
+  // Memories and answers friends add show up after the next sync.
+  const { arsiv, ulasilamaz, tazele } = useArsivAnilari(grupId, arkadasId)
   const [ekleAcik, setEkleAcik] = useState(false)
-  // Memories friends add show up after the next sync without reopening.
-  const sosyalSurum = useSosyalSurum()
+  const [yer, setYer] = useState<string | null>(null)
+  const [acikId, setAcikId] = useState<string | null>(null)
+  const kapat = useCallback(() => setAcikId(null), [])
 
-  const tazele = useCallback(async () => {
-    setHata(null)
-    try {
-      setAnilar(await anilariGetir({ grupId, arkadasId }))
-    } catch (err) {
-      setHata(err instanceof Error ? err.message : 'Anılar alınamadı')
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [grupId, arkadasId, sosyalSurum])
-
-  useEffect(() => {
-    void tazele()
-  }, [tazele])
+  const anilar = useMemo(() => arsiv?.anilar ?? [], [arsiv])
+  const yerler = useMemo(() => arsivYerleri(anilar), [anilar])
+  // A place that's gone (its last photo deleted) stops filtering.
+  const seciliYer = yer && yerdekiAnilar(anilar, yer).length > 0 ? yer : null
+  const aylar = useMemo(() => aylaraBol(yerdekiAnilar(anilar, seciliYer)), [anilar, seciliYer])
+  // What the arrows step through: what's on screen, in its order.
+  const gorunenler = useMemo(() => aylar.flatMap((a) => a.anilar), [aylar])
 
   return (
     <div className="space-y-3">
@@ -44,7 +44,7 @@ export function AniArsivi({ grupId, arkadasId, benimId, baslik }: Props) {
         <div className="flex items-center gap-2">
           <Icon name="ImageIcon" className="w-4 h-4 text-ink-400" />
           <h2 className="text-sm font-semibold text-ink-500">Anılar</h2>
-          {anilar && <span className="text-xs text-ink-400">{anilar.length}</span>}
+          {arsiv && <span className="text-xs text-ink-400">{anilar.length}</span>}
         </div>
         <button
           onClick={() => setEkleAcik(true)}
@@ -54,30 +54,75 @@ export function AniArsivi({ grupId, arkadasId, benimId, baslik }: Props) {
         </button>
       </div>
 
-      {hata && (
+      {ulasilamaz && (
         <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3">
           <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
-          <p className="text-sm text-rose-700">{hata}</p>
+          <p className="text-sm text-rose-700">Anılar alınamadı.</p>
         </div>
       )}
 
-      {anilar === null ? (
+      {yerler.length > 0 && (
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-1 px-1" role="group" aria-label="Mekana göre süz">
+          {[{ ad: null, sayi: anilar.length }, ...yerler].map((y) => {
+            const secili = y.ad === seciliYer
+            return (
+              <button
+                key={y.ad ?? ''}
+                onClick={() => setYer(y.ad)}
+                aria-pressed={secili}
+                className={`chip text-xs shrink-0 ${secili ? 'bg-gradient-orchid text-white' : 'bg-mist-50 text-ink-500 border border-ink-100'}`}
+              >
+                {y.ad ? <Icon name="MapPin" className="w-3.5 h-3.5" /> : null}
+                {y.ad ?? 'Hepsi'}
+                <span className={secili ? 'text-white/80' : 'text-ink-300'}>{y.sayi}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {!arsiv && !ulasilamaz ? (
         <div className="grid grid-cols-2 gap-3">
           <div className="skeleton h-36 rounded-2xl" />
           <div className="skeleton h-36 rounded-2xl" />
         </div>
-      ) : anilar.length === 0 ? (
+      ) : arsiv && anilar.length === 0 ? (
         <div className="card p-5 text-center">
           <p className="text-sm text-ink-400">
             Henüz anı yok. Birlikte gittiğiniz bir mekanın fotoğrafını ekleyerek başla.
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3">
-          {anilar.map((a) => (
-            <AniKarti key={a.id} ani={a} benimId={benimId} onSilindi={tazele} />
-          ))}
-        </div>
+        aylar.map((ay) => (
+          <section key={ay.ay} aria-label={ay.baslik} className="space-y-2">
+            <h3 className="text-xs font-semibold text-ink-400 uppercase tracking-wide px-1 pt-1">{ay.baslik}</h3>
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+              {ay.anilar.map((a) => (
+                <AniKarti
+                  key={a.id}
+                  ani={a}
+                  benimId={benimId}
+                  etkilesim={arsiv?.etkilesimler.get(a.id)}
+                  profiller={arsiv?.profiller}
+                  onAc={() => setAcikId(a.id)}
+                  onSilindi={tazele}
+                />
+              ))}
+            </div>
+          </section>
+        ))
+      )}
+
+      {acikId && arsiv && (
+        <AniPenceresi
+          anilar={gorunenler}
+          baslangicId={acikId}
+          baslik={baslik}
+          etkilesimler={arsiv.etkilesimler}
+          profiller={arsiv.profiller}
+          benimId={benimId}
+          onKapat={kapat}
+        />
       )}
 
       {ekleAcik && (
@@ -96,37 +141,80 @@ export function AniArsivi({ grupId, arkadasId, benimId, baslik }: Props) {
   )
 }
 
-function AniKarti({ ani, benimId, onSilindi }: { ani: Ani; benimId: string; onSilindi: () => Promise<void> }) {
+function AniKarti({
+  ani,
+  benimId,
+  etkilesim,
+  profiller,
+  onAc,
+  onSilindi,
+}: {
+  ani: Ani
+  benimId: string
+  etkilesim?: AniEtkilesimi
+  profiller?: Map<string, Profil>
+  onAc: () => void
+  onSilindi: () => Promise<void>
+}) {
   const [onay, setOnay] = useState(false)
+  const benim = ani.sahip_id === benimId
+  const kim = benim ? 'Sen' : (profiller?.get(ani.sahip_id)?.ad ?? 'Bir arkadaşın')
+  const tepki = etkilesim?.tepkiler.length ?? 0
+  const yorum = etkilesim?.yorumlar.length ?? 0
 
   return (
-    <div className="card overflow-hidden">
-      <div className="aspect-square bg-mist-100 relative">
-        <AniGorseli ani={ani} />
-        {ani.sahip_id === benimId && (
-          <button
-            onClick={async () => {
-              if (!onay) {
-                setOnay(true)
-                setTimeout(() => setOnay(false), 3000)
-                return
-              }
-              await aniSil(ani)
-              await onSilindi()
-            }}
-            className={`absolute top-2 right-2 rounded-lg flex items-center justify-center active:scale-90 transition-all ${
-              onay ? 'bg-rose-500 text-white px-2 h-7 text-xs font-semibold' : 'w-7 h-7 bg-ink-900/40 text-white'
-            }`}
-          >
-            {onay ? 'Sil' : <Icon name="Trash2" className="w-3.5 h-3.5" />}
-          </button>
-        )}
-      </div>
-      <div className="p-3">
-        <p className="text-sm font-semibold text-ink-700 truncate">{ani.mekan_adi}</p>
-        <p className="text-xs text-ink-400">{formatDate(ani.tarih) ?? ani.tarih}</p>
-        {ani.notlar && <p className="text-xs text-ink-400 mt-1 line-clamp-2">{ani.notlar}</p>}
-      </div>
+    <div className="card overflow-hidden relative">
+      <button
+        onClick={onAc}
+        aria-label={`${ani.mekan_adi}, ${kim}`}
+        className="block w-full text-left active:scale-[0.98] transition-transform"
+      >
+        <div className="aspect-square bg-mist-100">
+          <AniGorseli ani={ani} />
+        </div>
+        <div className="p-3">
+          <p className="text-sm font-semibold text-ink-700 truncate">{ani.mekan_adi}</p>
+          <p className="text-xs text-ink-400 truncate">
+            {formatDate(ani.tarih) ?? ani.tarih} · {kim}
+          </p>
+          {ani.notlar && <p className="text-xs text-ink-400 mt-1 line-clamp-2">{ani.notlar}</p>}
+          {(tepki > 0 || yorum > 0) && (
+            <p className="flex items-center gap-2.5 text-[11px] text-ink-400 mt-1.5">
+              {tepki > 0 && (
+                <span className="flex items-center gap-0.5">
+                  <Icon name="SmilePlus" className="w-3 h-3" />
+                  {tepki}
+                </span>
+              )}
+              {yorum > 0 && (
+                <span className="flex items-center gap-0.5">
+                  <Icon name="MessageCircle" className="w-3 h-3" />
+                  {yorum}
+                </span>
+              )}
+            </p>
+          )}
+        </div>
+      </button>
+      {benim && (
+        <button
+          onClick={async () => {
+            if (!onay) {
+              setOnay(true)
+              setTimeout(() => setOnay(false), 3000)
+              return
+            }
+            await aniSil(ani)
+            await onSilindi()
+          }}
+          aria-label={onay ? 'Silmek için tekrar dokun' : 'Anıyı sil'}
+          className={`absolute top-2 right-2 rounded-lg flex items-center justify-center active:scale-90 transition-all ${
+            onay ? 'bg-rose-500 text-white px-2 h-7 text-xs font-semibold' : 'w-7 h-7 bg-ink-900/40 text-white'
+          }`}
+        >
+          {onay ? 'Sil' : <Icon name="Trash2" className="w-3.5 h-3.5" />}
+        </button>
+      )}
     </div>
   )
 }

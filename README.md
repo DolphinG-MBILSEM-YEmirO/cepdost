@@ -85,6 +85,12 @@ another address signs in once with their username and password.
   arrows step through the day. "Anı ekle" fills in the plan's place and day,
   and adding one marks the plan done (`src/lib/planAnilari.ts`,
   `src/components/PlanAnilari.tsx`, `src/components/AniPenceresi.tsx`).
+- **Memory archive**: a group's and a friend's "Anılar" tab lays photos out
+  by month, the newest first, with who added each and how many reactions
+  and comments it has. With two places or more, chips filter by place
+  (spellings of the same place count as one). A photo opens large with its
+  answers, and the arrows step through what the filter shows
+  (`src/lib/aniArsivi.ts`, `src/components/AniArsivi.tsx`).
 - **Message actions, WhatsApp style**: right-click or long-press a message
   (or use its options button on desktop) to reply with a quote, react with
   an emoji, copy, forward, pin, star, see who read it, edit it for 15
