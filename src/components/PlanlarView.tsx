@@ -73,6 +73,7 @@ export function PlanlarView({
     <div className="flex flex-col h-full">
       <EkranBasligi
         baslik="Planlar"
+        altBaslik={new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}
         eylemler={onAsistan && <ChatButton onClick={onAsistan} />}
       >
         <div className="lg:hidden">
@@ -93,8 +94,8 @@ export function PlanlarView({
 
       <div className="flex-1 min-h-0">
         {masaustu ? (
-          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,400px)] gap-6 items-start">
-            {bugun}
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,400px)] gap-6 items-start kademeli">
+            <div className="card p-5">{bugun}</div>
             <div className="space-y-6">
               <div className="card overflow-hidden">{hatirlat}</div>
               <div className="card overflow-hidden">{fikirlerGorunumu}</div>
