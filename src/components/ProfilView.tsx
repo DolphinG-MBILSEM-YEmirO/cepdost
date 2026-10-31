@@ -49,7 +49,8 @@ export function ProfilView({
         </div>
       </EkranBasligi>
 
-      <div className="flex-1 min-h-0">
+      {/* key: each section slides in when picked. */}
+      <div key={sekme} className="flex-1 min-h-0 animate-gecis">
         {sekme === 'hesap' && <HesabimView kayitlar={kayitlar} onArkadaslar={onArkadaslar} />}
         {sekme === 'arsiv' && (
           <ArchiveView

@@ -236,7 +236,7 @@ function ArkadaslarIcerik({
                         gecmis={ozetler?.gecmisler.get(a.profil.id)}
                         bugun={bugun}
                         onAc={() => setSecili(a)}
-                        onCikar={tazele}
+                        onMesaj={() => setMesajArkadasi(a.profil)}
                       />
                     ))}
                   </div>
@@ -338,9 +338,12 @@ function ArkadaslarIcerik({
         <GrupKurModal
           arkadaslar={kabulEdilmis}
           onClose={() => setGrupKurAcik(false)}
-          onKuruldu={async () => {
+          onKuruldu={async (grupId) => {
             setGrupKurAcik(false)
             await tazele()
+            // Straight into the new group's chat, ready for the first message.
+            const yeni = (await gruplarimiGetir()).find((g) => g.id === grupId)
+            if (yeni) setSeciliGrup(yeni)
           }}
         />
       )}
@@ -368,7 +371,8 @@ function GrupKurModal({
 }: {
   arkadaslar: Arkadas[]
   onClose: () => void
-  onKuruldu: () => Promise<void>
+  // Gets the new group's id.
+  onKuruldu: (grupId: string) => Promise<void>
 }) {
   useGeriIleKapat(onClose)
   const [ad, setAd] = useState('')
@@ -396,8 +400,8 @@ function GrupKurModal({
     setKuruluyor(true)
     setHata(null)
     try {
-      await grupOlustur(ad.trim(), Array.from(secilenler), { emoji, renk, aciklama })
-      await onKuruldu()
+      const grupId = await grupOlustur(ad.trim(), Array.from(secilenler), { emoji, renk, aciklama })
+      await onKuruldu(grupId)
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Grup kurulamadı')
     } finally {
@@ -791,15 +795,14 @@ function ArkadasKarti({
   gecmis,
   bugun,
   onAc,
-  onCikar,
+  onMesaj,
 }: {
   arkadas: Arkadas
   gecmis?: OrtakGecmis
   bugun: string
   onAc: () => void
-  onCikar: () => Promise<void>
+  onMesaj: () => void
 }) {
-  const [onay, setOnay] = useState(false)
   const siradaki = gecmis?.siradaki
   const son = gecmis?.sonBulusma
 
@@ -828,33 +831,14 @@ function ArkadasKarti({
         </div>
         <Icon name="ChevronRight" className="w-4 h-4 text-ink-400 shrink-0" />
       </button>
-      {onay ? (
-        <div className="flex gap-1.5 shrink-0">
-          <button
-            onClick={() => setOnay(false)}
-            className="text-xs font-medium text-ink-400 px-2 py-1"
-          >
-            Vazgeç
-          </button>
-          <button
-            onClick={async () => {
-              await arkadasliktanCik(arkadas.arkadaslikId)
-              await onCikar()
-            }}
-            className="text-xs font-semibold text-rose-600 px-2 py-1"
-          >
-            Çıkar
-          </button>
-        </div>
-      ) : (
-        <button
-          onClick={() => setOnay(true)}
-          className="w-8 h-8 rounded-lg flex items-center justify-center active:opacity-80 transition-transform shrink-0"
-          aria-label="Arkadaşlıktan çıkar"
-        >
-          <Icon name="Trash2" className="w-4 h-4 text-ink-400" />
-        </button>
-      )}
+      {/* Writing to a friend is one tap; unfriending lives in their profile. */}
+      <button
+        onClick={onMesaj}
+        className="w-10 h-10 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center basinca shrink-0"
+        aria-label={`${arkadas.profil.ad} ile mesajlaş`}
+      >
+        <Icon name="MessageCircle" className="w-5 h-5" />
+      </button>
     </div>
   )
 }

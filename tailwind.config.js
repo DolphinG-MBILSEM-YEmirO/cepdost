@@ -166,6 +166,8 @@ export default {
         'scale-in': `popIn ${tasarim.motion.sheet} ${tasarim.motion.spring}`,
         'pop-in': `popIn ${tasarim.motion.sheet} ${tasarim.motion.spring}`,
         sayfa: `sayfaGir ${tasarim.motion.page} ${tasarim.motion.easeOut}`,
+        // Switching between the sections of one screen (segmented control).
+        gecis: `gecisGir ${tasarim.motion.sheet} ${tasarim.motion.easeOut}`,
         shimmer: 'shimmer 1.6s linear infinite',
         'bounce-soft': `popIn ${tasarim.motion.sheet} ${tasarim.motion.spring}`,
         'bubble-in-left': `balonSol ${tasarim.motion.sheet} ${tasarim.motion.spring}`,
@@ -193,6 +195,11 @@ export default {
           '0%': { opacity: '0', filter: 'blur(10px)', transform: 'translateY(16px) scale(0.98)' },
           '60%': { opacity: '1', filter: 'blur(0)' },
           '100%': { opacity: '1', filter: 'blur(0)', transform: 'translateY(0) scale(1)' },
+        },
+        // A section slides in a little and fades up, lighter than a page.
+        gecisGir: {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         // The bottom bar's selection blob stretches like a drop of liquid
         // while it slides to the new tab, then settles.

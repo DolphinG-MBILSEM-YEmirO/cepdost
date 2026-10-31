@@ -96,11 +96,20 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false, odakMe
 
   return (
     <div className={gomulu ? 'flex flex-col h-full min-h-0' : 'panel-tam z-[55]'}>
-      <div className="flex items-center justify-between px-3 pt-[calc(0.5rem+var(--safe-top))] pb-2.5 bg-bolum-canli text-white shadow-soft shrink-0 lg:rounded-none">
+      {/* Same layout as a group chat: back on the left, the name (which
+          opens the profile), then the chat's own actions. */}
+      <div className="flex items-center gap-2 px-3 pt-[calc(0.5rem+var(--safe-top))] pb-2.5 bg-bolum-canli text-white shadow-soft shrink-0 lg:rounded-none">
+        <button
+          onClick={onClose}
+          aria-label="Geri"
+          className="w-10 h-10 rounded-2xl flex items-center justify-center hover:bg-white/20 basinca shrink-0"
+        >
+          <Icon name="ArrowLeft" className="w-5 h-5" />
+        </button>
         <button
           onClick={() => setProfilAcik(true)}
           aria-label={`${arkadas.ad} profilini aç`}
-          className="flex items-center gap-3 min-w-0 text-left rounded-2xl -m-1 p-1 hover:bg-white/15 basinca"
+          className="flex items-center gap-3 min-w-0 flex-1 text-left rounded-2xl -m-1 p-1 hover:bg-white/15 basinca"
         >
           <Avatar ad={arkadas.ad} foto={arkadas.avatar} emoji={arkadas.emoji} renk={arkadas.renk} boyut="sm" />
           <div className="min-w-0">
@@ -129,13 +138,6 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false, odakMe
             className="w-10 h-10 rounded-2xl flex items-center justify-center hover:bg-white/20 basinca"
           >
             <Icon name="Palette" className="w-5 h-5" />
-          </button>
-          <button
-            onClick={onClose}
-            aria-label="Kapat"
-            className="w-10 h-10 rounded-2xl flex items-center justify-center hover:bg-white/20 basinca"
-          >
-            <Icon name="X" className="w-5 h-5" />
           </button>
         </div>
       </div>
