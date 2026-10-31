@@ -117,25 +117,25 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3">
+      <div className="px-4 lg:px-0 pt-1 pb-3">
         {secilenler ? (
           <div className="flex items-center mb-4">
             <div className="flex items-center gap-2 min-w-0">
               <button
                 onClick={() => setSecilenler(null)}
                 aria-label="Seçimi bitir"
-                className="w-11 h-11 rounded-full bg-mist-50 border border-ink-100 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
+                className="w-10 h-10 rounded-xl bg-white border border-ink-100 flex items-center justify-center hover:bg-ink-50 active:bg-ink-100 shrink-0"
               >
                 <Icon name="X" className="w-5 h-5 text-ink-400" />
               </button>
               <div className="min-w-0">
-                <h1 className="font-display text-xl font-bold text-ink-700" aria-live="polite">
+                <h2 className="text-title text-ink-800" aria-live="polite">
                   {secilenKayitlar.length} seçili
-                </h1>
+                </h2>
                 <button
                   onClick={() => setSecilenler(hepsiSecili ? new Set() : new Set(filtered.map((k) => k.id)))}
                   disabled={filtered.length === 0}
-                  className="text-xs font-semibold text-orchid-600 disabled:text-ink-400"
+                  className="text-xs font-semibold text-brand-600 disabled:text-ink-400"
                 >
                   {hepsiSecili ? 'Seçimi kaldır' : 'Tümünü seç'}
                 </button>
@@ -145,8 +145,8 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
         ) : (
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="font-display text-2xl font-bold text-ink-700">Arşiv</h1>
-              <p className="text-sm text-ink-400 mt-0.5">{gorunen.length} kayıt</p>
+              <h2 className="text-title text-ink-800">Arşiv</h2>
+              <p className="text-caption font-normal text-ink-400 mt-0.5">{gorunen.length} kayıt</p>
             </div>
             <div className="flex items-center gap-2">
               {gorunen.length > 0 && (
@@ -156,7 +156,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
                     setSecilenler(new Set())
                   }}
                   aria-label="Seç"
-                  className="w-11 h-11 rounded-full bg-mist-50 border border-ink-100 flex items-center justify-center active:opacity-80 transition-transform"
+                  className="w-10 h-10 rounded-xl bg-white border border-ink-100 flex items-center justify-center hover:bg-ink-50 active:bg-ink-100"
                 >
                   <Icon name="ListChecks" className="w-5 h-5 text-ink-400" />
                 </button>
@@ -166,7 +166,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
                   onClick={() => setShowSortMenu(!showSortMenu)}
                   aria-label={`Sırala: ${sortLabels[sortMode]}`}
                   aria-expanded={showSortMenu}
-                  className="w-11 h-11 rounded-full bg-mist-50 border border-ink-100 flex items-center justify-center active:opacity-80 transition-transform"
+                  className="w-10 h-10 rounded-xl bg-white border border-ink-100 flex items-center justify-center hover:bg-ink-50 active:bg-ink-100"
                 >
                   <Icon name="Filter" className="w-5 h-5 text-ink-400" />
                 </button>
@@ -179,7 +179,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
                           key={mode}
                           onClick={() => { setSortMode(mode); setShowSortMenu(false) }}
                           className={`w-full px-3 py-2.5 rounded-xl text-sm font-medium text-left flex items-center justify-between transition-colors
-                            ${sortMode === mode ? 'bg-orchid-50 text-orchid-600' : 'text-ink-500 hover:bg-ink-50'}`}
+                            ${sortMode === mode ? 'bg-brand-50 text-brand-600' : 'text-ink-500 hover:bg-ink-50'}`}
                         >
                           {sortLabels[mode]}
                           {sortMode === mode && <Icon name="Check" className="w-4 h-4" />}
@@ -194,7 +194,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
               <button
                 onClick={() => setLinkEkleAcik(true)}
                 aria-label="Arşive link ekle"
-                className="w-11 h-11 rounded-full bg-orchid-600 text-white flex items-center justify-center shadow-soft active:opacity-80 transition-transform"
+                className="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center hover:bg-brand-700 active:bg-brand-800"
               >
                 <Icon name="LinkIcon" className="w-5 h-5" />
               </button>
@@ -209,7 +209,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Ara..."
             aria-label="Arşivde ara"
-            className="w-full bg-mist-50 border border-ink-100 rounded-2xl pl-11 pr-11 py-3 text-ink-700 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-orchid-200 transition-all"
+            className="w-full bg-white border border-ink-200 rounded-xl pl-11 pr-11 py-2.5 text-ink-700 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-brand-200 transition-all"
           />
           {search && (
             <button
@@ -257,7 +257,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
         </div>
       </div>
 
-      <div className={`flex-1 overflow-y-auto px-5 ${secilenler ? 'pb-64 lg:pb-28' : 'pb-24 lg:pb-10'}`}>
+      <div className={`flex-1 overflow-y-auto px-4 ${secilenler ? 'pb-64 lg:pb-28' : 'pb-24 lg:pb-10'}`}>
         {loading ? (
           <div className="space-y-3 mt-2 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
             {[...Array(4)].map((_, i) => (
@@ -279,11 +279,11 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
           <div className="space-y-5 mt-2">
             {bolumler.map((bolum) => (
               <section key={bolum.anahtar} aria-label={bolum.baslik}>
-                <h2 className="text-xs font-semibold text-ink-400 uppercase tracking-wide px-1 mb-2">
+                <h2 className="flex items-baseline gap-2 text-label text-ink-500 px-1 mb-2">
                   {bolum.baslik}
-                  <span className="ml-1.5 text-ink-400 font-normal">{bolum.kayitlar.length}</span>
+                  <span className="text-caption font-normal text-ink-400 tabular-nums">{bolum.kayitlar.length}</span>
                 </h2>
-                <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0 lg:items-start">
+                <div className="bg-white rounded-2xl border border-ink-100 divide-y divide-ink-100 overflow-hidden">
                   {bolum.kayitlar.map((kayit) => (
                     <KayitCard
                       key={kayit.id}
@@ -345,7 +345,7 @@ function FilterChip({ label, count, active, onClick, icon }: { label: string; co
   return (
     <button
       onClick={onClick}
-      className={`chip shrink-0 ${active ? 'bg-ink-700 text-mist-50' : 'bg-mist-50 text-ink-400 border border-ink-100'}`}
+      className={`chip shrink-0 ${active ? 'bg-ink-700 text-mist-50' : 'bg-white text-ink-600 border border-ink-200'}`}
     >
       <Icon name={icon} className="w-4 h-4" />
       {label}
@@ -374,7 +374,7 @@ function EmptyState({
         <div className="w-16 h-16 rounded-full bg-ink-50 flex items-center justify-center mb-4">
           <Icon name="Search" className="w-8 h-8 text-ink-400" />
         </div>
-        <p className="font-semibold text-ink-500 mb-1">Sonuç bulunamadı</p>
+        <p className="text-headline text-ink-800 mb-1">Sonuç bulunamadı</p>
         <p className="text-sm text-ink-400">{hasSearch ? 'Başka bir kelime dene.' : durum !== 'hepsi' ? 'Bu süzgeçte kayıt yok.' : 'Bu kategoride kayıt yok.'}</p>
       </div>
     )
@@ -382,10 +382,10 @@ function EmptyState({
 
   return (
     <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-fade-in">
-      <div className="w-20 h-20 rounded-full bg-orchid-100 flex items-center justify-center mb-5">
-        <Icon name="Share2" className="w-10 h-10 text-orchid-600" />
+      <div className="w-12 h-12 rounded-2xl bg-ink-50 border border-ink-100 flex items-center justify-center mb-4">
+        <Icon name="Share2" className="w-10 h-10 text-brand-600" />
       </div>
-      <p className="font-display text-lg font-bold text-ink-600 mb-2">Kaydettiğin şey burada işe yarasın</p>
+      <p className="text-headline text-ink-800 mb-1">Kaydettiğin şey burada işe yarasın</p>
       <p className="text-sm text-ink-400 mb-6 max-w-xs">
         Telefonun paylaş menüsünden bir link ya da ekran görüntüsü gönder — ben anlayıp
         arşivleyeyim. Ya da bir bağlantıyı buradan elle ekle.

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ChatButton } from './ChatButton'
 import { SegmentedControl } from '../ui/SegmentedControl'
+import { EkranBasligi } from '../ui/EkranBasligi'
 import { BugunView } from './BugunView'
 import { RemindersView } from './RemindersView'
 import { AniHatirlatici } from './AniHatirlatici'
@@ -70,20 +71,23 @@ export function PlanlarView({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-2 px-5 pt-[calc(1rem+var(--safe-top))] pb-2 shrink-0 lg:hidden">
-        <SegmentedControl
-          etiket="Planlar görünümü"
-          className="flex-1"
-          secili={gorunum}
-          onSec={setGorunum}
-          segmentler={[
-            { id: 'bugun', etiket: 'Takvim' },
-            { id: 'hatirlat', etiket: 'Hatırlatmalar', sayi: bekleyen },
-            { id: 'fikirler', etiket: 'Fikirler', sayi: fikirSayisi },
-          ]}
-        />
-        {onAsistan && <ChatButton onClick={onAsistan} />}
-      </div>
+      <EkranBasligi
+        baslik="Planlar"
+        eylemler={onAsistan && <ChatButton onClick={onAsistan} />}
+      >
+        <div className="lg:hidden">
+          <SegmentedControl
+            etiket="Planlar görünümü"
+            secili={gorunum}
+            onSec={setGorunum}
+            segmentler={[
+              { id: 'bugun', etiket: 'Takvim' },
+              { id: 'hatirlat', etiket: 'Hatırlatmalar', sayi: bekleyen },
+              { id: 'fikirler', etiket: 'Fikirler', sayi: fikirSayisi },
+            ]}
+          />
+        </div>
+      </EkranBasligi>
 
       <AniHatirlatici kayitlar={kayitlar} />
 

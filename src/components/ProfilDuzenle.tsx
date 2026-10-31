@@ -55,23 +55,23 @@ export function ProfilDuzenle({
         className="card w-full max-w-sm mx-4 mb-4 sm:mb-0 p-5 animate-slide-up max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className={`-mx-5 -mt-5 mb-4 px-5 pt-5 pb-4 rounded-t-3xl ${renkAl(renk, ad).zemin}`}>
+        <div className={`-mx-5 -mt-5 mb-4 px-4 pt-5 pb-4 rounded-t-3xl ${renkAl(renk, ad).zemin}`}>
           <div className="flex items-center gap-3">
             <Avatar ad={ad || '?'} foto={profil.avatar} emoji={emoji} renk={renk} boyut="lg" />
             <div className="min-w-0">
-              <p className="font-display text-lg font-bold text-ink-700 truncate">{ad || 'Adın'}</p>
+              <p className="text-title text-ink-800 truncate">{ad || 'Adın'}</p>
               {profil.kullanici_adi && <p className="text-xs text-ink-400">@{profil.kullanici_adi}</p>}
               {biyografi.trim() && <p className="text-xs text-ink-500 mt-1 line-clamp-2">{biyografi}</p>}
             </div>
           </div>
         </div>
 
-        <label htmlFor="profil-ad" className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
+        <label htmlFor="profil-ad" className="block text-label text-ink-500 mb-2">
           Adın
         </label>
         <input id="profil-ad" value={ad} onChange={(e) => setAd(e.target.value)} maxLength={80} className="input-field mb-4" />
 
-        <label htmlFor="profil-bio" className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
+        <label htmlFor="profil-bio" className="block text-label text-ink-500 mb-2">
           Hakkında
         </label>
         <textarea
@@ -86,12 +86,12 @@ export function ProfilDuzenle({
           {biyografi.length}/{BIYOGRAFI_MAKS}
         </p>
 
-        <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">Simgen</p>
+        <p className="text-label text-ink-500 mb-2">Simgen</p>
         <div className="mb-4">
           <EmojiSecici secenekler={PROFIL_EMOJILERI} secili={emoji} onSec={setEmoji} />
         </div>
 
-        <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">Rengin</p>
+        <p className="text-label text-ink-500 mb-2">Rengin</p>
         <div className="mb-4">
           <RenkSecici secili={renk} onSec={setRenk} />
         </div>

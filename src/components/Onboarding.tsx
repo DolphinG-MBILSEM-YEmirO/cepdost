@@ -36,10 +36,10 @@ export function Onboarding({ onDone }: OnboardingProps) {
     <div className="fixed inset-0 z-40 bg-uygulama animate-fade-in lg:flex lg:items-center lg:justify-center">
       {/* Desktop: the same steps in a centred card. */}
       <div className="flex flex-col h-full w-full max-w-md mx-auto lg:card lg:h-[600px]">
-        <div className="flex justify-end px-5 pt-[calc(1rem+var(--safe-top))]">
+        <div className="flex justify-end px-4 pt-[calc(1rem+var(--safe-top))]">
           <button
             onClick={onDone}
-            className="text-sm text-ink-400 font-medium active:opacity-80 transition-transform"
+            className="h-10 px-3 rounded-xl text-callout text-ink-500 font-medium hover:bg-ink-50 active:opacity-80"
           >
             Geç
           </button>
@@ -48,15 +48,15 @@ export function Onboarding({ onDone }: OnboardingProps) {
         <div className="flex-1 flex flex-col items-center justify-center px-8">
           <div
             key={step}
-            className="w-20 h-20 rounded-2xl bg-orchid-50 flex items-center justify-center mb-8 animate-bounce-soft"
+            className="w-16 h-16 rounded-2xl bg-brand-50 flex items-center justify-center mb-8 animate-fade-in"
           >
-            <Icon name={current.icon} className="w-10 h-10 text-orchid-600" />
+            <Icon name={current.icon} className="w-8 h-8 text-brand-600" />
           </div>
 
-          <h2 key={`title-${step}`} className="font-display text-2xl font-bold text-ink-700 text-center mb-3 animate-slide-up">
+          <h2 key={`title-${step}`} className="text-title text-ink-900 text-center mb-2 animate-fade-in">
             {current.title}
           </h2>
-          <p key={`desc-${step}`} className="text-ink-400 text-center max-w-xs leading-relaxed animate-slide-up">
+          <p key={`desc-${step}`} className="text-body text-ink-500 text-center max-w-xs animate-fade-in">
             {current.desc}
           </p>
         </div>
@@ -66,7 +66,7 @@ export function Onboarding({ onDone }: OnboardingProps) {
             {steps.map((_, i) => (
               <div
                 key={i}
-                className={`h-2 rounded-full transition-all duration-300 ${i === step ? 'w-8 bg-orchid-600' : 'w-2 bg-ink-200'}`}
+                className={`h-1.5 rounded-full transition-all duration-200 ${i === step ? 'w-6 bg-ink-800' : 'w-1.5 bg-ink-200'}`}
               />
             ))}
           </div>

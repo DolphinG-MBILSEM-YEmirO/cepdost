@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { SegmentedControl } from '../ui/SegmentedControl'
 import { Icon, type IconName } from './Icon'
 import { Avatar, GrupAvatari } from './Avatar'
 import { GrupDuzenle } from './GrupDuzenle'
@@ -45,7 +46,7 @@ import { useSosyalSurum } from '../sosyal/cekirdek'
 import { useGeriAdimi, useGeriIleKapat } from '../lib/geriTusu'
 import type { MesajGonderimEki } from '../sosyal/mesajOrtak'
 import type { SohbetHedefi } from '../sosyal/mesajIslemleri'
-import { ETKINLIK_EMOJILERI, renkAl } from '../lib/kisisellestirme'
+import { ETKINLIK_EMOJILERI } from '../lib/kisisellestirme'
 import { UYGULAMA_ADI } from '../../shared/marka'
 
 type Sekme = 'planlar' | 'sohbet' | 'anilar' | 'uyeler'
@@ -96,7 +97,8 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
     }
   }, [acilanGrup.id, sosyalSurum])
   const grup = guncelGrup?.id === acilanGrup.id ? guncelGrup : acilanGrup
-  const zemin = renkAl(grup.renk, grup.ad).zemin
+  // The group's colour stays on its avatar; the header itself is neutral.
+  const zemin = 'bg-white'
 
   const uyeleriTazele = useCallback(async () => {
     setUyeler(await grupUyeleriGetir(grup.id))
@@ -122,17 +124,17 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
 
   return (
     <div className={gomulu ? 'flex flex-col h-full min-h-0' : 'panel-tam z-[55]'}>
-      <div className={`flex items-center gap-3 px-5 pt-[calc(1rem+var(--safe-top))] pb-3 shrink-0 ${zemin}`}>
+      <div className={`flex items-center gap-3 px-4 pt-[calc(1rem+var(--safe-top))] pb-3 shrink-0 ${zemin}`}>
         <button
           onClick={onClose}
           aria-label="Geri"
-          className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
+          className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-ink-50 active:bg-ink-100 shrink-0"
         >
           <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />
         </button>
         <GrupAvatari grup={grup} boyut="sm" />
         <div className="min-w-0 flex-1">
-          <h2 className="font-display text-base font-bold text-ink-700 truncate">{grup.ad}</h2>
+          <h2 className="text-headline text-ink-800 truncate">{grup.ad}</h2>
           <p className="text-xs text-ink-400 truncate">
             {grup.aciklama ? `${grup.aciklama} · ` : ''}
             {uyeler.length} üye
@@ -145,7 +147,7 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
               setAramaAcik(true)
             }}
             aria-label="Sohbette ara"
-            className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
+            className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-ink-50 active:bg-ink-100 shrink-0"
           >
             <Icon name="Search" className="w-5 h-5 text-ink-400" />
           </button>
@@ -154,7 +156,7 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
           <button
             onClick={() => setTemaAcik(true)}
             aria-label="Sohbet temasını değiştir"
-            className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
+            className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-ink-50 active:bg-ink-100 shrink-0"
           >
             <Icon name="Palette" className="w-5 h-5 text-ink-400" />
           </button>
@@ -162,7 +164,7 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
         <button
           onClick={() => setDuzenleAcik(true)}
           aria-label="Grubu düzenle"
-          className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
+          className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-ink-50 active:bg-ink-100 shrink-0"
         >
           <Icon name="Pencil" className="w-4 h-4 text-ink-400" />
         </button>
@@ -180,19 +182,13 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
         />
       )}
 
-      <div className={`flex gap-1.5 px-5 pb-3 shrink-0 overflow-x-auto no-scrollbar ${zemin}`}>
-        {sekmeler.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => setSekme(s.id)}
-            className={`chip shrink-0 ${
-              sekme === s.id ? 'bg-orchid-600 text-white' : 'bg-mist-50 text-ink-400 border border-ink-100'
-            }`}
-          >
-            <Icon name={s.ikon} className="w-4 h-4" />
-            {s.etiket}
-          </button>
-        ))}
+      <div className={`px-4 pb-3 shrink-0 border-b border-ink-100 ${zemin}`}>
+        <SegmentedControl
+          etiket={`${grup.ad} bölümleri`}
+          secili={sekme}
+          onSec={setSekme}
+          segmentler={sekmeler.map((s) => ({ id: s.id, etiket: s.etiket }))}
+        />
       </div>
 
       {sekme === 'planlar' && (
@@ -226,7 +222,7 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
         />
       )}
       {sekme === 'anilar' && (
-        <div className="flex-1 overflow-y-auto px-5 pb-8">
+        <div className="flex-1 overflow-y-auto px-4 pb-8">
           <AniArsivi grupId={grup.id} benimId={benimId} baslik={grup.ad} />
         </div>
       )}
@@ -338,9 +334,9 @@ function PlanlarSekmesi({
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto px-5 pb-8 space-y-3">
+      <div className="flex-1 overflow-y-auto px-4 pb-8 space-y-3">
         {hata && (
-          <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3">
+          <div className="flex items-start gap-2 bg-white border border-rose-200 rounded-xl px-4 py-3">
             <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
             <p className="text-sm text-rose-700">{hata}</p>
           </div>
@@ -391,7 +387,7 @@ function PlanlarSekmesi({
           ].map((p, i, liste) => (
             <div key={p.id}>
               {planGectiMi(p.tarih) && (i === 0 || !planGectiMi(liste[i - 1].tarih)) && (
-                <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mt-2 mb-3 px-1">Geçmiş planlar</p>
+                <p className="text-label text-ink-500 mt-2 mb-3 px-1">Geçmiş planlar</p>
               )}
               <PlanKarti
                 plan={p}
@@ -476,7 +472,7 @@ function PlanKarti({
           <p className="text-xs text-ink-500 mt-0.5">{detay}</p>
           {plan.notlar && <p className="text-xs text-ink-400 mt-1 line-clamp-2">{plan.notlar}</p>}
         </div>
-        <span className="flex items-center gap-0.5 text-xs font-semibold text-orchid-600 shrink-0 mt-0.5">
+        <span className="flex items-center gap-0.5 text-xs font-semibold text-brand-600 shrink-0 mt-0.5">
           Ayrıntılar
           <Icon name="ChevronRight" className="w-4 h-4" />
         </span>
@@ -500,7 +496,7 @@ function PlanKarti({
               onClick={() => onYanit(s.d)}
               aria-pressed={benimYanit === s.d}
               className={`flex-1 rounded-xl py-2 text-xs font-semibold active:opacity-80 transition-all ${
-                benimYanit === s.d ? s.renk : 'bg-mist-100 text-ink-400 border border-ink-100'
+                benimYanit === s.d ? s.renk : 'bg-white text-ink-600 border border-ink-200'
               }`}
             >
               {s.etiket}
@@ -645,7 +641,7 @@ function PlanEkleModal({
         />
 
         {hata && (
-          <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3 mb-4">
+          <div className="flex items-start gap-2 bg-white border border-rose-200 rounded-xl px-4 py-3 mb-4">
             <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
             <p className="text-sm text-rose-700">{hata}</p>
           </div>
@@ -756,14 +752,14 @@ function SohbetSekmesi({
       {aramaAcik && <SohbetIciArama mesajlar={mesajlar} onGit={islemler.mesajaGit} onKapat={onAramaKapat} />}
       <SohbetUstSeridi islemler={islemler} />
 
-      <SohbetZemini tema={tema} className="px-5 pb-4">
+      <SohbetZemini tema={tema} className="px-4 pb-4">
         <div className="space-y-2 pt-2">
           {mesajlar.length === 0 && (
             <div className="card p-5 text-center">
               <p className="text-sm text-ink-400 mb-3">Sohbet boş. İlk mesajı sen yaz.</p>
               <button
                 onClick={() => setSihirbazAcik(true)}
-                className="chip bg-orchid-100 text-orchid-700 mx-auto"
+                className="chip bg-brand-100 text-brand-700 mx-auto"
               >
                 <Icon name="Wand2" className="w-4 h-4" />
                 Yapay zekâdan plan iste
@@ -797,7 +793,7 @@ function SohbetSekmesi({
           })}
 
           {hata && (
-            <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3">
+            <div className="flex items-start gap-2 bg-white border border-rose-200 rounded-xl px-4 py-3">
               <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
               <p className="text-sm text-rose-700">{hata}</p>
             </div>
@@ -861,9 +857,9 @@ function UyelerSekmesi({
   const eklenebilir = arkadaslar.filter((a) => a.durum === 'kabul' && !uyeIdler.has(a.profil.id))
 
   return (
-    <div className="flex-1 overflow-y-auto px-5 pb-8 space-y-5">
+    <div className="flex-1 overflow-y-auto px-4 pb-8 space-y-5">
       {hata && (
-        <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3">
+        <div className="flex items-start gap-2 bg-white border border-rose-200 rounded-xl px-4 py-3">
           <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
           <p className="text-sm text-rose-700">{hata}</p>
         </div>
@@ -896,7 +892,7 @@ function UyelerSekmesi({
             <button
               key={u.kullanici_id}
               onClick={() => onUyeAc(u)}
-              className="w-full card p-4 flex items-center gap-3 text-left active:opacity-80 transition-transform lg:hover:border-orchid-200"
+              className="w-full card p-4 flex items-center gap-3 text-left active:opacity-80 transition-transform lg:hover:border-brand-200"
             >
               {icerik}
               <Icon name="ChevronRight" className="w-4 h-4 text-ink-400 shrink-0" />
@@ -955,7 +951,7 @@ function UyelerSekmesi({
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <label className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
+    <label className="block text-label text-ink-500 mb-2">
       {children}
     </label>
   )

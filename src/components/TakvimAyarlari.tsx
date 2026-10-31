@@ -76,8 +76,8 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
   return (
     <div className="card p-5">
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 rounded-xl bg-sky-100 flex items-center justify-center">
-          <Icon name="CalendarPlus" className="w-5 h-5 text-sky-600" />
+        <div className="w-10 h-10 rounded-xl bg-ink-50 flex items-center justify-center">
+          <Icon name="CalendarPlus" className="w-5 h-5 text-ink-500" />
         </div>
         <h2 className="font-semibold text-ink-700">Telefon takvimin</h2>
       </div>
@@ -95,7 +95,7 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
       >
         <div
           className={`w-11 h-6 rounded-full transition-colors shrink-0 relative ${
-            ayar.izin ? 'bg-orchid-600' : 'bg-ink-200'
+            ayar.izin ? 'bg-brand-600' : 'bg-ink-200'
           }`}
         >
           <div
@@ -119,7 +119,7 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
           <div className="bg-mist-100 rounded-2xl p-4">
             {/* Etikette ".ics" yazmıyor: uppercase + Türkçe yerelde "i"
                 "İ"ye dönüşüp ".İCS" gibi görünüyordu. */}
-            <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
+            <p className="text-label text-ink-500 mb-2">
               Takvim bağlantısı
             </p>
             <input
@@ -201,7 +201,7 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
       )}
 
       {hata && (
-        <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3 mt-3">
+        <div className="flex items-start gap-2 bg-white border border-rose-200 rounded-xl px-4 py-3 mt-3">
           <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
           <p className="text-sm text-rose-700">{hata}</p>
         </div>

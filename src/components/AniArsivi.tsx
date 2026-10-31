@@ -48,14 +48,14 @@ export function AniArsivi({ grupId, arkadasId, benimId, baslik }: Props) {
         </div>
         <button
           onClick={() => setEkleAcik(true)}
-          className="text-xs font-semibold text-orchid-600 active:opacity-80 transition-transform"
+          className="text-xs font-semibold text-brand-600 active:opacity-80 transition-transform"
         >
           Fotoğraf ekle
         </button>
       </div>
 
       {ulasilamaz && (
-        <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3">
+        <div className="flex items-start gap-2 bg-white border border-rose-200 rounded-xl px-4 py-3">
           <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
           <p className="text-sm text-rose-700">Anılar alınamadı.</p>
         </div>
@@ -70,7 +70,7 @@ export function AniArsivi({ grupId, arkadasId, benimId, baslik }: Props) {
                 key={y.ad ?? ''}
                 onClick={() => setYer(y.ad)}
                 aria-pressed={secili}
-                className={`chip text-xs shrink-0 ${secili ? 'bg-orchid-600 text-white' : 'bg-mist-50 text-ink-500 border border-ink-100'}`}
+                className={`chip text-xs shrink-0 ${secili ? 'bg-ink-800 text-white border border-ink-800' : 'bg-white text-ink-600 border border-ink-200 hover:bg-ink-50'}`}
               >
                 {y.ad ? <Icon name="MapPin" className="w-3.5 h-3.5" /> : null}
                 {y.ad ?? 'Hepsi'}
@@ -95,7 +95,7 @@ export function AniArsivi({ grupId, arkadasId, benimId, baslik }: Props) {
       ) : (
         aylar.map((ay) => (
           <section key={ay.ay} aria-label={ay.baslik} className="space-y-2">
-            <h3 className="text-xs font-semibold text-ink-400 uppercase tracking-wide px-1 pt-1">{ay.baslik}</h3>
+            <h3 className="text-label text-ink-500 px-1 pt-1">{ay.baslik}</h3>
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
               {ay.anilar.map((a) => (
                 <AniKarti
@@ -312,8 +312,8 @@ export function AniEkleModal({
             <img src={onizleme} alt="Seçilen" className="w-full h-full object-cover" />
           ) : (
             <>
-              <div className="w-12 h-12 rounded-full bg-orchid-100 flex items-center justify-center">
-                <Icon name="ImageIcon" className="w-6 h-6 text-orchid-500" />
+              <div className="w-12 h-12 rounded-full bg-brand-100 flex items-center justify-center">
+                <Icon name="ImageIcon" className="w-6 h-6 text-ink-500" />
               </div>
               <p className="text-sm font-medium text-ink-500">Fotoğraf seç</p>
             </>
@@ -346,8 +346,8 @@ export function AniEkleModal({
             onClick={() => setGorunurluk('arkadaslar')}
             className={`flex-1 rounded-xl py-2.5 text-xs font-semibold transition-all active:opacity-80 ${
               gorunurluk === 'arkadaslar'
-                ? 'bg-orchid-600 text-white'
-                : 'bg-mist-100 text-ink-400 border border-ink-100'
+                ? 'bg-ink-800 text-white'
+                : 'bg-white text-ink-600 border border-ink-200'
             }`}
           >
             {hedefAdi}
@@ -356,8 +356,8 @@ export function AniEkleModal({
             onClick={() => setGorunurluk('herkes')}
             className={`flex-1 rounded-xl py-2.5 text-xs font-semibold transition-all active:opacity-80 ${
               gorunurluk === 'herkes'
-                ? 'bg-sky-500 text-white'
-                : 'bg-mist-100 text-ink-400 border border-ink-100'
+                ? 'bg-ink-800 text-white'
+                : 'bg-white text-ink-600 border border-ink-200'
             }`}
           >
             Herkes
@@ -370,7 +370,7 @@ export function AniEkleModal({
         )}
 
         {hata && (
-          <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3 mb-4">
+          <div className="flex items-start gap-2 bg-white border border-rose-200 rounded-xl px-4 py-3 mb-4">
             <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
             <p className="text-sm text-rose-700">{hata}</p>
           </div>
@@ -402,7 +402,7 @@ export function AniEkleModal({
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <label className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
+    <label className="block text-label text-ink-500 mb-2">
       {children}
     </label>
   )

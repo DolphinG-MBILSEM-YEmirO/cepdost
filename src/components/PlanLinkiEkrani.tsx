@@ -101,7 +101,7 @@ export function PlanLinkiEkrani({ link, girisli, onKapat, onSahibiEkle }: Props)
 
   return (
     <div className="min-h-screen bg-uygulama">
-      <header className="max-w-md mx-auto px-5 pt-[calc(1rem+var(--safe-top))] flex items-center justify-between">
+      <header className="max-w-md mx-auto px-4 pt-[calc(1rem+var(--safe-top))] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <img src="/icons/icon-192.png" alt="" className="w-8 h-8 rounded-xl" />
           <span className="font-display text-lg font-bold text-ink-800">{UYGULAMA_ADI}</span>
@@ -116,9 +116,9 @@ export function PlanLinkiEkrani({ link, girisli, onKapat, onSahibiEkle }: Props)
         )}
       </header>
 
-      <main className="max-w-md mx-auto px-5 pt-4 pb-[calc(2.5rem+var(--safe-bottom))] space-y-4">
+      <main className="max-w-md mx-auto px-4 pt-4 pb-[calc(2.5rem+var(--safe-bottom))] space-y-4">
         {hata && (
-          <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3">
+          <div className="flex items-start gap-2 bg-white border border-rose-200 rounded-xl px-4 py-3">
             <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
             <p className="text-sm text-rose-700">{hata}</p>
           </div>
@@ -133,14 +133,14 @@ export function PlanLinkiEkrani({ link, girisli, onKapat, onSahibiEkle }: Props)
           )
         ) : !plan ? (
           <div className="card p-6 text-center">
-            <div className="w-14 h-14 rounded-full bg-orchid-100 flex items-center justify-center mx-auto mb-3">
-              <Icon name="CalendarX" className="w-7 h-7 text-orchid-500" />
+            <div className="w-12 h-12 rounded-2xl bg-ink-50 border border-ink-100 flex items-center justify-center mx-auto mb-3">
+              <Icon name="CalendarX" className="w-6 h-6 text-ink-400" />
             </div>
-            <p className="font-semibold text-ink-600 mb-1">Bu plan bulunamadı</p>
+            <p className="text-headline text-ink-800 mb-1">Bu plan bulunamadı</p>
             <p className="text-sm text-ink-400 mb-4">
               Link eksik kopyalanmış ya da planın süresi dolmuş olabilir. Linki gönderen kişiye sorabilirsin.
             </p>
-            <button onClick={onKapat} className="btn-primary text-sm px-5 py-2.5">
+            <button onClick={onKapat} className="btn-primary text-sm px-4 py-2.5">
               {UYGULAMA_ADI} uygulamasını aç
             </button>
           </div>
@@ -159,7 +159,7 @@ export function PlanLinkiEkrani({ link, girisli, onKapat, onSahibiEkle }: Props)
                 <h2 className="font-semibold text-ink-700 mb-3">Sen geliyor musun?</h2>
                 {!girisli && (
                   <>
-                    <label htmlFor="link-ad" className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
+                    <label htmlFor="link-ad" className="block text-label text-ink-500 mb-2">
                       Adın
                     </label>
                     <input
@@ -184,8 +184,8 @@ export function PlanLinkiEkrani({ link, girisli, onKapat, onSahibiEkle }: Props)
                         aria-pressed={secili}
                         className={`flex flex-col items-center gap-1 rounded-2xl py-3 text-sm font-semibold transition-all active:opacity-80 disabled:opacity-60 ${
                           secili
-                            ? 'bg-orchid-600 text-white'
-                            : 'bg-mist-100 text-ink-500 border border-ink-100 hover:border-orchid-200'
+                            ? 'bg-brand-600 text-white'
+                            : 'bg-mist-100 text-ink-500 border border-ink-100 hover:border-brand-200'
                         }`}
                       >
                         <Icon
@@ -213,7 +213,7 @@ export function PlanLinkiEkrani({ link, girisli, onKapat, onSahibiEkle }: Props)
             )}
 
             {!plan.sahipKodu ? null : !girisli ? (
-              <div className="card p-5 bg-orchid-50 border-orchid-100">
+              <div className="card p-5 bg-brand-50 border-brand-100">
                 <p className="font-semibold text-ink-700 mb-1">Planlarını {UYGULAMA_ADI} ile kur</p>
                 <p className="text-sm text-ink-500 mb-4">
                   {plan.sahipAdi} ile arkadaş ol; boş saatlerinizi görün, sonraki planı birlikte ayarlayın. Ücretsiz.
@@ -234,7 +234,7 @@ export function PlanLinkiEkrani({ link, girisli, onKapat, onSahibiEkle }: Props)
                     <p className="text-sm font-semibold text-ink-700 truncate">{plan.sahipAdi}</p>
                     <p className="text-xs text-ink-400">Arkadaş olarak ekle</p>
                   </div>
-                  <Icon name="UserPlus" className="w-5 h-5 text-orchid-500 shrink-0" />
+                  <Icon name="UserPlus" className="w-5 h-5 text-ink-500 shrink-0" />
                 </button>
               )
             )}
@@ -252,28 +252,28 @@ function PlanKarti({ plan }: { plan: LinkPlani }) {
 
   return (
     <div className="card overflow-hidden">
-      <div className="bg-orchid-50 px-5 pt-6 pb-5 text-center">
+      <div className="bg-brand-50 px-4 pt-6 pb-5 text-center">
         <div className="w-16 h-16 rounded-3xl bg-mist-50 shadow-soft flex items-center justify-center mx-auto mb-3">
           {plan.emoji ? (
             <span className="text-3xl" aria-hidden="true">
               {plan.emoji}
             </span>
           ) : (
-            <Icon name="CalendarDays" className="w-8 h-8 text-orchid-500" />
+            <Icon name="CalendarDays" className="w-6 h-6 text-ink-400" />
           )}
         </div>
         <p className="text-sm text-ink-500">{plan.sahipAdi} seni davet ediyor</p>
-        <h1 className="font-display text-2xl font-bold text-ink-700 mt-1 break-words">{plan.baslik}</h1>
+        <h1 className="text-display text-ink-800 tracking-tight mt-1 break-words">{plan.baslik}</h1>
       </div>
 
       {plan.iptal && (
-        <div className="flex items-center gap-2 bg-rose-50 border-y border-rose-100 px-5 py-3">
+        <div className="flex items-center gap-2 bg-rose-50 border-y border-rose-100 px-4 py-3">
           <Icon name="AlertCircle" className="w-4 h-4 text-rose-500 shrink-0" />
           <p className="text-sm font-medium text-rose-700">Bu plan iptal edildi.</p>
         </div>
       )}
 
-      <div className="px-5 py-4 space-y-3">
+      <div className="px-4 py-4 space-y-3">
         {gun && <Bilgi ikon="CalendarDays" metin={gun} alt={saat || null} />}
         {plan.konum && (
           <Bilgi
@@ -281,7 +281,7 @@ function PlanKarti({ plan }: { plan: LinkPlani }) {
             metin={plan.konum}
             alt={
               harita ? (
-                <a href={harita} target="_blank" rel="noreferrer" className="text-orchid-600 font-medium">
+                <a href={harita} target="_blank" rel="noreferrer" className="text-brand-600 font-medium">
                   Haritada aç
                 </a>
               ) : null
@@ -297,8 +297,8 @@ function PlanKarti({ plan }: { plan: LinkPlani }) {
 function Bilgi({ ikon, metin, alt }: { ikon: IconName; metin: string; alt?: React.ReactNode }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="w-9 h-9 rounded-xl bg-orchid-50 flex items-center justify-center shrink-0">
-        <Icon name={ikon} className="w-4 h-4 text-orchid-500" />
+      <div className="w-9 h-9 rounded-xl bg-ink-50 flex items-center justify-center shrink-0">
+        <Icon name={ikon} className="w-4 h-4 text-ink-500" />
       </div>
       <div className="min-w-0 pt-0.5">
         <p className="text-sm font-semibold text-ink-700 break-words">{metin}</p>
@@ -353,7 +353,7 @@ function Kisi({ ad, etiket, soluk }: { ad: string; etiket?: string; soluk?: bool
   return (
     <div
       className={`flex items-center gap-2 rounded-full border pl-1 pr-3 py-1 ${
-        soluk ? 'bg-mist-100 border-ink-100 opacity-70' : 'bg-mist-50 border-ink-100'
+        soluk ? 'bg-mist-100 border-ink-100 opacity-70' : 'bg-white border-ink-200'
       }`}
     >
       <Avatar ad={ad} boyut="sm" />

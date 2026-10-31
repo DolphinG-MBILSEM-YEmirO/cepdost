@@ -56,7 +56,7 @@ export function GrupUyesiKarti({ uye, grupAdi, iliski, onKapat }: Props) {
         <button
           onClick={onKapat}
           aria-label="Kapat"
-          className="absolute top-3 right-3 w-9 h-9 rounded-full bg-ink-50 flex items-center justify-center active:opacity-80 transition-transform"
+          className="absolute top-3 right-3 w-9 h-9 rounded-xl flex items-center justify-center hover:bg-ink-50 active:bg-ink-100"
         >
           <Icon name="X" className="w-4 h-4 text-ink-500" />
         </button>
@@ -64,7 +64,7 @@ export function GrupUyesiKarti({ uye, grupAdi, iliski, onKapat }: Props) {
         <div className="flex justify-center mb-3">
           <Avatar ad={ad} foto={profil?.avatar} emoji={profil?.emoji} renk={profil?.renk} boyut="lg" />
         </div>
-        <h3 className="font-display text-lg font-bold text-ink-700 break-words">{ad}</h3>
+        <h3 className="text-title text-ink-800 break-words">{ad}</h3>
         {profil?.kullanici_adi && <p className="text-sm text-ink-400">@{profil.kullanici_adi}</p>}
         <p className="text-xs text-ink-400 mt-1">
           {grupAdi} grubunda {uye.rol === 'yonetici' ? 'yönetici' : 'üye'}

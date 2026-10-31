@@ -49,7 +49,7 @@ export function KenarCubugu({
               aria-label={rozet > 0 ? `${t.label}, ${rozet} yeni` : t.label}
               aria-current={secili ? 'page' : undefined}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
-                secili ? 'bg-orchid-50 text-orchid-700' : 'text-ink-500 hover:bg-ink-50 hover:text-ink-700'
+                secili ? 'bg-brand-50 text-brand-700' : 'text-ink-500 hover:bg-ink-50 hover:text-ink-700'
               }`}
             >
               <Icon name={t.icon} className="w-5 h-5" />

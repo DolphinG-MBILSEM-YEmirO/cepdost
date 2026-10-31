@@ -67,7 +67,7 @@ export function AyTakvimi({
               setAy({ yil: d.getFullYear(), ay: d.getMonth() })
               onSec(bugun)
             }}
-            className="text-xs font-medium text-orchid-600 px-2 py-1 rounded-full hover:bg-orchid-50"
+            className="text-xs font-medium text-brand-600 px-2 py-1 rounded-full hover:bg-brand-50"
           >
             Bu ay
           </button>
@@ -125,7 +125,7 @@ export function AyTakvimi({
               aria-pressed={seciliMi}
               aria-current={bugunMu ? 'date' : undefined}
               className={`relative mx-auto w-10 h-11 rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all active:opacity-80
-                ${seciliMi ? 'bg-orchid-600 text-white shadow-soft' : bugunMu ? 'ring-2 ring-orchid-300 text-orchid-600' : 'hover:bg-ink-50'}
+                ${seciliMi ? 'bg-brand-600 text-white shadow-soft' : bugunMu ? 'ring-2 ring-brand-300 text-brand-600' : 'hover:bg-ink-50'}
                 ${!g.buAy && !seciliMi ? 'text-ink-200' : ''}`}
             >
               <span className={`text-sm leading-none ${bugunMu || seciliMi ? 'font-bold' : 'font-medium'} ${g.buAy && !seciliMi && !bugunMu ? 'text-ink-600' : ''}`}>

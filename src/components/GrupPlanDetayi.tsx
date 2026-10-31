@@ -73,11 +73,11 @@ export function GrupPlanDetayi({ plan, grup, benimId, onClose }: Props) {
 
   return (
     <div className="panel-tam z-[60]" role="dialog" aria-label={plan.baslik}>
-      <div className="flex items-center gap-3 px-5 pt-[calc(1rem+var(--safe-top))] pb-3 shrink-0">
+      <div className="flex items-center gap-3 px-4 pt-[calc(1rem+var(--safe-top))] pb-3 shrink-0">
         <button
           onClick={onClose}
           aria-label="Geri"
-          className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
+          className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-ink-50 active:bg-ink-100 shrink-0"
         >
           <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />
         </button>
@@ -88,14 +88,14 @@ export function GrupPlanDetayi({ plan, grup, benimId, onClose }: Props) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 pb-8">
+      <div className="flex-1 overflow-y-auto px-4 pb-8">
         <div className="card p-5 mb-4">
           <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-orchid-100 flex items-center justify-center text-2xl shrink-0">
-              {plan.emoji ?? <Icon name="CalendarClock" className="w-6 h-6 text-orchid-500" />}
+            <div className="w-12 h-12 rounded-2xl bg-ink-50 flex items-center justify-center text-2xl shrink-0">
+              {plan.emoji ?? <Icon name="CalendarClock" className="w-6 h-6 text-ink-500" />}
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="font-display text-xl font-bold text-ink-700 leading-snug">{plan.baslik}</h2>
+              <h2 className="text-title text-ink-800 leading-snug">{plan.baslik}</h2>
               <p className="text-sm text-ink-500 mt-0.5">{zaman}</p>
             </div>
           </div>
@@ -123,7 +123,7 @@ export function GrupPlanDetayi({ plan, grup, benimId, onClose }: Props) {
               <p className="text-sm font-semibold text-ink-400">Bu plan geçti</p>
             ) : (
               <>
-                <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">Yanıtın</p>
+                <p className="text-label text-ink-500 mb-2">Yanıtın</p>
                 <div className="flex gap-2" role="group" aria-label="Yanıtın">
                   {SECENEKLER.map((s) => (
                     <button
@@ -132,7 +132,7 @@ export function GrupPlanDetayi({ plan, grup, benimId, onClose }: Props) {
                       disabled={isleniyor}
                       aria-pressed={benimYanit === s.d}
                       className={`flex-1 rounded-xl py-2.5 text-sm font-semibold active:opacity-80 transition-all disabled:opacity-60 ${
-                        benimYanit === s.d ? s.renk : 'bg-mist-100 text-ink-400 border border-ink-100'
+                        benimYanit === s.d ? s.renk : 'bg-white text-ink-600 border border-ink-200'
                       }`}
                     >
                       {s.etiket}
@@ -152,7 +152,7 @@ export function GrupPlanDetayi({ plan, grup, benimId, onClose }: Props) {
                         uid: plan.id,
                       })
                     }
-                    className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-sky-700 hover:text-sky-800"
+                    className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-700 hover:text-brand-800"
                   >
                     <Icon name="CalendarPlus" className="w-4 h-4" />
                     Telefon takvimine ekle

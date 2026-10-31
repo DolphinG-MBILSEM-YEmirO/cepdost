@@ -131,18 +131,18 @@ export function AkisView({ onPlanAc, onAsistan }: { onPlanAc: (kayit: Kayit) => 
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3 flex items-start gap-3">
+      <div className="px-4 pt-[calc(1rem+var(--safe-top))] pb-3 flex items-start gap-3">
         <div className="flex-1 min-w-0">
-          <h1 className="font-display text-2xl font-bold text-ink-700">Akış</h1>
+          <h1 className="text-display text-ink-800 tracking-tight">Akış</h1>
           <p className="text-sm text-ink-400 mt-0.5">
             Paylaşılan mekanlar
-            {yeniSayisi > 0 && <span className="text-orchid-600 font-medium"> · {yeniSayisi} yeni</span>}
+            {yeniSayisi > 0 && <span className="text-brand-600 font-medium"> · {yeniSayisi} yeni</span>}
           </p>
         </div>
         {onAsistan && <ChatButton onClick={onAsistan} />}
       </div>
 
-      <div className="px-5 pb-3 shrink-0 lg:max-w-sm">
+      <div className="px-4 pb-3 shrink-0 lg:max-w-sm">
         <SegmentedControl
           etiket="Akış kapsamı"
           secili={kapsam}
@@ -156,7 +156,7 @@ export function AkisView({ onPlanAc, onAsistan }: { onPlanAc: (kayit: Kayit) => 
 
       {secenekler.length > 0 && (
         <div
-          className="flex gap-1.5 px-5 pb-3 shrink-0 overflow-x-auto no-scrollbar"
+          className="flex gap-1.5 px-4 pb-3 shrink-0 overflow-x-auto no-scrollbar"
           role="group"
           aria-label="Kişiye ya da gruba göre süz"
         >
@@ -167,7 +167,7 @@ export function AkisView({ onPlanAc, onAsistan }: { onPlanAc: (kayit: Kayit) => 
                 key={s ? `${s.tur}:${s.id}` : 'hepsi'}
                 onClick={() => setSecim(s && { tur: s.tur, id: s.id })}
                 aria-pressed={secili}
-                className={`chip text-xs shrink-0 ${secili ? 'bg-ink-700 text-mist-50' : 'bg-mist-50 text-ink-500 border border-ink-100'}`}
+                className={`chip text-xs shrink-0 ${secili ? 'bg-ink-800 text-white border border-ink-800' : 'bg-white text-ink-600 border border-ink-200 hover:bg-ink-50'}`}
               >
                 {s?.tur === 'grup' && <Icon name="Users" className="w-3.5 h-3.5" />}
                 {s ? s.ad : 'Hepsi'}
@@ -180,9 +180,9 @@ export function AkisView({ onPlanAc, onAsistan }: { onPlanAc: (kayit: Kayit) => 
 
       {/* On a phone the last card scrolls clear of the bottom bar and the
           assistant button, so its comment box and buttons stay tappable. */}
-      <div className="flex-1 overflow-y-auto px-5 pb-[calc(10.5rem+var(--safe-bottom))] space-y-4 lg:pb-10 lg:grid lg:grid-cols-2 lg:gap-5 lg:space-y-0 lg:items-start">
+      <div className="flex-1 overflow-y-auto px-4 pb-[calc(10.5rem+var(--safe-bottom))] space-y-4 lg:pb-10 lg:grid lg:grid-cols-2 lg:gap-5 lg:space-y-0 lg:items-start">
         {hata && (
-          <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3 lg:col-span-2">
+          <div className="flex items-start gap-2 bg-white border border-rose-200 rounded-xl px-4 py-3 lg:col-span-2">
             <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
             <p className="text-sm text-rose-700">{hata}</p>
           </div>
@@ -195,10 +195,10 @@ export function AkisView({ onPlanAc, onAsistan }: { onPlanAc: (kayit: Kayit) => 
           </>
         ) : anilar && anilar.length === 0 ? (
           <div className="card p-6 text-center lg:col-span-2">
-            <div className="w-14 h-14 rounded-full bg-sky-100 flex items-center justify-center mx-auto mb-3">
-              <Icon name="ImageIcon" className="w-7 h-7 text-sky-600" />
+            <div className="w-12 h-12 rounded-2xl bg-ink-50 border border-ink-100 flex items-center justify-center mx-auto mb-3">
+              <Icon name="ImageIcon" className="w-7 h-7 text-ink-500" />
             </div>
-            <p className="font-semibold text-ink-600 mb-1">Henüz paylaşım yok</p>
+            <p className="text-headline text-ink-800 mb-1">Henüz paylaşım yok</p>
             <p className="text-sm text-ink-400">
               {kapsam === 'arkadaslar'
                 ? 'Arkadaşların seninle bir mekan fotoğrafı paylaştığında burada görünecek.'
@@ -238,7 +238,7 @@ export function AkisView({ onPlanAc, onAsistan }: { onPlanAc: (kayit: Kayit) => 
                 onPlanAc(eklenen)
                 setEklenen(null)
               }}
-              className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold text-orchid-200 hover:bg-white/10 active:opacity-80"
+              className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold text-brand-200 hover:bg-white/10 active:opacity-80"
             >
               Aç
             </button>

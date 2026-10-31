@@ -86,11 +86,11 @@ export function GrupOzetKarti({ grup, benimId, uyeler, planlar, yanitlar, onPlan
         <div className="mt-3 pt-3 border-t border-ink-100">
           {siradaki ? (
             <button onClick={() => onPlanAc(siradaki)} className="w-full flex items-center gap-3 text-left active:opacity-80 transition-transform">
-              <div className="w-11 h-11 rounded-2xl bg-orchid-100 flex items-center justify-center text-xl shrink-0">
-                {siradaki.emoji ?? <Icon name="CalendarClock" className="w-5 h-5 text-orchid-500" />}
+              <div className="w-11 h-11 rounded-2xl bg-ink-50 flex items-center justify-center text-xl shrink-0">
+                {siradaki.emoji ?? <Icon name="CalendarClock" className="w-5 h-5 text-ink-500" />}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-semibold text-ink-400 uppercase tracking-wide">Sıradaki plan</p>
+                <p className="text-label text-ink-500">Sıradaki plan</p>
                 <p className="text-sm font-semibold text-ink-700 truncate">{siradaki.baslik}</p>
                 <p className="text-xs text-ink-500 truncate">
                   {[goreceGun(siradaki.tarih, bugun), formatPlanTime(siradaki.saat, siradaki.tum_gun), siradaki.konum].filter(Boolean).join(' · ')}
@@ -122,7 +122,7 @@ export function GrupOzetKarti({ grup, benimId, uyeler, planlar, yanitlar, onPlan
                 <AniGorseli ani={sonAni} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-semibold text-ink-400 uppercase tracking-wide">Son anı</p>
+                <p className="text-label text-ink-500">Son anı</p>
                 <p className="text-sm font-semibold text-ink-700 truncate">{sonAni.mekan_adi}</p>
                 <p className="text-xs text-ink-500 truncate">
                   {sonAniSahibi} · {neKadarOnce(gunFarki(sonAni.tarih, bugun))}

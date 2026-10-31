@@ -96,15 +96,15 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false, odakMe
 
   return (
     <div className={gomulu ? 'flex flex-col h-full min-h-0' : 'panel-tam z-[55]'}>
-      <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-4 border-b border-ink-100 shrink-0">
+      <div className="flex items-center justify-between px-3 pt-[calc(0.5rem+var(--safe-top))] pb-2 bg-white border-b border-ink-100 shrink-0">
         <button
           onClick={() => setProfilAcik(true)}
           aria-label={`${arkadas.ad} profilini aç`}
-          className="flex items-center gap-3 min-w-0 text-left rounded-2xl -m-1 p-1 hover:bg-ink-50 active:opacity-80 transition-all"
+          className="flex items-center gap-3 min-w-0 text-left rounded-xl -m-1 p-1 hover:bg-ink-50 active:opacity-80"
         >
           <Avatar ad={arkadas.ad} foto={arkadas.avatar} emoji={arkadas.emoji} renk={arkadas.renk} boyut="sm" />
           <div className="min-w-0">
-            <h2 className="font-display text-base font-bold text-ink-700 leading-tight truncate">
+            <h2 className="text-headline text-ink-800 leading-tight truncate">
               {arkadas.ad}
             </h2>
             {arkadas.kullanici_adi && (
@@ -112,28 +112,28 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false, odakMe
             )}
           </div>
         </button>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={() => {
               setTumu(true)
               setAramaAcik(true)
             }}
             aria-label="Sohbette ara"
-            className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:opacity-80 transition-transform"
+            className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-ink-50 active:bg-ink-100"
           >
-            <Icon name="Search" className="w-5 h-5 text-ink-400" />
+            <Icon name="Search" className="w-5 h-5 text-ink-500" />
           </button>
           <button
             onClick={() => setTemaAcik(true)}
             aria-label="Sohbet temasını değiştir"
-            className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:opacity-80 transition-transform"
+            className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-ink-50 active:bg-ink-100"
           >
-            <Icon name="Palette" className="w-5 h-5 text-ink-400" />
+            <Icon name="Palette" className="w-5 h-5 text-ink-500" />
           </button>
           <button
             onClick={onClose}
             aria-label="Kapat"
-            className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:opacity-80 transition-transform"
+            className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-ink-50 active:bg-ink-100"
           >
             <Icon name="X" className="w-5 h-5 text-ink-500" />
           </button>
@@ -170,7 +170,7 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false, odakMe
 
       <SohbetUstSeridi islemler={islemler} />
 
-      <SohbetZemini tema={tema} className="px-5 py-4">
+      <SohbetZemini tema={tema} className="px-4 py-4">
         <div className="space-y-2">
           {yukleniyor ? (
             <div className="flex justify-center py-8">
@@ -207,7 +207,7 @@ export function DirektSohbet({ arkadas, benimId, onClose, gomulu = false, odakMe
           )}
 
           {hata && (
-            <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3">
+            <div className="flex items-start gap-2 bg-white border border-rose-200 rounded-xl px-4 py-3">
               <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
               <p className="text-sm text-rose-700">{hata}</p>
             </div>

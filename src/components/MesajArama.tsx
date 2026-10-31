@@ -14,7 +14,7 @@ import type { MesajSonucu } from '../sosyal/mesajArama'
 export function MesajSonucuSatiri({ sonuc, sorgu, onAc }: { sonuc: MesajSonucu; sorgu: string; onAc: () => void }) {
   const { sohbet } = sonuc
   return (
-    <button onClick={onAc} className="w-full card p-3 flex items-start gap-3 text-left active:opacity-80 transition-all lg:hover:border-orchid-200">
+    <button onClick={onAc} className="w-full px-4 py-3 flex items-start gap-3 text-left transition-colors hover:bg-ink-50/60 active:bg-ink-50">
       {sohbet.tur === 'grup' && sohbet.grup ? (
         <GrupAvatari grup={sohbet.grup} boyut="sm" />
       ) : (

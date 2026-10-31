@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { SegmentedControl } from '../ui/SegmentedControl'
+import { EkranBasligi } from '../ui/EkranBasligi'
 import { HesabimView } from './HesabimView'
 import { ArchiveView } from './ArchiveView'
 import { SettingsView } from './SettingsView'
@@ -42,14 +43,11 @@ export function ProfilView({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-2 shrink-0 lg:max-w-md">
-        <SegmentedControl
-          etiket="Profil bölümleri"
-          secili={sekme}
-          onSec={setSekme}
-          segmentler={sekmeler}
-        />
-      </div>
+      <EkranBasligi baslik="Profil">
+        <div className="lg:max-w-md">
+          <SegmentedControl etiket="Profil bölümleri" secili={sekme} onSec={setSekme} segmentler={sekmeler} />
+        </div>
+      </EkranBasligi>
 
       <div className="flex-1 min-h-0">
         {sekme === 'hesap' && <HesabimView kayitlar={kayitlar} onArkadaslar={onArkadaslar} />}

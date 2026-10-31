@@ -49,113 +49,117 @@ export function KayitCard({ kayit, onToggleStatus, onDelete, onClick, sorgu = nu
       ? tiklanabilir(onClick)
       : {}
 
+  const kategori = kayit.kategori ? CATEGORY_LABELS[kayit.kategori] : 'Sınıflandırılmamış'
+  const geciken = past && !done
+
+  // A row of a grouped list (the caller draws the white group and the
+  // dividers): status on the left, title and details in the middle, time
+  // left and delete on the right.
   return (
     <div
       {...tiklama}
-      className={`card p-4 ${onClick || secim ? 'cursor-pointer' : ''} transition-all duration-200 active:opacity-80 ${
-        done && !secim?.secili ? 'opacity-60' : ''
-      } ${secim?.secili ? 'ring-2 ring-orchid-300' : ''}`}
+      className={`flex items-start gap-3 px-4 py-3 transition-colors ${onClick || secim ? 'cursor-pointer hover:bg-ink-50/60' : ''} ${
+        secim?.secili ? 'bg-brand-50' : ''
+      }`}
     >
-      <div className="flex items-start gap-3">
-        {secim ? (
-          <span
-            aria-hidden="true"
-            className={`shrink-0 mt-0.5 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${
-              secim.secili ? 'bg-orchid-500 border-orchid-500 text-white' : 'border-ink-200'
-            }`}
-          >
-            {secim.secili && <Icon name="Check" className="w-4 h-4" />}
-          </span>
-        ) : (
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleStatus() }}
-            aria-label={done ? 'Bekliyor olarak işaretle' : 'Yapıldı olarak işaretle'}
-            className={`shrink-0 mt-0.5 transition-transform active:opacity-80 ${done ? 'text-teal-500' : 'text-ink-200'}`}
-          >
-            <Icon name={done ? 'CheckCircle2' : 'Circle'} className="w-6 h-6" />
-          </button>
+      {secim ? (
+        <span
+          aria-hidden="true"
+          className={`shrink-0 mt-0.5 w-[22px] h-[22px] rounded-md border-2 flex items-center justify-center transition-colors ${
+            secim.secili ? 'bg-brand-600 border-brand-600 text-white' : 'border-ink-200 bg-white'
+          }`}
+        >
+          {secim.secili && <Icon name="Check" className="w-3.5 h-3.5" strokeWidth={2.5} />}
+        </span>
+      ) : (
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleStatus() }}
+          aria-label={done ? 'Bekliyor olarak işaretle' : 'Yapıldı olarak işaretle'}
+          className={`shrink-0 -m-1.5 p-1.5 rounded-lg hover:bg-ink-50 ${done ? 'text-teal-600' : 'text-ink-300 hover:text-teal-600'}`}
+        >
+          <Icon name={done ? 'CheckCircle2' : 'Circle'} className="w-[22px] h-[22px]" />
+        </button>
+      )}
+
+      <div className="flex-1 min-w-0">
+        <p className={`text-body font-medium leading-snug ${done ? 'text-ink-400 line-through' : 'text-ink-800'}`}>
+          {kayit.emoji && <span aria-hidden="true">{kayit.emoji} </span>}
+          <Vurgulu metin={baslik} sorgu={sorgu} />
+        </p>
+        {gizliOzet && (
+          <p className="mt-0.5 text-caption font-normal text-ink-400 line-clamp-2">
+            <Vurgulu metin={gizliOzet} sorgu={sorgu} />
+          </p>
         )}
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className={`chip ${colors.bg} ${colors.text} text-xs`}>
-              <Icon name={CATEGORY_ICON_NAME[kayit.kategori ?? 'not']} className="w-3.5 h-3.5" />
-              {kayit.kategori ? CATEGORY_LABELS[kayit.kategori] : 'Sınıflandırılmamış'}
-            </span>
-            {kayit.oncelik === 'yuksek' && (
-              <span className="flex items-center gap-1 text-xs text-rose-500 font-medium">
-                <Icon name="Flame" className="w-3 h-3" />
+        <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-caption font-normal text-ink-400">
+          <span className={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${colors.bg} ${colors.text}`} aria-hidden="true">
+            <Icon name={CATEGORY_ICON_NAME[kayit.kategori ?? 'not']} className="w-3 h-3" />
+          </span>
+          <span>{kategori}</span>
+          {dateLabel && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span className={geciken ? 'text-rose-600 font-medium' : ''}>
+                {dateLabel}
+                {timeLabel ? ` ${timeLabel}` : ''}
+                {durLabel ? `, ${durLabel}` : ''}
               </span>
-            )}
-            {done && <span className="text-xs text-teal-600 font-medium">Yapıldı</span>}
-          </div>
-
-          <h3 className={`font-semibold text-ink-700 text-balance leading-snug ${done ? 'line-through' : ''}`}>
-            {kayit.emoji && <span aria-hidden="true">{kayit.emoji} </span>}
-            <Vurgulu metin={baslik} sorgu={sorgu} />
-          </h3>
-          {gizliOzet && (
-            <p className="mt-1 text-xs text-ink-400 line-clamp-2">
-              <Vurgulu metin={gizliOzet} sorgu={sorgu} />
-            </p>
+            </>
           )}
-
-          {(dateLabel || timeLabel || kayit.konum) && (
-            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
-              {dateLabel && (
-                <span className={`flex items-center gap-1 text-xs ${past && !done ? 'text-rose-500 font-medium' : 'text-ink-400'}`}>
-                  <Icon name="Clock" className="w-3.5 h-3.5" />
-                  {dateLabel}
-                  {timeLabel ? ` ${timeLabel}` : ''}
-                  {durLabel ? ` · ${durLabel}` : ''}
-                </span>
-              )}
-              {kayit.konum &&
-                (secim ? (
-                  <span className="flex items-center gap-1 text-xs text-teal-600 font-medium">
-                    <Icon name="MapPin" className="w-3.5 h-3.5" />
-                    <Vurgulu metin={kayit.konum} sorgu={sorgu} />
-                  </span>
-                ) : (
-                  <a
-                    href={mapsLink ?? '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="flex items-center gap-1 text-xs text-teal-600 font-medium active:opacity-80 transition-transform"
-                  >
-                    <Icon name="MapPin" className="w-3.5 h-3.5" />
-                    <Vurgulu metin={kayit.konum} sorgu={sorgu} />
-                  </a>
-                ))}
-            </div>
-          )}
-
-          <div className="mt-2 flex items-center justify-between">
-            <div className="flex items-center gap-2 min-w-0">
-              {kalan ? (
-                <span className={`text-xs font-medium ${kalan.durum === 'yakin' || kalan.durum === 'suruyor' ? 'text-orchid-600' : 'text-ink-400'}`}>
-                  {kalan.metin}
+          {kayit.konum && (
+            <>
+              <span aria-hidden="true">·</span>
+              {secim ? (
+                <span className="truncate max-w-[12rem]">
+                  <Vurgulu metin={kayit.konum} sorgu={sorgu} />
                 </span>
               ) : (
-                <span className="text-xs text-ink-400">{formatRelativeTime(kayit.olusturulmaTarihi)}</span>
+                <a
+                  href={mapsLink ?? '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-0.5 text-ink-500 underline decoration-ink-200 underline-offset-2 hover:text-ink-700 truncate max-w-[12rem]"
+                >
+                  <Icon name="MapPin" className="w-3 h-3 shrink-0" />
+                  <Vurgulu metin={kayit.konum} sorgu={sorgu} />
+                </a>
               )}
-              <PlanRozetleri kayit={kayit} />
-              {kayit.oncelik !== 'orta' && (
-                <span className={`w-2 h-2 rounded-full ${PRIORITY_COLORS[kayit.oncelik].dot}`} />
-              )}
-            </div>
-            {!secim && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onDelete() }}
-                aria-label="Kaydı sil"
-                className="w-8 h-8 rounded-full flex items-center justify-center text-ink-200 hover:text-rose-500 hover:bg-rose-50 transition-all active:opacity-80"
-              >
-                <Icon name="Trash2" className="w-4 h-4" />
-              </button>
-            )}
-          </div>
+            </>
+          )}
+          {kayit.oncelik === 'yuksek' && (
+            <span className="inline-flex items-center gap-0.5 text-rose-600 font-medium">
+              <Icon name="Flame" className="w-3 h-3" />
+              Öncelikli
+            </span>
+          )}
+          {kayit.oncelik === 'dusuk' && <span className={`w-1.5 h-1.5 rounded-full ${PRIORITY_COLORS.dusuk.dot}`} aria-label="Düşük öncelik" />}
         </div>
+
+        <div className="mt-1.5 empty:hidden">
+          <PlanRozetleri kayit={kayit} />
+        </div>
+      </div>
+
+      <div className="shrink-0 flex flex-col items-end gap-1 -mr-1.5">
+        <span
+          className={`text-caption tabular-nums whitespace-nowrap ${
+            kalan && (kalan.durum === 'yakin' || kalan.durum === 'suruyor') ? 'text-brand-600 font-semibold' : 'text-ink-400 font-normal'
+          }`}
+        >
+          {kalan ? kalan.metin : done ? 'Yapıldı' : formatRelativeTime(kayit.olusturulmaTarihi)}
+        </span>
+        {!secim && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete() }}
+            aria-label="Kaydı sil"
+            title="Sil"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-ink-300 hover:text-rose-600 hover:bg-rose-50"
+          >
+            <Icon name="Trash2" className="w-4 h-4" />
+          </button>
+        )}
       </div>
     </div>
   )

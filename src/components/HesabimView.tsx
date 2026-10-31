@@ -8,7 +8,6 @@ import { useSosyalSurum } from '../sosyal/cekirdek'
 import { avatarSil, avatarYukle } from '../sosyal/avatar'
 import { arkadaslariGetir, profilGuncelle, profilimiGetir, type Profil } from '../sosyal/api'
 import { gruplarimiGetir } from '../sosyal/gruplar'
-import { renkAl } from '../lib/kisisellestirme'
 import { UYGULAMA_ADI } from '../../shared/marka'
 import type { Kayit } from '../db'
 import { PlanOzetiKarti } from './PlanIstatistikleri'
@@ -54,9 +53,9 @@ function HesabimIcerik({ kayitlar, onArkadaslar }: Props) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto px-5 pt-2 pb-24 lg:pb-10">
+      <div className="flex-1 overflow-y-auto px-4 pt-2 pb-24 lg:pb-10">
         {hata && (
-          <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3 mb-4">
+          <div className="flex items-start gap-2 bg-white border border-rose-200 rounded-xl px-4 py-3 mb-4">
             <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
             <p className="text-sm text-rose-700">{hata}</p>
           </div>
@@ -125,14 +124,14 @@ function ProfilKarti({
 
   return (
     <div className="card overflow-hidden">
-      <div className={`px-5 pt-6 pb-5 flex flex-col items-center text-center ${renkAl(profil.renk, profil.ad).zemin}`}>
+      <div className="px-4 pt-6 pb-5 flex flex-col items-center text-center">
         <AvatarSecici profil={profil} onDegisti={onDegisti} onHata={setHata} />
-        <p className="font-display text-xl font-bold text-ink-700 mt-3 max-w-full truncate">{profil.ad}</p>
+        <p className="text-title text-ink-800 mt-3 max-w-full truncate">{profil.ad}</p>
 
         {duzenle ? (
           <div className="w-full max-w-xs mt-2">
             <div className="flex gap-2">
-              <div className="flex-1 flex items-center bg-mist-50 border border-ink-100 rounded-xl px-3">
+              <div className="flex-1 flex items-center bg-white border border-ink-200 rounded-xl px-3">
                 <span className="text-ink-400 text-sm">@</span>
                 <input
                   value={kullaniciAdi}
@@ -166,7 +165,7 @@ function ProfilKarti({
           <button
             onClick={() => setDuzenle(true)}
             aria-label={profil.kullanici_adi ? 'Kullanıcı adını değiştir' : undefined}
-            className="text-sm text-orchid-600 font-medium mt-0.5 active:opacity-80 transition-transform"
+            className="text-sm text-brand-600 font-medium mt-0.5 active:opacity-80 transition-transform"
           >
             {profil.kullanici_adi ? `@${profil.kullanici_adi}` : 'Kullanıcı adı belirle'}
           </button>
@@ -189,7 +188,7 @@ function ProfilKarti({
         <Sayac sayi={grupSayisi} etiket="Grup" onClick={onArkadaslar} />
       </div>
 
-      {hata && <p className="text-xs text-rose-600 px-5 pb-4">{hata}</p>}
+      {hata && <p className="text-xs text-rose-600 px-4 pb-4">{hata}</p>}
 
       {profilDuzenle && (
         <ProfilDuzenle
@@ -212,7 +211,7 @@ function Sayac({ sayi, etiket, onClick }: { sayi: number; etiket: string; onClic
       aria-label={`${sayi} ${etiket.toLocaleLowerCase('tr-TR')}, arkadaşlarını gör`}
       className="py-3.5 flex flex-col items-center hover:bg-ink-50 active:opacity-80 transition-all"
     >
-      <span className="font-display text-lg font-bold text-ink-700">{sayi}</span>
+      <span className="text-title text-ink-800">{sayi}</span>
       <span className="text-xs text-ink-400">{etiket}</span>
     </button>
   )
@@ -246,7 +245,7 @@ function GizlilikKarti({ profil, onDegisti }: { profil: Profil; onDegisti: () =>
   return (
     <div className="card p-5">
       <div className="flex items-center gap-2 mb-4">
-        <Icon name="ShieldCheck" className="w-4 h-4 text-orchid-500" />
+        <Icon name="ShieldCheck" className="w-4 h-4 text-ink-500" />
         <h2 className="text-sm font-semibold text-ink-600">Paylaşım ve gizlilik</h2>
       </div>
       <div className="space-y-3">
@@ -329,7 +328,7 @@ function AvatarSecici({
         className="block active:opacity-80 transition-transform disabled:opacity-60"
       >
         <Avatar ad={profil.ad} foto={profil.avatar} emoji={profil.emoji} renk={profil.renk} boyut="lg" />
-        <span className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-orchid-600 text-white flex items-center justify-center shadow-soft ring-2 ring-mist-50">
+        <span className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-brand-600 text-white flex items-center justify-center shadow-soft ring-2 ring-mist-50">
           <Icon name={calisiyor ? 'Loader2' : 'Camera'} className={`w-4 h-4 ${calisiyor ? 'animate-spin' : ''}`} />
         </span>
       </button>
@@ -373,7 +372,7 @@ function Anahtar({
     >
       <div
         className={`w-11 h-6 rounded-full transition-colors shrink-0 relative ${
-          acik ? 'bg-orchid-600' : 'bg-ink-200'
+          acik ? 'bg-brand-600' : 'bg-ink-200'
         }`}
       >
         <div

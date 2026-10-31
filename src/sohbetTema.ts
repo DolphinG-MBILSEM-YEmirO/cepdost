@@ -27,18 +27,19 @@ const NOKTA_DESENI =
 const CIZGI_DESENI =
   'repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 10px)'
 
-// The first theme is the default: the app's own blue orchid look.
+// The first theme is the default: the app's own look. Its id stays
+// 'orkide' so the choice people already saved keeps working.
 export const TEMALAR: SohbetTemasi[] = [
   {
     id: 'orkide',
-    ad: 'Mavi orkide',
-    benim: 'bg-orchid-600',
+    ad: 'Sharloop',
+    benim: 'bg-brand-600',
     benimMetin: 'text-white',
-    karsi: 'bg-white border border-ink-100/70',
-    karsiMetin: 'text-ink-700',
+    karsi: 'bg-white border border-ink-100',
+    karsiMetin: 'text-ink-800',
     zemin: 'bg-mist-100',
-    desen: NOKTA_DESENI,
-    onizleme: 'bg-orchid-600',
+    desen: 'none',
+    onizleme: 'bg-brand-600',
   },
   {
     id: 'okyanus',
@@ -76,7 +77,7 @@ export const TEMALAR: SohbetTemasi[] = [
   {
     id: 'gece',
     ad: 'Gece',
-    benim: 'bg-orchid-600',
+    benim: 'bg-brand-600',
     benimMetin: 'text-white',
     karsi: 'bg-ink-700/90 border border-ink-500/40',
     karsiMetin: 'text-mist-50',

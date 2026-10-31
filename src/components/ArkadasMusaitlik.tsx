@@ -62,9 +62,9 @@ export function ArkadasMusaitlik({ arkadas }: { arkadas: Profil }) {
   const henuzGelmedi = !paylasimKapali && takvim !== null && takvim.bloklar === null
 
   return (
-    <div className="px-5 pt-1 pb-8 space-y-3">
+    <div className="px-4 pt-1 pb-8 space-y-3">
       {hata && (
-        <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3">
+        <div className="flex items-start gap-2 bg-white border border-rose-200 rounded-xl px-4 py-3">
           <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
           <p className="text-sm text-rose-700">{hata}</p>
         </div>
@@ -170,7 +170,7 @@ function GunSatiri({
         </div>
         <button
           onClick={onDavet}
-          className="text-xs font-semibold text-orchid-600 active:opacity-80 transition-transform shrink-0"
+          className="text-xs font-semibold text-brand-600 active:opacity-80 transition-transform shrink-0"
         >
           Davet et
         </button>
@@ -258,7 +258,7 @@ function DavetModal({
           <div className="w-14 h-14 rounded-full bg-teal-100 flex items-center justify-center mx-auto mb-4">
             <Icon name="CheckCircle2" className="w-7 h-7 text-teal-600" />
           </div>
-          <p className="font-display text-lg font-bold text-ink-700 mb-1">Davet gönderildi</p>
+          <p className="text-title text-ink-800 mb-1">Davet gönderildi</p>
           <p className="text-sm text-ink-400 mb-5">
             Plan takvimine eklendi. {arkadas.ad} kabul ederse onun takvimine de düşecek.
           </p>
@@ -280,8 +280,8 @@ function DavetModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2.5 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-orchid-100 flex items-center justify-center shrink-0">
-            <Icon name="CalendarClock" className="w-5 h-5 text-orchid-500" />
+          <div className="w-10 h-10 rounded-xl bg-ink-50 flex items-center justify-center shrink-0">
+            <Icon name="CalendarClock" className="w-5 h-5 text-ink-500" />
           </div>
           <div className="min-w-0">
             <h3 className="font-semibold text-ink-700 truncate">{arkadas.ad} davet et</h3>
@@ -344,7 +344,7 @@ function DavetModal({
         />
 
         {hata && (
-          <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3 mb-4">
+          <div className="flex items-start gap-2 bg-white border border-rose-200 rounded-xl px-4 py-3 mb-4">
             <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
             <p className="text-sm text-rose-700">{hata}</p>
           </div>
@@ -379,7 +379,7 @@ function DavetModal({
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <label className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
+    <label className="block text-label text-ink-500 mb-2">
       {children}
     </label>
   )

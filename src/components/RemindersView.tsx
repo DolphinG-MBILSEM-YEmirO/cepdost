@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
-import { Icon, type IconName } from './Icon'
+import { Icon } from './Icon'
+import { BosDurum } from '../ui/BosDurum'
 import { KayitCard } from './KayitCard'
 import { type Kayit } from '../db'
 import { isToday, isTomorrow, isPast, isUpcoming, parseLocalDate, sortByTime, sortByPriority, addDays } from '../lib/format'
@@ -73,45 +74,34 @@ export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, 
 
   if (!hasAny) {
     return (
-      <div className="flex flex-col items-center justify-center h-full px-6 text-center">
-        <div className="w-20 h-20 rounded-full bg-orchid-100 flex items-center justify-center mb-5">
-          <Icon name="BellRing" className="w-10 h-10 text-orchid-500" />
-        </div>
-        <p className="font-display text-lg font-bold text-ink-600 mb-2">Henüz hatırlatma yok</p>
-        <p className="text-sm text-ink-400 mb-6 max-w-xs">Tarihi olan kayıtların burada öne çıkar. Bir etkinlik veya randevu kaydet.</p>
-        <button onClick={onAddClick} className="btn-primary flex items-center gap-2">
-          <Icon name="Plus" className="w-5 h-5" />
-          Kayıt ekle
-        </button>
-      </div>
+      <BosDurum
+        ikon="Bell"
+        baslik="Henüz hatırlatma yok"
+        aciklama="Tarihi olan planların burada gün gün sıralanır."
+        eylem={{ etiket: 'Plan ekle', ikon: 'Plus', onClick: onAddClick }}
+      />
     )
   }
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3">
-        <h1 className="font-display text-2xl font-bold text-ink-700">Hatırlatmalar</h1>
-        <p className="text-sm text-ink-400 mt-0.5">
+      <div className="px-4 pt-1 pb-3 lg:pt-4">
+        <h2 className="text-title text-ink-800">Hatırlatmalar</h2>
+        <p className="text-caption font-normal text-ink-400 mt-0.5">
           {totalCount} bekleyen
-          {groups.overdue.length > 0 && <span className="text-rose-500 font-medium"> · {groups.overdue.length} kaçtı</span>}
+          {groups.overdue.length > 0 && <span className="text-rose-600 font-medium"> · {groups.overdue.length} kaçtı</span>}
         </p>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 pb-24 space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 pb-24 space-y-5">
         {totalCount === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
-            <div className="w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center mb-4">
-              <Icon name="CheckCheck" className="w-8 h-8 text-teal-600" />
-            </div>
-            <p className="font-semibold text-ink-500 mb-1">Hepsi halledilmiş</p>
-            <p className="text-sm text-ink-400">Yeni bir kayıt eklemek için + simgesine dokun.</p>
-          </div>
+          <BosDurum ikon="CheckCheck" baslik="Hepsi halledildi" aciklama="Bekleyen planın yok." sikisik />
         ) : (
           <>
             {groups.overdue.length > 0 && (
               <Section
                 title="Kaçtı"
-                icon="AlertCircle"
+               
                 count={groups.overdue.length}
                 accent="rose"
                 kayitlar={groups.overdue}
@@ -120,13 +110,13 @@ export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, 
                 onRecordClick={onRecordClick}
                 eylemler={
                   groups.overdue.length > 1 && (
-                    <div className="flex flex-wrap items-center gap-1.5 mb-3 px-1">
-                      <span className="text-xs text-ink-400 mr-1">Hepsini:</span>
+                    <div className="flex flex-wrap items-center gap-1.5 mb-2 px-1">
+                      <span className="text-caption font-normal text-ink-400 mr-1">Hepsini:</span>
                       <button
                         onClick={() => void islem.uygula(groups.overdue, { tur: 'tasi', tarih: bugun })}
                         disabled={islem.mesgul}
                         aria-label="Hepsini bugüne al"
-                        className="chip text-xs bg-mist-50 text-ink-500 border border-ink-100 active:opacity-80 disabled:opacity-50"
+                        className="chip text-xs bg-white text-ink-600 border border-ink-200 hover:bg-ink-50 disabled:opacity-50"
                       >
                         Bugüne al
                       </button>
@@ -134,7 +124,7 @@ export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, 
                         onClick={() => void islem.uygula(groups.overdue, { tur: 'tasi', tarih: gunEkle(bugun, 1) })}
                         disabled={islem.mesgul}
                         aria-label="Hepsini yarına ertele"
-                        className="chip text-xs bg-mist-50 text-ink-500 border border-ink-100 active:opacity-80 disabled:opacity-50"
+                        className="chip text-xs bg-white text-ink-600 border border-ink-200 hover:bg-ink-50 disabled:opacity-50"
                       >
                         Yarına ertele
                       </button>
@@ -142,7 +132,7 @@ export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, 
                         onClick={() => void islem.uygula(groups.overdue, { tur: 'yapildi' })}
                         disabled={islem.mesgul}
                         aria-label="Hepsini yapıldı say"
-                        className="chip text-xs bg-mist-50 text-ink-500 border border-ink-100 active:opacity-80 disabled:opacity-50"
+                        className="chip text-xs bg-white text-ink-600 border border-ink-200 hover:bg-ink-50 disabled:opacity-50"
                       >
                         <Icon name="CheckCheck" className="w-3.5 h-3.5" />
                         Yapıldı say
@@ -153,30 +143,30 @@ export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, 
               />
             )}
             {groups.today.length > 0 && (
-              <Section title="Bugün" icon="CalendarDays" count={groups.today.length} accent="orchid" kayitlar={groups.today} onToggleStatus={onToggleStatus} onDelete={onDelete} onRecordClick={onRecordClick} />
+              <Section title="Bugün" count={groups.today.length} accent="orchid" kayitlar={groups.today} onToggleStatus={onToggleStatus} onDelete={onDelete} onRecordClick={onRecordClick} />
             )}
             {groups.tomorrow.length > 0 && (
-              <Section title="Yarın" icon="Clock" count={groups.tomorrow.length} kayitlar={groups.tomorrow} onToggleStatus={onToggleStatus} onDelete={onDelete} onRecordClick={onRecordClick} />
+              <Section title="Yarın" count={groups.tomorrow.length} kayitlar={groups.tomorrow} onToggleStatus={onToggleStatus} onDelete={onDelete} onRecordClick={onRecordClick} />
             )}
             {groups.thisWeek.length > 0 && (
-              <Section title="Bu hafta" icon="Calendar" count={groups.thisWeek.length} kayitlar={groups.thisWeek} onToggleStatus={onToggleStatus} onDelete={onDelete} onRecordClick={onRecordClick} />
+              <Section title="Bu hafta" count={groups.thisWeek.length} kayitlar={groups.thisWeek} onToggleStatus={onToggleStatus} onDelete={onDelete} onRecordClick={onRecordClick} />
             )}
             {groups.later.length > 0 && (
-              <Section title="Daha sonra" icon="CalendarHeart" count={groups.later.length} kayitlar={groups.later} onToggleStatus={onToggleStatus} onDelete={onDelete} onRecordClick={onRecordClick} muted />
+              <Section title="Daha sonra" count={groups.later.length} kayitlar={groups.later} onToggleStatus={onToggleStatus} onDelete={onDelete} onRecordClick={onRecordClick} />
             )}
           </>
         )}
         {onFikirler && groups.noDate.length > 0 && (
           <button
             onClick={onFikirler}
-            className="w-full card px-4 py-3 flex items-center gap-3 text-left active:opacity-80 transition-transform"
+            className="w-full bg-white rounded-2xl border border-ink-100 px-4 py-3 flex items-center gap-3 text-left hover:bg-ink-50/60"
           >
-            <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
-              <Icon name="Lightbulb" className="w-[18px] h-[18px] text-amber-600" />
-            </div>
+            <span className="w-8 h-8 rounded-lg bg-ink-50 flex items-center justify-center shrink-0">
+              <Icon name="Lightbulb" className="w-[18px] h-[18px] text-ink-500" />
+            </span>
             <span className="flex-1 min-w-0">
-              <span className="block text-sm font-semibold text-ink-600">Fikirler</span>
-              <span className="block text-xs text-ink-400">Günü belli olmayan {groups.noDate.length} plan</span>
+              <span className="block text-body font-medium text-ink-800">Fikirler</span>
+              <span className="block text-caption font-normal text-ink-400">Günü belli olmayan {groups.noDate.length} plan</span>
             </span>
             <Icon name="ChevronRight" className="w-4 h-4 text-ink-400 shrink-0" />
           </button>
@@ -190,40 +180,34 @@ export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, 
 
 function Section({
   title,
-  icon,
   count,
   kayitlar,
   onToggleStatus,
   onDelete,
   onRecordClick,
   accent,
-  muted,
   eylemler,
 }: {
   title: string
-  icon: IconName
   count: number
   kayitlar: Kayit[]
   onToggleStatus: (id: string) => void
   onDelete: (id: string) => void
   onRecordClick: (kayit: Kayit) => void
   accent?: 'rose' | 'orchid'
-  muted?: boolean
   // Buttons that act on the whole section, under its title.
   eylemler?: React.ReactNode
 }) {
-  const color = accent === 'rose' ? 'text-rose-500' : accent === 'orchid' ? 'text-orchid-500' : muted ? 'text-ink-400' : 'text-ink-400'
-  const textColor = accent === 'rose' ? 'text-rose-600' : accent === 'orchid' ? 'text-orchid-600' : muted ? 'text-ink-400' : 'text-ink-500'
+  const textColor = accent === 'rose' ? 'text-rose-600' : accent === 'orchid' ? 'text-brand-600' : 'text-ink-500'
 
   return (
-    <div>
-      <div className="flex items-center gap-2 mb-3 px-1">
-        <Icon name={icon} className={`w-4 h-4 ${color}`} />
-        <h2 className={`text-sm font-semibold ${textColor}`}>{title}</h2>
-        <span className={`text-xs ${color}`}>{count}</span>
-      </div>
+    <section>
+      <h2 className={`flex items-baseline gap-2 text-label px-1 mb-2 ${textColor}`}>
+        {title}
+        <span className="text-caption font-normal text-ink-400 tabular-nums">{count}</span>
+      </h2>
       {eylemler}
-      <div className="space-y-3">
+      <div className="bg-white rounded-2xl border border-ink-100 divide-y divide-ink-100 overflow-hidden">
         {kayitlar.map((kayit) => (
           <KayitCard
             key={kayit.id}
@@ -234,6 +218,6 @@ function Section({
           />
         ))}
       </div>
-    </div>
+    </section>
   )
 }

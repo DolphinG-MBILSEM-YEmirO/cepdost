@@ -34,12 +34,12 @@
   }
 
   ::selection {
-    @apply bg-orchid-200 text-ink-800;
+    @apply bg-brand-200 text-ink-800;
   }
 
   /* Keyboard focus is always visible; touches and clicks don't draw it. */
   :focus-visible {
-    @apply outline-none ring-2 ring-orchid-600 ring-offset-2 ring-offset-mist-100;
+    @apply outline-none ring-2 ring-brand-600 ring-offset-2 ring-offset-mist-100;
   }
 
   /* People who ask for less motion get fades only, no shifting or
@@ -94,9 +94,10 @@
 
   /* One solid brand colour for the main action on a screen. */
   .btn-primary {
-    @apply bg-orchid-600 text-white font-semibold rounded-xl px-5 py-3
+    @apply bg-brand-600 text-white font-semibold rounded-xl px-4 py-3
            transition-colors duration-150
-           hover:bg-orchid-700 active:bg-orchid-800;
+           hover:bg-brand-700 active:bg-brand-800
+           disabled:bg-ink-200 disabled:text-ink-500 disabled:opacity-100 disabled:cursor-not-allowed;
   }
 
   .btn-ghost {
@@ -112,9 +113,9 @@
   }
 
   .input-field {
-    @apply w-full bg-mist-100 border border-ink-100 rounded-xl px-3 py-2.5
-           text-ink-700 font-medium placeholder:text-ink-300
-           focus:outline-none focus:bg-white focus:border-orchid-400 focus:ring-4 focus:ring-orchid-100
+    @apply w-full bg-white border border-ink-200 rounded-xl px-3 py-2.5
+           text-ink-800 placeholder:text-ink-400
+           focus:outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100
            transition-colors;
   }
 

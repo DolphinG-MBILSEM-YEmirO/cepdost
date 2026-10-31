@@ -101,7 +101,7 @@ export function AniYanitlari({
             onClick={() => setSecici(!secici)}
             aria-expanded={secici}
             aria-label={tepkim ? `Tepkin: ${tepkim}` : 'Tepki ver'}
-            className={`chip text-xs active:opacity-80 ${tepkim ? 'bg-orchid-50 text-orchid-700 border border-orchid-100' : 'bg-mist-50 text-ink-500 border border-ink-100'}`}
+            className={`chip text-xs active:opacity-80 ${tepkim ? 'bg-brand-50 text-brand-700 border border-brand-100' : 'bg-white text-ink-600 border border-ink-200'}`}
           >
             {tepkim ? <span aria-hidden="true">{tepkim}</span> : <Icon name="SmilePlus" className="w-3.5 h-3.5" />}
             Tepki
@@ -111,7 +111,7 @@ export function AniYanitlari({
           <button
             onClick={() => setYorumlarAcik(!yorumlarAcik)}
             aria-expanded={yorumlarAcik}
-            className="chip text-xs bg-mist-50 text-ink-500 border border-ink-100 active:opacity-80"
+            className="chip text-xs bg-white text-ink-600 border border-ink-200 active:opacity-80"
           >
             <Icon name="MessageCircle" className="w-3.5 h-3.5" />
             Yorum{etkilesim.yorumlar.length > 0 ? ` (${etkilesim.yorumlar.length})` : ''}
@@ -123,7 +123,7 @@ export function AniYanitlari({
             disabled={isleniyor === 'gitmek'}
             aria-pressed={gitmekIstiyorum}
             className={`chip text-xs active:opacity-80 disabled:opacity-50 ${
-              gitmekIstiyorum ? 'bg-teal-100 text-teal-700' : 'bg-mist-50 text-ink-500 border border-ink-100'
+              gitmekIstiyorum ? 'bg-teal-100 text-teal-700' : 'bg-white text-ink-600 border border-ink-200'
             }`}
           >
             <Icon name={gitmekIstiyorum ? 'Check' : 'MapPin'} className="w-3.5 h-3.5" />
@@ -144,7 +144,7 @@ export function AniYanitlari({
               aria-label={`${emoji} bırak`}
               aria-pressed={tepkim === emoji}
               className={`w-10 h-10 rounded-full text-xl flex items-center justify-center active:opacity-80 transition-transform ${
-                tepkim === emoji ? 'bg-orchid-100 ring-2 ring-orchid-300' : 'bg-mist-100 hover:bg-mist-200'
+                tepkim === emoji ? 'bg-brand-100 ring-2 ring-brand-300' : 'bg-mist-100 hover:bg-mist-200'
               }`}
             >
               {emoji}
@@ -223,7 +223,7 @@ export function AniYanitlari({
             type="submit"
             disabled={!yorum.trim() || isleniyor === 'yorum'}
             aria-label="Yorumu gönder"
-            className="w-10 shrink-0 rounded-2xl bg-orchid-600 text-white flex items-center justify-center active:opacity-80 transition-transform disabled:opacity-40"
+            className="w-10 shrink-0 rounded-2xl bg-brand-600 text-white flex items-center justify-center active:opacity-80 transition-transform disabled:opacity-40"
           >
             <Icon name={isleniyor === 'yorum' ? 'Loader2' : 'Send'} className={`w-4 h-4 ${isleniyor === 'yorum' ? 'animate-spin' : ''}`} />
           </button>

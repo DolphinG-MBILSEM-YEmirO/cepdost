@@ -107,7 +107,7 @@ export function GetirListesiKarti({ planId, gecti = false }: { planId: string; g
                     aria-pressed={getiriyorum}
                     aria-label={getiriyorum ? `${m.metin}: getirmekten vazgeç` : `${m.metin}: ben getiririm`}
                     className={`chip text-xs shrink-0 active:opacity-80 disabled:opacity-50 ${
-                      getiriyorum ? 'bg-teal-100 text-teal-700' : 'bg-mist-50 text-ink-500 border border-ink-100'
+                      getiriyorum ? 'bg-teal-100 text-teal-700' : 'bg-white text-ink-600 border border-ink-200'
                     }`}
                   >
                     <Icon name={getiriyorum ? 'Check' : 'Plus'} className="w-3.5 h-3.5" />
@@ -156,7 +156,7 @@ export function GetirListesiKarti({ planId, gecti = false }: { planId: string; g
             type="submit"
             disabled={!yeni.trim() || isleniyor === 'ekle'}
             aria-label="Listeye ekle"
-            className="w-11 shrink-0 rounded-2xl bg-orchid-600 text-white flex items-center justify-center active:opacity-80 transition-transform disabled:opacity-40"
+            className="w-11 shrink-0 rounded-2xl bg-brand-600 text-white flex items-center justify-center active:opacity-80 transition-transform disabled:opacity-40"
           >
             <Icon name={isleniyor === 'ekle' ? 'Loader2' : 'Plus'} className={`w-5 h-5 ${isleniyor === 'ekle' ? 'animate-spin' : ''}`} />
           </button>
@@ -166,7 +166,7 @@ export function GetirListesiKarti({ planId, gecti = false }: { planId: string; g
       {!gecti && maddeler.length === 0 && (
         <div className="flex flex-wrap gap-2 mt-3">
           {ONERILER.map((o) => (
-            <button key={o} onClick={() => ekle(o)} className="chip bg-mist-50 text-ink-500 border border-ink-100 active:opacity-80">
+            <button key={o} onClick={() => ekle(o)} className="chip bg-white text-ink-600 border border-ink-200 active:opacity-80">
               <Icon name="Plus" className="w-3.5 h-3.5" />
               {o}
             </button>

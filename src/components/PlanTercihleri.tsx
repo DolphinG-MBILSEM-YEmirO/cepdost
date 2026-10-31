@@ -88,7 +88,7 @@ export function PlanTercihleri({ paylasimAcik }: { paylasimAcik: boolean }) {
               onClick={() => planAyarlariniKaydet({ ...ayar, yolPayiDk: dk })}
               aria-pressed={ayar.yolPayiDk === dk}
               className={`chip flex-1 justify-center ${
-                ayar.yolPayiDk === dk ? 'bg-orchid-600 text-white' : 'bg-mist-50 text-ink-500 border border-ink-100'
+                ayar.yolPayiDk === dk ? 'bg-brand-600 text-white' : 'bg-white text-ink-600 border border-ink-200'
               }`}
             >
               {dk === 0 ? 'Yok' : `${dk} dk`}

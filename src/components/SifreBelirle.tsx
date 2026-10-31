@@ -52,23 +52,23 @@ export function SifreBelirle({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3 flex items-start gap-3">
+      <div className="px-4 pt-[calc(1rem+var(--safe-top))] pb-3 flex items-start gap-3">
         {onVazgec && (
           <button
             onClick={onVazgec}
             aria-label="Geri"
-            className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
+            className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-ink-50 active:bg-ink-100 shrink-0"
           >
             <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />
           </button>
         )}
         <div>
-          <h1 className="font-display text-2xl font-bold text-ink-700">{degistir ? 'Şifreni değiştir' : 'Şifre belirle'}</h1>
+          <h1 className="text-display text-ink-800 tracking-tight">{degistir ? 'Şifreni değiştir' : 'Şifre belirle'}</h1>
           <p className="text-sm text-ink-400 mt-0.5">Başka bir telefondan bununla gireceksin</p>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 pb-24">
+      <div className="flex-1 overflow-y-auto px-4 pb-24">
         <div className="card p-4 mb-4 bg-teal-50/60 border-teal-100">
           <div className="flex items-start gap-2.5">
             <Icon name="ShieldCheck" className="w-5 h-5 text-teal-600 shrink-0 mt-0.5" />
@@ -81,7 +81,7 @@ export function SifreBelirle({
         </div>
 
         <form onSubmit={kaydet}>
-          <label className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
+          <label className="block text-label text-ink-500 mb-2">
             Şifren
           </label>
           <div className="relative mb-2">
@@ -97,7 +97,7 @@ export function SifreBelirle({
             <button
               type="button"
               onClick={() => setGorunur((g) => !g)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-orchid-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-brand-600"
             >
               {gorunur ? 'Gizle' : 'Göster'}
             </button>
@@ -113,7 +113,7 @@ export function SifreBelirle({
             </span>
           </div>
 
-          <label className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
+          <label className="block text-label text-ink-500 mb-2">
             Şifren (tekrar)
           </label>
           <input
@@ -137,7 +137,7 @@ export function SifreBelirle({
           )}
 
           {hata && (
-            <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3 mb-4">
+            <div className="flex items-start gap-2 bg-white border border-rose-200 rounded-xl px-4 py-3 mb-4">
               <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
               <p className="text-sm text-rose-700">{hata}</p>
             </div>

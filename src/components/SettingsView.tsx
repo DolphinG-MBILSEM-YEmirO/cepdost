@@ -13,34 +13,8 @@ import { SLOGAN, UYGULAMA_ADI } from '../../shared/marka'
 export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
   return (
     <div className="flex flex-col h-full">
-      <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3">
-        <h1 className="font-display text-2xl font-bold text-ink-700">Ayarlar</h1>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-5 pb-24 flex flex-col gap-6 lg:block lg:pb-10 lg:columns-2 lg:[&>*]:break-inside-avoid lg:[&>*]:mb-6">
-        <div className="card p-5">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center">
-              <Icon name="Info" className="w-5 h-5 text-teal-600" />
-            </div>
-            <h2 className="font-semibold text-ink-700">Nasıl çalışır?</h2>
-          </div>
-          <div className="space-y-3 text-sm text-ink-500">
-            <div className="flex gap-3">
-              <span className="w-6 h-6 rounded-full bg-orchid-100 text-orchid-600 font-bold text-xs flex items-center justify-center shrink-0">1</span>
-              <p>Arkadaşlarını Sohbet → Arkadaşlar'dan kullanıcı adıyla ekle.</p>
-            </div>
-            <div className="flex gap-3">
-              <span className="w-6 h-6 rounded-full bg-orchid-100 text-orchid-600 font-bold text-xs flex items-center justify-center shrink-0">2</span>
-              <p>+ ile plan kur ya da asistana yaz ("Cumartesi Ayşe'yle kahvaltı"); herkesin boş olduğu saati bulur, davetleri gönderir.</p>
-            </div>
-            <div className="flex gap-3">
-              <span className="w-6 h-6 rounded-full bg-orchid-100 text-orchid-600 font-bold text-xs flex items-center justify-center shrink-0">3</span>
-              <p>Bir link ya da ekran görüntüsünü paylaş menüsünden gönder; saatiyle, yeriyle plana dönüşür, Arşiv'de kalır.</p>
-            </div>
-          </div>
-        </div>
-
+      <h2 className="sr-only">Ayarlar</h2>
+      <div className="flex-1 overflow-y-auto px-4 pt-1 pb-24 lg:px-0 flex flex-col gap-6 lg:block lg:pb-10 lg:columns-2 lg:[&>*]:break-inside-avoid lg:[&>*]:mb-6">
         <BildirimAyarlari />
 
         <HesapGuvenligi />
@@ -51,8 +25,8 @@ export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
 
         <div className="card p-5">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-              <Icon name="Share2" className="w-5 h-5 text-amber-600" />
+            <div className="w-10 h-10 rounded-xl bg-ink-50 flex items-center justify-center">
+              <Icon name="Share2" className="w-5 h-5 text-ink-500" />
             </div>
             <h2 className="font-semibold text-ink-700">Paylaş menüsüne ekle</h2>
           </div>
@@ -64,9 +38,32 @@ export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
           </p>
         </div>
 
+        <div className="card p-5">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-xl bg-ink-50 flex items-center justify-center">
+              <Icon name="Info" className="w-5 h-5 text-ink-500" />
+            </div>
+            <h2 className="font-semibold text-ink-700">Nasıl çalışır?</h2>
+          </div>
+          <div className="space-y-3 text-sm text-ink-500">
+            <div className="flex gap-3">
+              <span className="w-6 h-6 rounded-full bg-ink-50 text-ink-600 font-semibold border border-ink-100 text-xs flex items-center justify-center shrink-0">1</span>
+              <p>Arkadaşlarını Sohbet → Arkadaşlar'dan kullanıcı adıyla ekle.</p>
+            </div>
+            <div className="flex gap-3">
+              <span className="w-6 h-6 rounded-full bg-ink-50 text-ink-600 font-semibold border border-ink-100 text-xs flex items-center justify-center shrink-0">2</span>
+              <p>+ ile plan kur ya da asistana yaz ("Cumartesi Ayşe'yle kahvaltı"); herkesin boş olduğu saati bulur, davetleri gönderir.</p>
+            </div>
+            <div className="flex gap-3">
+              <span className="w-6 h-6 rounded-full bg-ink-50 text-ink-600 font-semibold border border-ink-100 text-xs flex items-center justify-center shrink-0">3</span>
+              <p>Bir link ya da ekran görüntüsünü paylaş menüsünden gönder; saatiyle, yeriyle plana dönüşür, Arşiv'de kalır.</p>
+            </div>
+          </div>
+        </div>
+
         <div className="text-center pt-2">
-          <p className="text-xs text-ink-400">{UYGULAMA_ADI} · Faz 0 MVP</p>
-          <p className="text-xs text-ink-400 mt-1">{SLOGAN}</p>
+          <p className="text-caption font-medium text-ink-500">{UYGULAMA_ADI}</p>
+          <p className="text-caption font-normal text-ink-400 mt-0.5">{SLOGAN}</p>
         </div>
       </div>
     </div>

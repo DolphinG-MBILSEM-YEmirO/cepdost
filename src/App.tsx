@@ -17,6 +17,7 @@ import type { SosyalBolum } from './components/sekmeler'
 import { KenarCubugu } from './components/KenarCubugu'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { ChatButton } from './components/ChatButton'
+import { EkranBasligi } from './ui/EkranBasligi'
 import { ChatPanel } from './components/ChatPanel'
 import { GirisEkrani } from './components/GirisEkrani'
 import { HesapKurulumu } from './components/HesapKurulumu'
@@ -404,10 +405,12 @@ export default function App() {
   // The assistant button sits next to the switch on the chats side only, as
   // the floating button did before (Arkadaşlar has its own actions).
   const sosyalUst = (
-    <div className="flex items-center gap-2">
+    <EkranBasligi
+      baslik="Sohbet"
+      eylemler={sosyalBolum === 'sohbetler' && <ChatButton onClick={() => setShowChat(true)} />}
+    >
       <SosyalSekmeler secili={sosyalBolum} onSec={setSosyalBolum} sohbetRozeti={mesajRozeti} arkadasRozeti={rozet} />
-      {sosyalBolum === 'sohbetler' && <ChatButton onClick={() => setShowChat(true)} />}
-    </div>
+    </EkranBasligi>
   )
 
   // Phone: one column under a bottom bar. Desktop (lg): a sidebar and a
@@ -590,7 +593,7 @@ function MarkaPaneli() {
     { ikon: 'MessageCircle', metin: 'Asistana "Cumartesi Ayşe\'yle kahvaltı" yaz; saati bulsun, davetleri hazırlasın.' },
   ]
   return (
-    <div className="hidden lg:flex flex-col justify-between bg-orchid-900 text-white p-12 relative overflow-hidden">
+    <div className="hidden lg:flex flex-col justify-between bg-ink-900 text-white p-12 relative overflow-hidden">
       <div className="relative flex items-center gap-3">
         <img src="/icons/icon-192.png" alt="" className="w-11 h-11 rounded-2xl ring-2 ring-white/30" />
         <span className="font-display text-2xl font-bold">{UYGULAMA_ADI}</span>
@@ -631,7 +634,7 @@ function BaglantiHatasi({ onTekrar, onCikis }: { onTekrar: () => void; onCikis: 
       <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center mb-4">
         <Icon name="WifiOff" className="w-7 h-7 text-amber-600" />
       </div>
-      <h1 className="font-display text-xl font-bold text-ink-700 mb-2">Hesabın getirilemedi</h1>
+      <h1 className="text-title text-ink-800 mb-2">Hesabın getirilemedi</h1>
       <p className="text-sm text-ink-400 leading-relaxed mb-6">
         Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene; planların ve arşivin bu telefonda duruyor.
       </p>

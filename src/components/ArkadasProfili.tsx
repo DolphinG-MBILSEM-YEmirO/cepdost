@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
+import { SegmentedControl } from '../ui/SegmentedControl'
 import { Icon, type IconName } from './Icon'
 import { Avatar, GrupAvatari } from './Avatar'
 import { AniArsivi } from './AniArsivi'
@@ -51,22 +52,22 @@ export function ArkadasProfili({ arkadas, benimId, onClose, onMesaj, onGrupAc, a
 
   return (
     <div className="panel-tam z-[55]" role="dialog" aria-label={`${arkadas.ad} profili`}>
-      <div className={`flex justify-end px-5 pt-[calc(1rem+var(--safe-top))] shrink-0 ${zemin}`}>
+      <div className={`flex justify-end px-4 pt-[calc(1rem+var(--safe-top))] shrink-0 ${zemin}`}>
         <button
           onClick={onClose}
           aria-label="Kapat"
-          className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:opacity-80 transition-transform"
+          className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-ink-50 active:bg-ink-100"
         >
           <Icon name="X" className="w-5 h-5 text-ink-500" />
         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className={`px-5 pb-6 text-center ${zemin}`}>
+        <div className={`px-4 pb-6 text-center ${zemin}`}>
           <div className="flex justify-center mb-3">
             <Avatar ad={arkadas.ad} foto={arkadas.avatar} emoji={arkadas.emoji} renk={arkadas.renk} boyut="lg" />
           </div>
-          <h2 className="font-display text-xl font-bold text-ink-700 break-words">{arkadas.ad}</h2>
+          <h2 className="text-title text-ink-800 break-words">{arkadas.ad}</h2>
           {arkadas.kullanici_adi && <p className="text-sm text-ink-400">@{arkadas.kullanici_adi}</p>}
           {arkadas.biyografi && (
             <p className="text-sm text-ink-500 mt-2 max-w-sm mx-auto whitespace-pre-line break-words">
@@ -80,7 +81,7 @@ export function ArkadasProfili({ arkadas, benimId, onClose, onMesaj, onGrupAc, a
             </button>
             <button
               onClick={() => setPaylasAcik(true)}
-              className="bg-mist-50 text-orchid-700 font-semibold text-sm rounded-2xl py-2.5 flex items-center justify-center gap-2 border border-orchid-100 active:opacity-80 transition-all hover:bg-orchid-50"
+              className="bg-mist-50 text-brand-700 font-semibold text-sm rounded-2xl py-2.5 flex items-center justify-center gap-2 border border-brand-100 active:opacity-80 transition-all hover:bg-brand-50"
             >
               <Icon name="CalendarPlus" className="w-4 h-4" />
               Plan yap
@@ -89,21 +90,13 @@ export function ArkadasProfili({ arkadas, benimId, onClose, onMesaj, onGrupAc, a
           <OrtakGecmisSatiri arkadasId={arkadas.id} />
         </div>
 
-        <div className="sticky top-0 z-10 bg-mist-100 flex gap-1.5 px-5 py-3" role="tablist">
-          {SEKMELER.map((s) => (
-            <button
-              key={s.id}
-              role="tab"
-              aria-selected={sekme === s.id}
-              onClick={() => setSekme(s.id)}
-              className={`chip ${
-                sekme === s.id ? 'bg-orchid-600 text-white' : 'bg-mist-50 text-ink-400 border border-ink-100'
-              }`}
-            >
-              <Icon name={s.ikon} className="w-4 h-4" />
-              {s.etiket}
-            </button>
-          ))}
+        <div className="sticky top-0 z-10 bg-mist-100 px-4 py-3">
+          <SegmentedControl
+            etiket={`${arkadas.ad} profili`}
+            secili={sekme}
+            onSec={setSekme}
+            segmentler={SEKMELER.map((s) => ({ id: s.id, etiket: s.etiket }))}
+          />
         </div>
 
         {sekme === 'birlikte' ? (
@@ -111,7 +104,7 @@ export function ArkadasProfili({ arkadas, benimId, onClose, onMesaj, onGrupAc, a
         ) : sekme === 'musaitlik' ? (
           <ArkadasMusaitlik arkadas={arkadas} />
         ) : (
-          <div className="px-5 pb-8">
+          <div className="px-4 pb-8">
             <AniArsivi arkadasId={arkadas.id} benimId={benimId} baslik={arkadas.ad} />
           </div>
         )}
@@ -216,7 +209,7 @@ function Birlikte({
   const planlar = takvimde && [...bekleyen, ...takvimde].sort(sirala)
 
   return (
-    <div className="px-5 pt-1 pb-8 space-y-6">
+    <div className="px-4 pt-1 pb-8 space-y-6">
       <Bolum baslik="Yaklaşan planlarınız">
         {planlar === undefined ? (
           <div className="skeleton h-16 rounded-2xl" />
@@ -228,13 +221,13 @@ function Birlikte({
           <div className="space-y-2">
             {planlar.map((p) => (
               <div key={p.id} className="card p-3 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-orchid-50 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">
                   {p.emoji ? (
                     <span className="text-lg" aria-hidden="true">
                       {p.emoji}
                     </span>
                   ) : (
-                    <Icon name="CalendarDays" className="w-5 h-5 text-orchid-500" />
+                    <Icon name="CalendarDays" className="w-5 h-5 text-ink-500" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -338,7 +331,7 @@ function ArkadasliktanCik({
 function Bolum({ baslik, children }: { baslik: string; children: React.ReactNode }) {
   return (
     <section>
-      <h3 className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2 px-1">{baslik}</h3>
+      <h3 className="text-label text-ink-500 mb-2 px-1">{baslik}</h3>
       {children}
     </section>
   )

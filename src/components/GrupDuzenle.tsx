@@ -53,22 +53,22 @@ export function GrupDuzenle({
         className="card w-full max-w-sm mx-4 mb-4 sm:mb-0 p-5 animate-slide-up max-h-[85vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className={`-mx-5 -mt-5 mb-4 px-5 pt-5 pb-4 rounded-t-3xl ${renkAl(renk, ad).zemin}`}>
+        <div className={`-mx-5 -mt-5 mb-4 px-4 pt-5 pb-4 rounded-t-3xl ${renkAl(renk, ad).zemin}`}>
           <div className="flex items-center gap-3">
             <GrupAvatari grup={{ ad: ad || '?', emoji, renk }} boyut="lg" />
             <div className="min-w-0">
-              <p className="font-display text-lg font-bold text-ink-700 truncate">{ad || 'Grup adı'}</p>
+              <p className="text-title text-ink-800 truncate">{ad || 'Grup adı'}</p>
               {aciklama.trim() && <p className="text-xs text-ink-500 mt-1 line-clamp-2">{aciklama}</p>}
             </div>
           </div>
         </div>
 
-        <label htmlFor="grup-ad" className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
+        <label htmlFor="grup-ad" className="block text-label text-ink-500 mb-2">
           Grup adı
         </label>
         <input id="grup-ad" value={ad} onChange={(e) => setAd(e.target.value)} maxLength={80} className="input-field mb-4" />
 
-        <label htmlFor="grup-duzenle-aciklama" className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
+        <label htmlFor="grup-duzenle-aciklama" className="block text-label text-ink-500 mb-2">
           Açıklama
         </label>
         <input
@@ -80,12 +80,12 @@ export function GrupDuzenle({
           className="input-field mb-4"
         />
 
-        <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">Simge</p>
+        <p className="text-label text-ink-500 mb-2">Simge</p>
         <div className="mb-4">
           <EmojiSecici secenekler={GRUP_EMOJILERI} secili={emoji} onSec={setEmoji} />
         </div>
 
-        <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">Renk</p>
+        <p className="text-label text-ink-500 mb-2">Renk</p>
         <div className="mb-4">
           <RenkSecici secili={renk} onSec={setRenk} />
         </div>

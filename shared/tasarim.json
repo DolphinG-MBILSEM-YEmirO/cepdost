@@ -1,21 +1,98 @@
 {
-  "$comment": "Sharloop design tokens (single source). Tailwind reads this file; Davet and the native apps will read it too. Colours are hex; ink/mist/orchid are exposed as CSS variables so a dark theme can redefine them later.",
+  "$comment": "Sharloop design tokens (single source). Theme 'Mercan' (2026-10-31): cool neutral surfaces, near-black text and one coral accent, the colour of plans made for the evening; shared with Davet. Tailwind serves mist/ink/brand as CSS variables; Davet and the native apps read this file too.",
   "color": {
-    "mist": { "50": "#FCFDFF", "100": "#F4F6FD", "200": "#E9EDF9", "300": "#DCE2F4", "400": "#C6CEEA", "500": "#A6B1DA" },
-    "ink": {
-      "50": "#F3F5FA", "100": "#E3E7F1", "200": "#C6CDDE", "300": "#7F89A6", "400": "#5E6787",
-      "500": "#4B5473", "600": "#353D5B", "700": "#232A45", "800": "#151A2F", "900": "#0B0E1D"
+    "mist": {
+      "50": "#FFFFFF",
+      "100": "#F4F5F7",
+      "200": "#EBEDF0",
+      "300": "#E1E4E8",
+      "400": "#CBD0D6",
+      "500": "#A7AEB8"
     },
-    "orchid": {
-      "50": "#EFF3FF", "100": "#DFE7FF", "200": "#C3D1FF", "300": "#9BB1FD", "400": "#6F88F9",
-      "500": "#4A62F0", "600": "#3549DB", "700": "#2C3AB5", "800": "#28338F", "900": "#222B6B"
+    "ink": {
+      "50": "#F6F7F8",
+      "100": "#E7E9EC",
+      "200": "#D3D7DC",
+      "300": "#868D99",
+      "400": "#5A616E",
+      "500": "#464C58",
+      "600": "#343943",
+      "700": "#22262E",
+      "800": "#16191F",
+      "900": "#0C0E12"
+    },
+    "brand": {
+      "50": "#FFF4F1",
+      "100": "#FFE4DD",
+      "200": "#FFC8BA",
+      "300": "#FFA08A",
+      "400": "#F7714F",
+      "500": "#E8502E",
+      "600": "#C93A1A",
+      "700": "#A82F15",
+      "800": "#872714",
+      "900": "#6A2113"
     }
   },
-  "radius": { "sm": "0.5rem", "md": "0.75rem", "lg": "1rem", "sheet": "1.5rem" },
+  "radius": {
+    "sm": "0.5rem",
+    "md": "0.75rem",
+    "lg": "1rem",
+    "sheet": "1.5rem"
+  },
   "motion": {
     "press": "80ms",
     "change": "160ms",
     "sheet": "280ms",
     "easeOut": "cubic-bezier(0.2, 0.8, 0.2, 1)"
+  },
+  "font": {
+    "sans": [
+      "-apple-system",
+      "BlinkMacSystemFont",
+      "\"Segoe UI Variable Text\"",
+      "\"Segoe UI\"",
+      "Roboto",
+      "\"Helvetica Neue\"",
+      "Arial",
+      "sans-serif"
+    ]
+  },
+  "type": {
+    "display": [
+      "1.75rem",
+      "2.125rem",
+      "700"
+    ],
+    "title": [
+      "1.25rem",
+      "1.625rem",
+      "600"
+    ],
+    "headline": [
+      "1rem",
+      "1.375rem",
+      "600"
+    ],
+    "body": [
+      "0.9375rem",
+      "1.375rem",
+      "400"
+    ],
+    "callout": [
+      "0.875rem",
+      "1.25rem",
+      "500"
+    ],
+    "label": [
+      "0.8125rem",
+      "1.125rem",
+      "600"
+    ],
+    "caption": [
+      "0.75rem",
+      "1rem",
+      "500"
+    ]
   }
 }

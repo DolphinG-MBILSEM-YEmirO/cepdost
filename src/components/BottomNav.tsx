@@ -46,7 +46,7 @@ export function BottomNav({
             <button
               onClick={onAddClick}
               aria-label="Yeni plan ekle"
-              className="w-11 h-11 rounded-xl bg-orchid-600 text-white flex items-center justify-center transition-colors hover:bg-orchid-700 active:bg-orchid-800"
+              className="w-11 h-11 rounded-xl bg-brand-600 text-white flex items-center justify-center transition-colors hover:bg-brand-700 active:bg-brand-800"
             >
               <Icon name="Plus" className="w-6 h-6" strokeWidth={2.25} />
             </button>
@@ -87,7 +87,7 @@ function NavButton({
       <div className="relative">
         <Icon
           name={tab.icon}
-          className={`w-6 h-6 transition-colors ${active ? 'text-orchid-600' : 'text-ink-400'}`}
+          className={`w-6 h-6 transition-colors ${active ? 'text-brand-600' : 'text-ink-400'}`}
         />
         {rozet > 0 && (
           <span className="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-rose-600 text-white text-[10px] font-bold flex items-center justify-center tabular-nums ring-2 ring-white">
@@ -96,7 +96,7 @@ function NavButton({
         )}
       </div>
       <span
-        className={`text-[11px] leading-none transition-colors ${active ? 'text-orchid-700 font-semibold' : 'text-ink-500 font-medium'}`}
+        className={`text-[11px] leading-none transition-colors ${active ? 'text-brand-700 font-semibold' : 'text-ink-500 font-medium'}`}
       >
         {tab.label}
       </span>

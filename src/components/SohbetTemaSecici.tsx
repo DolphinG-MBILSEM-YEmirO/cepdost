@@ -34,7 +34,7 @@ export function TemaSheet({ onKapat }: { onKapat: () => void }) {
               >
                 <span
                   className={`w-11 h-11 rounded-2xl ${t.onizleme} flex items-center justify-center ${
-                    aktif ? 'ring-2 ring-offset-2 ring-orchid-500 ring-offset-mist-50' : ''
+                    aktif ? 'ring-2 ring-offset-2 ring-brand-500 ring-offset-mist-50' : ''
                   }`}
                 >
                   {aktif && <Icon name="Check" className="w-4 h-4 text-white" />}
@@ -67,8 +67,8 @@ export function SohbetTemaSecici() {
   return (
     <div className="card p-5">
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 rounded-xl bg-orchid-100 flex items-center justify-center">
-          <Icon name="MessagesSquare" className="w-5 h-5 text-orchid-500" />
+        <div className="w-10 h-10 rounded-xl bg-ink-50 flex items-center justify-center">
+          <Icon name="MessagesSquare" className="w-5 h-5 text-ink-500" />
         </div>
         <h2 className="font-semibold text-ink-700">Sohbet teması</h2>
       </div>
@@ -112,7 +112,7 @@ export function SohbetTemaSecici() {
             >
               <span
                 className={`w-10 h-10 rounded-2xl ${t.onizleme} flex items-center justify-center ${
-                  aktif ? 'ring-2 ring-offset-2 ring-orchid-500 ring-offset-mist-50' : ''
+                  aktif ? 'ring-2 ring-offset-2 ring-brand-500 ring-offset-mist-50' : ''
                 }`}
               >
                 {aktif && <Icon name="Check" className="w-4 h-4 text-white" />}

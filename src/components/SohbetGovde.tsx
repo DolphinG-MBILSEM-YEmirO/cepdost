@@ -84,7 +84,7 @@ export function Baloncuk({
         )}
         <div className={`flex items-center gap-1.5 ${benim ? 'flex-row-reverse' : ''}`}>
           <div
-            className={`min-w-0 rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words transition-shadow duration-300 ${
+            className={`min-w-0 rounded-[18px] px-3.5 py-2 text-[15px] leading-[1.4] whitespace-pre-wrap break-words transition-shadow duration-300 ${
               benim
                 ? `${tema.benim} ${tema.benimMetin} rounded-br-md`
                 : `${tema.karsi} ${tema.karsiMetin} rounded-bl-md`
@@ -127,7 +127,7 @@ export function GonderButonu({
       onClick={onClick}
       disabled={gonderiliyor || pasif}
       aria-label="Gönder"
-      className="w-11 h-11 rounded-full bg-orchid-600 text-white flex items-center justify-center active:opacity-80 transition-all disabled:opacity-40 shrink-0"
+      className="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center hover:bg-brand-700 active:bg-brand-800 transition-all disabled:opacity-40 shrink-0"
     >
       <Icon
         name={gonderiliyor ? 'Loader2' : 'Send'}

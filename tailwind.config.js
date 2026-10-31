@@ -2,14 +2,14 @@ import { readFileSync } from 'node:fs'
 import plugin from 'tailwindcss/plugin'
 
 /** @type {import('tailwindcss').Config} */
-// "Blue orchid" theme (2026-10-18), calmed down in the 2026-10-31 interface
-// plan: `orchid` is the brand colour (solid, no gradients), `mist` the
-// surfaces and `ink` the text. These three come from shared/tasarim.json and
+// Theme "Mercan" from the 2026-10-31 interface redesign: cool neutral
+// `mist` surfaces, near-black `ink` text and one coral `brand` accent, the
+// same family as Davet. These three come from shared/tasarim.json and
 // are served as CSS variables (R G B triplets), so a dark theme only has to
 // redefine the variables. `coral` only stays for the personal "Mercan"
 // accent people can pick (lib/kisisellestirme.ts).
 const tasarim = JSON.parse(readFileSync(new URL('./shared/tasarim.json', import.meta.url), 'utf8'))
-const DEGISKENLI_RENKLER = ['mist', 'ink', 'orchid']
+const DEGISKENLI_RENKLER = ['mist', 'ink', 'brand']
 
 const rgbUclusu = (hex) =>
   [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(' ')
@@ -33,12 +33,39 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      // The phone's own typeface (SF Pro on iOS, Roboto on Android, Segoe on
+      // Windows): reads as native on every device, needs no download, and
+      // matches what the native apps will use.
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-        display: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        sans: tasarim.font.sans,
+        display: tasarim.font.sans,
       },
+      // Named steps of the type scale (tasarim.json `type`): text-display,
+      // text-title, text-headline, text-body, text-callout, text-label,
+      // text-caption.
+      fontSize: Object.fromEntries(
+        Object.entries(tasarim.type).map(([ad, [boyut, satir, agirlik]]) => [
+          ad,
+          [boyut, { lineHeight: satir, fontWeight: agirlik }],
+        ]),
+      ),
       colors: {
         ...degiskenRenkleri,
+        // The earlier blue, kept only as one of the personal accents people
+        // can pick ("Orkide" in lib/kisisellestirme.ts). The interface uses
+        // `brand`.
+        orchid: {
+          50: '#EFF3FF',
+          100: '#DFE7FF',
+          200: '#C3D1FF',
+          300: '#9BB1FD',
+          400: '#6F88F9',
+          500: '#4A62F0',
+          600: '#3549DB',
+          700: '#2C3AB5',
+          800: '#28338F',
+          900: '#222B6B',
+        },
         // Only for the personal "Mercan" accent.
         coral: {
           50: '#FFF4F0',
