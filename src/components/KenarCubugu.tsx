@@ -35,7 +35,7 @@ export function KenarCubugu({
 
       <button onClick={onAddClick} className="btn-primary w-full flex items-center justify-center gap-2 mb-6">
         <Icon name="Plus" className="w-5 h-5" />
-        Yeni plan
+        Oluştur
       </button>
 
       <nav aria-label="Ana menü" className="space-y-1">

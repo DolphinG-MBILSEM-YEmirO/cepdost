@@ -24,7 +24,16 @@ import {
 import { bilinenProfiller, musaitlikKaydi, ozettenProfil, type Profil } from './api'
 import { onaylilariSec } from './epostaImzacisi'
 import { bildirArkaplanda } from './bildirimler'
-import { fotoBilgisiAl, fotoHazirla, fotoSil, fotoUrl, fotoYayinla, type FotoBilgisi } from './foto'
+import {
+  fotoBilgisiAl,
+  fotoHazirla,
+  fotoSil,
+  fotoUrl,
+  fotoYayinla,
+  medyaYayinla,
+  videoBilgisiAl,
+  type FotoBilgisi,
+} from './foto'
 import {
   BOS_BAGLAM,
   degisiklikMi,
@@ -108,11 +117,30 @@ export interface Ani {
   gorunurluk: Gizlilik
   olusturulma: string
   foto: FotoBilgisi | null
+  // A post's photos and clips in order; empty on older single-photo
+  // memories, which only have the cover above.
+  medya: AniMedyasi[]
+  // The sharer's rating of the place, 1-5 stars.
+  puan: number | null
   // Owner's name and photo (Keşfet shows strangers' memories).
   sahip: ProfilOzeti | null
   // Topic of the channel the record lives on; locates the photo.
   konu: string
 }
+
+export type MedyaTuru = 'foto' | 'video'
+
+// One photo or clip of a post. Its chunks are filed under `id`; the first
+// photo reuses the cover's chunks (id = the memory's id).
+export interface AniMedyasi {
+  id: string
+  tur: MedyaTuru
+  bilgi: FotoBilgisi
+}
+
+// At most this many photos and clips in one post.
+export const AZAMI_MEDYA = 6
+export const AZAMI_PUAN = 5
 
 // ---------- groups ----------
 
@@ -510,13 +538,40 @@ export interface YeniAni {
   tarih: string
   notlar?: string | null
   gorunurluk?: Gizlilik
+  // The cover photo: the feed thumbnail, and the only photo older app
+  // versions show.
   dosya: File
+  // Photos and clips in the order they are shown. The cover can be one of
+  // them (the same File), or a frame of the first clip.
+  medya?: YeniMedya[]
+  puan?: number | null
+  // Share with all my friends (my broadcast channel) rather than one group
+  // or friend.
+  arkadaslarim?: boolean
+}
+
+export type YeniMedya =
+  | { tur: 'foto'; dosya: File }
+  // A clip already shrunk on the device (lib/videoHazirla.ts).
+  | { tur: 'video'; bayt: Uint8Array; tip: string }
+
+// Bytes ready to publish, prepared once and sent to every copy.
+interface HazirMedya {
+  id: string
+  tur: MedyaTuru
+  bayt: Uint8Array
+  tip: string
 }
 
 // Where a memory lives: the group, the pair channel with the friend, or
 // (with neither) my own channel.
-async function aniKanali(grupId?: string | null, arkadasId?: string | null): Promise<Kanal> {
+async function aniKanali(grupId?: string | null, arkadasId?: string | null, arkadaslarim = false): Promise<Kanal> {
   if (grupId) return grupKanaliBul(grupId)
+  if (arkadaslarim) {
+    const durum = await kanalDurumu()
+    if (!durum.yayin) throw new Error('Paylaşım kanalın henüz hazır değil, birazdan tekrar dene.')
+    return durum.yayin
+  }
   if (arkadasId) {
     const durum = await kanalDurumu()
     const kanal = durum.cift.get(arkadasId)
@@ -537,12 +592,45 @@ function kesfetKanaliAl(): Promise<Kanal> {
   return kesfet
 }
 
+// Shrinks the photos and gives every item its chunk id. The first photo
+// that is the cover itself reuses the cover's chunks.
+async function medyaHazirla(aniId: string, yeni: YeniAni): Promise<HazirMedya[]> {
+  const liste = (yeni.medya ?? []).slice(0, AZAMI_MEDYA)
+  const hazir: HazirMedya[] = []
+  for (const [i, o] of liste.entries()) {
+    if (o.tur === 'video') {
+      hazir.push({ id: `${aniId}-${i}`, tur: 'video', bayt: o.bayt, tip: o.tip })
+    } else if (o.dosya !== yeni.dosya) {
+      hazir.push({ id: `${aniId}-${i}`, tur: 'foto', bayt: await fotoHazirla(o.dosya), tip: 'image/jpeg' })
+    } else {
+      hazir.push({ id: aniId, tur: 'foto', bayt: new Uint8Array(), tip: 'image/jpeg' })
+    }
+  }
+  return hazir
+}
+
+// Sends the extra items to a channel; the cover is already there.
+async function medyaYukle(kanal: Kanal, aniId: string, hazir: HazirMedya[], kapak: FotoBilgisi) {
+  const sonuc: { id: string; tur: MedyaTuru; parca: number; tip: string }[] = []
+  for (const o of hazir) {
+    const bilgi = o.id === aniId ? kapak : await medyaYayinla(kanal, o.id, o.bayt, o.tip)
+    sonuc.push({ id: o.id, tur: o.tur, ...bilgi })
+  }
+  return sonuc
+}
+
+function puanAl(deger: unknown): number | null {
+  return typeof deger === 'number' && Number.isInteger(deger) && deger >= 1 && deger <= AZAMI_PUAN ? deger : null
+}
+
 export async function aniEkle(yeni: YeniAni): Promise<Ani> {
   const m = motor()
-  const kanal = await aniKanali(yeni.grupId, yeni.arkadasId)
+  const kanal = await aniKanali(yeni.grupId, yeni.arkadasId, yeni.arkadaslarim)
   const id = rastgeleId()
   const bayt = await fotoHazirla(yeni.dosya)
+  const hazir = await medyaHazirla(id, yeni)
   const foto = await fotoYayinla(kanal, id, bayt)
+  const medya = await medyaYukle(kanal, id, hazir, foto)
   const gorunurluk = yeni.gorunurluk ?? 'arkadaslar'
   const sahip = await benimOzetim()
   const veri = {
@@ -553,6 +641,8 @@ export async function aniEkle(yeni: YeniAni): Promise<Ani> {
     arkadas_id: yeni.arkadasId ?? null,
     gorunurluk,
     foto,
+    ...(medya.length > 0 ? { medya } : {}),
+    ...(puanAl(yeni.puan) ? { puan: yeni.puan } : {}),
     zaman: simdiMs(),
   }
   const kayit = await m.yayinla(kanal, TUR.ani, `ani:${id}`, veri)
@@ -562,12 +652,33 @@ export async function aniEkle(yeni: YeniAni): Promise<Ani> {
     try {
       const k = await kesfetKanaliAl()
       const kesfetFoto = await fotoYayinla(k, id, bayt)
-      await m.yayinla(k, TUR.ani, `ani:${id}`, { ...veri, grup_id: null, arkadas_id: null, foto: kesfetFoto, sahip })
+      const kesfetMedya = await medyaYukle(k, id, hazir, kesfetFoto)
+      await m.yayinla(k, TUR.ani, `ani:${id}`, {
+        ...veri,
+        grup_id: null,
+        arkadas_id: null,
+        foto: kesfetFoto,
+        ...(kesfetMedya.length > 0 ? { medya: kesfetMedya } : {}),
+        sahip,
+      })
     } catch (err) {
       console.warn('anı Keşfet\'e eklenemedi', err)
     }
   }
   return aniKur(kayit)!
+}
+
+function medyaListesiAl(deger: unknown, aniId: string): AniMedyasi[] {
+  if (!Array.isArray(deger)) return []
+  return deger.slice(0, AZAMI_MEDYA).flatMap((o): AniMedyasi[] => {
+    if (!nesneMi(o) || typeof o.id !== 'string') return []
+    // Only chunks filed under this memory: a record can't point elsewhere.
+    const ek = o.id.slice(aniId.length)
+    if (!o.id.startsWith(aniId) || (ek !== '' && !/^-\d$/.test(ek))) return []
+    const tur: MedyaTuru = o.tur === 'video' ? 'video' : 'foto'
+    const bilgi = tur === 'video' ? videoBilgisiAl(o) : fotoBilgisiAl(o)
+    return bilgi ? [{ id: o.id, tur, bilgi }] : []
+  })
 }
 
 function aniKur(k: SosyalKayit): Ani | null {
@@ -576,8 +687,11 @@ function aniKur(k: SosyalKayit): Ani | null {
   const tarih = metinAl(k.veri.tarih, 10)
   if (!mekan || !tarih) return null
   const kanal = kanalBilgisi(k.konu)
+  // Friends hold my broadcast key too; only its owner posts there.
+  if (kanal?.tur === 'yayin' && k.yazar !== kanal.sahip) return null
+  const id = k.anahtar.slice('ani:'.length)
   return {
-    id: k.anahtar.slice('ani:'.length),
+    id,
     sahip_id: k.yazar,
     grup_id: kanal?.grupId ?? metinAl(k.veri.grup_id, 40),
     arkadas_id: kanal?.tur === 'cift' ? (k.yazar === motor().benimId ? kanal.karsi! : motor().benimId) : null,
@@ -587,6 +701,8 @@ function aniKur(k: SosyalKayit): Ani | null {
     gorunurluk: k.veri.gorunurluk === 'herkes' ? 'herkes' : 'arkadaslar',
     olusturulma: isoZaman(kayitZamani(k)),
     foto: fotoBilgisiAl(k.veri.foto),
+    medya: medyaListesiAl(k.veri.medya, id),
+    puan: puanAl(k.veri.puan),
     sahip: profilOzetiAl(k.veri.sahip),
     konu: k.konu,
   }
@@ -640,7 +756,13 @@ export async function akisAnilariGetir(kapsam: AkisKapsami, limit = 60): Promise
   }
 
   const durum = await kanalDurumu()
-  const kanallar = [...durum.cift.values(), ...[...durum.gruplar.values()].map((g) => g.kanal)]
+  // Pair and group channels, plus everyone's "all my friends" posts.
+  const kanallar = [
+    ...durum.cift.values(),
+    ...[...durum.gruplar.values()].map((g) => g.kanal),
+    ...(durum.yayin ? [durum.yayin] : []),
+    ...durum.arkadasYayin.values(),
+  ]
   const anilar: Ani[] = []
   for (const kanal of kanallar) {
     for (const k of await m.kayitlar(kanal.konu, TUR.ani)) {
@@ -678,6 +800,17 @@ export async function aniGorselUrl(ani: Ani): Promise<string | null> {
   return kanal ? fotoUrl(kanal, ani.sahip_id, ani.id, ani.foto) : null
 }
 
+// Object URL of one of a post's photos or clips (fetched on first use).
+export async function aniMedyaUrl(ani: Ani, medya: AniMedyasi): Promise<string | null> {
+  const kanal = await aniKanaliBul(ani)
+  return kanal ? fotoUrl(kanal, ani.sahip_id, medya.id, medya.bilgi) : null
+}
+
+// Deletes a post's extra items; the cover's chunks are deleted separately.
+async function medyaSil(kanal: Kanal, aniId: string, medya: AniMedyasi[]) {
+  for (const o of medya) if (o.id !== aniId) await fotoSil(kanal, o.id, o.bilgi).catch(() => {})
+}
+
 export async function aniSil(ani: Ani): Promise<void> {
   const m = motor()
   if (ani.sahip_id !== m.benimId) throw new Error('Yalnızca kendi eklediğin anıları silebilirsin.')
@@ -685,6 +818,7 @@ export async function aniSil(ani: Ani): Promise<void> {
   if (!kanal) throw new Error('Anı bulunamadı.')
   await m.yayinla(kanal, TUR.ani, `ani:${ani.id}`, null)
   if (ani.foto) await fotoSil(kanal, ani.id, ani.foto).catch(() => {})
+  await medyaSil(kanal, ani.id, ani.medya)
 
   // Remove the Keşfet copy too, wherever the delete started from.
   if (ani.gorunurluk === 'herkes') {
@@ -694,6 +828,7 @@ export async function aniSil(ani: Ani): Promise<void> {
       await m.yayinla(kesfetK, TUR.ani, `ani:${ani.id}`, null).catch(() => {})
       const kopyaFoto = fotoBilgisiAl(nesneMi(kopya?.veri) ? kopya.veri.foto : null)
       if (kopyaFoto) await fotoSil(kesfetK, ani.id, kopyaFoto).catch(() => {})
+      await medyaSil(kesfetK, ani.id, medyaListesiAl(nesneMi(kopya?.veri) ? kopya.veri.medya : null, ani.id))
     }
   }
 }

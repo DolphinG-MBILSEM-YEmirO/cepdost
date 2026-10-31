@@ -75,6 +75,9 @@ import {
   Lightbulb,
   ChevronUp,
   ChevronLeft,
+  Video,
+  Globe,
+  Play,
 } from 'lucide-react'
 
 const iconMap = {
@@ -154,6 +157,9 @@ const iconMap = {
   Lightbulb,
   ChevronUp,
   ChevronLeft,
+  Video,
+  Globe,
+  Play,
 }
 
 export type IconName = keyof typeof iconMap

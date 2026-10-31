@@ -62,7 +62,7 @@ export function BottomNav({ active, onChange, onAddClick, sohbetRozeti = 0 }: Bo
                 setDalga((d) => d + 1)
                 onAddClick()
               }}
-              aria-label="Yeni plan ekle"
+              aria-label="Oluştur: paylaşım ya da plan"
               className="group relative w-[52px] h-[52px] -my-1 rounded-full bg-bolum-canli text-white flex items-center justify-center shadow-glow basinca hover:brightness-110"
             >
               {dalga > 0 && (

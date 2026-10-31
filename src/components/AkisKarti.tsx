@@ -1,13 +1,14 @@
 import { Icon } from './Icon'
 import { Avatar } from './Avatar'
-import { AniGorseli } from './AniGorseli'
-import type { Ani } from '../sosyal/gruplar'
+import { AniMedyaGalerisi } from './AniMedyaGalerisi'
+import { AZAMI_PUAN, type Ani } from '../sosyal/gruplar'
 import type { Profil } from '../sosyal/api'
 import { formatDate } from '../lib/format'
 import { UYGULAMA_ADI } from '../../shared/marka'
 
-// A memory as a card: who shared it (and in which group), the photo, the
-// place, the day and the note. Its answers go in as children.
+// A memory as a card: who shared it (and in which group), the photos and
+// clips, the place, the rating, the day and the note. Its answers go in as
+// children.
 
 export function AkisKarti({
   ani,
@@ -44,18 +45,35 @@ export function AkisKarti({
       </div>
 
       <div className="aspect-square bg-mist-100">
-        <AniGorseli ani={ani} />
+        <AniMedyaGalerisi ani={ani} />
       </div>
 
       <div className="p-4">
         <div className="flex items-center gap-1.5">
           <Icon name="MapPin" className="w-4 h-4 text-ink-500 shrink-0" />
-          <p className="text-body font-semibold text-ink-800 truncate">{ani.mekan_adi}</p>
+          <p className="text-body font-semibold text-ink-800 truncate flex-1">{ani.mekan_adi}</p>
+          {ani.puan && <Yildizlar puan={ani.puan} />}
         </div>
         <p className="text-xs text-ink-400 mt-0.5">{formatDate(ani.tarih) ?? ani.tarih}</p>
         {ani.notlar && <p className="text-sm text-ink-500 mt-2">{ani.notlar}</p>}
       </div>
       {children}
     </div>
+  )
+}
+
+// The sharer's rating as small filled stars.
+function Yildizlar({ puan }: { puan: number }) {
+  return (
+    <span className="flex items-center gap-0.5 shrink-0" aria-label={`${puan} / ${AZAMI_PUAN} yıldız`}>
+      {Array.from({ length: AZAMI_PUAN }, (_, i) => (
+        <svg key={i} viewBox="0 0 24 24" className="w-3.5 h-3.5" aria-hidden>
+          <path
+            d="M12 2.8l2.8 5.7 6.3.9-4.55 4.43 1.07 6.27L12 17.15 6.38 20.1l1.07-6.27L2.9 9.4l6.3-.9z"
+            fill={i < puan ? '#FBBF24' : '#E5E7EB'}
+          />
+        </svg>
+      ))}
+    </span>
   )
 }

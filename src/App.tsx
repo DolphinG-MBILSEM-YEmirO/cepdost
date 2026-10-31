@@ -10,6 +10,8 @@ import { davetKaynagi, davetLinkiCoz } from './sosyal/davet'
 import { AkisView } from './components/AkisView'
 import { ProfilView } from './components/ProfilView'
 import { PlanOlustur } from './components/PlanOlustur'
+import { OlusturMenusu } from './components/OlusturMenusu'
+import { PaylasimOlustur } from './components/PaylasimOlustur'
 import { RecordDetail } from './components/RecordDetail'
 import { Onboarding } from './components/Onboarding'
 import { BottomNav, type Tab } from './components/BottomNav'
@@ -97,6 +99,9 @@ export default function App() {
   // without the app answer in Davet itself).
   const [planLinki, setPlanLinki] = useState<LinkKaynagi | null>(() => adrestekiLink(window.location.hash))
   const [showCapture, setShowCapture] = useState(false)
+  // The "+" button's choice (post or plan), and the post composer.
+  const [showOlustur, setShowOlustur] = useState(false)
+  const [showPaylasim, setShowPaylasim] = useState(false)
   const [showChat, setShowChat] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [banner, setBanner] = useState<ShareBanner>(
@@ -454,7 +459,7 @@ export default function App() {
       <KenarCubugu
         active={activeTab}
         onChange={setActiveTab}
-        onAddClick={() => setShowCapture(true)}
+        onAddClick={() => setShowOlustur(true)}
         onAsistan={() => setShowChat(true)}
         profil={profil}
         sohbetRozeti={mesajRozeti + rozet}
@@ -518,9 +523,30 @@ export default function App() {
       <BottomNav
         active={activeTab}
         onChange={setActiveTab}
-        onAddClick={() => setShowCapture(true)}
+        onAddClick={() => setShowOlustur(true)}
         sohbetRozeti={mesajRozeti + rozet}
       />
+
+      {showOlustur && (
+        <OlusturMenusu
+          onKapat={() => setShowOlustur(false)}
+          onSec={(secim) => {
+            setShowOlustur(false)
+            if (secim === 'plan') setShowCapture(true)
+            else setShowPaylasim(true)
+          }}
+        />
+      )}
+
+      {showPaylasim && (
+        <PaylasimOlustur
+          onKapat={() => setShowPaylasim(false)}
+          onPaylasildi={() => {
+            setShowPaylasim(false)
+            setActiveTab('akis')
+          }}
+        />
+      )}
 
       {showCapture && <PlanOlustur onClose={() => setShowCapture(false)} onSaved={() => {}} />}
 

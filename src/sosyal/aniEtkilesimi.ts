@@ -7,8 +7,8 @@ import { GOVDE_MAKS } from '../../shared/bildirim'
 import { UYGULAMA_ADI } from '../../shared/marka'
 
 // Friends answering a memory: an emoji reaction, comments, and "I want to
-// go too". They sit next to the memory on its pair or group channel, so
-// only the people who see the memory see them:
+// go too". They sit next to the memory on its pair, group or broadcast
+// channel, so only the people who see the memory see them:
 //
 //   ani-tepki 'ani-tepki:<aniId>'           one per person: their emoji
 //                                           and whether they want to go
@@ -46,11 +46,12 @@ function tepkiMi(emoji: unknown): emoji is (typeof ANI_TEPKILERI)[number] {
   return typeof emoji === 'string' && (ANI_TEPKILERI as readonly string[]).includes(emoji)
 }
 
-// The channel a memory's answers go on: its pair or group channel only.
+// The channel a memory's answers go on: its pair or group channel, or the
+// sharer's broadcast channel for a post to all their friends.
 export async function etkilesimKanali(ani: Ani): Promise<Kanal | null> {
   await kanalDurumu()
   const kanal = kanalBilgisi(ani.konu)
-  return kanal && (kanal.tur === 'cift' || kanal.tur === 'grup') ? kanal : null
+  return kanal && (kanal.tur === 'cift' || kanal.tur === 'grup' || kanal.tur === 'yayin') ? kanal : null
 }
 
 async function kanalAl(ani: Ani): Promise<Kanal> {
