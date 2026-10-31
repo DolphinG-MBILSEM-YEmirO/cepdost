@@ -48,7 +48,6 @@ export function KenarCubugu({
               onClick={() => onChange(t.id)}
               aria-label={rozet > 0 ? `${t.label}, ${rozet} yeni` : t.label}
               aria-current={secili ? 'page' : undefined}
-              data-bolum={t.id}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-semibold basinca transition-all duration-300 ${
                 secili ? 'bg-bolum text-white shadow-glow' : 'text-ink-500 hover:bg-bolum-soluk hover:text-ink-800'
               }`}

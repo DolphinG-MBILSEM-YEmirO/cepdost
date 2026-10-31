@@ -1,3 +1,22 @@
+/* The tab colours are registered as real colours so the browser can
+   animate them: switching tabs melts one gradient into the next instead of
+   jumping (data-bolum on the app root changes, the values glide). */
+@property --bolum-1 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ea580c;
+}
+@property --bolum-2 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #e11d48;
+}
+@property --bolum-3 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #7c3aed;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -53,6 +72,14 @@
       transition-duration: 1ms !important;
       scroll-behavior: auto !important;
     }
+  }
+
+  :root,
+  [data-bolum] {
+    transition:
+      --bolum-1 700ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      --bolum-2 700ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      --bolum-3 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
   input,

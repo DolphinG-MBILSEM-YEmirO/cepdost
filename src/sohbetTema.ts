@@ -33,13 +33,13 @@ export const TEMALAR: SohbetTemasi[] = [
   {
     id: 'orkide',
     ad: 'Sharloop',
-    benim: 'bg-gradient-to-br from-violet-600 to-blue-600 shadow-[0_6px_16px_-8px_rgba(79,70,229,0.7)]',
+    benim: 'bg-bolum shadow-glow',
     benimMetin: 'text-white',
     karsi: 'bg-white shadow-soft',
     karsiMetin: 'text-ink-800',
     zemin: 'bg-mist-100',
     desen: NOKTA_DESENI,
-    onizleme: 'bg-gradient-to-br from-violet-600 to-blue-600',
+    onizleme: 'bg-bolum',
   },
   {
     id: 'okyanus',

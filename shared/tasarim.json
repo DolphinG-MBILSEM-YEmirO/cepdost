@@ -1,5 +1,5 @@
 {
-  "$comment": "Sharloop design tokens (single source). Theme 'Canlı' (2026-10-31, after the user asked for vivid colours and more motion): soft lavender-white surfaces, deep violet-black text, a magenta-pink brand and one bright gradient per main tab (bolum). Tailwind serves mist/ink/brand as CSS variables; Davet and the native apps read this file too.",
+  "$comment": "Sharloop design tokens (single source). Theme 'Canlı' (2026-10-31, after the user asked for vivid colours and more motion): soft lavender-white surfaces, deep violet-black text, a magenta-pink brand and one gradient per main tab (bolum). The four tab gradients walk one hue path (orange, rose, magenta, violet, indigo) in tab order and each starts where the previous ends, so switching tabs blends instead of jumping. Tailwind serves mist/ink/brand as CSS variables; Davet and the native apps read this file too.",
   "color": {
     "mist": {
       "50": "#FFFFFF",
@@ -99,26 +99,26 @@
   },
   "gradient": {
     "brand": [
-      "#FF6B3D",
-      "#F5317A",
-      "#8B5CF6"
+      "#EA580C",
+      "#E11D48",
+      "#7C3AED"
     ],
     "bolum": {
       "planlar": [
-        "#F2542D",
-        "#DB1F66"
+        "#EA580C",
+        "#E11D48"
       ],
       "sohbet": [
-        "#7C3AED",
-        "#2563EB"
+        "#E11D48",
+        "#C026D3"
       ],
       "akis": [
-        "#DB1F66",
-        "#F2542D"
+        "#C026D3",
+        "#7C3AED"
       ],
       "profil": [
-        "#0D9488",
-        "#2563EB"
+        "#7C3AED",
+        "#4F46E5"
       ]
     }
   }

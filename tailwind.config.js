@@ -175,6 +175,9 @@ export default {
         nabiz: 'nabiz 2.4s ease-out infinite',
         'gradyan-akis': 'gradyanAkis 8s ease infinite',
         sallan: `sallan 500ms ${tasarim.motion.easeOut}`,
+        eri: `eri 560ms ${tasarim.motion.easeOut}`,
+        sicra: `sicra 520ms ${tasarim.motion.easeOut}`,
+        dalga: 'dalga 650ms ease-out forwards',
       },
       keyframes: {
         fadeIn: {
@@ -185,9 +188,30 @@ export default {
           '0%': { opacity: '0', transform: 'scale(0.85)' },
           '100%': { opacity: '1', transform: 'scale(1)' },
         },
+        // The page "melts" in: out of a soft blur while rising slightly.
         sayfaGir: {
-          '0%': { opacity: '0', transform: 'translateY(14px) scale(0.985)' },
-          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+          '0%': { opacity: '0', filter: 'blur(10px)', transform: 'translateY(16px) scale(0.98)' },
+          '60%': { opacity: '1', filter: 'blur(0)' },
+          '100%': { opacity: '1', filter: 'blur(0)', transform: 'translateY(0) scale(1)' },
+        },
+        // The bottom bar's selection blob stretches like a drop of liquid
+        // while it slides to the new tab, then settles.
+        eri: {
+          '0%': { transform: 'scale(1, 1)' },
+          '35%': { transform: 'scale(1.9, 0.62)' },
+          '65%': { transform: 'scale(0.9, 1.12)' },
+          '100%': { transform: 'scale(1, 1)' },
+        },
+        // An icon that has just been chosen hops once.
+        sicra: {
+          '0%': { transform: 'translateY(0) scale(1)' },
+          '40%': { transform: 'translateY(-5px) scale(1.15)' },
+          '70%': { transform: 'translateY(1px) scale(0.96)' },
+          '100%': { transform: 'translateY(0) scale(1)' },
+        },
+        dalga: {
+          '0%': { transform: 'scale(0.6)', opacity: '0.55' },
+          '100%': { transform: 'scale(2.4)', opacity: '0' },
         },
         slideUp: {
           '0%': { opacity: '0', transform: 'translateY(24px)' },
