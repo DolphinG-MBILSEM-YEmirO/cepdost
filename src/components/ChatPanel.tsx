@@ -182,22 +182,22 @@ export function ChatPanel({ kayitlar, onClose }: ChatPanelProps) {
 
   return (
     <div className="panel-tam z-50">
-      <div className="flex items-center justify-between px-4 pt-[calc(1rem+var(--safe-top))] pb-4 border-b border-ink-100 shrink-0">
+      <div className="relative overflow-hidden bg-bolum-canli text-white rounded-b-[2rem] mb-2 flex items-center justify-between px-4 pt-[calc(1rem+var(--safe-top))] pb-5 shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-ink-50 flex items-center justify-center">
-            <Icon name="MessageCircle" className="w-5 h-5 text-ink-500" />
+          <div className="w-9 h-9 rounded-2xl bg-white/20 text-white flex items-center justify-center">
+            <Icon name="MessageCircle" className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="text-headline text-ink-800 leading-tight">{UYGULAMA_ADI} Asistanı</h2>
-            <p className="text-xs text-ink-400">Sor ya da tek mesajla plan kurdur</p>
+            <h2 className="text-headline text-white leading-tight">{UYGULAMA_ADI} Asistanı</h2>
+            <p className="text-xs text-white/80">Sor ya da tek mesajla plan kurdur</p>
           </div>
         </div>
         <button
           onClick={onClose}
           aria-label="Kapat"
-          className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-ink-50 active:bg-ink-100"
+          className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/20 hover:bg-white/30 basinca"
         >
-          <Icon name="X" className="w-5 h-5 text-ink-500" />
+          <Icon name="X" className="w-5 h-5" />
         </button>
       </div>
 

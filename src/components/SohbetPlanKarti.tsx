@@ -30,8 +30,8 @@ function KartCercevesi({ etiket, emoji, baslik, tarih, saat, sure, tumGun, konum
   return (
     <div className="w-72 max-w-full rounded-2xl bg-mist-50 border border-ink-100 shadow-soft p-3.5 text-ink-700">
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-ink-50 flex items-center justify-center shrink-0 text-lg">
-          {emoji ?? <Icon name="CalendarClock" className="w-5 h-5 text-ink-500" />}
+        <div className="w-10 h-10 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center shrink-0 text-lg">
+          {emoji ?? <Icon name="CalendarClock" className="w-5 h-5 text-bolum-koyu" />}
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-bold uppercase tracking-wide text-brand-600">{etiket}</p>

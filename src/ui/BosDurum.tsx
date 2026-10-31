@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react'
 import { Icon, type IconName } from '../components/Icon'
 
-// What a list shows when it has nothing yet: a neutral icon, a short title,
-// one sentence on how to fill it, and at most one action. Same shape on
-// every screen so empty states read as part of the product, not as
-// decoration.
+// What a list shows when it has nothing yet: a floating tile in the tab's
+// gradient, a short title, one sentence on how to fill it, and at most one
+// action. Same shape on every screen.
 interface Props {
   ikon: IconName
   baslik: string
@@ -18,16 +17,19 @@ interface Props {
 export function BosDurum({ ikon, baslik, aciklama, eylem, sikisik, className = '' }: Props) {
   return (
     <div className={`flex flex-col items-center text-center animate-fade-in ${sikisik ? 'py-8 px-4' : 'py-14 px-6'} ${className}`}>
-      <div className="w-12 h-12 rounded-2xl bg-ink-50 border border-ink-100 flex items-center justify-center mb-4">
-        <Icon name={ikon} className="w-6 h-6 text-ink-400" />
+      <div className="relative mb-5 animate-pop-in">
+        <div aria-hidden className="absolute inset-0 rounded-[1.75rem] bg-bolum blur-xl opacity-40 scale-90 translate-y-2" />
+        <div className={`relative rounded-[1.75rem] bg-bolum flex items-center justify-center animate-yuzen ${sikisik ? 'w-14 h-14' : 'w-[72px] h-[72px]'}`}>
+          <Icon name={ikon} className={`text-white ${sikisik ? 'w-7 h-7' : 'w-9 h-9'}`} strokeWidth={2} />
+        </div>
       </div>
-      <p className="text-headline text-ink-800">{baslik}</p>
+      <p className="text-title text-ink-800">{baslik}</p>
       {aciklama && <p className="text-callout font-normal text-ink-400 mt-1 max-w-xs text-balance">{aciklama}</p>}
       {eylem && (
         <button
           type="button"
           onClick={eylem.onClick}
-          className="mt-5 inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-white border border-ink-200 text-callout text-ink-700 transition-colors hover:bg-ink-50 active:bg-ink-100"
+          className="mt-5 btn-primary inline-flex items-center gap-2 h-11 px-5 py-0 text-callout font-semibold"
         >
           {eylem.ikon && <Icon name={eylem.ikon} className="w-4 h-4" />}
           {eylem.etiket}

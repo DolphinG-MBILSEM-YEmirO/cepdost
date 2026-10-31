@@ -280,8 +280,8 @@ function DavetModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2.5 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-ink-50 flex items-center justify-center shrink-0">
-            <Icon name="CalendarClock" className="w-5 h-5 text-ink-500" />
+          <div className="w-10 h-10 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center shrink-0">
+            <Icon name="CalendarClock" className="w-5 h-5 text-bolum-koyu" />
           </div>
           <div className="min-w-0">
             <h3 className="font-semibold text-ink-700 truncate">{arkadas.ad} davet et</h3>

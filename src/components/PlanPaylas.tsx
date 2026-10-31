@@ -115,8 +115,8 @@ export function PlanPaylasSheet({
         <Satir
           onClick={onUygunSaat}
           sol={
-            <span className="w-10 h-10 rounded-xl bg-ink-50 flex items-center justify-center shrink-0">
-              <Icon name="Wand2" className="w-5 h-5 text-ink-500" />
+            <span className="w-10 h-10 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center shrink-0">
+              <Icon name="Wand2" className="w-5 h-5 text-bolum-koyu" />
             </span>
           }
           baslik="Herkese uyan saati bul"
@@ -205,7 +205,7 @@ export function PaylasimHedefiSheet({ kayit, onKapat }: { kayit: Kayit; onKapat:
     return (
       <Sheet baslik="Paylaşıldı" onKapat={onKapat}>
         <div className="text-center py-4">
-          <div className="w-12 h-12 rounded-2xl bg-ink-50 border border-ink-100 flex items-center justify-center mx-auto mb-3">
+          <div className="w-12 h-12 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center mx-auto mb-3">
             <Icon name="CheckCircle2" className="w-7 h-7 text-teal-600" />
           </div>
           <p className="text-sm text-ink-500 mb-5">

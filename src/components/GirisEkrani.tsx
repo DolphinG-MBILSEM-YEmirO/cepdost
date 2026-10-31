@@ -177,7 +177,7 @@ export function GirisEkrani({
       </div>
 
       {/* What the app does, then the privacy promise, before signing up. */}
-      <ul className="bg-white rounded-2xl border border-ink-100 divide-y divide-ink-100 mb-6">
+      <ul className="card divide-y divide-ink-100/70 overflow-hidden kademeli mb-6">
         {[
           { ikon: 'Users' as const, baslik: 'Arkadaşlarınla planla', metin: 'Kullanıcı adıyla ekle, planı gönder, kimin geldiğini gör.' },
           { ikon: 'CalendarClock' as const, baslik: 'Herkese uyan saati bul', metin: 'Boş saatler karşılaştırılır, uygun aralık önerilir.' },
@@ -186,10 +186,13 @@ export function GirisEkrani({
             baslik: 'Planların sende kalır',
             metin: 'Arkadaşların yalnızca dolu saatlerini görür; ne yaptığın ve notların telefonundan çıkmaz.',
           },
-        ].map((m) => (
+        ].map((m, i) => (
           <li key={m.baslik} className="flex items-start gap-3 px-4 py-3">
-            <span className="w-8 h-8 rounded-lg bg-ink-50 flex items-center justify-center shrink-0">
-              <Icon name={m.ikon} className="w-[18px] h-[18px] text-ink-500" />
+            <span
+              data-bolum={(['planlar', 'sohbet', 'profil'] as const)[i]}
+              className="w-10 h-10 rounded-2xl bg-bolum text-white shadow-glow flex items-center justify-center shrink-0"
+            >
+              <Icon name={m.ikon} className="w-5 h-5" />
             </span>
             <span className="min-w-0">
               <span className="block text-body font-medium text-ink-800">{m.baslik}</span>
@@ -250,20 +253,25 @@ function Cerceve({
 }) {
   return (
     <div className="flex flex-col h-full">
-      <div className="px-4 pt-[calc(1.5rem+var(--safe-top))] pb-5 flex items-start gap-3">
+      {/* A brand-gradient hero with the app icon floating in it. */}
+      <div className="relative overflow-hidden bg-bolum-canli text-white rounded-b-[2rem] px-4 pt-[calc(1.5rem+var(--safe-top))] pb-6 mb-5 flex items-start gap-3 lg:rounded-none lg:bg-none lg:text-ink-800 lg:mb-0">
+        <div aria-hidden className="pointer-events-none absolute -top-16 -right-12 w-52 h-52 rounded-full bg-white/15 animate-yuzen lg:hidden" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-24 -left-10 w-48 h-48 rounded-[3rem] bg-white/10 rotate-12 animate-yuzen-yavas lg:hidden" />
         {onGeri && (
           <button
             onClick={onGeri}
             aria-label="Geri"
-            className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-ink-50 active:bg-ink-100 shrink-0"
+            className="relative w-10 h-10 rounded-2xl flex items-center justify-center bg-white/20 hover:bg-white/30 basinca shrink-0 lg:bg-ink-50"
           >
-            <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />
+            <Icon name="ArrowLeft" className="w-5 h-5" />
           </button>
         )}
-        <div>
-          {!onGeri && <img src="/icons/icon-192.png" alt="" className="w-11 h-11 rounded-xl mb-5 lg:hidden" />}
-          <h1 className="text-display text-ink-800 tracking-tight">{baslik}</h1>
-          <p className="text-callout font-normal text-ink-400 mt-1">{altBaslik}</p>
+        <div className="relative">
+          {!onGeri && (
+            <img src="/icons/icon-192.png" alt="" className="w-14 h-14 rounded-2xl mb-5 shadow-float ring-4 ring-white/30 animate-yuzen lg:hidden" />
+          )}
+          <h1 className="text-[2rem] leading-[2.375rem] font-extrabold tracking-tight animate-slide-up">{baslik}</h1>
+          <p className="text-callout text-white/85 mt-1 animate-fade-in lg:text-ink-400">{altBaslik}</p>
         </div>
       </div>
       <div className="flex-1 overflow-y-auto px-4 pb-24">{children}</div>

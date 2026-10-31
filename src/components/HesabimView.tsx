@@ -123,8 +123,12 @@ function ProfilKarti({
   }
 
   return (
-    <div className="card overflow-hidden">
-      <div className="px-4 pt-6 pb-5 flex flex-col items-center text-center">
+    <div className="card overflow-hidden animate-pop-in">
+      {/* A colour band the avatar overlaps, like a social profile cover. */}
+      <div aria-hidden className="h-20 bg-bolum-canli relative overflow-hidden">
+        <div className="absolute -top-8 -right-6 w-28 h-28 rounded-full bg-white/15 animate-yuzen" />
+      </div>
+      <div className="px-4 -mt-12 pb-5 flex flex-col items-center text-center relative">
         <AvatarSecici profil={profil} onDegisti={onDegisti} onHata={setHata} />
         <p className="text-title text-ink-800 mt-3 max-w-full truncate">{profil.ad}</p>
 
@@ -165,7 +169,7 @@ function ProfilKarti({
           <button
             onClick={() => setDuzenle(true)}
             aria-label={profil.kullanici_adi ? 'Kullanıcı adını değiştir' : undefined}
-            className="text-sm text-brand-600 font-medium mt-0.5 active:opacity-80 transition-transform"
+            className="text-sm text-bolum-koyu font-semibold mt-0.5 basinca"
           >
             {profil.kullanici_adi ? `@${profil.kullanici_adi}` : 'Kullanıcı adı belirle'}
           </button>
@@ -175,7 +179,7 @@ function ProfilKarti({
 
         <button
           onClick={() => setProfilDuzenle(true)}
-          className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-mist-50 border border-ink-100 px-4 py-2 text-sm font-semibold text-ink-600 active:opacity-80 transition-transform"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-bolum-soluk px-4 py-2 text-sm font-semibold text-bolum-koyu basinca"
         >
           <Icon name="Pencil" className="w-4 h-4" />
           Profili düzenle
@@ -209,9 +213,9 @@ function Sayac({ sayi, etiket, onClick }: { sayi: number; etiket: string; onClic
     <button
       onClick={onClick}
       aria-label={`${sayi} ${etiket.toLocaleLowerCase('tr-TR')}, arkadaşlarını gör`}
-      className="py-3.5 flex flex-col items-center hover:bg-ink-50 active:opacity-80 transition-all"
+      className="py-3.5 flex flex-col items-center hover:bg-bolum-soluk basinca transition-colors"
     >
-      <span className="text-title text-ink-800">{sayi}</span>
+      <span className="text-[1.625rem] leading-8 font-extrabold text-bolum tabular-nums">{sayi}</span>
       <span className="text-xs text-ink-400">{etiket}</span>
     </button>
   )
@@ -325,10 +329,10 @@ function AvatarSecici({
         onClick={() => girdiRef.current?.click()}
         disabled={calisiyor}
         aria-label="Profil fotoğrafını değiştir"
-        className="block active:opacity-80 transition-transform disabled:opacity-60"
+        className="block rounded-full ring-4 ring-white shadow-float basinca disabled:opacity-60"
       >
         <Avatar ad={profil.ad} foto={profil.avatar} emoji={profil.emoji} renk={profil.renk} boyut="lg" />
-        <span className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-brand-600 text-white flex items-center justify-center shadow-soft ring-2 ring-mist-50">
+        <span className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-bolum text-white flex items-center justify-center shadow-glow ring-2 ring-white">
           <Icon name={calisiyor ? 'Loader2' : 'Camera'} className={`w-4 h-4 ${calisiyor ? 'animate-spin' : ''}`} />
         </span>
       </button>

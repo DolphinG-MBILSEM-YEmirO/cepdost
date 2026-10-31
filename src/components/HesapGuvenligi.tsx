@@ -38,8 +38,8 @@ export function HesapGuvenligi() {
   return (
     <div className="card p-5">
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 rounded-xl bg-ink-50 flex items-center justify-center">
-          <Icon name="KeyRound" className="w-5 h-5 text-ink-500" />
+        <div className="w-10 h-10 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center">
+          <Icon name="KeyRound" className="w-5 h-5 text-bolum-koyu" />
         </div>
         <h2 className="font-semibold text-ink-700">Hesap güvenliği</h2>
       </div>

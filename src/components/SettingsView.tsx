@@ -25,8 +25,8 @@ export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
 
         <div className="card p-5">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-xl bg-ink-50 flex items-center justify-center">
-              <Icon name="Share2" className="w-5 h-5 text-ink-500" />
+            <div className="w-10 h-10 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center">
+              <Icon name="Share2" className="w-5 h-5 text-bolum-koyu" />
             </div>
             <h2 className="font-semibold text-ink-700">Paylaş menüsüne ekle</h2>
           </div>
@@ -40,22 +40,22 @@ export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
 
         <div className="card p-5">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-xl bg-ink-50 flex items-center justify-center">
-              <Icon name="Info" className="w-5 h-5 text-ink-500" />
+            <div className="w-10 h-10 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center">
+              <Icon name="Info" className="w-5 h-5 text-bolum-koyu" />
             </div>
             <h2 className="font-semibold text-ink-700">Nasıl çalışır?</h2>
           </div>
           <div className="space-y-3 text-sm text-ink-500">
             <div className="flex gap-3">
-              <span className="w-6 h-6 rounded-full bg-ink-50 text-ink-600 font-semibold border border-ink-100 text-xs flex items-center justify-center shrink-0">1</span>
+              <span className="w-6 h-6 rounded-full bg-bolum text-white font-bold text-xs flex items-center justify-center shrink-0">1</span>
               <p>Arkadaşlarını Sohbet → Arkadaşlar'dan kullanıcı adıyla ekle.</p>
             </div>
             <div className="flex gap-3">
-              <span className="w-6 h-6 rounded-full bg-ink-50 text-ink-600 font-semibold border border-ink-100 text-xs flex items-center justify-center shrink-0">2</span>
+              <span className="w-6 h-6 rounded-full bg-bolum text-white font-bold text-xs flex items-center justify-center shrink-0">2</span>
               <p>+ ile plan kur ya da asistana yaz ("Cumartesi Ayşe'yle kahvaltı"); herkesin boş olduğu saati bulur, davetleri gönderir.</p>
             </div>
             <div className="flex gap-3">
-              <span className="w-6 h-6 rounded-full bg-ink-50 text-ink-600 font-semibold border border-ink-100 text-xs flex items-center justify-center shrink-0">3</span>
+              <span className="w-6 h-6 rounded-full bg-bolum text-white font-bold text-xs flex items-center justify-center shrink-0">3</span>
               <p>Bir link ya da ekran görüntüsünü paylaş menüsünden gönder; saatiyle, yeriyle plana dönüşür, Arşiv'de kalır.</p>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { SegmentedControl } from '../ui/SegmentedControl'
+import { BaslikBaglami } from '../ui/baslikBaglami'
 import { Icon, type IconName } from './Icon'
 import { Avatar, GrupAvatari } from './Avatar'
 import { GrupDuzenle } from './GrupDuzenle'
@@ -98,7 +99,6 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
   }, [acilanGrup.id, sosyalSurum])
   const grup = guncelGrup?.id === acilanGrup.id ? guncelGrup : acilanGrup
   // The group's colour stays on its avatar; the header itself is neutral.
-  const zemin = 'bg-white'
 
   const uyeleriTazele = useCallback(async () => {
     setUyeler(await grupUyeleriGetir(grup.id))
@@ -124,18 +124,18 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
 
   return (
     <div className={gomulu ? 'flex flex-col h-full min-h-0' : 'panel-tam z-[55]'}>
-      <div className={`flex items-center gap-3 px-4 pt-[calc(1rem+var(--safe-top))] pb-3 shrink-0 ${zemin}`}>
+      <div className={`flex items-center gap-3 px-4 pt-[calc(1rem+var(--safe-top))] pb-3 shrink-0 bg-bolum text-white`}>
         <button
           onClick={onClose}
           aria-label="Geri"
-          className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-ink-50 active:bg-ink-100 shrink-0"
+          className="w-10 h-10 rounded-2xl flex items-center justify-center hover:bg-white/20 basinca shrink-0"
         >
-          <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />
+          <Icon name="ArrowLeft" className="w-5 h-5 text-white" />
         </button>
         <GrupAvatari grup={grup} boyut="sm" />
         <div className="min-w-0 flex-1">
-          <h2 className="text-headline text-ink-800 truncate">{grup.ad}</h2>
-          <p className="text-xs text-ink-400 truncate">
+          <h2 className="text-headline text-white font-bold truncate">{grup.ad}</h2>
+          <p className="text-xs text-white/80 truncate">
             {grup.aciklama ? `${grup.aciklama} · ` : ''}
             {uyeler.length} üye
           </p>
@@ -147,26 +147,26 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
               setAramaAcik(true)
             }}
             aria-label="Sohbette ara"
-            className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-ink-50 active:bg-ink-100 shrink-0"
+            className="w-10 h-10 rounded-2xl flex items-center justify-center hover:bg-white/20 basinca shrink-0"
           >
-            <Icon name="Search" className="w-5 h-5 text-ink-400" />
+            <Icon name="Search" className="w-5 h-5 text-white" />
           </button>
         )}
         {sekme === 'sohbet' && (
           <button
             onClick={() => setTemaAcik(true)}
             aria-label="Sohbet temasını değiştir"
-            className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-ink-50 active:bg-ink-100 shrink-0"
+            className="w-10 h-10 rounded-2xl flex items-center justify-center hover:bg-white/20 basinca shrink-0"
           >
-            <Icon name="Palette" className="w-5 h-5 text-ink-400" />
+            <Icon name="Palette" className="w-5 h-5 text-white" />
           </button>
         )}
         <button
           onClick={() => setDuzenleAcik(true)}
           aria-label="Grubu düzenle"
-          className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-ink-50 active:bg-ink-100 shrink-0"
+          className="w-10 h-10 rounded-2xl flex items-center justify-center hover:bg-white/20 basinca shrink-0"
         >
-          <Icon name="Pencil" className="w-4 h-4 text-ink-400" />
+          <Icon name="Pencil" className="w-4 h-4 text-white" />
         </button>
       </div>
 
@@ -182,13 +182,15 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
         />
       )}
 
-      <div className={`px-4 pb-3 shrink-0 border-b border-ink-100 ${zemin}`}>
-        <SegmentedControl
-          etiket={`${grup.ad} bölümleri`}
-          secili={sekme}
-          onSec={setSekme}
-          segmentler={sekmeler.map((s) => ({ id: s.id, etiket: s.etiket }))}
-        />
+      <div className="px-4 pb-4 mb-1 shrink-0 bg-bolum rounded-b-[2rem] shadow-soft">
+        <BaslikBaglami.Provider value>
+          <SegmentedControl
+            etiket={`${grup.ad} bölümleri`}
+            secili={sekme}
+            onSec={setSekme}
+            segmentler={sekmeler.map((s) => ({ id: s.id, etiket: s.etiket }))}
+          />
+        </BaslikBaglami.Provider>
       </div>
 
       {sekme === 'planlar' && (

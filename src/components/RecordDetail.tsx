@@ -123,15 +123,15 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
 
   return (
     <div className="panel-tam z-50">
-      <div className="flex items-center justify-between px-4 pt-[calc(1rem+var(--safe-top))] pb-3">
-        <button onClick={onClose} aria-label="Geri" className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-ink-50 active:bg-ink-100">
-          <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />
+      <div className="relative overflow-hidden bg-bolum-canli text-white rounded-b-[2rem] mb-2 flex items-center justify-between px-4 pt-[calc(1rem+var(--safe-top))] pb-5">
+        <button onClick={onClose} aria-label="Geri" className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/20 hover:bg-white/30 basinca">
+          <Icon name="ArrowLeft" className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-2">
           <button
             onClick={handleToggleStatus}
             className={`px-4 py-2 rounded-full text-sm font-medium transition-all active:opacity-80 flex items-center gap-1.5
-              ${done ? 'bg-teal-100 text-teal-700' : 'bg-white text-ink-600 border border-ink-200'}`}
+              ${done ? 'bg-white text-teal-700' : 'bg-white/20 text-white'}`}
           >
             <Icon name={done ? 'CheckCircle2' : 'Circle'} className="w-4 h-4" />
             {done ? 'Yapıldı' : 'Bekliyor'}
@@ -141,13 +141,13 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
               onClick={handleSave}
               disabled={saving}
               aria-label="Kaydet"
-              className="w-10 h-10 rounded-full bg-brand-600 text-white flex items-center justify-center active:opacity-80 transition-transform disabled:opacity-50"
+              className="w-10 h-10 rounded-2xl bg-white text-bolum-koyu flex items-center justify-center basinca disabled:opacity-50"
             >
               <Icon name={saving ? 'Loader2' : 'Save'} className={`w-5 h-5 ${saving ? 'animate-spin' : ''}`} />
             </button>
           ) : (
-            <button onClick={() => setEditing(true)} aria-label="Düzenle" className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-ink-50 active:bg-ink-100">
-              <Icon name="Pencil" className="w-5 h-5 text-ink-500" />
+            <button onClick={() => setEditing(true)} aria-label="Düzenle" className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/20 hover:bg-white/30 basinca">
+              <Icon name="Pencil" className="w-5 h-5" />
             </button>
           )}
         </div>
@@ -264,8 +264,8 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
                   )}
                   {kayit.konum && (
                     <a href={mapsLink ?? '#'} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 active:opacity-80 transition-transform">
-                      <div className="w-8 h-8 rounded-lg bg-ink-50 flex items-center justify-center">
-                        <Icon name="MapPin" className="w-4 h-4 text-ink-500" />
+                      <div className="w-8 h-8 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center">
+                        <Icon name="MapPin" className="w-4 h-4 text-bolum-koyu" />
                       </div>
                       <div className="flex-1">
                         <p className="text-xs text-ink-400">Konum</p>

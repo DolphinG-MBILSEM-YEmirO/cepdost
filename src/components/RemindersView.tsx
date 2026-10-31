@@ -161,8 +161,8 @@ export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, 
             onClick={onFikirler}
             className="w-full bg-white rounded-2xl border border-ink-100 px-4 py-3 flex items-center gap-3 text-left hover:bg-ink-50/60"
           >
-            <span className="w-8 h-8 rounded-lg bg-ink-50 flex items-center justify-center shrink-0">
-              <Icon name="Lightbulb" className="w-[18px] h-[18px] text-ink-500" />
+            <span className="w-8 h-8 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center shrink-0">
+              <Icon name="Lightbulb" className="w-[18px] h-[18px] text-bolum-koyu" />
             </span>
             <span className="flex-1 min-w-0">
               <span className="block text-body font-medium text-ink-800">Fikirler</span>
@@ -207,7 +207,7 @@ function Section({
         <span className="text-caption font-normal text-ink-400 tabular-nums">{count}</span>
       </h2>
       {eylemler}
-      <div className="bg-white rounded-2xl border border-ink-100 divide-y divide-ink-100 overflow-hidden">
+      <div className="card divide-y divide-ink-100/70 overflow-hidden kademeli">
         {kayitlar.map((kayit) => (
           <KayitCard
             key={kayit.id}

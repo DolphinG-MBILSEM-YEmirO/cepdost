@@ -73,7 +73,7 @@ export function FikirlerView({ kayitlar, onRecordClick }: Props) {
               onClick={() => setFiltre(f)}
               aria-pressed={filtre === f}
               className={`chip text-xs shrink-0 ${
-                filtre === f ? 'bg-ink-800 text-white border border-ink-800' : 'bg-white text-ink-600 border border-ink-200 hover:bg-ink-50'
+                filtre === f ? 'bg-bolum text-white shadow-glow' : 'bg-white text-ink-600 shadow-soft hover:bg-bolum-soluk'
               }`}
             >
               {f === 'hepsi' ? 'Hepsi' : CATEGORY_LABELS[f]}

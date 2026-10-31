@@ -191,7 +191,7 @@ export function SohbetlerView({ onDegisti, ust, onArkadasEkle, acilacak, onAcild
               onMesaj={(r) => ac(r.sohbet, r.mesajId)}
             />
           ) : sohbetler === null ? (
-            <div className="bg-white rounded-2xl border border-ink-100 divide-y divide-ink-100">
+            <div className="card divide-y divide-ink-100/70 overflow-hidden kademeli">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-3 px-4 py-3">
                   <div className="skeleton w-11 h-11 rounded-full" />
@@ -212,7 +212,7 @@ export function SohbetlerView({ onDegisti, ust, onArkadasEkle, acilacak, onAcild
           ) : (
             <div className="space-y-5">
               {yazisilmis.length > 0 && (
-              <div className="bg-white rounded-2xl border border-ink-100 divide-y divide-ink-100 overflow-hidden">
+              <div className="card divide-y divide-ink-100/70 overflow-hidden kademeli">
               {yazisilmis.map((s) => (
                 <SohbetSatiri
                   key={`${s.tur}-${s.id}`}
@@ -227,7 +227,7 @@ export function SohbetlerView({ onDegisti, ust, onArkadasEkle, acilacak, onAcild
               {bos.length > 0 && (
                 <section>
                   {yazisilmis.length > 0 && <h2 className="text-label text-ink-500 px-1 mb-2">Yeni sohbet başlat</h2>}
-                  <div className="bg-white rounded-2xl border border-ink-100 divide-y divide-ink-100 overflow-hidden">
+                  <div className="card divide-y divide-ink-100/70 overflow-hidden kademeli">
                   {bos.map((s) => (
                     <SohbetSatiri
                       key={`${s.tur}-${s.id}`}
@@ -279,7 +279,7 @@ function AramaSonuclari({
       {sohbetler.length > 0 && (
         <>
           <p className={baslik}>Sohbetler</p>
-          <div className="bg-white rounded-2xl border border-ink-100 divide-y divide-ink-100 overflow-hidden">
+          <div className="card divide-y divide-ink-100/70 overflow-hidden kademeli">
             {sohbetler.map((s) => (
               <SohbetSatiri key={`${s.tur}-${s.id}`} sohbet={s} secili={secili(s)} onAc={() => onSohbet(s)} />
             ))}
@@ -294,7 +294,7 @@ function AramaSonuclari({
       ) : mesajlar.length === 0 ? (
         <p className="text-sm text-ink-400 px-1 py-2">Mesajlarda geçmiyor.</p>
       ) : (
-        <div className="bg-white rounded-2xl border border-ink-100 divide-y divide-ink-100 overflow-hidden">
+        <div className="card divide-y divide-ink-100/70 overflow-hidden kademeli">
           {mesajlar.map((r) => (
             <MesajSonucuSatiri key={`${r.sohbet.id}-${r.mesajId}`} sonuc={r} sorgu={sorgu} onAc={() => onMesaj(r)} />
           ))}
@@ -331,7 +331,7 @@ function SohbetSatiri({ sohbet, secili = false, onAc }: { sohbet: Sohbet; secili
         <div className="flex items-center gap-2">
           <p className="text-body font-semibold text-ink-800 truncate flex-1">{sohbet.ad}</p>
           {sohbet.sonZaman && (
-            <span className={`text-caption shrink-0 tabular-nums ${sohbet.okunmamis > 0 ? 'text-brand-600 font-semibold' : 'text-ink-400 font-normal'}`}>
+            <span className={`text-caption shrink-0 tabular-nums ${sohbet.okunmamis > 0 ? 'text-bolum-koyu font-bold' : 'text-ink-400 font-normal'}`}>
               {formatRelativeTime(new Date(sohbet.sonZaman).getTime())}
             </span>
           )}
@@ -346,7 +346,7 @@ function SohbetSatiri({ sohbet, secili = false, onAc }: { sohbet: Sohbet; secili
       </div>
 
       {sohbet.okunmamis > 0 && (
-        <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-brand-600 text-white text-[11px] font-bold flex items-center justify-center shrink-0 tabular-nums">
+        <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-bolum text-white text-[11px] font-bold flex items-center justify-center shrink-0 tabular-nums shadow-glow animate-pop-in">
           {sohbet.okunmamis > 9 ? '9+' : sohbet.okunmamis}
         </span>
       )}

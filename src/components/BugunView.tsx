@@ -139,7 +139,7 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
       <div className="px-4 lg:px-0 pb-2">
         <div className="flex items-center gap-3 mb-3">
           <div className="flex-1 min-w-0">
-            <h2 className="text-title text-ink-800 truncate first-letter:uppercase">{dayLabel}</h2>
+            <h2 key={dayLabel} className="text-title text-ink-800 truncate first-letter:uppercase animate-slide-up">{dayLabel}</h2>
             <p className="text-caption font-normal text-ink-400 mt-0.5">{ozet}</p>
           </div>
           <SimgeButonu
@@ -172,8 +172,12 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
                     aria-label={`${d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' })}${count > 0 ? `, ${count} plan` : ''}`}
                     aria-pressed={active}
                     aria-current={today ? 'date' : undefined}
-                    className={`flex flex-col items-center py-1.5 rounded-xl transition-colors ${
-                      active ? 'bg-brand-600 text-white' : 'hover:bg-ink-50 active:bg-ink-100'
+                    className={`flex flex-col items-center py-2 rounded-2xl basinca transition-all duration-300 ${
+                      active
+                        ? 'bg-bolum text-white shadow-glow scale-105'
+                        : today
+                          ? 'bg-white shadow-soft ring-2 ring-brand-300'
+                          : 'bg-white/70 hover:bg-white hover:shadow-soft'
                     }`}
                   >
                     <span className={`text-[11px] font-medium leading-4 ${active ? 'text-white/80' : 'text-ink-400'}`}>
@@ -181,14 +185,14 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
                     </span>
                     <span
                       className={`text-headline tabular-nums leading-6 ${
-                        active ? 'text-white' : today ? 'text-brand-600' : 'text-ink-800'
+                        active ? 'text-white' : today ? 'text-bolum-koyu' : 'text-ink-800'
                       }`}
                     >
                       {d.getDate()}
                     </span>
                     <span
                       aria-hidden="true"
-                      className={`w-1 h-1 rounded-full mt-0.5 ${count > 0 ? (active ? 'bg-white' : 'bg-ink-300') : 'bg-transparent'}`}
+                      className={`w-1.5 h-1.5 rounded-full mt-0.5 ${count > 0 ? (active ? 'bg-white' : 'bg-bolum') : 'bg-transparent'}`}
                     />
                   </button>
                 )
@@ -209,8 +213,8 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
           <div className="flex items-center gap-4 mt-3 min-h-[1.5rem]">
             {done.length > 0 && (
               <div className="flex items-center gap-2 flex-1 min-w-0" aria-label={`${done.length} / ${allDayRecords.length} tamamlandı`}>
-                <div className="flex-1 max-w-[8rem] h-1 rounded-full bg-ink-100 overflow-hidden">
-                  <div className="h-full rounded-full bg-teal-500 transition-all duration-300" style={{ width: `${progressPct}%` }} />
+                <div className="flex-1 max-w-[8rem] h-2 rounded-full bg-ink-100 overflow-hidden">
+                  <div className="h-full rounded-full bg-gradient-to-r from-teal-400 to-emerald-500 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]" style={{ width: `${progressPct}%` }} />
                 </div>
                 <span className="text-caption font-normal text-ink-400 tabular-nums">
                   {done.length}/{allDayRecords.length}
@@ -219,7 +223,7 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
             )}
             <div className="flex items-center gap-4 ml-auto">
               {!isTodayView && (
-                <button onClick={() => setSelectedDate(new Date())} className="text-callout text-brand-600 hover:text-brand-700">
+                <button onClick={() => setSelectedDate(new Date())} className="chip bg-bolum-soluk text-bolum-koyu font-semibold">
                   Bugüne dön
                 </button>
               )}
@@ -237,7 +241,7 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
         )}
 
         {gunuErtele && (
-          <div className="mt-2 rounded-2xl bg-white border border-ink-100 p-3">
+          <div className="mt-2 card p-3 animate-pop-in">
             <p className="text-caption font-normal text-ink-400 mb-2">Bu günün {pending.length} bekleyen planı nereye taşınsın?</p>
             <ErtelemeSecici tarih={seciliTarih} onSec={(hedef) => void gunuTasi(hedef)} mesgul={islem.mesgul} etiket="Bu günün planları" />
           </div>
@@ -254,7 +258,7 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
           </div>
         )}
         {loading ? (
-          <div className="mt-2 bg-white rounded-2xl border border-ink-100 divide-y divide-ink-100">
+          <div className="mt-2 card divide-y divide-ink-100">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="flex gap-3 px-4 py-3.5">
                 <div className="skeleton w-10 h-4 rounded-md" />
@@ -316,15 +320,17 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
   )
 }
 
-// A titled group of plan rows in one white card, like a grouped list.
+// A titled group of plan cards that arrive one after another.
 function Section({ title, count, children }: { title: string; count: number; children: React.ReactNode }) {
   return (
     <section>
-      <h3 className="flex items-baseline gap-2 text-label text-ink-500 px-1 mb-2">
+      <h3 className="flex items-center gap-2 text-label text-ink-600 px-1 mb-2.5">
         {title}
-        <span className="text-caption font-normal text-ink-400 tabular-nums">{count}</span>
+        <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-bolum-soluk text-bolum-koyu text-[11px] font-bold flex items-center justify-center tabular-nums">
+          {count}
+        </span>
       </h3>
-      <div className="bg-white rounded-2xl border border-ink-100 divide-y divide-ink-100">{children}</div>
+      <div className="space-y-2.5 kademeli">{children}</div>
     </section>
   )
 }
@@ -354,25 +360,27 @@ function PlanSatiri({
   const kategori = kayit.kategori ? CATEGORY_LABELS[kayit.kategori] : 'Sınıflandırılmamış'
 
   return (
-    <div>
-      <div className="flex items-start gap-3 px-4 py-3">
-        {saatli && (
-          <div className="w-12 shrink-0 pt-0.5 text-left">
-            <span className={`block tabular-nums ${kayit.tumGun ? 'text-caption text-brand-600' : 'text-callout font-semibold text-ink-800'}`}>
-              {timeLabel}
-            </span>
-            {durLabel && <span className="block text-[11px] text-ink-400 mt-0.5">{durLabel}</span>}
-          </div>
-        )}
+    <div className="card overflow-hidden transition-shadow duration-300 hover:shadow-float">
+      <div className="flex items-start gap-3 px-3.5 py-3">
+        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${colors.bg} ${colors.text}`}>
+          <Icon name={CATEGORY_ICON_NAME[kayit.kategori ?? 'not']} className="w-5 h-5" />
+        </div>
         <div {...tiklanabilir(onClick)} className="flex-1 min-w-0 cursor-pointer">
           <p className="text-body font-medium text-ink-800 leading-snug">
             {kayit.emoji && <span aria-hidden="true">{kayit.emoji} </span>}
             {baslik}
           </p>
           <p className="flex items-center gap-1.5 text-caption font-normal text-ink-400 mt-1 min-w-0">
-            <span className={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${colors.bg} ${colors.text}`}>
-              <Icon name={CATEGORY_ICON_NAME[kayit.kategori ?? 'not']} className="w-3 h-3" />
-            </span>
+            {saatli && (
+              <span
+                className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${
+                  kayit.tumGun ? 'bg-bolum-soluk text-bolum-koyu' : 'bg-bolum text-white'
+                }`}
+              >
+                {timeLabel}
+                {durLabel && <span className="font-medium opacity-80"> · {durLabel}</span>}
+              </span>
+            )}
             <span className="truncate">
               {kategori}
               {kayit.konum ? ` · ${kayit.konum}` : ''}
@@ -391,7 +399,7 @@ function PlanSatiri({
               aria-expanded={showReschedule}
               title="Ertele"
               className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
-                showReschedule ? 'bg-brand-50 text-brand-600' : 'text-ink-300 hover:text-ink-500 hover:bg-ink-50'
+                showReschedule ? 'bg-bolum-soluk text-bolum-koyu' : 'text-ink-300 hover:text-ink-500 hover:bg-ink-50'
               }`}
             >
               <Icon name="CalendarClock" className="w-[18px] h-[18px]" />
@@ -400,14 +408,14 @@ function PlanSatiri({
           <button
             onClick={onToggle}
             aria-label="Yapıldı olarak işaretle"
-            className="w-9 h-9 rounded-lg flex items-center justify-center text-ink-300 hover:text-teal-600 hover:bg-ink-50"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-ink-300 basinca hover:text-teal-600 hover:bg-teal-50"
           >
             <Icon name="Circle" className="w-[22px] h-[22px]" />
           </button>
         </div>
       </div>
       {showReschedule && kayit.tarih && (
-        <div className="px-4 pb-3">
+        <div className="px-4 pb-3 animate-slide-down">
           <ErtelemeSecici tarih={kayit.tarih} onSec={onReschedule} mesgul={rescheduling} etiket={baslik} />
         </div>
       )}
@@ -420,7 +428,7 @@ function DoneItem({ kayit, onClick, onToggle }: { kayit: Kayit; onClick: () => v
   const baslik = goruntulemeBasligi(kayit)
 
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5">
+    <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-white/60">
       <div {...tiklanabilir(onClick)} className="flex-1 min-w-0 flex items-center gap-3 cursor-pointer">
         {timeLabel && <span className="w-12 shrink-0 text-caption font-normal text-ink-400 tabular-nums">{timeLabel}</span>}
         <span className="text-callout font-normal text-ink-400 truncate line-through">{baslik}</span>
@@ -428,9 +436,9 @@ function DoneItem({ kayit, onClick, onToggle }: { kayit: Kayit; onClick: () => v
       <button
         onClick={onToggle}
         aria-label="Bekliyor olarak işaretle"
-        className="w-9 h-9 -mr-2 rounded-lg flex items-center justify-center text-teal-600 hover:bg-ink-50 shrink-0"
+        className="w-9 h-9 -mr-2 rounded-full flex items-center justify-center text-teal-500 hover:bg-teal-50 shrink-0 basinca"
       >
-        <Icon name="CheckCircle2" className="w-[22px] h-[22px]" />
+        <Icon name="CheckCircle2" className="w-[22px] h-[22px] animate-pop-in" />
       </button>
     </div>
   )

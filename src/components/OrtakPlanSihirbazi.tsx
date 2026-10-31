@@ -332,8 +332,8 @@ export function OrtakPlanSihirbazi({
               <>
                 <div className="card p-5">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="w-9 h-9 rounded-xl bg-ink-50 flex items-center justify-center shrink-0">
-                      <Icon name="Wand2" className="w-[18px] h-[18px] text-ink-500" />
+                    <div className="w-9 h-9 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center shrink-0">
+                      <Icon name="Wand2" className="w-[18px] h-[18px] text-bolum-koyu" />
                     </div>
                     <p className="text-label text-ink-500">
                       Herkese uyan öneri
@@ -505,13 +505,13 @@ function Kabuk({
 }) {
   return (
     <div className="panel-tam z-[60]">
-      <div className="flex items-center justify-between px-4 pt-[calc(1rem+var(--safe-top))] pb-4 border-b border-ink-100 shrink-0">
-        <h2 className="text-headline text-ink-800 truncate">{baslik}</h2>
+      <div className="relative overflow-hidden bg-bolum-canli text-white rounded-b-[2rem] mb-2 flex items-center justify-between px-4 pt-[calc(1rem+var(--safe-top))] pb-5 shrink-0">
+        <h2 className="text-headline text-white truncate">{baslik}</h2>
         <button
           onClick={onKapat}
-          className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-ink-50 active:bg-ink-100 shrink-0"
+          className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/20 hover:bg-white/30 basinca shrink-0"
         >
-          <Icon name="X" className="w-5 h-5 text-ink-500" />
+          <Icon name="X" className="w-5 h-5" />
         </button>
       </div>
       {children}

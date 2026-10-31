@@ -1,50 +1,52 @@
 {
-  "$comment": "Sharloop design tokens (single source). Theme 'Mercan' (2026-10-31): cool neutral surfaces, near-black text and one coral accent, the colour of plans made for the evening; shared with Davet. Tailwind serves mist/ink/brand as CSS variables; Davet and the native apps read this file too.",
+  "$comment": "Sharloop design tokens (single source). Theme 'Canlı' (2026-10-31, after the user asked for vivid colours and more motion): soft lavender-white surfaces, deep violet-black text, a magenta-pink brand and one bright gradient per main tab (bolum). Tailwind serves mist/ink/brand as CSS variables; Davet and the native apps read this file too.",
   "color": {
     "mist": {
       "50": "#FFFFFF",
-      "100": "#F4F5F7",
-      "200": "#EBEDF0",
-      "300": "#E1E4E8",
-      "400": "#CBD0D6",
-      "500": "#A7AEB8"
+      "100": "#F6F4FB",
+      "200": "#EEEAF6",
+      "300": "#E4DFEF",
+      "400": "#CEC7DE",
+      "500": "#A9A1BD"
     },
     "ink": {
-      "50": "#F6F7F8",
-      "100": "#E7E9EC",
-      "200": "#D3D7DC",
-      "300": "#868D99",
-      "400": "#5A616E",
-      "500": "#464C58",
-      "600": "#343943",
-      "700": "#22262E",
-      "800": "#16191F",
-      "900": "#0C0E12"
+      "50": "#F7F6FA",
+      "100": "#ECE9F3",
+      "200": "#D9D4E5",
+      "300": "#8E879F",
+      "400": "#635C75",
+      "500": "#4C4560",
+      "600": "#38324A",
+      "700": "#262137",
+      "800": "#1A1628",
+      "900": "#0F0C19"
     },
     "brand": {
-      "50": "#FFF4F1",
-      "100": "#FFE4DD",
-      "200": "#FFC8BA",
-      "300": "#FFA08A",
-      "400": "#F7714F",
-      "500": "#E8502E",
-      "600": "#C93A1A",
-      "700": "#A82F15",
-      "800": "#872714",
-      "900": "#6A2113"
+      "50": "#FFF0F5",
+      "100": "#FFDDE9",
+      "200": "#FFBAD3",
+      "300": "#FF8DB5",
+      "400": "#FF5C93",
+      "500": "#F5317A",
+      "600": "#DB1F66",
+      "700": "#B5154F",
+      "800": "#8F1141",
+      "900": "#6B0F33"
     }
   },
   "radius": {
-    "sm": "0.5rem",
-    "md": "0.75rem",
-    "lg": "1rem",
-    "sheet": "1.5rem"
+    "sm": "0.625rem",
+    "md": "0.875rem",
+    "lg": "1.25rem",
+    "sheet": "1.75rem"
   },
   "motion": {
-    "press": "80ms",
-    "change": "160ms",
-    "sheet": "280ms",
-    "easeOut": "cubic-bezier(0.2, 0.8, 0.2, 1)"
+    "press": "90ms",
+    "change": "200ms",
+    "sheet": "360ms",
+    "page": "420ms",
+    "easeOut": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+    "spring": "cubic-bezier(0.34, 1.56, 0.64, 1)"
   },
   "font": {
     "sans": [
@@ -94,5 +96,30 @@
       "1rem",
       "500"
     ]
+  },
+  "gradient": {
+    "brand": [
+      "#FF6B3D",
+      "#F5317A",
+      "#8B5CF6"
+    ],
+    "bolum": {
+      "planlar": [
+        "#F2542D",
+        "#DB1F66"
+      ],
+      "sohbet": [
+        "#7C3AED",
+        "#2563EB"
+      ],
+      "akis": [
+        "#DB1F66",
+        "#F2542D"
+      ],
+      "profil": [
+        "#0D9488",
+        "#2563EB"
+      ]
+    }
   }
 }

@@ -42,8 +42,8 @@
     @apply outline-none ring-2 ring-brand-600 ring-offset-2 ring-offset-mist-100;
   }
 
-  /* People who ask for less motion get fades only, no shifting or
-     shimmering. */
+  /* People who ask for less motion get no movement: animations and
+     transitions finish at once, floating decoration stands still. */
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -74,46 +74,97 @@
     padding-right: var(--safe-right);
   }
 
-  /* The app's backdrop: one flat, cool surface. Depth comes from the
-     surfaces on top of it, not from coloured light. */
+  /* The app's backdrop: a soft lavender-white surface with a faint wash of
+     the current tab's colour at the top. */
   .bg-uygulama {
     @apply bg-mist-100;
+    background-image: radial-gradient(
+      120% 60% at 50% -10%,
+      color-mix(in srgb, var(--bolum-1) 10%, transparent),
+      transparent 70%
+    );
+    background-attachment: fixed;
   }
 
-  /* Bars that sit over content (bottom bar, sidebar): opaque with a
-     hairline, no blur. */
+  /* The current tab's gradient (--bolum-1 to --bolum-2, set by data-bolum
+     on a parent; the brand gradient outside the tabs). */
+  .bg-bolum {
+    background-image: linear-gradient(135deg, var(--bolum-1), var(--bolum-2));
+  }
+  /* The same gradient, slowly moving: heroes and the main button. */
+  .bg-bolum-canli {
+    background-image: linear-gradient(120deg, var(--bolum-1), var(--bolum-2), var(--bolum-3), var(--bolum-1));
+    background-size: 300% 300%;
+    @apply animate-gradyan-akis;
+  }
+  .text-bolum {
+    background-image: linear-gradient(135deg, var(--bolum-1), var(--bolum-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  /* A light tint of the tab colour for selected rows and icon tiles. */
+  .bg-bolum-soluk {
+    background-color: color-mix(in srgb, var(--bolum-1) 12%, white);
+  }
+  .text-bolum-koyu {
+    color: color-mix(in srgb, var(--bolum-2) 85%, black);
+  }
+
+  /* Bars that sit over content (bottom bar, sidebar): frosted white. */
   .glass {
-    @apply bg-white border-ink-100;
+    @apply bg-white/85 border-white/60;
+    -webkit-backdrop-filter: saturate(180%) blur(18px);
+    backdrop-filter: saturate(180%) blur(18px);
   }
 
-  /* Flat surface with a hairline border; shadows are kept for things that
-     float (menus, sheets). */
+  /* White surface lifted by a soft shadow. */
   .card {
-    @apply bg-white rounded-2xl border border-ink-100;
+    @apply bg-white rounded-2xl shadow-card;
   }
 
-  /* One solid brand colour for the main action on a screen. */
+  /* Anything tappable gets a springy press. */
+  .basinca {
+    transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .basinca:active {
+    transform: scale(0.96);
+  }
+
+  /* The main action on a screen: the tab's gradient with a coloured glow. */
   .btn-primary {
-    @apply bg-brand-600 text-white font-semibold rounded-xl px-4 py-3
-           transition-colors duration-150
-           hover:bg-brand-700 active:bg-brand-800
-           disabled:bg-ink-200 disabled:text-ink-500 disabled:opacity-100 disabled:cursor-not-allowed;
+    @apply bg-bolum text-white font-semibold rounded-2xl px-4 py-3 shadow-glow basinca
+           transition-[filter,transform,box-shadow] duration-200
+           hover:brightness-110
+           disabled:bg-none disabled:bg-ink-200 disabled:text-ink-500 disabled:shadow-none disabled:cursor-not-allowed;
   }
 
   .btn-ghost {
-    @apply bg-transparent text-ink-500 font-medium rounded-xl px-4 py-3
+    @apply bg-transparent text-ink-500 font-medium rounded-2xl px-4 py-3 basinca
            transition-colors duration-150
            hover:bg-ink-50 active:bg-ink-100;
   }
 
   .chip {
-    @apply inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5
-           text-sm font-medium transition-colors duration-150
-           active:opacity-80;
+    @apply inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5
+           text-sm font-medium transition-all duration-200 basinca;
   }
 
+  /* Children of a list arrive one after another. */
+  .kademeli > * {
+    animation: slideUp 460ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  .kademeli > *:nth-child(1) { animation-delay: 30ms; }
+  .kademeli > *:nth-child(2) { animation-delay: 70ms; }
+  .kademeli > *:nth-child(3) { animation-delay: 110ms; }
+  .kademeli > *:nth-child(4) { animation-delay: 150ms; }
+  .kademeli > *:nth-child(5) { animation-delay: 190ms; }
+  .kademeli > *:nth-child(6) { animation-delay: 230ms; }
+  .kademeli > *:nth-child(7) { animation-delay: 270ms; }
+  .kademeli > *:nth-child(n + 8) { animation-delay: 300ms; }
+
   .input-field {
-    @apply w-full bg-white border border-ink-200 rounded-xl px-3 py-2.5
+    @apply w-full bg-white border border-ink-200 rounded-2xl px-3.5 py-2.5
            text-ink-800 placeholder:text-ink-400
            focus:outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100
            transition-colors;

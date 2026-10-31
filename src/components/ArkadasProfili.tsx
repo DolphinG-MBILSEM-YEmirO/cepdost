@@ -10,7 +10,6 @@ import { ArkadaslaSihirbaz } from './OrtakPlanSihirbazi'
 import { OrtakGecmisSatiri } from './PlanIstatistikleri'
 import { db, goruntulemeBasligi } from '../db'
 import { formatDate, formatPlanTime, localDateString } from '../lib/format'
-import { renkAl } from '../lib/kisisellestirme'
 import { useGeriIleKapat } from '../lib/geriTusu'
 import { useSosyalSurum } from '../sosyal/cekirdek'
 import { arkadasliktanCik, davetleriGetir, type Profil } from '../sosyal/api'
@@ -48,23 +47,24 @@ export function ArkadasProfili({ arkadas, benimId, onClose, onMesaj, onGrupAc, a
   // Sheets opened from here sit above the profile, so Escape and the back
   // button close them first.
   useGeriIleKapat(onClose)
-  const zemin = renkAl(arkadas.renk, arkadas.ad).zemin
 
   return (
     <div className="panel-tam z-[55]" role="dialog" aria-label={`${arkadas.ad} profili`}>
-      <div className={`flex justify-end px-4 pt-[calc(1rem+var(--safe-top))] shrink-0 ${zemin}`}>
+      {/* Cover band in the friend's colour family; the avatar overlaps it. */}
+      <div className="relative overflow-hidden flex justify-end px-4 pt-[calc(1rem+var(--safe-top))] pb-12 shrink-0 bg-bolum-canli">
+        <div aria-hidden className="pointer-events-none absolute -top-10 -left-8 w-36 h-36 rounded-full bg-white/15 animate-yuzen" />
         <button
           onClick={onClose}
           aria-label="Kapat"
-          className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-ink-50 active:bg-ink-100"
+          className="relative w-10 h-10 rounded-2xl flex items-center justify-center bg-white/20 hover:bg-white/30 text-white basinca"
         >
-          <Icon name="X" className="w-5 h-5 text-ink-500" />
+          <Icon name="X" className="w-5 h-5" />
         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className={`px-4 pb-6 text-center ${zemin}`}>
-          <div className="flex justify-center mb-3">
+        <div className="px-4 pb-6 text-center rounded-b-[2rem] shadow-soft bg-white">
+          <div className="flex justify-center mb-3 -mt-10 relative animate-pop-in">
             <Avatar ad={arkadas.ad} foto={arkadas.avatar} emoji={arkadas.emoji} renk={arkadas.renk} boyut="lg" />
           </div>
           <h2 className="text-title text-ink-800 break-words">{arkadas.ad}</h2>
@@ -81,7 +81,7 @@ export function ArkadasProfili({ arkadas, benimId, onClose, onMesaj, onGrupAc, a
             </button>
             <button
               onClick={() => setPaylasAcik(true)}
-              className="bg-mist-50 text-brand-700 font-semibold text-sm rounded-2xl py-2.5 flex items-center justify-center gap-2 border border-brand-100 active:opacity-80 transition-all hover:bg-brand-50"
+              className="bg-bolum-soluk text-bolum-koyu font-semibold text-sm rounded-2xl py-2.5 flex items-center justify-center gap-2 basinca hover:brightness-95"
             >
               <Icon name="CalendarPlus" className="w-4 h-4" />
               Plan yap

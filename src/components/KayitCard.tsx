@@ -65,7 +65,7 @@ export function KayitCard({ kayit, onToggleStatus, onDelete, onClick, sorgu = nu
       {secim ? (
         <span
           aria-hidden="true"
-          className={`shrink-0 mt-0.5 w-[22px] h-[22px] rounded-md border-2 flex items-center justify-center transition-colors ${
+          className={`shrink-0 mt-0.5 w-[22px] h-[22px] rounded-lg border-2 flex items-center justify-center transition-all duration-200 ${
             secim.secili ? 'bg-brand-600 border-brand-600 text-white' : 'border-ink-200 bg-white'
           }`}
         >

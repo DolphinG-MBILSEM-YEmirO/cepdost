@@ -70,7 +70,7 @@ export function AniArsivi({ grupId, arkadasId, benimId, baslik }: Props) {
                 key={y.ad ?? ''}
                 onClick={() => setYer(y.ad)}
                 aria-pressed={secili}
-                className={`chip text-xs shrink-0 ${secili ? 'bg-ink-800 text-white border border-ink-800' : 'bg-white text-ink-600 border border-ink-200 hover:bg-ink-50'}`}
+                className={`chip text-xs shrink-0 ${secili ? 'bg-bolum text-white shadow-glow' : 'bg-white text-ink-600 shadow-soft hover:bg-bolum-soluk'}`}
               >
                 {y.ad ? <Icon name="MapPin" className="w-3.5 h-3.5" /> : null}
                 {y.ad ?? 'Hepsi'}
@@ -346,7 +346,7 @@ export function AniEkleModal({
             onClick={() => setGorunurluk('arkadaslar')}
             className={`flex-1 rounded-xl py-2.5 text-xs font-semibold transition-all active:opacity-80 ${
               gorunurluk === 'arkadaslar'
-                ? 'bg-ink-800 text-white'
+                ? 'bg-bolum text-white shadow-glow'
                 : 'bg-white text-ink-600 border border-ink-200'
             }`}
           >
@@ -356,7 +356,7 @@ export function AniEkleModal({
             onClick={() => setGorunurluk('herkes')}
             className={`flex-1 rounded-xl py-2.5 text-xs font-semibold transition-all active:opacity-80 ${
               gorunurluk === 'herkes'
-                ? 'bg-ink-800 text-white'
+                ? 'bg-bolum text-white shadow-glow'
                 : 'bg-white text-ink-600 border border-ink-200'
             }`}
           >

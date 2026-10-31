@@ -1,9 +1,10 @@
 import { Icon } from './Icon'
 import { renkAl } from '../lib/kisisellestirme'
 
-// Profile photo when there is one; otherwise the person's emoji or the
-// first letter of their name, on their chosen colour (or one derived from
-// the name).
+// Profile photo when there is one; otherwise the person's emoji on a soft
+// tint, or the first letter of their name in white on their full colour
+// (chosen, or derived from the name). People are round; groups are rounded
+// squares, so the two never get mixed up in a list.
 
 const OLCULER = {
   xs: 'w-6 h-6 text-[11px]',
@@ -27,13 +28,13 @@ export function Avatar({ ad, foto, emoji, renk, boyut = 'md' }: Props) {
   const olcu = OLCULER[boyut]
 
   if (foto) {
-    return <img src={foto} alt={ad} className={`${olcu} rounded-2xl object-cover shrink-0 bg-mist-100`} />
+    return <img src={foto} alt={ad} className={`${olcu} rounded-full object-cover shrink-0 bg-mist-100 ring-2 ring-white`} />
   }
 
   const harf = (ad.trim()[0] ?? '?').toLocaleUpperCase('tr-TR')
   return (
     <div
-      className={`${olcu} ${renkAl(renk, ad).yumusak} rounded-2xl flex items-center justify-center font-bold shrink-0`}
+      className={`${olcu} ${emoji ? renkAl(renk, ad).yumusak : `${renkAl(renk, ad).dolu} text-white`} rounded-full flex items-center justify-center font-bold shrink-0 ring-2 ring-white`}
       aria-label={ad}
     >
       {emoji || harf}

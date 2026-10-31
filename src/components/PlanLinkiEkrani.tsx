@@ -133,8 +133,8 @@ export function PlanLinkiEkrani({ link, girisli, onKapat, onSahibiEkle }: Props)
           )
         ) : !plan ? (
           <div className="card p-6 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-ink-50 border border-ink-100 flex items-center justify-center mx-auto mb-3">
-              <Icon name="CalendarX" className="w-6 h-6 text-ink-400" />
+            <div className="w-12 h-12 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center mx-auto mb-3">
+              <Icon name="CalendarX" className="w-6 h-6 text-bolum-koyu" />
             </div>
             <p className="text-headline text-ink-800 mb-1">Bu plan bulunamadı</p>
             <p className="text-sm text-ink-400 mb-4">
@@ -297,8 +297,8 @@ function PlanKarti({ plan }: { plan: LinkPlani }) {
 function Bilgi({ ikon, metin, alt }: { ikon: IconName; metin: string; alt?: React.ReactNode }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="w-9 h-9 rounded-xl bg-ink-50 flex items-center justify-center shrink-0">
-        <Icon name={ikon} className="w-4 h-4 text-ink-500" />
+      <div className="w-9 h-9 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center shrink-0">
+        <Icon name={ikon} className="w-4 h-4 text-bolum-koyu" />
       </div>
       <div className="min-w-0 pt-0.5">
         <p className="text-sm font-semibold text-ink-700 break-words">{metin}</p>

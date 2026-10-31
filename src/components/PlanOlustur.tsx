@@ -324,24 +324,35 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
 
   return (
     <div className="panel-tam z-50">
-      <div className="flex items-center justify-between px-4 pt-[calc(1rem+var(--safe-top))] pb-3 shrink-0">
-        <div className="min-w-0">
-          <h2 className="text-title text-ink-800">
-            {adim === 'kiminle' ? 'Kiminle?' : adim === 'detay' ? 'Plan detayları' : 'Son kontrol'}
-          </h2>
-          <p className="text-xs text-ink-400 mt-0.5">
-            {adim === 'kiminle' ? '1 / 3' : adim === 'detay' ? '2 / 3' : '3 / 3'}
-          </p>
+      {/* Gradient header with a springy three-step progress bar. */}
+      <div className="relative overflow-hidden bg-bolum-canli text-white rounded-b-[2rem] px-4 pt-[calc(1rem+var(--safe-top))] pb-4 mb-4 shrink-0 lg:rounded-none">
+        <div aria-hidden className="pointer-events-none absolute -top-14 -right-10 w-40 h-40 rounded-full bg-white/15 animate-yuzen" />
+        <div className="relative flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-caption text-white/80 font-semibold">
+              Adım {adim === 'kiminle' ? 1 : adim === 'detay' ? 2 : 3} / 3
+            </p>
+            <h2 key={adim} className="text-[1.625rem] leading-8 font-extrabold tracking-tight animate-slide-up">
+              {adim === 'kiminle' ? 'Kiminle?' : adim === 'detay' ? 'Plan detayları' : 'Son kontrol'}
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Kapat"
+            className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/20 hover:bg-white/30 basinca shrink-0"
+          >
+            <Icon name="X" className="w-5 h-5" />
+          </button>
         </div>
-        <button
-          onClick={onClose}
-          className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-ink-50 active:bg-ink-100 shrink-0"
-        >
-          <Icon name="X" className="w-5 h-5 text-ink-500" />
-        </button>
+        <div className="relative mt-3 h-1.5 rounded-full bg-white/25 overflow-hidden" aria-hidden>
+          <div
+            className="h-full rounded-full bg-white transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+            style={{ width: adim === 'kiminle' ? '33%' : adim === 'detay' ? '66%' : '100%' }}
+          />
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-8 space-y-4">
+      <div key={adim} className="flex-1 overflow-y-auto px-4 pb-8 space-y-4 animate-sayfa">
         {hata && (
           <div className="flex items-start gap-2 bg-white border border-rose-200 rounded-xl px-4 py-3">
             <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
@@ -421,12 +432,12 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
         )}
       </div>
 
-      <div className="px-4 pb-[calc(1rem+var(--safe-bottom))] pt-3 border-t border-ink-100 safe-x shrink-0 flex gap-3">
+      <div className="px-4 pb-[calc(1rem+var(--safe-bottom))] pt-3 glass border-t safe-x shrink-0 flex gap-3">
         {adim !== 'kiminle' && (
           <button
             onClick={() => setAdim(adim === 'ozet' ? 'detay' : 'kiminle')}
             disabled={kaydediliyor}
-            className="btn-ghost border border-ink-100 px-6"
+            className="btn-ghost bg-white shadow-soft px-6"
           >
             Geri
           </button>
@@ -528,7 +539,7 @@ function KiminleAdimi({
             >
               <div
                 className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${
-                  aktif ? 'bg-brand-600 text-white' : 'bg-ink-50 text-ink-500'
+                  aktif ? 'bg-bolum text-white' : 'bg-bolum-soluk text-bolum-koyu'
                 }`}
               >
                 <Icon name={s.ikon} className="w-5 h-5" />

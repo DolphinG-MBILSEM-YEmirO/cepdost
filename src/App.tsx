@@ -420,7 +420,7 @@ export default function App() {
     activeTab === 'sohbet' ? 'lg:max-w-none lg:px-0' : activeTab === 'akis' ? 'lg:max-w-4xl lg:pt-4' : 'lg:max-w-6xl lg:pt-4'
 
   return (
-    <div className="min-h-screen bg-uygulama">
+    <div className="min-h-screen bg-uygulama" data-bolum={activeTab}>
       <SekmeGeriAdimlari
         sekme={activeTab}
         sosyalBolum={sosyalBolum}
@@ -461,7 +461,8 @@ export default function App() {
       />
 
       <main className="lg:pl-64">
-        <div className={`min-h-screen max-w-md md:max-w-2xl mx-auto relative lg:px-6 ${icerikGenisligi}`}>
+        {/* key: every tab switch replays the page entrance. */}
+        <div key={activeTab} className={`min-h-screen max-w-md md:max-w-2xl mx-auto relative lg:px-6 animate-sayfa ${icerikGenisligi}`}>
           {activeTab === 'planlar' && (
             <PlanlarView
               kayitlar={kayitlar}

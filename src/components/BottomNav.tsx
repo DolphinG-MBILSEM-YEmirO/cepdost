@@ -9,8 +9,9 @@ export type { Tab }
 // Arşiv alt bardan çıkıp Profil'in içine taşındı; yeri Sohbet'e verildi.
 // Arkadaşlar da Sohbet'te; istekler ve davetler Sohbet rozetine sayılır.
 // Masaüstünde (lg) bu çubuk gizli; yerini KenarCubugu alıyor.
-// Arayüz planı (2026-10-31): opak zemin + ince çizgi, + düğmesi çubuğun
-// içinde düz marka rengi bir kare; yukarı taşan yuvarlak buton kalktı.
+// Canlı tema (2026-10-31): ekranın altında yüzen buzlu bir çubuk. Seçili
+// sekmenin simgesi kendi renk geçişli kapsülüne yaylanarak oturur; + düğmesi
+// o anki sekmenin renginde, basınca dönen yuvarlak bir düğme.
 
 interface BottomNavProps {
   active: Tab
@@ -27,11 +28,11 @@ export function BottomNav({
   sohbetRozeti = 0,
 }: BottomNavProps) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 lg:hidden">
-      <div className="bg-white border-t border-ink-100 safe-x">
+    <div className="fixed bottom-0 left-0 right-0 z-30 lg:hidden px-3 pb-[calc(0.5rem+var(--safe-bottom))] pointer-events-none">
+      <div className="glass border rounded-[1.75rem] shadow-float safe-x max-w-md md:max-w-2xl mx-auto pointer-events-auto">
         {/* grid-cols-5 + ortadaki hücre: buton matematiksel olarak tam
             merkezde kalıyor, sekme etiketlerinin uzunluğundan etkilenmiyor. */}
-        <div className="grid grid-cols-5 items-center px-2 pt-1.5 pb-[calc(0.375rem+var(--safe-bottom))] max-w-md md:max-w-2xl mx-auto">
+        <div className="grid grid-cols-5 items-center px-1.5 py-1.5">
           {solTablar.map((t) => (
             <NavButton
               key={t.id}
@@ -46,9 +47,13 @@ export function BottomNav({
             <button
               onClick={onAddClick}
               aria-label="Yeni plan ekle"
-              className="w-11 h-11 rounded-xl bg-brand-600 text-white flex items-center justify-center transition-colors hover:bg-brand-700 active:bg-brand-800"
+              className="group w-[52px] h-[52px] -my-1 rounded-full bg-bolum-canli text-white flex items-center justify-center shadow-glow basinca hover:brightness-110"
             >
-              <Icon name="Plus" className="w-6 h-6" strokeWidth={2.25} />
+              <Icon
+                name="Plus"
+                className="w-7 h-7 transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:rotate-90 group-active:rotate-90"
+                strokeWidth={2.5}
+              />
             </button>
           </div>
 
@@ -82,21 +87,27 @@ function NavButton({
       onClick={onClick}
       aria-label={rozet > 0 ? `${tab.label}, ${rozet} yeni` : tab.label}
       aria-current={active ? 'page' : undefined}
-      className="flex flex-col items-center gap-1 py-1 min-h-[44px] active:opacity-80"
+      data-bolum={tab.id}
+      className="flex flex-col items-center gap-0.5 py-0.5 min-h-[48px] basinca"
     >
-      <div className="relative">
+      <div
+        className={`relative h-8 flex items-center justify-center rounded-full transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+          active ? 'w-14 bg-bolum shadow-glow' : 'w-10'
+        }`}
+      >
         <Icon
           name={tab.icon}
-          className={`w-6 h-6 transition-colors ${active ? 'text-brand-600' : 'text-ink-400'}`}
+          className={`w-[22px] h-[22px] transition-colors duration-200 ${active ? 'text-white' : 'text-ink-400'}`}
+          strokeWidth={active ? 2.25 : undefined}
         />
         {rozet > 0 && (
-          <span className="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-rose-600 text-white text-[10px] font-bold flex items-center justify-center tabular-nums ring-2 ring-white">
+          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center tabular-nums ring-2 ring-white animate-pop-in">
             {rozet > 9 ? '9+' : rozet}
           </span>
         )}
       </div>
       <span
-        className={`text-[11px] leading-none transition-colors ${active ? 'text-brand-700 font-semibold' : 'text-ink-500 font-medium'}`}
+        className={`text-[11px] leading-none transition-colors ${active ? 'text-bolum-koyu font-bold' : 'text-ink-400 font-medium'}`}
       >
         {tab.label}
       </span>

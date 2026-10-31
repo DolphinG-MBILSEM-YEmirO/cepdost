@@ -196,8 +196,8 @@ function ArkadaslarIcerik({
                   onClick={() => setSihirbazAcik(true)}
                   className="w-full card p-4 flex items-center gap-3 text-left active:opacity-80 transition-transform"
                 >
-                  <div className="w-10 h-10 rounded-2xl bg-ink-50 flex items-center justify-center shrink-0">
-                    <Icon name="Wand2" className="w-5 h-5 text-ink-500" />
+                  <div className="w-10 h-10 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center shrink-0">
+                    <Icon name="Wand2" className="w-5 h-5 text-bolum-koyu" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-ink-700">Herkese uyan saati bul</p>

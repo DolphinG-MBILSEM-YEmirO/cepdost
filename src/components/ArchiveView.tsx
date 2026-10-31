@@ -283,7 +283,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
                   {bolum.baslik}
                   <span className="text-caption font-normal text-ink-400 tabular-nums">{bolum.kayitlar.length}</span>
                 </h2>
-                <div className="bg-white rounded-2xl border border-ink-100 divide-y divide-ink-100 overflow-hidden">
+                <div className="card divide-y divide-ink-100/70 overflow-hidden kademeli">
                   {bolum.kayitlar.map((kayit) => (
                     <KayitCard
                       key={kayit.id}
@@ -371,8 +371,8 @@ function EmptyState({
   if (hasSearch || hasFilter) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-fade-in">
-        <div className="w-16 h-16 rounded-full bg-ink-50 flex items-center justify-center mb-4">
-          <Icon name="Search" className="w-8 h-8 text-ink-400" />
+        <div className="w-16 h-16 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center mb-4">
+          <Icon name="Search" className="w-8 h-8 text-bolum-koyu" />
         </div>
         <p className="text-headline text-ink-800 mb-1">Sonuç bulunamadı</p>
         <p className="text-sm text-ink-400">{hasSearch ? 'Başka bir kelime dene.' : durum !== 'hepsi' ? 'Bu süzgeçte kayıt yok.' : 'Bu kategoride kayıt yok.'}</p>
@@ -382,7 +382,7 @@ function EmptyState({
 
   return (
     <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-fade-in">
-      <div className="w-12 h-12 rounded-2xl bg-ink-50 border border-ink-100 flex items-center justify-center mb-4">
+      <div className="w-12 h-12 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center mb-4">
         <Icon name="Share2" className="w-10 h-10 text-brand-600" />
       </div>
       <p className="text-headline text-ink-800 mb-1">Kaydettiğin şey burada işe yarasın</p>

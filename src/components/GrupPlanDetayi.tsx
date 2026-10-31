@@ -91,8 +91,8 @@ export function GrupPlanDetayi({ plan, grup, benimId, onClose }: Props) {
       <div className="flex-1 overflow-y-auto px-4 pb-8">
         <div className="card p-5 mb-4">
           <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-ink-50 flex items-center justify-center text-2xl shrink-0">
-              {plan.emoji ?? <Icon name="CalendarClock" className="w-6 h-6 text-ink-500" />}
+            <div className="w-12 h-12 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center text-2xl shrink-0">
+              {plan.emoji ?? <Icon name="CalendarClock" className="w-6 h-6 text-bolum-koyu" />}
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="text-title text-ink-800 leading-snug">{plan.baslik}</h2>
