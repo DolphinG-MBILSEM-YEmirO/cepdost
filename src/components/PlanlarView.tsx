@@ -101,12 +101,11 @@ export function PlanlarView({
               <div className="card overflow-hidden">{fikirlerGorunumu}</div>
             </div>
           </div>
-        ) : gorunum === 'bugun' ? (
-          bugun
-        ) : gorunum === 'hatirlat' ? (
-          hatirlat
         ) : (
-          fikirlerGorunumu
+          // key: each view slides in when picked.
+          <div key={gorunum} className="animate-gecis">
+            {gorunum === 'bugun' ? bugun : gorunum === 'hatirlat' ? hatirlat : fikirlerGorunumu}
+          </div>
         )}
       </div>
     </div>

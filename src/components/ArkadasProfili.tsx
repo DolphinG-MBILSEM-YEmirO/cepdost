@@ -99,15 +99,18 @@ export function ArkadasProfili({ arkadas, benimId, onClose, onMesaj, onGrupAc, a
           />
         </div>
 
-        {sekme === 'birlikte' ? (
-          <Birlikte arkadas={arkadas} onGrupAc={onGrupAc} arkadaslikId={arkadaslikId} onCikarildi={onCikarildi} />
-        ) : sekme === 'musaitlik' ? (
-          <ArkadasMusaitlik arkadas={arkadas} />
-        ) : (
-          <div className="px-4 pb-8">
-            <AniArsivi arkadasId={arkadas.id} benimId={benimId} baslik={arkadas.ad} />
-          </div>
-        )}
+        {/* key: each tab slides in when picked. */}
+        <div key={sekme} className="animate-gecis">
+          {sekme === 'birlikte' ? (
+            <Birlikte arkadas={arkadas} onGrupAc={onGrupAc} arkadaslikId={arkadaslikId} onCikarildi={onCikarildi} />
+          ) : sekme === 'musaitlik' ? (
+            <ArkadasMusaitlik arkadas={arkadas} />
+          ) : (
+            <div className="px-4 pb-8">
+              <AniArsivi arkadasId={arkadas.id} benimId={benimId} baslik={arkadas.ad} />
+            </div>
+          )}
+        </div>
       </div>
 
       {paylasAcik && (

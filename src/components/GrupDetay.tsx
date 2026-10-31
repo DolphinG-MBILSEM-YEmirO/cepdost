@@ -50,7 +50,8 @@ import type { SohbetHedefi } from '../sosyal/mesajIslemleri'
 import { ETKINLIK_EMOJILERI } from '../lib/kisisellestirme'
 import { UYGULAMA_ADI } from '../../shared/marka'
 
-type Sekme = 'planlar' | 'sohbet' | 'anilar' | 'uyeler'
+export type GrupSekmesi = 'sohbet' | 'planlar' | 'anilar' | 'uyeler'
+type Sekme = GrupSekmesi
 
 interface Props {
   grup: Grup
@@ -63,13 +64,25 @@ interface Props {
   gomulu?: boolean
   // Opened from a search: the chat, with this message in view.
   odakMesajId?: string | null
+  // The section shown first. A group is a chat first, so it opens on the
+  // chat unless the caller asks for another section.
+  ilkSekme?: GrupSekmesi
 }
 
-export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAyrildi, gomulu = false, odakMesajId }: Props) {
+export function GrupDetay({
+  grup: acilanGrup,
+  benimId,
+  arkadaslar,
+  onClose,
+  onAyrildi,
+  gomulu = false,
+  odakMesajId,
+  ilkSekme = 'sohbet',
+}: Props) {
   useGeriIleKapat(onClose, !gomulu)
   // Desktop: the group sits in the side pane, so only back closes it.
   useGeriAdimi(onClose, gomulu)
-  const [sekme, setSekme] = useState<Sekme>(odakMesajId ? 'sohbet' : 'planlar')
+  const [sekme, setSekme] = useState<Sekme>(odakMesajId ? 'sohbet' : ilkSekme)
   const [temaAcik, setTemaAcik] = useState(false)
   const [aramaAcik, setAramaAcik] = useState(false)
   // The chat loads its latest messages, or all of them once searched.
@@ -116,8 +129,8 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
   }, [uyeler])
 
   const sekmeler: { id: Sekme; etiket: string; ikon: IconName }[] = [
-    { id: 'planlar', etiket: 'Planlar', ikon: 'CalendarClock' },
     { id: 'sohbet', etiket: 'Sohbet', ikon: 'MessageCircle' },
+    { id: 'planlar', etiket: 'Planlar', ikon: 'CalendarClock' },
     { id: 'anilar', etiket: 'Anılar', ikon: 'ImageIcon' },
     { id: 'uyeler', etiket: 'Üyeler', ikon: 'Users' },
   ]
@@ -132,14 +145,21 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
         >
           <Icon name="ArrowLeft" className="w-5 h-5 text-white" />
         </button>
-        <GrupAvatari grup={grup} boyut="sm" />
-        <div className="min-w-0 flex-1">
-          <h2 className="text-headline text-white font-bold truncate">{grup.ad}</h2>
-          <p className="text-xs text-white/80 truncate">
-            {grup.aciklama ? `${grup.aciklama} · ` : ''}
-            {uyeler.length} üye
-          </p>
-        </div>
+        {/* Like a friend's chat, the name leads to who is in it. */}
+        <button
+          onClick={() => setSekme('uyeler')}
+          aria-label={`${grup.ad} üyelerini göster`}
+          className="flex items-center gap-3 min-w-0 flex-1 text-left rounded-2xl -m-1 p-1 hover:bg-white/15 basinca"
+        >
+          <GrupAvatari grup={grup} boyut="sm" />
+          <div className="min-w-0 flex-1">
+            <h2 className="text-headline text-white font-bold truncate">{grup.ad}</h2>
+            <p className="text-xs text-white/80 truncate">
+              {grup.aciklama ? `${grup.aciklama} · ` : ''}
+              {uyeler.length} üye
+            </p>
+          </div>
+        </button>
         {sekme === 'sohbet' && (
           <button
             onClick={() => {
@@ -193,52 +213,55 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
         </BaslikBaglami.Provider>
       </div>
 
-      {sekme === 'planlar' && (
-        <PlanlarSekmesi
-          grup={grup}
-          benimId={benimId}
-          uyeler={uyeler}
-          onUyeler={() => setSekme('uyeler')}
-          adHaritasi={adHaritasi}
-          benimAdim={adHaritasi.get(benimId) ?? 'Ben'}
-          // Every member publishes a card with their name to the group, so
-          // a missing profile only means the card hasn't synced yet.
-          digerUyeler={uyeler
-            .filter((u) => u.kullanici_id !== benimId && u.profil)
-            .map((u) => u.profil!)}
-        />
-      )}
-      {sekme === 'sohbet' && (
-        <SohbetSekmesi
-          grup={grup}
-          benimId={benimId}
-          adHaritasi={adHaritasi}
-          benimAdim={adHaritasi.get(benimId) ?? 'Ben'}
-          digerUyeler={uyeler
-            .filter((u) => u.kullanici_id !== benimId && u.profil)
-            .map((u) => u.profil!)}
-          tumu={tumMesajlar}
-          aramaAcik={aramaAcik}
-          onAramaKapat={() => setAramaAcik(false)}
-          odakMesajId={odakMesajId}
-        />
-      )}
-      {sekme === 'anilar' && (
-        <div className="flex-1 overflow-y-auto px-4 pb-8">
-          <AniArsivi grupId={grup.id} benimId={benimId} baslik={grup.ad} />
-        </div>
-      )}
-      {sekme === 'uyeler' && (
-        <UyelerSekmesi
-          grup={grup}
-          benimId={benimId}
-          uyeler={uyeler}
-          arkadaslar={arkadaslar}
-          onUyeAc={setAcikUye}
-          onDegisti={uyeleriTazele}
-          onAyrildi={onAyrildi}
-        />
-      )}
+      {/* key: each section slides in when picked. */}
+      <div key={sekme} className="flex-1 min-h-0 flex flex-col animate-gecis">
+        {sekme === 'planlar' && (
+          <PlanlarSekmesi
+            grup={grup}
+            benimId={benimId}
+            uyeler={uyeler}
+            onUyeler={() => setSekme('uyeler')}
+            adHaritasi={adHaritasi}
+            benimAdim={adHaritasi.get(benimId) ?? 'Ben'}
+            // Every member publishes a card with their name to the group, so
+            // a missing profile only means the card hasn't synced yet.
+            digerUyeler={uyeler
+              .filter((u) => u.kullanici_id !== benimId && u.profil)
+              .map((u) => u.profil!)}
+          />
+        )}
+        {sekme === 'sohbet' && (
+          <SohbetSekmesi
+            grup={grup}
+            benimId={benimId}
+            adHaritasi={adHaritasi}
+            benimAdim={adHaritasi.get(benimId) ?? 'Ben'}
+            digerUyeler={uyeler
+              .filter((u) => u.kullanici_id !== benimId && u.profil)
+              .map((u) => u.profil!)}
+            tumu={tumMesajlar}
+            aramaAcik={aramaAcik}
+            onAramaKapat={() => setAramaAcik(false)}
+            odakMesajId={odakMesajId}
+          />
+        )}
+        {sekme === 'anilar' && (
+          <div className="flex-1 overflow-y-auto px-4 pb-8">
+            <AniArsivi grupId={grup.id} benimId={benimId} baslik={grup.ad} />
+          </div>
+        )}
+        {sekme === 'uyeler' && (
+          <UyelerSekmesi
+            grup={grup}
+            benimId={benimId}
+            uyeler={uyeler}
+            arkadaslar={arkadaslar}
+            onUyeAc={setAcikUye}
+            onDegisti={uyeleriTazele}
+            onAyrildi={onAyrildi}
+          />
+        )}
+      </div>
 
       {acikUye && (
         <UyeProfili
@@ -372,16 +395,14 @@ function PlanlarSekmesi({
           Kendim plan oluştur
         </button>
 
+        {/* No list while there are no plans: the overview card above already
+            says so. */}
         {planlar === null ? (
           <div className="space-y-3">
             <div className="skeleton h-28 rounded-3xl" />
             <div className="skeleton h-28 rounded-3xl" />
           </div>
-        ) : planlar.length === 0 ? (
-          <div className="card p-5 text-center">
-            <p className="text-sm text-ink-400">Henüz grup planı yok. İlkini sen oluştur.</p>
-          </div>
-        ) : (
+        ) : planlar.length === 0 ? null : (
           // Upcoming plans first; past ones below, most recent first.
           [
             ...planlar.filter((p) => !planGectiMi(p.tarih)),

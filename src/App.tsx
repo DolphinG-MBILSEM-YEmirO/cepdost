@@ -110,6 +110,8 @@ export default function App() {
   const [detailKayit, setDetailKayit] = useState<Kayit | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Kayit | null>(null)
   const [rozet, setRozet] = useState(0)
+  // Bumped when the open tab is tapped again, which restarts that tab.
+  const [sekmeBasi, setSekmeBasi] = useState(0)
   const [mesajRozeti, setMesajRozeti] = useState(0)
 
   const { kullanici, yukleniyor: authYukleniyor, yeniHesap, cikis } = useAuth()
@@ -402,6 +404,18 @@ export default function App() {
     )
   }
 
+  // Tapping the tab you're already on goes back to its start: open chats and
+  // sub-views close, Sohbet returns to the chat list, the page scrolls up.
+  function sekmeSec(sekme: Tab) {
+    if (sekme !== activeTab) {
+      setActiveTab(sekme)
+      return
+    }
+    if (sekme === 'sohbet') setSosyalBolum('sohbetler')
+    setSekmeBasi((n) => n + 1)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   function arkadaslariAc() {
     setSosyalBolum('arkadaslar')
     setActiveTab('sohbet')
@@ -458,7 +472,7 @@ export default function App() {
 
       <KenarCubugu
         active={activeTab}
-        onChange={setActiveTab}
+        onChange={sekmeSec}
         onAddClick={() => setShowOlustur(true)}
         onAsistan={() => setShowChat(true)}
         profil={profil}
@@ -466,8 +480,8 @@ export default function App() {
       />
 
       <main className="lg:pl-64">
-        {/* key: every tab switch replays the page entrance. */}
-        <div key={activeTab} className={`min-h-screen max-w-md md:max-w-2xl mx-auto relative lg:px-6 animate-sayfa ${icerikGenisligi}`}>
+        {/* key: every tab switch (or a tap on the open tab) replays the page entrance. */}
+        <div key={`${activeTab}-${sekmeBasi}`} className={`min-h-screen max-w-md md:max-w-2xl mx-auto relative lg:px-6 animate-sayfa ${icerikGenisligi}`}>
           {activeTab === 'planlar' && (
             <PlanlarView
               kayitlar={kayitlar}
@@ -501,7 +515,13 @@ export default function App() {
               />
             ))}
 
-          {activeTab === 'akis' && <AkisView onPlanAc={(k) => setDetailKayit(k)} onAsistan={() => setShowChat(true)} />}
+          {activeTab === 'akis' && (
+            <AkisView
+              onPlanAc={(k) => setDetailKayit(k)}
+              onAsistan={() => setShowChat(true)}
+              onPaylas={() => setShowPaylasim(true)}
+            />
+          )}
 
           {activeTab === 'profil' && (
             <ProfilView
@@ -522,7 +542,7 @@ export default function App() {
 
       <BottomNav
         active={activeTab}
-        onChange={setActiveTab}
+        onChange={sekmeSec}
         onAddClick={() => setShowOlustur(true)}
         sohbetRozeti={mesajRozeti + rozet}
       />
@@ -548,7 +568,9 @@ export default function App() {
         />
       )}
 
-      {showCapture && <PlanOlustur onClose={() => setShowCapture(false)} onSaved={() => {}} />}
+      {/* A new plan lands in Planlar, so that's where the app goes once it's
+          saved (as a new post leads to Akış). */}
+      {showCapture && <PlanOlustur onClose={() => setShowCapture(false)} onSaved={() => setActiveTab('planlar')} />}
 
       {showChat && <ChatPanel kayitlar={kayitlar} onClose={() => setShowChat(false)} />}
 

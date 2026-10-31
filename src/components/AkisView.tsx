@@ -44,7 +44,14 @@ function sonBakisiYaz(benimId: string) {
   }
 }
 
-export function AkisView({ onPlanAc, onAsistan }: { onPlanAc: (kayit: Kayit) => void; onAsistan?: () => void }) {
+interface Props {
+  onPlanAc: (kayit: Kayit) => void
+  onAsistan?: () => void
+  // Opens the post composer, so an empty feed isn't a dead end.
+  onPaylas?: () => void
+}
+
+export function AkisView({ onPlanAc, onAsistan, onPaylas }: Props) {
   const [kapsam, setKapsam] = useState<AkisKapsami>('arkadaslar')
   const [anilar, setAnilar] = useState<Ani[] | null>(null)
   const [profiller, setProfiller] = useState<Map<string, Profil>>(new Map())
@@ -205,6 +212,7 @@ export function AkisView({ onPlanAc, onAsistan }: { onPlanAc: (kayit: Kayit) => 
                   ? 'Arkadaşların seninle bir mekan fotoğrafı paylaştığında burada görünecek.'
                   : 'Herkese açık paylaşılan mekan fotoğrafları burada görünecek.'
               }
+              eylem={onPaylas && { etiket: 'İlk paylaşımı sen yap', ikon: 'Camera', onClick: onPaylas }}
               sikisik
             />
           </div>
