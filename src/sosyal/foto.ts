@@ -19,6 +19,15 @@ export interface FotoBilgisi {
   tip: string
 }
 
+// Short video clips travel the same way as photos, just in more chunks
+// (see lib/videoHazirla.ts for how a clip is shrunk first).
+export const MEDYA_AZAMI_PARCA = 64
+export const VIDEO_AZAMI_BAYT = Math.floor((MEDYA_AZAMI_PARCA * PARCA_BOYU * 3) / 4) - 1024
+const FOTO_AZAMI_PARCA = 20
+const VIDEO_TIPLERI = ['video/webm', 'video/mp4'] as const
+// Chunks sent at once; a long clip in one burst trips relay rate limits.
+const AYNI_ANDA = 6
+
 async function tuvaleCiz(dosya: Blob, azamiKenar: number, kare: boolean): Promise<HTMLCanvasElement> {
   const bitmap = await createImageBitmap(dosya)
   // Square avatars are centre-cropped; photos keep their shape.
@@ -70,12 +79,23 @@ export async function fotoHazirla(dosya: Blob): Promise<Uint8Array> {
 const parcaAnahtari = (aniId: string, i: number) => `foto:${aniId}:${i}`
 
 export async function fotoYayinla(kanal: Kanal, aniId: string, bayt: Uint8Array): Promise<FotoBilgisi> {
+  return medyaYayinla(kanal, aniId, bayt, 'image/jpeg')
+}
+
+// Publishes any media (photo or clip) under its own id, a few chunks at a
+// time.
+export async function medyaYayinla(kanal: Kanal, medyaId: string, bayt: Uint8Array, tip: string): Promise<FotoBilgisi> {
   const parcalar = baytiParcala(bayt, PARCA_BOYU)
+  if (parcalar.length > MEDYA_AZAMI_PARCA) throw new Error('Dosya çok büyük.')
   const m = motor()
-  await Promise.all(
-    parcalar.map((p, i) => m.yayinla(kanal, TUR.foto, parcaAnahtari(aniId, i), p, { konu: kanal.fotoKonu })),
-  )
-  return { parca: parcalar.length, tip: 'image/jpeg' }
+  for (let i = 0; i < parcalar.length; i += AYNI_ANDA) {
+    await Promise.all(
+      parcalar
+        .slice(i, i + AYNI_ANDA)
+        .map((p, j) => m.yayinla(kanal, TUR.foto, parcaAnahtari(medyaId, i + j), p, { konu: kanal.fotoKonu })),
+    )
+  }
+  return { parca: parcalar.length, tip }
 }
 
 export async function fotoSil(kanal: Kanal, aniId: string, bilgi: FotoBilgisi): Promise<void> {
@@ -105,7 +125,7 @@ export function fotoUrl(kanal: Kanal, yazar: string, aniId: string, bilgi: FotoB
 
 async function fotoBirlestir(kanal: Kanal, yazar: string, aniId: string, bilgi: FotoBilgisi): Promise<string | null> {
   const m = motor()
-  const anahtarlar = Array.from({ length: Math.min(bilgi.parca, 20) }, (_, i) => parcaAnahtari(aniId, i))
+  const anahtarlar = Array.from({ length: Math.min(bilgi.parca, MEDYA_AZAMI_PARCA) }, (_, i) => parcaAnahtari(aniId, i))
   const oku = () => Promise.all(anahtarlar.map((a) => m.kayit(kanal, yazar, a)))
   let parcalar = await oku()
   if (parcalar.some((p) => !p || typeof p.veri !== 'string')) {
@@ -120,6 +140,16 @@ async function fotoBirlestir(kanal: Kanal, yazar: string, aniId: string, bilgi: 
 export function fotoBilgisiAl(deger: unknown): FotoBilgisi | null {
   if (typeof deger !== 'object' || deger === null) return null
   const { parca, tip } = deger as Record<string, unknown>
-  if (typeof parca !== 'number' || !Number.isInteger(parca) || parca < 1 || parca > 20) return null
+  if (typeof parca !== 'number' || !Number.isInteger(parca) || parca < 1 || parca > FOTO_AZAMI_PARCA) return null
   return { parca, tip: tip === 'image/png' || tip === 'image/webp' ? tip : 'image/jpeg' }
+}
+
+// Like fotoBilgisiAl, for a clip: a video type and up to the larger chunk
+// count.
+export function videoBilgisiAl(deger: unknown): FotoBilgisi | null {
+  if (typeof deger !== 'object' || deger === null) return null
+  const { parca, tip } = deger as Record<string, unknown>
+  if (typeof parca !== 'number' || !Number.isInteger(parca) || parca < 1 || parca > MEDYA_AZAMI_PARCA) return null
+  const videoTipi = VIDEO_TIPLERI.find((t) => typeof tip === 'string' && tip.startsWith(t))
+  return videoTipi ? { parca, tip: videoTipi } : null
 }
