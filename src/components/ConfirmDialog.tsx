@@ -21,7 +21,7 @@ export function ConfirmDialog({
   useGeriIleKapat(onCancel)
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink-900/40 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink-900/40 animate-fade-in"
       onClick={onCancel}
     >
       <div
@@ -29,8 +29,8 @@ export function ConfirmDialog({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center shrink-0">
-            <Icon name="AlertTriangle" className="w-5 h-5 text-rose-500" />
+          <div className="w-10 h-10 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center shrink-0">
+            <Icon name="AlertTriangle" className="w-5 h-5 text-bolum-koyu" />
           </div>
           <div className="flex-1">
             <h3 className="font-semibold text-ink-700">{title}</h3>
@@ -43,7 +43,7 @@ export function ConfirmDialog({
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 bg-rose-500 text-white font-semibold rounded-2xl px-5 py-3.5 active:scale-[0.97] transition-all hover:bg-rose-600"
+            className="flex-1 bg-rose-500 text-white font-semibold rounded-2xl px-4 py-3.5 active:opacity-80 transition-all hover:bg-rose-600"
           >
             {confirmLabel}
           </button>

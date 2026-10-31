@@ -131,7 +131,7 @@ export function MesajSatiri({
         <span title={mesaj.okundu ? 'Okundu' : 'Gönderildi'} aria-label={mesaj.okundu ? 'Okundu' : 'Gönderildi'}>
           <Icon
             name={mesaj.okundu ? 'CheckCheck' : 'Check'}
-            className={`w-3.5 h-3.5 ${mesaj.okundu ? 'text-orchid-500' : 'text-ink-300'}`}
+            className={`w-3.5 h-3.5 ${mesaj.okundu ? 'text-brand-600' : 'text-ink-400'}`}
           />
         </span>
       )}
@@ -146,7 +146,7 @@ export function MesajSatiri({
         aria-hidden
         className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-mist-50 shadow-sm flex items-center justify-center opacity-0"
       >
-        <Icon name="Reply" className="w-4 h-4 text-orchid-500" />
+        <Icon name="Reply" className="w-4 h-4 text-brand-600" />
       </div>
       <Baloncuk
         benim={benim}
@@ -239,8 +239,8 @@ function TepkiRozeti({ mesaj, islemler }: { mesaj: SohbetMesaji; islemler: Mesaj
       type="button"
       onClick={() => islemler.tepkileriAc(mesaj)}
       aria-label={`${mesaj.tepkiler.length} tepki: ${emojiler.join(' ')}. Kimlerin bıraktığını gör`}
-      className={`relative z-[1] inline-flex items-center gap-1 rounded-full bg-mist-50 border px-1.5 py-0.5 text-sm leading-none shadow-sm active:scale-95 transition-transform ${
-        benimki ? 'border-orchid-300' : 'border-ink-100'
+      className={`relative z-[1] inline-flex items-center gap-1 rounded-full bg-mist-50 border px-1.5 py-0.5 text-sm leading-none shadow-sm active:opacity-80 transition-transform ${
+        benimki ? 'border-brand-300' : 'border-ink-100'
       }`}
     >
       <span>{emojiler.join('')}</span>
@@ -260,7 +260,7 @@ export function SohbetUstSeridi({ islemler }: { islemler: MesajIslemleri }) {
   if (!sabitGorunur && yildizli === 0) return null
 
   return (
-    <div className="flex items-center gap-2 px-5 py-2 border-b border-ink-100 bg-mist-50/90 shrink-0">
+    <div className="flex items-center gap-2 px-4 py-2 border-b border-ink-100 bg-mist-50/90 shrink-0">
       {sabitGorunur ? (
         <>
           <button
@@ -268,9 +268,9 @@ export function SohbetUstSeridi({ islemler }: { islemler: MesajIslemleri }) {
             onClick={() => islemler.mesajaGit(sabitGorunur.id)}
             className="flex-1 min-w-0 flex items-center gap-2.5 text-left rounded-xl -m-1 p-1 hover:bg-ink-50 transition-colors"
           >
-            <Icon name="Pin" className="w-4 h-4 text-orchid-500 shrink-0" />
+            <Icon name="Pin" className="w-4 h-4 text-brand-600 shrink-0" />
             <span className="min-w-0">
-              <span className="block text-[11px] font-semibold text-orchid-600">Sabitlenen mesaj</span>
+              <span className="block text-[11px] font-semibold text-brand-600">Sabitlenen mesaj</span>
               <span className="block text-xs text-ink-500 truncate">
                 {islemler.adAl(sabitGorunur.gonderen_id)}: {mesajOzeti(sabitGorunur)}
               </span>
@@ -280,7 +280,7 @@ export function SohbetUstSeridi({ islemler }: { islemler: MesajIslemleri }) {
             type="button"
             onClick={() => islemler.sabitDegistir(null)}
             aria-label="Sabitlemeyi kaldır"
-            className="w-8 h-8 rounded-full flex items-center justify-center text-ink-400 hover:bg-ink-50 active:scale-90 transition shrink-0"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-ink-400 hover:bg-ink-50 active:opacity-80 transition shrink-0"
           >
             <Icon name="PinOff" className="w-4 h-4" />
           </button>
@@ -310,12 +310,12 @@ export function MesajYazmaAlani({ islemler, onPlanPaylas }: { islemler: MesajIsl
   useGeriIleKapat(islemler.yazmaCubugunuKapat, !!(yanitlanan || duzenlenen))
 
   return (
-    <div className="px-5 pb-[calc(1rem+var(--safe-bottom))] pt-3 border-t border-ink-100 safe-x shrink-0 bg-mist-100">
+    <div className="px-4 pb-[calc(1rem+var(--safe-bottom))] pt-3 border-t border-ink-100 safe-x shrink-0 bg-mist-100">
       {(yanitlanan || duzenlenen) && (
         <div className="flex items-center gap-2 mb-2 rounded-2xl bg-mist-50 border border-ink-100 pl-3 pr-1.5 py-2 animate-slide-up">
-          <Icon name={duzenlenen ? 'Pencil' : 'Reply'} className="w-4 h-4 text-orchid-500 shrink-0" />
-          <div className="flex-1 min-w-0 border-l-[3px] border-orchid-400 pl-2.5">
-            <p className="text-[11px] font-semibold text-orchid-600 truncate">
+          <Icon name={duzenlenen ? 'Pencil' : 'Reply'} className="w-4 h-4 text-brand-600 shrink-0" />
+          <div className="flex-1 min-w-0 border-l-[3px] border-brand-400 pl-2.5">
+            <p className="text-[11px] font-semibold text-brand-600 truncate">
               {duzenlenen ? 'Mesajı düzenle' : `${islemler.adAl(yanitlanan!.gonderen_id)} · yanıtla`}
             </p>
             <p className="text-xs text-ink-500 truncate">{mesajOzeti((duzenlenen ?? yanitlanan)!)}</p>
@@ -324,7 +324,7 @@ export function MesajYazmaAlani({ islemler, onPlanPaylas }: { islemler: MesajIsl
             type="button"
             onClick={islemler.yazmaCubugunuKapat}
             aria-label={duzenlenen ? 'Düzenlemeyi bırak' : 'Yanıtı bırak'}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-ink-400 hover:bg-ink-50 active:scale-90 transition shrink-0"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-ink-400 hover:bg-ink-50 active:opacity-80 transition shrink-0"
           >
             <Icon name="X" className="w-4 h-4" />
           </button>
@@ -334,7 +334,7 @@ export function MesajYazmaAlani({ islemler, onPlanPaylas }: { islemler: MesajIsl
         <button
           onClick={onPlanPaylas}
           aria-label="Plan paylaş"
-          className="w-11 h-11 rounded-full bg-orchid-100 text-orchid-600 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          className="w-11 h-11 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
         >
           <Icon name="CalendarPlus" className="w-5 h-5" />
         </button>
@@ -351,7 +351,7 @@ export function MesajYazmaAlani({ islemler, onPlanPaylas }: { islemler: MesajIsl
           placeholder={duzenlenen ? 'Mesajı düzenle...' : 'Mesaj yaz...'}
           aria-label={duzenlenen ? 'Mesajı düzenle' : 'Mesaj yaz'}
           rows={1}
-          className="flex-1 bg-mist-50 border border-ink-100 rounded-2xl px-4 py-3 text-ink-700 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-orchid-200 transition-all resize-none max-h-32"
+          className="flex-1 bg-white border border-ink-200 rounded-xl px-4 py-2.5 text-ink-700 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-brand-200 transition-all resize-none max-h-32"
         />
         <GonderButonu
           onClick={() => void islemler.gonderVeyaKaydet()}
@@ -451,8 +451,8 @@ function MenuIcerigi({ mesaj, islemler, buyuk = false }: { mesaj: SohbetMesaji; 
       onClick={() => islemler.tepkiSec(mesaj, emoji)}
       aria-label={`${emoji} bırak`}
       aria-pressed={benimTepkim === emoji}
-      className={`${buyuk ? 'w-11 h-11 text-2xl' : 'w-9 h-9 text-xl'} rounded-full flex items-center justify-center hover:bg-ink-50 active:scale-90 transition ${
-        benimTepkim === emoji ? 'bg-orchid-100' : ''
+      className={`${buyuk ? 'w-11 h-11 text-2xl' : 'w-9 h-9 text-xl'} rounded-full flex items-center justify-center hover:bg-ink-50 active:opacity-80 transition ${
+        benimTepkim === emoji ? 'bg-brand-100' : ''
       }`}
     >
       {emoji}
@@ -473,7 +473,7 @@ function MenuIcerigi({ mesaj, islemler, buyuk = false }: { mesaj: SohbetMesaji; 
               type="button"
               onClick={() => setTumEmojiler(true)}
               aria-label="Başka bir emoji seç"
-              className={`${buyuk ? 'w-11 h-11' : 'w-9 h-9'} rounded-full bg-ink-50 text-ink-500 flex items-center justify-center hover:bg-ink-100 active:scale-90 transition`}
+              className={`${buyuk ? 'w-11 h-11' : 'w-9 h-9'} rounded-full bg-ink-50 text-ink-500 flex items-center justify-center hover:bg-ink-100 active:opacity-80 transition`}
             >
               <Icon name="SmilePlus" className="w-5 h-5" />
             </button>
@@ -553,7 +553,7 @@ function AltSayfa({
   useGeriIleKapat(onKapat)
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-end justify-center bg-ink-900/40 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[80] flex items-end justify-center bg-ink-900/40 animate-fade-in"
       onClick={onKapat}
     >
       <div
@@ -585,7 +585,7 @@ function SilmeSayfasi({ mesaj, islemler }: { mesaj: SohbetMesaji; islemler: Mesa
           <button
             type="button"
             onClick={() => islemler.sil(mesaj, true)}
-            className="w-full rounded-2xl bg-rose-50 text-rose-700 font-semibold px-4 py-3 active:scale-[0.98] transition"
+            className="w-full rounded-2xl bg-rose-50 text-rose-700 font-semibold px-4 py-3 active:opacity-80 transition"
           >
             Herkesten sil
           </button>
@@ -593,7 +593,7 @@ function SilmeSayfasi({ mesaj, islemler }: { mesaj: SohbetMesaji; islemler: Mesa
         <button
           type="button"
           onClick={() => islemler.sil(mesaj, false)}
-          className="w-full rounded-2xl bg-ink-50 text-ink-700 font-semibold px-4 py-3 active:scale-[0.98] transition"
+          className="w-full rounded-2xl bg-ink-50 text-ink-700 font-semibold px-4 py-3 active:opacity-80 transition"
         >
           Benden sil
         </button>
@@ -664,7 +664,7 @@ function IletmeSayfasi({ mesaj, islemler }: { mesaj: SohbetMesaji; islemler: Mes
       <div className="max-h-72 overflow-y-auto -mx-1">
         {sohbetler === null ? (
           <div className="flex justify-center py-6">
-            <Icon name="Loader2" className="w-5 h-5 animate-spin text-ink-300" />
+            <Icon name="Loader2" className="w-5 h-5 animate-spin text-ink-400" />
           </div>
         ) : gorunen.length === 0 ? (
           <p className="text-sm text-ink-400 text-center py-6">Sohbet bulunamadı.</p>
@@ -693,7 +693,7 @@ function IletmeSayfasi({ mesaj, islemler }: { mesaj: SohbetMesaji; islemler: Mes
                 </span>
                 <span
                   className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                    secildi ? 'bg-orchid-500 border-orchid-500 text-white' : 'border-ink-200'
+                    secildi ? 'bg-brand-600 border-brand-600 text-white' : 'border-ink-200'
                   }`}
                 >
                   {secildi && <Icon name="Check" className="w-3.5 h-3.5" />}
@@ -765,12 +765,12 @@ function BilgiSayfasi({ mesaj, islemler }: { mesaj: SohbetMesaji; islemler: Mesa
         <p className="text-sm text-rose-600 px-1">{hata}</p>
       ) : !bilgi ? (
         <div className="flex justify-center py-4">
-          <Icon name="Loader2" className="w-5 h-5 animate-spin text-ink-300" />
+          <Icon name="Loader2" className="w-5 h-5 animate-spin text-ink-400" />
         </div>
       ) : (
         <>
-          {liste('Okudu', bilgi.okuyanlar, 'CheckCheck', 'text-orchid-500')}
-          {liste('Henüz okumadı', bilgi.bekleyenler, 'Check', 'text-ink-300')}
+          {liste('Okudu', bilgi.okuyanlar, 'CheckCheck', 'text-brand-600')}
+          {liste('Henüz okumadı', bilgi.bekleyenler, 'Check', 'text-ink-400')}
         </>
       )}
     </AltSayfa>
@@ -841,7 +841,7 @@ function YildizliSayfasi({ islemler }: { islemler: MesajIslemleri }) {
                 type="button"
                 onClick={() => islemler.yildizDegistir(m)}
                 aria-label="Yıldızı kaldır"
-                className="w-9 h-9 rounded-full flex items-center justify-center text-amber-500 hover:bg-amber-50 active:scale-90 transition shrink-0"
+                className="w-9 h-9 rounded-full flex items-center justify-center text-amber-500 hover:bg-amber-50 active:opacity-80 transition shrink-0"
               >
                 <Icon name="StarOff" className="w-4 h-4" />
               </button>

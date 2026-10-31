@@ -17,7 +17,6 @@ import {
   Image as ImageIcon,
   Link as LinkIcon,
   Type,
-  Sparkles,
   Loader2,
   ChevronRight,
   ArrowLeft,
@@ -97,7 +96,6 @@ const iconMap = {
   ImageIcon,
   LinkIcon,
   Type,
-  Sparkles,
   Loader2,
   ChevronRight,
   ArrowLeft,
@@ -160,7 +158,22 @@ const iconMap = {
 
 export type IconName = keyof typeof iconMap
 
-export function Icon({ name, className, size }: { name: IconName; className?: string; size?: number }) {
+// One stroke weight for the whole app (interface plan: 1.75, close to SF
+// Symbols "regular" and Material Symbols at weight 400). A caller can go
+// heavier for a small glyph on a filled button.
+const CIZGI_KALINLIGI = 1.75
+
+export function Icon({
+  name,
+  className,
+  size,
+  strokeWidth = CIZGI_KALINLIGI,
+}: {
+  name: IconName
+  className?: string
+  size?: number
+  strokeWidth?: number
+}) {
   const Cmp = iconMap[name]
-  return <Cmp className={className} size={size} />
+  return <Cmp className={className} size={size} strokeWidth={strokeWidth} />
 }

@@ -123,15 +123,15 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
 
   return (
     <div className="panel-tam z-50">
-      <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-3">
-        <button onClick={onClose} aria-label="Geri" className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform">
-          <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />
+      <div className="relative overflow-hidden bg-bolum-canli text-white rounded-b-[2rem] mb-2 flex items-center justify-between px-4 pt-[calc(1rem+var(--safe-top))] pb-5">
+        <button onClick={onClose} aria-label="Geri" className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/20 hover:bg-white/30 basinca">
+          <Icon name="ArrowLeft" className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-2">
           <button
             onClick={handleToggleStatus}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all active:scale-95 flex items-center gap-1.5
-              ${done ? 'bg-teal-100 text-teal-700' : 'bg-mist-50 text-ink-400 border border-ink-100'}`}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all active:opacity-80 flex items-center gap-1.5
+              ${done ? 'bg-white text-teal-700' : 'bg-white/20 text-white'}`}
           >
             <Icon name={done ? 'CheckCircle2' : 'Circle'} className="w-4 h-4" />
             {done ? 'Yapıldı' : 'Bekliyor'}
@@ -141,19 +141,19 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
               onClick={handleSave}
               disabled={saving}
               aria-label="Kaydet"
-              className="w-10 h-10 rounded-full bg-gradient-orchid text-white flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
+              className="w-10 h-10 rounded-2xl bg-white text-bolum-koyu flex items-center justify-center basinca disabled:opacity-50"
             >
               <Icon name={saving ? 'Loader2' : 'Save'} className={`w-5 h-5 ${saving ? 'animate-spin' : ''}`} />
             </button>
           ) : (
-            <button onClick={() => setEditing(true)} aria-label="Düzenle" className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform">
-              <Icon name="Pencil" className="w-5 h-5 text-ink-500" />
+            <button onClick={() => setEditing(true)} aria-label="Düzenle" className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/20 hover:bg-white/30 basinca">
+              <Icon name="Pencil" className="w-5 h-5" />
             </button>
           )}
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 pb-8">
+      <div className="flex-1 overflow-y-auto px-4 pb-8">
         <div className="card p-5 mb-4">
           <div className="flex items-center gap-2 mb-4">
             <div className={`w-10 h-10 rounded-xl ${colors.bg} flex items-center justify-center text-xl`}>
@@ -179,7 +179,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
                   <button
                     key={cat}
                     onClick={() => setCategory(cat)}
-                    className={`chip ${category === cat ? `${CATEGORY_COLORS[cat].bg} ${CATEGORY_COLORS[cat].text} ring-2 ${CATEGORY_COLORS[cat].ring}` : 'bg-mist-100 text-ink-400'}`}
+                    className={`chip ${category === cat ? `${CATEGORY_COLORS[cat].bg} ${CATEGORY_COLORS[cat].text} ring-2 ${CATEGORY_COLORS[cat].ring}` : 'bg-white text-ink-600 border border-ink-200'}`}
                   >
                     <Icon name={CATEGORY_ICON_NAME[cat]} className="w-4 h-4" />
                     {CATEGORY_LABELS[cat]}
@@ -217,7 +217,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
                   <button
                     key={p}
                     onClick={() => setPriority(p)}
-                    className={`chip flex-1 justify-center ${priority === p ? `${PRIORITY_COLORS[p].bg} ${PRIORITY_COLORS[p].text} ring-2 ring-ink-200` : 'bg-mist-100 text-ink-400'}`}
+                    className={`chip flex-1 justify-center ${priority === p ? `${PRIORITY_COLORS[p].bg} ${PRIORITY_COLORS[p].text} ring-2 ring-ink-200` : 'bg-white text-ink-600 border border-ink-200'}`}
                   >
                     <span className={`w-2 h-2 rounded-full ${PRIORITY_COLORS[p].dot}`} />
                     {PRIORITY_LABELS[p]}
@@ -237,7 +237,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
             </>
           ) : (
             <>
-              <h2 className={`font-display text-xl font-bold text-ink-700 leading-snug ${done ? 'line-through opacity-60' : ''}`}>{baslik}</h2>
+              <h2 className={`text-title text-ink-800 leading-snug ${done ? 'line-through opacity-60' : ''}`}>{baslik}</h2>
               {!done && kayit.tarih && (
                 <div className="mt-2">
                   <GeriSayimRozeti kayit={kayit} />
@@ -248,8 +248,8 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
                 <div className="mt-4 pt-4 border-t border-ink-100 space-y-3">
                   {(dateLabel || timeLabel) && (
                     <div className="flex items-center gap-2">
-                      <div className={`w-8 h-8 rounded-lg ${past && !done ? 'bg-rose-100' : 'bg-orchid-100'} flex items-center justify-center`}>
-                        <Icon name="Clock" className={`w-4 h-4 ${past && !done ? 'text-rose-500' : 'text-orchid-500'}`} />
+                      <div className={`w-8 h-8 rounded-lg ${past && !done ? 'bg-rose-100' : 'bg-brand-100'} flex items-center justify-center`}>
+                        <Icon name="Clock" className={`w-4 h-4 ${past && !done ? 'text-rose-500' : 'text-brand-600'}`} />
                       </div>
                       <div>
                         <p className="text-xs text-ink-400">Tarih & Saat</p>
@@ -263,9 +263,9 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
                     </div>
                   )}
                   {kayit.konum && (
-                    <a href={mapsLink ?? '#'} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 active:scale-[0.98] transition-transform">
-                      <div className="w-8 h-8 rounded-lg bg-teal-100 flex items-center justify-center">
-                        <Icon name="MapPin" className="w-4 h-4 text-teal-600" />
+                    <a href={mapsLink ?? '#'} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 active:opacity-80 transition-transform">
+                      <div className="w-8 h-8 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center">
+                        <Icon name="MapPin" className="w-4 h-4 text-bolum-koyu" />
                       </div>
                       <div className="flex-1">
                         <p className="text-xs text-ink-400">Konum</p>
@@ -295,7 +295,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
 
         {kayit.yakinOneriler && kayit.yakinOneriler.length > 0 && !editing && (
           <div className="card p-5 mb-4">
-            <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-3">O sırada yakında bulunanlar</p>
+            <p className="text-label text-ink-500 mb-3">O sırada yakında bulunanlar</p>
             <div className="space-y-2">
               {kayit.yakinOneriler.map((o, i) => (
                 <div key={i} className="flex items-center justify-between text-sm">
@@ -338,15 +338,15 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
 
         {kayit.hamMetin && (
           <div className="card p-5 mb-4">
-            <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-3">İçerik</p>
+            <p className="text-label text-ink-500 mb-3">İçerik</p>
             <p className="text-sm text-ink-500 whitespace-pre-wrap leading-relaxed">{kayit.hamMetin}</p>
           </div>
         )}
 
         {kayit.hamLink && (
           <div className="card p-5 mb-4">
-            <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-3">Kaynak</p>
-            <a href={kayit.hamLink} target="_blank" rel="noopener noreferrer" className="text-sm text-orchid-600 font-medium flex items-center gap-2 break-all active:scale-[0.98] transition-transform">
+            <p className="text-label text-ink-500 mb-3">Kaynak</p>
+            <a href={kayit.hamLink} target="_blank" rel="noopener noreferrer" className="text-sm text-brand-600 font-medium flex items-center gap-2 break-all active:opacity-80 transition-transform">
               <Icon name="LinkIcon" className="w-4 h-4 shrink-0" />
               {kayit.hamLink}
               <Icon name="ExternalLink" className="w-3 h-3 shrink-0" />
@@ -356,7 +356,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
 
         {kayit.gorseller.length > 0 && (
           <div className="card p-5 mb-4">
-            <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-3">Görsel</p>
+            <p className="text-label text-ink-500 mb-3">Görsel</p>
             <div className="flex flex-wrap gap-2">
               {kayit.gorseller.map((g, i) => (
                 gorselUrlleri[i] && (
@@ -371,13 +371,13 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
 
         {!editing && (kayit.tarih || kayit.durum === 'bekliyor') && (
           <div className="mb-4">
-            <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2 px-1">{kayit.tarih ? 'Hızlı ertele' : 'Gün seç'}</p>
+            <p className="text-label text-ink-500 mb-2 px-1">{kayit.tarih ? 'Hızlı ertele' : 'Gün seç'}</p>
             <ErtelemeSecici tarih={kayit.tarih} onSec={(t) => void handleReschedule(t)} etiket={goruntulemeBasligi(kayit)} />
           </div>
         )}
 
         <div className="flex items-center justify-between px-1 mb-4">
-          <span className="text-xs text-ink-300">
+          <span className="text-xs text-ink-400">
             {kayit.kaynakTipi === 'gorsel' ? 'Görselden' : kayit.kaynakTipi === 'link' ? 'Linkten' : 'Metinden'} · {formatRelativeTime(kayit.olusturulmaTarihi)}
           </span>
         </div>
@@ -385,7 +385,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
         {paylasilabilir && !editing && (
           <button
             onClick={() => setPaylasAcik(true)}
-            className="w-full bg-orchid-50 text-orchid-700 font-medium rounded-2xl px-5 py-3.5 flex items-center justify-center gap-2 active:scale-[0.97] transition-all hover:bg-orchid-100 mb-3"
+            className="w-full bg-brand-50 text-brand-700 font-medium rounded-2xl px-4 py-3.5 flex items-center justify-center gap-2 active:opacity-80 transition-all hover:bg-brand-100 mb-3"
           >
             <Icon name="Send" className="w-5 h-5" />
             Arkadaşlarınla paylaş
@@ -397,7 +397,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
 
         <button
           onClick={() => setShowDelete(true)}
-          className="w-full bg-rose-50 text-rose-600 font-medium rounded-2xl px-5 py-3.5 flex items-center justify-center gap-2 active:scale-[0.97] transition-all hover:bg-rose-100"
+          className="w-full bg-rose-50 text-rose-600 font-medium rounded-2xl px-4 py-3.5 flex items-center justify-center gap-2 active:opacity-80 transition-all hover:bg-rose-100"
         >
           <Icon name="Trash2" className="w-5 h-5" />
           Kaydı sil
@@ -414,5 +414,5 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
 }
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <label className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">{children}</label>
+  return <label className="block text-label text-ink-500 mb-2">{children}</label>
 }

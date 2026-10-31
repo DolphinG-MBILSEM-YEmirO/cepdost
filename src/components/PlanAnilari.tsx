@@ -44,15 +44,15 @@ export function PlanAnilariKarti({ grupId, arkadasId, tarih, konum, planBasligi,
   return (
     <>
       {anilar.length === 0 ? (
-        <div className="card p-4 mb-4 bg-orchid-50/70 border-orchid-100">
+        <div className="card p-4 mb-4 bg-brand-50/70 border-brand-100">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-orchid-100 flex items-center justify-center shrink-0">
-              <Icon name="Camera" className="w-5 h-5 text-orchid-500" />
+            <div className="w-10 h-10 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center shrink-0">
+              <Icon name="Camera" className="w-5 h-5 text-bolum-koyu" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-ink-700">Nasıl geçti?</p>
               <p className="text-xs text-ink-500 mt-0.5">Bir fotoğraf ekle, {hedefAdi} arşivinde kalsın.</p>
-              <button onClick={() => setEkleAcik(true)} className="mt-3 chip bg-gradient-orchid text-white">
+              <button onClick={() => setEkleAcik(true)} className="mt-3 chip bg-brand-600 text-white">
                 <Icon name="ImageIcon" className="w-4 h-4" />
                 Fotoğraf ekle
               </button>
@@ -64,14 +64,14 @@ export function PlanAnilariKarti({ grupId, arkadasId, tarih, konum, planBasligi,
           <div className="flex items-start gap-2">
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline gap-2">
-                <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide">O günden anılar</p>
-                <span className="text-xs text-ink-300">{anilar.length}</span>
+                <p className="text-label text-ink-500">O günden anılar</p>
+                <span className="text-xs text-ink-400">{anilar.length}</span>
               </div>
               <p className="text-xs text-ink-500 mt-1">{ekleyenler} ekledi</p>
             </div>
             <button
               onClick={() => setEkleAcik(true)}
-              className="chip text-xs bg-orchid-50 text-orchid-700 border border-orchid-100 shrink-0 active:scale-95"
+              className="chip text-xs bg-brand-50 text-brand-700 border border-brand-100 shrink-0 active:opacity-80"
             >
               <Icon name="Plus" className="w-3.5 h-3.5" />
               Anı ekle
@@ -88,7 +88,7 @@ export function PlanAnilariKarti({ grupId, arkadasId, tarih, konum, planBasligi,
                   <button
                     onClick={() => setAcikId(a.id)}
                     aria-label={`${a.mekan_adi}, ${kim}${yanit ? `, ${yanit} yanıt` : ''}`}
-                    className="relative block w-24 h-24 rounded-2xl overflow-hidden bg-mist-100 active:scale-95 transition-transform"
+                    className="relative block w-24 h-24 rounded-2xl overflow-hidden bg-mist-100 active:opacity-80 transition-transform"
                   >
                     <AniGorseli ani={a} />
                     {yanit > 0 && (

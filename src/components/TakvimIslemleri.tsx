@@ -11,7 +11,7 @@ import { tiklanabilir } from '../lib/a11y'
 // whole day's worth), the missed plans card, and the "Geri al" bar that
 // follows each of these.
 
-const CHIP = 'chip bg-mist-50 text-ink-500 border border-ink-100 active:scale-95 disabled:opacity-50'
+const CHIP = 'chip bg-white text-ink-600 border border-ink-200 active:opacity-80 disabled:opacity-50'
 
 // Where a plan (or a day's plans) on `tarih` can go, plus any date. A plan
 // with no day yet (`tarih` null) is offered its first one.
@@ -90,7 +90,7 @@ export function GeriAlCubugu({
       <div className="flex items-center gap-3 rounded-2xl bg-ink-800/95 text-white shadow-float pl-4 pr-2 py-2.5">
         <Icon name={ikon} className="w-4 h-4 text-teal-300 shrink-0" />
         <span className="flex-1 text-sm leading-snug">{sonIslem.mesaj}</span>
-        <button onClick={onGeriAl} className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold text-orchid-200 hover:bg-white/10 active:scale-95">
+        <button onClick={onGeriAl} className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold text-brand-200 hover:bg-white/10 active:opacity-80">
           Geri al
         </button>
         <button onClick={onKapat} aria-label="Kapat" className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:bg-white/10">
@@ -138,7 +138,7 @@ export function KacanlarKarti({
         <Icon name="AlertCircle" className="w-4 h-4 text-rose-500" />
         <h2 className="text-sm font-semibold text-rose-600">Kaçanlar</h2>
         <span className="text-xs text-rose-400">{kayitlar.length}</span>
-        <span className="ml-auto text-[11px] text-ink-300">Günü geçti, hâlâ bekliyor</span>
+        <span className="ml-auto text-[11px] text-ink-400">Günü geçti, hâlâ bekliyor</span>
       </div>
 
       <ul className="divide-y divide-rose-100/70">
@@ -150,7 +150,7 @@ export function KacanlarKarti({
                 onClick={() => onUygula([k], { tur: 'yapildi' })}
                 disabled={mesgul}
                 aria-label={`${baslik}: yapıldı`}
-                className="shrink-0 mt-0.5 text-ink-200 hover:text-teal-500 active:scale-90 transition-all"
+                className="shrink-0 mt-0.5 text-ink-200 hover:text-teal-500 active:opacity-80 transition-all"
               >
                 <Icon name="Circle" className="w-5 h-5" />
               </button>
@@ -166,7 +166,7 @@ export function KacanlarKarti({
                   onClick={() => onUygula([k], { tur: 'tasi', tarih: bugun })}
                   disabled={mesgul}
                   aria-label={`${baslik}: bugüne al`}
-                  className="chip text-xs py-1 bg-white text-orchid-600 border border-orchid-100 active:scale-95 disabled:opacity-50"
+                  className="chip text-xs py-1 bg-white text-brand-600 border border-brand-100 active:opacity-80 disabled:opacity-50"
                 >
                   Bugün
                 </button>
@@ -174,7 +174,7 @@ export function KacanlarKarti({
                   onClick={() => onUygula([k], { tur: 'tasi', tarih: yarin })}
                   disabled={mesgul}
                   aria-label={`${baslik}: yarına ertele`}
-                  className="chip text-xs py-1 bg-white text-ink-500 border border-ink-100 active:scale-95 disabled:opacity-50"
+                  className="chip text-xs py-1 bg-white text-ink-500 border border-ink-100 active:opacity-80 disabled:opacity-50"
                 >
                   Yarın
                 </button>

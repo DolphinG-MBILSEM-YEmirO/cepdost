@@ -71,7 +71,7 @@ export function EpostaDogrulama({
   }
 
   const hataKutusu = hata && (
-    <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3 mt-3">
+    <div className="flex items-start gap-2 bg-white border border-rose-200 rounded-xl px-4 py-3 mt-3">
       <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
       <p className="text-sm text-rose-700">{hata}</p>
     </div>
@@ -164,7 +164,7 @@ export function EpostaDogrulama({
         <button
           onClick={() => void kodGonder()}
           disabled={bekleme > 0 || calisiyor !== null}
-          className="text-orchid-600 disabled:text-ink-300"
+          className="text-brand-600 disabled:text-ink-400"
         >
           {calisiyor === 'kod' ? 'Gönderiliyor...' : bekleme > 0 ? `Tekrar gönder (${bekleme})` : 'Kodu tekrar gönder'}
         </button>
@@ -184,7 +184,7 @@ export function DogrulanmisEposta({ eposta, onDegistir }: { eposta: string; onDe
         <p className="text-xs text-teal-700">Doğrulandı</p>
       </div>
       {onDegistir && (
-        <button onClick={onDegistir} className="text-xs font-semibold text-orchid-600 shrink-0">
+        <button onClick={onDegistir} className="text-xs font-semibold text-brand-600 shrink-0">
           Değiştir
         </button>
       )}
@@ -203,12 +203,12 @@ export function EpostaDogrulamaEkrani({
 }) {
   return (
     <div className="flex flex-col h-full">
-      <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3">
-        <h1 className="font-display text-2xl font-bold text-ink-700">E-postanı doğrula</h1>
+      <div className="px-4 pt-[calc(1rem+var(--safe-top))] pb-3">
+        <h1 className="text-display text-ink-800 tracking-tight">E-postanı doğrula</h1>
         <p className="text-sm text-ink-400 mt-0.5">Tek seferlik bir adım</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 pb-24">
+      <div className="flex-1 overflow-y-auto px-4 pb-24">
         <div className="card p-4 mb-4 bg-teal-50/60 border-teal-100">
           <div className="flex items-start gap-2.5">
             <Icon name="ShieldCheck" className="w-5 h-5 text-teal-600 shrink-0 mt-0.5" />
@@ -220,7 +220,7 @@ export function EpostaDogrulamaEkrani({
         </div>
 
         <div className="card p-5 mb-4">
-          <label className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">E-posta adresin</label>
+          <label className="block text-label text-ink-500 mb-2">E-posta adresin</label>
           <EpostaDogrulama
             onDogrulandi={async (eposta, onay) => {
               await epostayiKaydet(eposta, onay)

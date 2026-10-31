@@ -1,0 +1,125 @@
+{
+  "$comment": "Sharloop design tokens (single source). Theme 'Canlı' (2026-10-31, after the user asked for vivid colours and more motion): soft lavender-white surfaces, deep violet-black text, a magenta-pink brand and one gradient per main tab (bolum). The four tab gradients walk one hue path (orange, rose, magenta, violet, indigo) in tab order and each starts where the previous ends, so switching tabs blends instead of jumping. Tailwind serves mist/ink/brand as CSS variables; Davet and the native apps read this file too.",
+  "color": {
+    "mist": {
+      "50": "#FFFFFF",
+      "100": "#F6F4FB",
+      "200": "#EEEAF6",
+      "300": "#E4DFEF",
+      "400": "#CEC7DE",
+      "500": "#A9A1BD"
+    },
+    "ink": {
+      "50": "#F7F6FA",
+      "100": "#ECE9F3",
+      "200": "#D9D4E5",
+      "300": "#8E879F",
+      "400": "#635C75",
+      "500": "#4C4560",
+      "600": "#38324A",
+      "700": "#262137",
+      "800": "#1A1628",
+      "900": "#0F0C19"
+    },
+    "brand": {
+      "50": "#FFF0F5",
+      "100": "#FFDDE9",
+      "200": "#FFBAD3",
+      "300": "#FF8DB5",
+      "400": "#FF5C93",
+      "500": "#F5317A",
+      "600": "#DB1F66",
+      "700": "#B5154F",
+      "800": "#8F1141",
+      "900": "#6B0F33"
+    }
+  },
+  "radius": {
+    "sm": "0.625rem",
+    "md": "0.875rem",
+    "lg": "1.25rem",
+    "sheet": "1.75rem"
+  },
+  "motion": {
+    "press": "90ms",
+    "change": "200ms",
+    "sheet": "360ms",
+    "page": "420ms",
+    "easeOut": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+    "spring": "cubic-bezier(0.34, 1.56, 0.64, 1)"
+  },
+  "font": {
+    "sans": [
+      "-apple-system",
+      "BlinkMacSystemFont",
+      "\"Segoe UI Variable Text\"",
+      "\"Segoe UI\"",
+      "Roboto",
+      "\"Helvetica Neue\"",
+      "Arial",
+      "sans-serif"
+    ]
+  },
+  "type": {
+    "display": [
+      "1.75rem",
+      "2.125rem",
+      "700"
+    ],
+    "title": [
+      "1.25rem",
+      "1.625rem",
+      "600"
+    ],
+    "headline": [
+      "1rem",
+      "1.375rem",
+      "600"
+    ],
+    "body": [
+      "0.9375rem",
+      "1.375rem",
+      "400"
+    ],
+    "callout": [
+      "0.875rem",
+      "1.25rem",
+      "500"
+    ],
+    "label": [
+      "0.8125rem",
+      "1.125rem",
+      "600"
+    ],
+    "caption": [
+      "0.75rem",
+      "1rem",
+      "500"
+    ]
+  },
+  "gradient": {
+    "brand": [
+      "#EA580C",
+      "#E11D48",
+      "#7C3AED"
+    ],
+    "bolum": {
+      "planlar": [
+        "#EA580C",
+        "#E11D48"
+      ],
+      "sohbet": [
+        "#E11D48",
+        "#C026D3"
+      ],
+      "akis": [
+        "#C026D3",
+        "#7C3AED"
+      ],
+      "profil": [
+        "#7C3AED",
+        "#4F46E5"
+      ]
+    }
+  }
+}

@@ -51,7 +51,7 @@ export function GirisEkrani({
   useGeriAdimi(geri, asama !== 'karsilama')
 
   const hataKutusu = hata && (
-    <div className="mt-4 flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3 animate-fade-in">
+    <div className="mt-4 flex items-start gap-2 bg-white border border-rose-200 rounded-xl px-4 py-3 animate-fade-in">
       <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
       <p className="text-sm text-rose-700">{hata}</p>
     </div>
@@ -70,8 +70,8 @@ export function GirisEkrani({
           <label htmlFor="giris-kullanici" className="sr-only">
             Kullanıcı adı
           </label>
-          <div className="flex items-center bg-mist-50 border border-ink-100 rounded-2xl px-4">
-            <span className="text-ink-300">@</span>
+          <div className="flex items-center bg-white border border-ink-200 rounded-xl px-4">
+            <span className="text-ink-400">@</span>
             <input
               id="giris-kullanici"
               value={kullaniciAdi}
@@ -117,7 +117,7 @@ export function GirisEkrani({
             setAsama('kod')
             setHata(null)
           }}
-          className="w-full mt-5 text-sm font-semibold text-orchid-600"
+          className="w-full mt-5 text-sm font-semibold text-brand-600"
         >
           Şifreni mi unuttun? Kurtarma koduyla gir
         </button>
@@ -171,30 +171,39 @@ export function GirisEkrani({
 
   return (
     <Cerceve baslik={baslik} altBaslik={altBaslik}>
-      <div className="card p-5 mb-5">
-        <div className="w-14 h-14 rounded-2xl bg-orchid-100 flex items-center justify-center mb-4">
-          <Icon name="Users" className="w-7 h-7 text-orchid-500" />
-        </div>
-        <h2 className="font-display text-lg font-bold text-ink-700 mb-2">{tanitimBaslik}</h2>
-        <p className="text-sm text-ink-400 leading-relaxed">{tanitimMetin}</p>
+      <div className="mb-6">
+        <h2 className="text-title text-ink-800 mb-1.5">{tanitimBaslik}</h2>
+        <p className="text-callout font-normal text-ink-500 leading-relaxed">{tanitimMetin}</p>
       </div>
 
-      {/* The privacy promise comes before signing up. */}
-      <div className="card p-4 mb-6 bg-teal-50/60 border-teal-100">
-        <div className="flex items-start gap-2.5">
-          <Icon name="ShieldCheck" className="w-5 h-5 text-teal-600 shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-semibold text-teal-800 mb-1">Planların sende kalır</p>
-            <p className="text-xs text-teal-700/90 leading-relaxed">
-              Arkadaşların sadece <strong>dolu saatlerini</strong> görür — ne yaptığını, nereye
-              gittiğini, notlarını değil. Bunlar hiçbir zaman telefonundan çıkmıyor.
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* What the app does, then the privacy promise, before signing up. */}
+      <ul className="card divide-y divide-ink-100/70 overflow-hidden kademeli mb-6">
+        {[
+          { ikon: 'Users' as const, baslik: 'Arkadaşlarınla planla', metin: 'Kullanıcı adıyla ekle, planı gönder, kimin geldiğini gör.' },
+          { ikon: 'CalendarClock' as const, baslik: 'Herkese uyan saati bul', metin: 'Boş saatler karşılaştırılır, uygun aralık önerilir.' },
+          {
+            ikon: 'ShieldCheck' as const,
+            baslik: 'Planların sende kalır',
+            metin: 'Arkadaşların yalnızca dolu saatlerini görür; ne yaptığın ve notların telefonundan çıkmaz.',
+          },
+        ].map((m, i) => (
+          <li key={m.baslik} className="flex items-start gap-3 px-4 py-3">
+            <span
+              data-bolum={(['planlar', 'sohbet', 'profil'] as const)[i]}
+              className="w-10 h-10 rounded-2xl bg-bolum text-white shadow-glow flex items-center justify-center shrink-0"
+            >
+              <Icon name={m.ikon} className="w-5 h-5" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-body font-medium text-ink-800">{m.baslik}</span>
+              <span className="block text-caption font-normal text-ink-400 mt-0.5">{m.metin}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
 
       {eskiHesapVardi && (
-        <div className="card p-4 mb-6 bg-amber-50/70 border-amber-100">
+        <div className="rounded-2xl p-4 mb-6 bg-white border border-amber-200">
           <div className="flex items-start gap-2.5">
             <Icon name="Info" className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-800 leading-relaxed">
@@ -211,7 +220,7 @@ export function GirisEkrani({
         disabled={yukleniyor}
         className="w-full btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
       >
-        <Icon name="Sparkles" className="w-5 h-5" />
+        <Icon name="UserPlus" className="w-5 h-5" />
         Hesap oluştur
       </button>
       <button
@@ -220,13 +229,13 @@ export function GirisEkrani({
           setHata(null)
         }}
         disabled={yukleniyor}
-        className="w-full mt-3 btn-ghost border border-ink-100 disabled:opacity-50"
+        className="w-full mt-3 btn-ghost border border-ink-200 bg-white text-ink-700 disabled:opacity-50"
       >
         Zaten hesabım var
       </button>
       {hataKutusu}
 
-      <p className="text-xs text-ink-300 text-center mt-6 leading-relaxed">{altNot}</p>
+      <p className="text-xs text-ink-400 text-center mt-6 leading-relaxed">{altNot}</p>
     </Cerceve>
   )
 }
@@ -244,22 +253,28 @@ function Cerceve({
 }) {
   return (
     <div className="flex flex-col h-full">
-      <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3 flex items-start gap-3">
+      {/* A brand-gradient hero with the app icon floating in it. */}
+      <div className="relative overflow-hidden bg-bolum-canli text-white rounded-b-[2rem] px-4 pt-[calc(1.5rem+var(--safe-top))] pb-6 mb-5 flex items-start gap-3 lg:rounded-none lg:bg-none lg:text-ink-800 lg:mb-0">
+        <div aria-hidden className="pointer-events-none absolute -top-16 -right-12 w-52 h-52 rounded-full bg-white/15 animate-yuzen lg:hidden" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-24 -left-10 w-48 h-48 rounded-[3rem] bg-white/10 rotate-12 animate-yuzen-yavas lg:hidden" />
         {onGeri && (
           <button
             onClick={onGeri}
             aria-label="Geri"
-            className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+            className="relative w-10 h-10 rounded-2xl flex items-center justify-center bg-white/20 hover:bg-white/30 basinca shrink-0 lg:bg-ink-50"
           >
-            <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />
+            <Icon name="ArrowLeft" className="w-5 h-5" />
           </button>
         )}
-        <div>
-          <h1 className="font-display text-2xl font-bold text-ink-700">{baslik}</h1>
-          <p className="text-sm text-ink-400 mt-0.5">{altBaslik}</p>
+        <div className="relative">
+          {!onGeri && (
+            <img src="/icons/icon-192.png" alt="" className="w-14 h-14 rounded-2xl mb-5 shadow-float ring-4 ring-white/30 animate-yuzen lg:hidden" />
+          )}
+          <h1 className="text-[2rem] leading-[2.375rem] font-extrabold tracking-tight animate-slide-up">{baslik}</h1>
+          <p className="text-callout text-white/85 mt-1 animate-fade-in lg:text-ink-400">{altBaslik}</p>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto px-5 pb-24">{children}</div>
+      <div className="flex-1 overflow-y-auto px-4 pb-24">{children}</div>
     </div>
   )
 }

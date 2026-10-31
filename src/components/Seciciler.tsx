@@ -25,8 +25,8 @@ export function EmojiSecici({
           onClick={() => onSec(secili === e ? null : e)}
           aria-label={`${etiket} ${e}`}
           aria-pressed={secili === e}
-          className={`w-9 h-9 rounded-xl text-lg flex items-center justify-center transition-all active:scale-90 ${
-            secili === e ? 'bg-orchid-100 ring-2 ring-orchid-300' : 'bg-mist-100'
+          className={`w-9 h-9 rounded-xl text-lg flex items-center justify-center transition-all active:opacity-80 ${
+            secili === e ? 'bg-brand-100 ring-2 ring-brand-300' : 'bg-mist-100'
           }`}
         >
           {e}
@@ -46,7 +46,7 @@ export function RenkSecici({ secili, onSec }: { secili: string | null; onSec: (r
           onClick={() => onSec(r)}
           aria-label={RENKLER[r].ad}
           aria-pressed={secili === r}
-          className={`w-8 h-8 rounded-full ${RENKLER[r].dolu} flex items-center justify-center transition-transform active:scale-90 ${
+          className={`w-8 h-8 rounded-full ${RENKLER[r].dolu} flex items-center justify-center transition-transform active:opacity-80 ${
             secili === r ? 'ring-2 ring-offset-2 ring-ink-300' : ''
           }`}
         >
@@ -66,10 +66,10 @@ export function TumGunAnahtari({ acik, onDegistir }: { acik: boolean; onDegistir
       role="switch"
       aria-checked={acik}
       onClick={() => onDegistir(!acik)}
-      className="w-full flex items-center gap-3 text-left active:scale-[0.98] transition-transform"
+      className="w-full flex items-center gap-3 text-left active:opacity-80 transition-transform"
     >
       <span
-        className={`w-11 h-6 rounded-full transition-colors shrink-0 relative ${acik ? 'bg-gradient-orchid' : 'bg-ink-200'}`}
+        className={`w-11 h-6 rounded-full transition-colors shrink-0 relative ${acik ? 'bg-brand-600' : 'bg-ink-200'}`}
         aria-hidden="true"
       >
         <span

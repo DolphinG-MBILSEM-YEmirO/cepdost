@@ -15,7 +15,7 @@ import { arkadasPlandaMi } from '../sosyal/ortakGecmis'
 function Kutucuk({ deger, etiket, alt }: { deger: React.ReactNode; etiket: string; alt?: React.ReactNode }) {
   return (
     <div className="rounded-2xl bg-mist-100/70 px-3 py-3 text-center min-w-0">
-      <p className="font-display text-2xl font-bold text-ink-700 leading-none">{deger}</p>
+      <p className="text-display text-ink-800 tracking-tight leading-none">{deger}</p>
       <p className="text-xs text-ink-500 mt-1.5">{etiket}</p>
       {alt && <p className="text-[11px] text-ink-400 mt-0.5 truncate">{alt}</p>}
     </div>
@@ -23,7 +23,7 @@ function Kutucuk({ deger, etiket, alt }: { deger: React.ReactNode; etiket: strin
 }
 
 function Baslik({ children }: { children: React.ReactNode }) {
-  return <h3 className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">{children}</h3>
+  return <h3 className="text-label text-ink-500 mb-2">{children}</h3>
 }
 
 // This month's plans by category: one bar split in the categories' fixed
@@ -60,7 +60,7 @@ export function PlanOzetiKarti({ kayitlar }: { kayitlar: Kayit[] }) {
   return (
     <section className="card p-5" aria-label="Planların">
       <div className="flex items-center gap-2 mb-4">
-        <Icon name="Sparkles" className="w-4 h-4 text-orchid-500" />
+        <Icon name="CalendarDays" className="w-4 h-4 text-brand-600" />
         <h2 className="text-sm font-semibold text-ink-600">Planların</h2>
         <span className="ml-auto text-xs text-ink-400 capitalize">{ayAdi}</span>
       </div>
@@ -98,7 +98,7 @@ export function PlanOzetiKarti({ kayitlar }: { kayitlar: Kayit[] }) {
               <ul className="space-y-2">
                 {ozet.kisiler.map((k) => (
                   <li key={`${k.tur}:${k.id}`} className="flex items-center gap-3">
-                    <span className="w-8 h-8 rounded-full bg-orchid-100 text-orchid-600 flex items-center justify-center text-sm font-semibold shrink-0">
+                    <span className="w-8 h-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center text-sm font-semibold shrink-0">
                       {k.tur === 'grup' ? <Icon name="Users" className="w-4 h-4" /> : k.ad.slice(0, 1).toLocaleUpperCase('tr-TR')}
                     </span>
                     <span className="flex-1 min-w-0 text-sm font-medium text-ink-700 truncate">{k.ad}</span>
@@ -126,7 +126,7 @@ export function PlanOzetiKarti({ kayitlar }: { kayitlar: Kayit[] }) {
             </div>
           )}
 
-          <p className="text-[11px] text-ink-300">Planlarından hesaplanır, yalnızca sen görürsün.</p>
+          <p className="text-[11px] text-ink-400">Planlarından hesaplanır, yalnızca sen görürsün.</p>
         </div>
       )}
     </section>
@@ -159,7 +159,7 @@ export function OrtakGecmisSatiri({ arkadasId }: { arkadasId: string }) {
     <section className="mt-5 max-w-sm mx-auto" aria-label="Ortak geçmiş">
       <div className="grid grid-cols-3 divide-x divide-ink-100 rounded-2xl bg-mist-50/80 border border-ink-100/70 py-3">
         <div className="px-2">
-          <p className="font-display text-lg font-bold text-ink-700 leading-tight">{gecmis.toplam}</p>
+          <p className="text-title text-ink-800 leading-tight">{gecmis.toplam}</p>
           <p className="text-[11px] text-ink-400">birlikte plan</p>
         </div>
         <div className="px-2 min-w-0">

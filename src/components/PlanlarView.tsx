@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { Icon } from './Icon'
+import { ChatButton } from './ChatButton'
+import { SegmentedControl } from '../ui/SegmentedControl'
+import { EkranBasligi } from '../ui/EkranBasligi'
 import { BugunView } from './BugunView'
 import { RemindersView } from './RemindersView'
 import { AniHatirlatici } from './AniHatirlatici'
@@ -24,6 +26,8 @@ interface Props {
   onRecordClick: (kayit: Kayit) => void
   onToggleStatus: (id: string) => void
   onDelete: (id: string) => void
+  // Opens the assistant (phones; the desktop sidebar has its own entry).
+  onAsistan?: () => void
 }
 
 export function PlanlarView({
@@ -33,6 +37,7 @@ export function PlanlarView({
   onRecordClick,
   onToggleStatus,
   onDelete,
+  onAsistan,
 }: Props) {
   const [gorunum, setGorunum] = useState<Gorunum>('bugun')
   const masaustu = useMasaustu()
@@ -66,56 +71,31 @@ export function PlanlarView({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex gap-1.5 px-5 pt-[calc(1rem+var(--safe-top))] pb-2 shrink-0 overflow-x-auto no-scrollbar lg:hidden">
-        <button
-          onClick={() => setGorunum('bugun')}
-          className={`chip shrink-0 ${
-            gorunum === 'bugun' ? 'bg-gradient-orchid text-white' : 'bg-mist-50 text-ink-400 border border-ink-100'
-          }`}
-        >
-          <Icon name="CalendarDays" className="w-4 h-4" />
-          Takvim
-        </button>
-        <button
-          onClick={() => setGorunum('hatirlat')}
-          className={`chip shrink-0 ${
-            gorunum === 'hatirlat' ? 'bg-gradient-orchid text-white' : 'bg-mist-50 text-ink-400 border border-ink-100'
-          }`}
-        >
-          <Icon name="Bell" className="w-4 h-4" />
-          Hatırlatmalar
-          {bekleyen > 0 && (
-            <span
-              className={`ml-0.5 text-[10px] font-bold ${
-                gorunum === 'hatirlat' ? 'text-white/80' : 'text-ink-300'
-              }`}
-            >
-              {bekleyen}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setGorunum('fikirler')}
-          className={`chip shrink-0 ${
-            gorunum === 'fikirler' ? 'bg-gradient-orchid text-white' : 'bg-mist-50 text-ink-400 border border-ink-100'
-          }`}
-        >
-          <Icon name="Lightbulb" className="w-4 h-4" />
-          Fikirler
-          {fikirSayisi > 0 && (
-            <span className={`ml-0.5 text-[10px] font-bold ${gorunum === 'fikirler' ? 'text-white/80' : 'text-ink-300'}`}>
-              {fikirSayisi}
-            </span>
-          )}
-        </button>
-      </div>
+      <EkranBasligi
+        baslik="Planlar"
+        altBaslik={new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}
+        eylemler={onAsistan && <ChatButton onClick={onAsistan} />}
+      >
+        <div className="lg:hidden">
+          <SegmentedControl
+            etiket="Planlar görünümü"
+            secili={gorunum}
+            onSec={setGorunum}
+            segmentler={[
+              { id: 'bugun', etiket: 'Takvim' },
+              { id: 'hatirlat', etiket: 'Hatırlatmalar', sayi: bekleyen },
+              { id: 'fikirler', etiket: 'Fikirler', sayi: fikirSayisi },
+            ]}
+          />
+        </div>
+      </EkranBasligi>
 
       <AniHatirlatici kayitlar={kayitlar} />
 
       <div className="flex-1 min-h-0">
         {masaustu ? (
-          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,400px)] gap-6 items-start">
-            {bugun}
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,400px)] gap-6 items-start kademeli">
+            <div className="card p-5">{bugun}</div>
             <div className="space-y-6">
               <div className="card overflow-hidden">{hatirlat}</div>
               <div className="card overflow-hidden">{fikirlerGorunumu}</div>

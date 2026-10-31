@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Icon } from './Icon'
+import { BosDurum } from '../ui/BosDurum'
 import { Avatar, GrupAvatari } from './Avatar'
 import { DirektSohbet } from './DirektSohbet'
 import { BildirimBandi } from './BildirimAyarlari'
@@ -153,13 +154,13 @@ export function SohbetlerView({ onDegisti, ust, onArkadasEkle, acilacak, onAcild
   return (
     <div className="flex flex-col h-full lg:flex-row lg:h-screen">
       <div className="flex flex-col h-full min-h-0 lg:w-[360px] lg:shrink-0 lg:border-r lg:border-ink-100">
-        <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3 lg:pt-8">{ust}</div>
+        <div className="lg:px-4">{ust}</div>
 
-        <div className="flex-1 overflow-y-auto px-5 pb-24 lg:pb-6">
+        <div className="flex-1 overflow-y-auto px-4 pb-24 lg:pb-6">
           {hata && (
-            <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3 mb-4">
-              <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
-              <p className="text-sm text-rose-700">{hata}</p>
+            <div role="alert" className="flex items-start gap-2.5 bg-white border border-rose-200 rounded-xl px-4 py-3 mb-4">
+              <Icon name="AlertCircle" className="w-5 h-5 text-rose-600 shrink-0" />
+              <p className="text-callout font-normal text-ink-700">{hata}</p>
             </div>
           )}
 
@@ -167,7 +168,7 @@ export function SohbetlerView({ onDegisti, ust, onArkadasEkle, acilacak, onAcild
 
           {sohbetler && sohbetler.length > 0 && (
             <div className="relative mb-3" role="search">
-              <Icon name="Search" className="w-4 h-4 text-ink-300 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Icon name="Search" className="w-4 h-4 text-ink-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="search"
                 value={arama}
@@ -190,30 +191,28 @@ export function SohbetlerView({ onDegisti, ust, onArkadasEkle, acilacak, onAcild
               onMesaj={(r) => ac(r.sohbet, r.mesajId)}
             />
           ) : sohbetler === null ? (
-            <div className="space-y-3">
+            <div className="card divide-y divide-ink-100/70 overflow-hidden kademeli">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="skeleton h-16 rounded-2xl" />
+                <div key={i} className="flex items-center gap-3 px-4 py-3">
+                  <div className="skeleton w-11 h-11 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <div className="skeleton h-3.5 w-1/2 rounded-md" />
+                    <div className="skeleton h-3 w-3/4 rounded-md" />
+                  </div>
+                </div>
               ))}
             </div>
           ) : sohbetler.length === 0 ? (
-            <div className="card p-6 text-center">
-              <div className="w-14 h-14 rounded-full bg-orchid-100 flex items-center justify-center mx-auto mb-3">
-                <Icon name="MessagesSquare" className="w-7 h-7 text-orchid-500" />
-              </div>
-              <p className="font-semibold text-ink-600 mb-1">Henüz sohbet yok</p>
-              <p className="text-sm text-ink-400 mb-4">
-                Arkadaş ekle ya da grup kur, sohbetler burada görünsün.
-              </p>
-              <button
-                onClick={onArkadasEkle}
-                className="btn-primary text-sm px-4 py-2.5 inline-flex items-center gap-2"
-              >
-                <Icon name="UserPlus" className="w-4 h-4" />
-                Arkadaş ekle
-              </button>
-            </div>
+            <BosDurum
+              ikon="MessagesSquare"
+              baslik="Henüz sohbet yok"
+              aciklama="Arkadaş ekle ya da grup kur; sohbetlerin burada görünür."
+              eylem={{ etiket: 'Arkadaş ekle', ikon: 'UserPlus', onClick: onArkadasEkle }}
+            />
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-5">
+              {yazisilmis.length > 0 && (
+              <div className="card divide-y divide-ink-100/70 overflow-hidden kademeli">
               {yazisilmis.map((s) => (
                 <SohbetSatiri
                   key={`${s.tur}-${s.id}`}
@@ -222,14 +221,13 @@ export function SohbetlerView({ onDegisti, ust, onArkadasEkle, acilacak, onAcild
                   onAc={() => ac(s)}
                 />
               ))}
+              </div>
+              )}
 
               {bos.length > 0 && (
-                <>
-                  {yazisilmis.length > 0 && (
-                    <p className="text-xs font-semibold text-ink-300 uppercase tracking-wide pt-4 pb-1 px-1">
-                      Yeni sohbet başlat
-                    </p>
-                  )}
+                <section>
+                  {yazisilmis.length > 0 && <h2 className="text-label text-ink-500 px-1 mb-2">Yeni sohbet başlat</h2>}
+                  <div className="card divide-y divide-ink-100/70 overflow-hidden kademeli">
                   {bos.map((s) => (
                     <SohbetSatiri
                       key={`${s.tur}-${s.id}`}
@@ -238,7 +236,8 @@ export function SohbetlerView({ onDegisti, ust, onArkadasEkle, acilacak, onAcild
                       onAc={() => ac(s)}
                     />
                   ))}
-                </>
+                  </div>
+                </section>
               )}
             </div>
           )}
@@ -271,7 +270,7 @@ function AramaSonuclari({
   onSohbet: (s: Sohbet) => void
   onMesaj: (r: MesajSonucu) => void
 }) {
-  const baslik = 'text-xs font-semibold text-ink-300 uppercase tracking-wide pt-2 pb-1 px-1'
+  const baslik = 'text-label text-ink-500 pt-2 pb-1 px-1'
   if (sohbetler.length === 0 && mesajlar?.length === 0) {
     return <p className="text-sm text-ink-400 text-center py-10">Bir şey bulunamadı.</p>
   }
@@ -280,20 +279,26 @@ function AramaSonuclari({
       {sohbetler.length > 0 && (
         <>
           <p className={baslik}>Sohbetler</p>
-          {sohbetler.map((s) => (
-            <SohbetSatiri key={`${s.tur}-${s.id}`} sohbet={s} secili={secili(s)} onAc={() => onSohbet(s)} />
-          ))}
+          <div className="card divide-y divide-ink-100/70 overflow-hidden kademeli">
+            {sohbetler.map((s) => (
+              <SohbetSatiri key={`${s.tur}-${s.id}`} sohbet={s} secili={secili(s)} onAc={() => onSohbet(s)} />
+            ))}
+          </div>
         </>
       )}
       <p className={baslik}>Mesajlar</p>
       {mesajlar === null ? (
         <div className="flex justify-center py-4">
-          <Icon name="Loader2" className="w-5 h-5 animate-spin text-ink-300" />
+          <Icon name="Loader2" className="w-5 h-5 animate-spin text-ink-400" />
         </div>
       ) : mesajlar.length === 0 ? (
         <p className="text-sm text-ink-400 px-1 py-2">Mesajlarda geçmiyor.</p>
       ) : (
-        mesajlar.map((r) => <MesajSonucuSatiri key={`${r.sohbet.id}-${r.mesajId}`} sonuc={r} sorgu={sorgu} onAc={() => onMesaj(r)} />)
+        <div className="card divide-y divide-ink-100/70 overflow-hidden kademeli">
+          {mesajlar.map((r) => (
+            <MesajSonucuSatiri key={`${r.sohbet.id}-${r.mesajId}`} sonuc={r} sorgu={sorgu} onAc={() => onMesaj(r)} />
+          ))}
+        </div>
       )}
     </div>
   )
@@ -302,13 +307,7 @@ function AramaSonuclari({
 function SohbetSecilmedi() {
   return (
     <div className="flex-1 flex flex-col items-center justify-center text-center px-8">
-      <div className="w-16 h-16 rounded-3xl bg-orchid-100 flex items-center justify-center mb-4">
-        <Icon name="MessagesSquare" className="w-8 h-8 text-orchid-500" />
-      </div>
-      <p className="font-semibold text-ink-600 mb-1">Bir sohbet seç</p>
-      <p className="text-sm text-ink-400 max-w-xs">
-        Soldan bir arkadaşını ya da grubunu seç; mesajlar ve planlar burada açılır.
-      </p>
+      <BosDurum ikon="MessagesSquare" baslik="Bir sohbet seç" aciklama="Soldan bir arkadaşını ya da grubunu seç; mesajlar ve planlar burada açılır." />
     </div>
   )
 }
@@ -318,8 +317,8 @@ function SohbetSatiri({ sohbet, secili = false, onAc }: { sohbet: Sohbet; secili
     <button
       onClick={onAc}
       aria-current={secili ? 'true' : undefined}
-      className={`w-full card p-3 flex items-center gap-3 text-left active:scale-[0.98] transition-all lg:hover:border-orchid-200 ${
-        secili ? 'ring-2 ring-orchid-300 border-transparent' : ''
+      className={`w-full px-4 py-3 flex items-center gap-3 text-left transition-colors ${
+        secili ? 'bg-brand-50' : 'hover:bg-ink-50/60 active:bg-ink-50'
       }`}
     >
       {sohbet.tur === 'grup' && sohbet.grup ? (
@@ -330,16 +329,16 @@ function SohbetSatiri({ sohbet, secili = false, onAc }: { sohbet: Sohbet; secili
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold text-ink-700 truncate flex-1">{sohbet.ad}</p>
+          <p className="text-body font-semibold text-ink-800 truncate flex-1">{sohbet.ad}</p>
           {sohbet.sonZaman && (
-            <span className="text-[11px] text-ink-300 shrink-0">
+            <span className={`text-caption shrink-0 tabular-nums ${sohbet.okunmamis > 0 ? 'text-bolum-koyu font-bold' : 'text-ink-400 font-normal'}`}>
               {formatRelativeTime(new Date(sohbet.sonZaman).getTime())}
             </span>
           )}
         </div>
         <p
-          className={`text-xs truncate mt-0.5 ${
-            sohbet.okunmamis > 0 ? 'text-ink-600 font-medium' : 'text-ink-400'
+          className={`text-callout truncate mt-0.5 ${
+            sohbet.okunmamis > 0 ? 'text-ink-700 font-medium' : 'text-ink-400 font-normal'
           }`}
         >
           {sohbet.sonMesaj ?? (sohbet.tur === 'grup' ? 'Grup sohbeti' : 'Yeni sohbet')}
@@ -347,7 +346,7 @@ function SohbetSatiri({ sohbet, secili = false, onAc }: { sohbet: Sohbet; secili
       </div>
 
       {sohbet.okunmamis > 0 && (
-        <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-rose-500 text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+        <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-bolum text-white text-[11px] font-bold flex items-center justify-center shrink-0 tabular-nums shadow-glow animate-pop-in">
           {sohbet.okunmamis > 9 ? '9+' : sohbet.okunmamis}
         </span>
       )}

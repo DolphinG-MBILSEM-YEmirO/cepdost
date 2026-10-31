@@ -10,7 +10,7 @@ export function TemaSheet({ onKapat }: { onKapat: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-end justify-center bg-ink-900/40 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[70] flex items-end justify-center bg-ink-900/40 animate-fade-in"
       onClick={onKapat}
     >
       <div
@@ -30,11 +30,11 @@ export function TemaSheet({ onKapat }: { onKapat: () => void }) {
                 onClick={() => temayiYaz(t.id)}
                 aria-label={`${t.ad} teması`}
                 aria-pressed={aktif}
-                className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform"
+                className="flex flex-col items-center gap-1.5 active:opacity-80 transition-transform"
               >
                 <span
                   className={`w-11 h-11 rounded-2xl ${t.onizleme} flex items-center justify-center ${
-                    aktif ? 'ring-2 ring-offset-2 ring-orchid-500 ring-offset-mist-50' : ''
+                    aktif ? 'ring-2 ring-offset-2 ring-brand-500 ring-offset-mist-50' : ''
                   }`}
                 >
                   {aktif && <Icon name="Check" className="w-4 h-4 text-white" />}
@@ -67,8 +67,8 @@ export function SohbetTemaSecici() {
   return (
     <div className="card p-5">
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 rounded-xl bg-orchid-100 flex items-center justify-center">
-          <Icon name="MessagesSquare" className="w-5 h-5 text-orchid-500" />
+        <div className="w-10 h-10 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center">
+          <Icon name="MessagesSquare" className="w-5 h-5 text-bolum-koyu" />
         </div>
         <h2 className="font-semibold text-ink-700">Sohbet teması</h2>
       </div>
@@ -108,11 +108,11 @@ export function SohbetTemaSecici() {
               onClick={() => temayiYaz(t.id)}
               aria-label={`${t.ad} teması`}
               aria-pressed={aktif}
-              className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform"
+              className="flex flex-col items-center gap-1.5 active:opacity-80 transition-transform"
             >
               <span
                 className={`w-10 h-10 rounded-2xl ${t.onizleme} flex items-center justify-center ${
-                  aktif ? 'ring-2 ring-offset-2 ring-orchid-500 ring-offset-mist-50' : ''
+                  aktif ? 'ring-2 ring-offset-2 ring-brand-500 ring-offset-mist-50' : ''
                 }`}
               >
                 {aktif && <Icon name="Check" className="w-4 h-4 text-white" />}

@@ -10,22 +10,22 @@ interface OnboardingProps {
 // what you come across (the share menu), which is how CepDost started.
 const steps = [
   {
+    bolum: 'sohbet',
     icon: 'Users' as IconName,
     title: 'Arkadaşlarınla planla',
     desc: 'Arkadaşlarını kullanıcı adıyla ekle, planı gönder; kimin geldiğini anında gör.',
-    color: 'bg-gradient-orchid',
   },
   {
-    icon: 'Sparkles' as IconName,
+    bolum: 'planlar',
+    icon: 'CalendarClock' as IconName,
     title: 'Saati asistan bulsun',
     desc: '"Cumartesi Ayşe\'yle kahvaltı" yaz; herkesin boş olduğu saati bulup planı hazırlar.',
-    color: 'bg-gradient-to-br from-sky-400 to-orchid-500',
   },
   {
+    bolum: 'profil',
     icon: 'Share2' as IconName,
     title: 'Gördüğünü kaydet',
     desc: 'Reel, TikTok, ekran görüntüsü ya da link; telefonun paylaş menüsünden gönder, saatiyle yeriyle plana dönüşsün.',
-    color: 'bg-gradient-to-br from-orchid-500 to-violet-500',
   },
 ]
 
@@ -35,31 +35,38 @@ export function Onboarding({ onDone }: OnboardingProps) {
   const current = steps[step]
   const isLast = step === steps.length - 1
 
+  // Every step has its own colour; the whole screen fades from one to the
+  // next while the icon springs in.
   return (
-    <div className="fixed inset-0 z-40 bg-uygulama animate-fade-in lg:flex lg:items-center lg:justify-center">
-      {/* Desktop: the same steps in a centred card. */}
-      <div className="flex flex-col h-full w-full max-w-md mx-auto lg:card lg:h-[600px]">
-        <div className="flex justify-end px-5 pt-[calc(1rem+var(--safe-top))]">
+    <div
+      data-bolum={current.bolum}
+      className="fixed inset-0 z-40 bg-bolum-canli text-white animate-fade-in transition-colors lg:flex lg:items-center lg:justify-center"
+    >
+      <div aria-hidden className="pointer-events-none absolute top-[12%] -left-16 w-56 h-56 rounded-full bg-white/10 animate-yuzen" />
+      <div aria-hidden className="pointer-events-none absolute bottom-[18%] -right-14 w-64 h-64 rounded-[4rem] bg-white/10 rotate-12 animate-yuzen-yavas" />
+
+      <div className="relative flex flex-col h-full w-full max-w-md mx-auto lg:h-[600px]">
+        <div className="flex justify-end px-4 pt-[calc(1rem+var(--safe-top))]">
           <button
             onClick={onDone}
-            className="text-sm text-ink-400 font-medium active:scale-95 transition-transform"
+            className="h-10 px-4 rounded-2xl text-callout text-white font-semibold bg-white/15 hover:bg-white/25 basinca"
           >
             Geç
           </button>
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center px-8">
-          <div
-            key={step}
-            className={`w-24 h-24 rounded-3xl ${current.color} shadow-brand flex items-center justify-center mb-8 animate-bounce-soft`}
-          >
-            <Icon name={current.icon} className="w-12 h-12 text-white" />
+          <div key={step} className="relative mb-10 animate-pop-in">
+            <div aria-hidden className="absolute inset-0 rounded-[2.5rem] bg-white/30 blur-2xl scale-110" />
+            <div className="relative w-28 h-28 rounded-[2.5rem] bg-white flex items-center justify-center shadow-float animate-yuzen">
+              <Icon name={current.icon} className="w-14 h-14 text-bolum-koyu" strokeWidth={2} />
+            </div>
           </div>
 
-          <h2 key={`title-${step}`} className="font-display text-2xl font-bold text-ink-700 text-center mb-3 animate-slide-up">
+          <h2 key={`title-${step}`} className="text-[1.75rem] leading-9 font-extrabold tracking-tight text-center mb-3 animate-slide-up">
             {current.title}
           </h2>
-          <p key={`desc-${step}`} className="text-ink-400 text-center max-w-xs leading-relaxed animate-slide-up">
+          <p key={`desc-${step}`} className="text-body text-white/90 text-center max-w-xs animate-slide-up [animation-delay:80ms] [animation-fill-mode:both]">
             {current.desc}
           </p>
         </div>
@@ -69,14 +76,14 @@ export function Onboarding({ onDone }: OnboardingProps) {
             {steps.map((_, i) => (
               <div
                 key={i}
-                className={`h-2 rounded-full transition-all duration-300 ${i === step ? 'w-8 bg-gradient-orchid' : 'w-2 bg-ink-200'}`}
+                className={`h-2 rounded-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${i === step ? 'w-8 bg-white' : 'w-2 bg-white/40'}`}
               />
             ))}
           </div>
 
           <button
             onClick={() => (isLast ? onDone() : setStep(step + 1))}
-            className="w-full btn-primary flex items-center justify-center gap-2"
+            className="w-full h-14 rounded-2xl bg-white text-bolum-koyu text-headline font-bold flex items-center justify-center gap-2 shadow-float basinca"
           >
             {isLast ? (
               <>

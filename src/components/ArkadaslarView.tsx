@@ -128,11 +128,11 @@ function ArkadaslarIcerik({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3 lg:pt-8">{ust}</div>
+      <div className="lg:px-4">{ust}</div>
 
-      <div className="flex-1 overflow-y-auto px-5 pb-24 space-y-6 lg:pb-10 lg:max-w-6xl">
+      <div className="flex-1 overflow-y-auto px-4 pb-24 space-y-6 lg:pb-10 lg:max-w-6xl">
         {hata && (
-          <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3">
+          <div className="flex items-start gap-2 bg-white border border-rose-200 rounded-xl px-4 py-3">
             <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
             <p className="text-sm text-rose-700">{hata}</p>
           </div>
@@ -194,10 +194,10 @@ function ArkadaslarIcerik({
               {kabulEdilmis.length > 0 && (
                 <button
                   onClick={() => setSihirbazAcik(true)}
-                  className="w-full card p-4 flex items-center gap-3 text-left active:scale-[0.98] transition-transform"
+                  className="w-full card p-4 flex items-center gap-3 text-left active:opacity-80 transition-transform"
                 >
-                  <div className="w-10 h-10 rounded-2xl bg-orchid-100 flex items-center justify-center shrink-0">
-                    <Icon name="Wand2" className="w-5 h-5 text-orchid-500" />
+                  <div className="w-10 h-10 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center shrink-0">
+                    <Icon name="Wand2" className="w-5 h-5 text-bolum-koyu" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-ink-700">Herkese uyan saati bul</p>
@@ -205,7 +205,7 @@ function ArkadaslarIcerik({
                       Arkadaşlarını seç, gerisini yapay zekâ halletsin
                     </p>
                   </div>
-                  <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />
+                  <Icon name="ChevronRight" className="w-4 h-4 text-ink-400 shrink-0" />
                 </button>
               )}
             </div>
@@ -249,14 +249,14 @@ function ArkadaslarIcerik({
                     <button
                       key={g.id}
                       onClick={() => setSeciliGrup(g)}
-                      className="card p-4 w-full flex items-center gap-3 text-left active:scale-[0.98] transition-transform"
+                      className="card p-4 w-full flex items-center gap-3 text-left active:opacity-80 transition-transform"
                     >
                       <GrupAvatari grup={g} boyut="sm" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-ink-700 truncate">{g.ad}</p>
                         <GrupAltSatiri grup={g} siradaki={ozetler?.siradakiler.get(g.id)} bugun={bugun} />
                       </div>
-                      <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />
+                      <Icon name="ChevronRight" className="w-4 h-4 text-ink-400 shrink-0" />
                     </button>
                   ))}
                   <button
@@ -278,14 +278,14 @@ function ArkadaslarIcerik({
                         <Avatar ad={a.profil.ad} foto={a.profil.avatar} emoji={a.profil.emoji} renk={a.profil.renk} boyut="sm" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-ink-600 truncate">{a.profil.ad}</p>
-                          <p className="text-xs text-ink-300">Onay bekleniyor</p>
+                          <p className="text-xs text-ink-400">Onay bekleniyor</p>
                         </div>
                         <button
                           onClick={async () => {
                             await arkadasliktanCik(a.arkadaslikId)
                             await tazele()
                           }}
-                          className="text-xs font-medium text-ink-400 active:scale-95 transition-transform"
+                          className="text-xs font-medium text-ink-400 active:opacity-80 transition-transform"
                         >
                           İptal
                         </button>
@@ -407,7 +407,7 @@ function GrupKurModal({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink-900/40 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink-900/40 animate-fade-in"
       onClick={onClose}
     >
       <div
@@ -419,7 +419,7 @@ function GrupKurModal({
       >
         <h3 className="font-semibold text-ink-700 mb-4">Grup kur</h3>
 
-        <label className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
+        <label className="block text-label text-ink-500 mb-2">
           Grup adı
         </label>
         <input
@@ -430,7 +430,7 @@ function GrupKurModal({
           autoFocus
         />
 
-        <label htmlFor="grup-aciklama" className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
+        <label htmlFor="grup-aciklama" className="block text-label text-ink-500 mb-2">
           Açıklama
         </label>
         <input
@@ -442,17 +442,17 @@ function GrupKurModal({
           className="input-field mb-4"
         />
 
-        <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">Simge</p>
+        <p className="text-label text-ink-500 mb-2">Simge</p>
         <div className="mb-4">
           <EmojiSecici secenekler={GRUP_EMOJILERI} secili={emoji} onSec={setEmoji} />
         </div>
 
-        <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">Renk</p>
+        <p className="text-label text-ink-500 mb-2">Renk</p>
         <div className="mb-4">
           <RenkSecici secili={renk} onSec={setRenk} />
         </div>
 
-        <label className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
+        <label className="block text-label text-ink-500 mb-2">
           Kimler olsun
         </label>
         <div className="space-y-2 mb-4">
@@ -462,8 +462,8 @@ function GrupKurModal({
               <button
                 key={a.profil.id}
                 onClick={() => degistir(a.profil.id)}
-                className={`w-full flex items-center gap-3 rounded-2xl p-3 border transition-all active:scale-[0.98] ${
-                  secili ? 'bg-orchid-50 border-orchid-200' : 'bg-mist-100 border-ink-100'
+                className={`w-full flex items-center gap-3 rounded-2xl p-3 border transition-all active:opacity-80 ${
+                  secili ? 'bg-brand-50 border-brand-200' : 'bg-mist-100 border-ink-100'
                 }`}
               >
                 <Avatar ad={a.profil.ad} foto={a.profil.avatar} emoji={a.profil.emoji} renk={a.profil.renk} boyut="sm" />
@@ -472,7 +472,7 @@ function GrupKurModal({
                 </span>
                 <div
                   className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${
-                    secili ? 'bg-orchid-500' : 'bg-mist-50 border border-ink-200'
+                    secili ? 'bg-brand-600' : 'bg-white border border-ink-300'
                   }`}
                 >
                   {secili && <Icon name="Check" className="w-3.5 h-3.5 text-white" />}
@@ -483,7 +483,7 @@ function GrupKurModal({
         </div>
 
         {hata && (
-          <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3 mb-4">
+          <div className="flex items-start gap-2 bg-white border border-rose-200 rounded-xl px-4 py-3 mb-4">
             <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
             <p className="text-sm text-rose-700">{hata}</p>
           </div>
@@ -553,7 +553,7 @@ function BeniPaylas({ kod, kullaniciAdi }: { kod: string; kullaniciAdi: string |
           {kullaniciAdi ? (
             <>
               <p className="text-xs text-ink-400">Senin kullanıcı adın</p>
-              <p className="font-display text-lg font-bold text-ink-700 truncate select-all">@{kullaniciAdi}</p>
+              <p className="text-title text-ink-800 truncate select-all">@{kullaniciAdi}</p>
             </>
           ) : (
             <p className="text-xs text-ink-400">
@@ -564,7 +564,7 @@ function BeniPaylas({ kod, kullaniciAdi }: { kod: string; kullaniciAdi: string |
         {kullaniciAdi && (
           <button
             onClick={() => void kopyala()}
-            className="w-9 h-9 rounded-xl bg-mist-100 border border-ink-100 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+            className="w-9 h-9 rounded-xl bg-mist-100 border border-ink-100 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
             aria-label="Kullanıcı adını kopyala"
           >
             <Icon
@@ -681,7 +681,7 @@ function ArkadasEkle({
   return (
     <div className="card p-5">
       <div className="flex items-center gap-2 mb-3">
-        <Icon name="UserPlus" className="w-4 h-4 text-orchid-500" />
+        <Icon name="UserPlus" className="w-4 h-4 text-ink-500" />
         <h2 className="text-sm font-semibold text-ink-600">Arkadaş ekle</h2>
       </div>
 
@@ -805,7 +805,7 @@ function ArkadasKarti({
 
   return (
     <div className="card p-4 flex items-center gap-3">
-      <button onClick={onAc} className="flex items-center gap-3 flex-1 min-w-0 text-left active:scale-[0.98] transition-transform">
+      <button onClick={onAc} className="flex items-center gap-3 flex-1 min-w-0 text-left active:opacity-80 transition-transform">
         <Avatar ad={arkadas.profil.ad} foto={arkadas.profil.avatar} emoji={arkadas.profil.emoji} renk={arkadas.profil.renk} boyut="sm" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-ink-700 truncate">{arkadas.profil.ad}</p>
@@ -813,7 +813,7 @@ function ArkadasKarti({
             {arkadas.profil.kullanici_adi ? `@${arkadas.profil.kullanici_adi}` : 'Profilini gör'}
           </p>
           {siradaki ? (
-            <p className="flex items-center gap-1 text-xs text-orchid-600 mt-0.5 min-w-0">
+            <p className="flex items-center gap-1 text-xs text-brand-600 mt-0.5 min-w-0">
               <Icon name="CalendarClock" className="w-3.5 h-3.5 shrink-0" />
               <span className="truncate">
                 {goreceGun(siradaki.tarih, bugun)}
@@ -826,7 +826,7 @@ function ArkadasKarti({
             </p>
           ) : null}
         </div>
-        <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />
+        <Icon name="ChevronRight" className="w-4 h-4 text-ink-400 shrink-0" />
       </button>
       {onay ? (
         <div className="flex gap-1.5 shrink-0">
@@ -849,10 +849,10 @@ function ArkadasKarti({
       ) : (
         <button
           onClick={() => setOnay(true)}
-          className="w-8 h-8 rounded-lg flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          className="w-8 h-8 rounded-lg flex items-center justify-center active:opacity-80 transition-transform shrink-0"
           aria-label="Arkadaşlıktan çıkar"
         >
-          <Icon name="Trash2" className="w-4 h-4 text-ink-300" />
+          <Icon name="Trash2" className="w-4 h-4 text-ink-400" />
         </button>
       )}
     </div>
@@ -883,7 +883,7 @@ function UzunAraKarti({
           const son = gecmisler.get(a.profil.id)?.sonBulusma
           return (
             <div key={a.arkadaslikId} className="flex items-center gap-3">
-              <button onClick={() => onAc(a)} className="flex items-center gap-3 flex-1 min-w-0 text-left active:scale-[0.98] transition-transform">
+              <button onClick={() => onAc(a)} className="flex items-center gap-3 flex-1 min-w-0 text-left active:opacity-80 transition-transform">
                 <Avatar ad={a.profil.ad} foto={a.profil.avatar} emoji={a.profil.emoji} renk={a.profil.renk} boyut="sm" />
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-ink-700 truncate">{a.profil.ad}</p>
@@ -897,7 +897,7 @@ function UzunAraKarti({
               <button
                 onClick={() => onPlanla(a.profil)}
                 aria-label={`${a.profil.ad} ile plan yap`}
-                className="chip bg-orchid-50 text-orchid-600 border border-orchid-100 text-xs shrink-0 active:scale-95"
+                className="chip bg-brand-50 text-brand-600 border border-brand-100 text-xs shrink-0 active:opacity-80"
               >
                 <Icon name="CalendarPlus" className="w-3.5 h-3.5" />
                 Plan yap
@@ -915,7 +915,7 @@ function GrupAltSatiri({ grup, siradaki, bugun }: { grup: Grup; siradaki?: GrupP
   if (siradaki) {
     const saat = formatPlanTime(siradaki.saat, siradaki.tum_gun)
     return (
-      <p className="flex items-center gap-1 text-xs text-orchid-600 min-w-0">
+      <p className="flex items-center gap-1 text-xs text-brand-600 min-w-0">
         <Icon name="CalendarClock" className="w-3.5 h-3.5 shrink-0" />
         <span className="truncate">
           {goreceGun(siradaki.tarih, bugun)}
@@ -956,7 +956,7 @@ function DavetKarti({
     .join(' · ')
 
   return (
-    <div className="card p-4 border-orchid-100 bg-orchid-50/40">
+    <div className="card p-4 border-brand-100 bg-brand-50/40">
       <div className="flex items-center gap-2.5 mb-2">
         <Avatar ad={gonderenAd} boyut="sm" />
         <div className="min-w-0">
@@ -1003,12 +1003,12 @@ function Bolum({
   soluk?: boolean
   children: React.ReactNode
 }) {
-  const renk = soluk ? 'text-ink-300' : 'text-ink-400'
+  const renk = soluk ? 'text-ink-400' : 'text-ink-400'
   return (
     <div>
       <div className="flex items-center gap-2 mb-3 px-1">
         <Icon name={ikon} className={`w-4 h-4 ${renk}`} />
-        <h2 className={`text-sm font-semibold ${soluk ? 'text-ink-300' : 'text-ink-500'}`}>{baslik}</h2>
+        <h2 className={`text-sm font-semibold ${soluk ? 'text-ink-400' : 'text-ink-500'}`}>{baslik}</h2>
         <span className={`text-xs ${renk}`}>{sayi}</span>
       </div>
       {children}

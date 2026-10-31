@@ -30,11 +30,11 @@ function KartCercevesi({ etiket, emoji, baslik, tarih, saat, sure, tumGun, konum
   return (
     <div className="w-72 max-w-full rounded-2xl bg-mist-50 border border-ink-100 shadow-soft p-3.5 text-ink-700">
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-orchid-100 flex items-center justify-center shrink-0 text-lg">
-          {emoji ?? <Icon name="CalendarClock" className="w-5 h-5 text-orchid-500" />}
+        <div className="w-10 h-10 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center shrink-0 text-lg">
+          {emoji ?? <Icon name="CalendarClock" className="w-5 h-5 text-bolum-koyu" />}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-orchid-600">{etiket}</p>
+          <p className="text-[10px] font-bold uppercase tracking-wide text-brand-600">{etiket}</p>
           <p className="text-sm font-semibold leading-snug">{baslik}</p>
           <p className="text-xs text-ink-400 mt-0.5">{zaman}</p>
         </div>
@@ -44,9 +44,9 @@ function KartCercevesi({ etiket, emoji, baslik, tarih, saat, sure, tumGun, konum
           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(konum)}`}
           target="_blank"
           rel="noreferrer"
-          className="flex items-center gap-1 text-xs text-ink-500 mt-2 hover:text-orchid-600"
+          className="flex items-center gap-1 text-xs text-ink-500 mt-2 hover:text-brand-600"
         >
-          <Icon name="MapPin" className="w-3.5 h-3.5 text-orchid-500 shrink-0" />
+          <Icon name="MapPin" className="w-3.5 h-3.5 text-ink-500 shrink-0" />
           <span className="truncate">{konum}</span>
         </a>
       )}
@@ -60,7 +60,7 @@ function TakvimeEkle(props: Parameters<typeof planiTakvimeIndir>[0]) {
   return (
     <button
       onClick={() => planiTakvimeIndir(props)}
-      className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-700 hover:text-sky-800"
+      className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-700 hover:text-brand-800"
     >
       <Icon name="CalendarPlus" className="w-3.5 h-3.5" />
       Telefon takvimine ekle
@@ -152,14 +152,14 @@ export function DavetKartiSohbet({
         <button
           onClick={() => void calistir(() => onYanit(false))}
           disabled={isleniyor}
-          className="flex-1 rounded-xl bg-mist-100 border border-ink-100 text-ink-500 text-xs font-semibold py-2 active:scale-95 transition-transform disabled:opacity-50"
+          className="flex-1 rounded-xl bg-mist-100 border border-ink-100 text-ink-500 text-xs font-semibold py-2 active:opacity-80 transition-transform disabled:opacity-50"
         >
           Uymuyor
         </button>
         <button
           onClick={() => void calistir(() => onYanit(true))}
           disabled={isleniyor}
-          className="flex-1 rounded-xl bg-gradient-orchid text-white text-xs font-semibold py-2 active:scale-95 transition-transform disabled:opacity-50"
+          className="flex-1 rounded-xl bg-brand-600 text-white text-xs font-semibold py-2 active:opacity-80 transition-transform disabled:opacity-50"
         >
           Geliyorum
         </button>
@@ -174,7 +174,7 @@ export function DavetKartiSohbet({
           ) : davet.durum === 'red' ? (
             <Durum renk="text-ink-400">Gelmiyorsun</Durum>
           ) : (
-            <Durum renk="text-ink-300">Bu plan geçti</Durum>
+            <Durum renk="text-ink-400">Bu plan geçti</Durum>
           )}
           {!gecti && davet.durum !== 'bekliyor' && (
             <button
@@ -198,7 +198,7 @@ export function DavetKartiSohbet({
           ) : davet.durum === 'red' ? (
             <Durum renk="text-ink-400">{karsiAd} gelemiyor</Durum>
           ) : (
-            <Durum renk="text-ink-300">{gecti ? 'Bu plan geçti' : 'Yanıt bekleniyor'}</Durum>
+            <Durum renk="text-ink-400">{gecti ? 'Bu plan geçti' : 'Yanıt bekleniyor'}</Durum>
           )}
           {!gecti && (
             <button onClick={() => void calistir(onIptal)} disabled={isleniyor} className={kucukDugme}>
@@ -234,7 +234,7 @@ export function DavetKartiSohbet({
 const SECENEKLER: { d: YanitDurumu; etiket: string; renk: string }[] = [
   { d: 'geliyorum', etiket: 'Geliyorum', renk: 'bg-teal-500 text-white' },
   { d: 'belki', etiket: 'Belki', renk: 'bg-amber-400 text-amber-900' },
-  { d: 'gelmiyorum', etiket: 'Yokum', renk: 'bg-ink-200 text-ink-600' },
+  { d: 'gelmiyorum', etiket: 'Gelemem', renk: 'bg-ink-200 text-ink-600' },
 ]
 
 export function GrupPlanKartiSohbet({
@@ -278,7 +278,7 @@ export function GrupPlanKartiSohbet({
         {belkiler.length > 0 && ` · ${belkiler.length} belki`}
       </p>
       {gecti ? (
-        <Durum renk="text-ink-300">Bu plan geçti</Durum>
+        <Durum renk="text-ink-400">Bu plan geçti</Durum>
       ) : (
         <>
           <div className="flex gap-1.5">
@@ -298,8 +298,8 @@ export function GrupPlanKartiSohbet({
                 }}
                 disabled={isleniyor}
                 aria-pressed={benimYanit === s.d}
-                className={`flex-1 rounded-lg py-1.5 text-[11px] font-semibold active:scale-95 transition-all disabled:opacity-60 ${
-                  benimYanit === s.d ? s.renk : 'bg-mist-100 text-ink-400 border border-ink-100'
+                className={`flex-1 rounded-lg py-1.5 text-[11px] font-semibold active:opacity-80 transition-all disabled:opacity-60 ${
+                  benimYanit === s.d ? s.renk : 'bg-white text-ink-600 border border-ink-200'
                 }`}
               >
                 {s.etiket}
@@ -322,7 +322,7 @@ export function GrupPlanKartiSohbet({
         </>
       )}
       {onAc && (
-        <button onClick={onAc} className="mt-2 inline-flex items-center gap-0.5 text-[11px] font-semibold text-orchid-600 hover:text-orchid-700">
+        <button onClick={onAc} className="mt-2 inline-flex items-center gap-0.5 text-[11px] font-semibold text-brand-600 hover:text-brand-700">
           Ayrıntılar ve kim ne getiriyor
           <Icon name="ChevronRight" className="w-3.5 h-3.5" />
         </button>

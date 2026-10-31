@@ -324,26 +324,37 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
 
   return (
     <div className="panel-tam z-50">
-      <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-3 shrink-0">
-        <div className="min-w-0">
-          <h2 className="font-display text-xl font-bold text-ink-700">
-            {adim === 'kiminle' ? 'Kiminle?' : adim === 'detay' ? 'Plan detayları' : 'Son kontrol'}
-          </h2>
-          <p className="text-xs text-ink-400 mt-0.5">
-            {adim === 'kiminle' ? '1 / 3' : adim === 'detay' ? '2 / 3' : '3 / 3'}
-          </p>
+      {/* Gradient header with a springy three-step progress bar. */}
+      <div className="relative overflow-hidden bg-bolum-canli text-white rounded-b-[2rem] px-4 pt-[calc(1rem+var(--safe-top))] pb-4 mb-4 shrink-0 lg:rounded-none">
+        <div aria-hidden className="pointer-events-none absolute -top-14 -right-10 w-40 h-40 rounded-full bg-white/15 animate-yuzen" />
+        <div className="relative flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-caption text-white/80 font-semibold">
+              Adım {adim === 'kiminle' ? 1 : adim === 'detay' ? 2 : 3} / 3
+            </p>
+            <h2 key={adim} className="text-[1.625rem] leading-8 font-extrabold tracking-tight animate-slide-up">
+              {adim === 'kiminle' ? 'Kiminle?' : adim === 'detay' ? 'Plan detayları' : 'Son kontrol'}
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Kapat"
+            className="w-10 h-10 rounded-2xl flex items-center justify-center bg-white/20 hover:bg-white/30 basinca shrink-0"
+          >
+            <Icon name="X" className="w-5 h-5" />
+          </button>
         </div>
-        <button
-          onClick={onClose}
-          className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
-        >
-          <Icon name="X" className="w-5 h-5 text-ink-500" />
-        </button>
+        <div className="relative mt-3 h-1.5 rounded-full bg-white/25 overflow-hidden" aria-hidden>
+          <div
+            className="h-full rounded-full bg-white transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+            style={{ width: adim === 'kiminle' ? '33%' : adim === 'detay' ? '66%' : '100%' }}
+          />
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 pb-8 space-y-4">
+      <div key={adim} className="flex-1 overflow-y-auto px-4 pb-8 space-y-4 animate-sayfa">
         {hata && (
-          <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3">
+          <div className="flex items-start gap-2 bg-white border border-rose-200 rounded-xl px-4 py-3">
             <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
             <p className="text-sm text-rose-700">{hata}</p>
           </div>
@@ -421,12 +432,12 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
         )}
       </div>
 
-      <div className="px-5 pb-[calc(1rem+var(--safe-bottom))] pt-3 border-t border-ink-100 safe-x shrink-0 flex gap-3">
+      <div className="px-4 pb-[calc(1rem+var(--safe-bottom))] pt-3 glass border-t safe-x shrink-0 flex gap-3">
         {adim !== 'kiminle' && (
           <button
             onClick={() => setAdim(adim === 'ozet' ? 'detay' : 'kiminle')}
             disabled={kaydediliyor}
-            className="btn-ghost border border-ink-100 px-6"
+            className="btn-ghost bg-white shadow-soft px-6"
           >
             Geri
           </button>
@@ -522,13 +533,13 @@ function KiminleAdimi({
             <button
               key={s.id}
               onClick={() => onKapsam(s.id)}
-              className={`w-full flex items-center gap-3 rounded-2xl p-4 border text-left transition-all active:scale-[0.98] ${
-                aktif ? 'bg-orchid-50 border-orchid-200' : 'bg-mist-50 border-ink-100'
+              className={`w-full flex items-center gap-3 rounded-2xl p-4 border text-left transition-all active:opacity-80 ${
+                aktif ? 'bg-brand-50 border-brand-500' : 'bg-white border-ink-200 hover:bg-ink-50'
               }`}
             >
               <div
                 className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${
-                  aktif ? 'bg-gradient-orchid text-white' : 'bg-mist-100 text-ink-400'
+                  aktif ? 'bg-bolum text-white' : 'bg-bolum-soluk text-bolum-koyu'
                 }`}
               >
                 <Icon name={s.ikon} className="w-5 h-5" />
@@ -537,7 +548,7 @@ function KiminleAdimi({
                 <p className="text-sm font-semibold text-ink-700">{s.ad}</p>
                 <p className="text-xs text-ink-400">{s.aciklama}</p>
               </div>
-              {aktif && <Icon name="Check" className="w-5 h-5 text-orchid-500 shrink-0" />}
+              {aktif && <Icon name="Check" className="w-5 h-5 text-brand-600 shrink-0" />}
             </button>
           )
         })}
@@ -545,7 +556,7 @@ function KiminleAdimi({
 
       {kapsam === 'arkadas' && (
         <div>
-          <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2 px-1">
+          <p className="text-label text-ink-500 mb-2 px-1">
             Kimleri davet edeceksin?
           </p>
           {arkadaslar.length === 0 ? (
@@ -562,8 +573,8 @@ function KiminleAdimi({
                   <button
                     key={a.profil.id}
                     onClick={() => onArkadasDegistir(a.profil.id)}
-                    className={`w-full flex items-center gap-3 rounded-2xl p-3 border transition-all active:scale-[0.98] ${
-                      secili ? 'bg-orchid-50 border-orchid-200' : 'bg-mist-50 border-ink-100'
+                    className={`w-full flex items-center gap-3 rounded-2xl p-3 border transition-all active:opacity-80 ${
+                      secili ? 'bg-brand-50 border-brand-500' : 'bg-white border-ink-200 hover:bg-ink-50'
                     }`}
                   >
                     <Avatar ad={a.profil.ad} foto={a.profil.avatar} emoji={a.profil.emoji} renk={a.profil.renk} boyut="sm" />
@@ -575,7 +586,7 @@ function KiminleAdimi({
                     </div>
                     <div
                       className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${
-                        secili ? 'bg-orchid-500' : 'bg-mist-100 border border-ink-200'
+                        secili ? 'bg-brand-600' : 'bg-white border border-ink-300'
                       }`}
                     >
                       {secili && <Icon name="Check" className="w-3.5 h-3.5 text-white" />}
@@ -590,7 +601,7 @@ function KiminleAdimi({
 
       {kapsam === 'grup' && (
         <div>
-          <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2 px-1">
+          <p className="text-label text-ink-500 mb-2 px-1">
             Hangi grup?
           </p>
           {gruplar.length === 0 ? (
@@ -607,8 +618,8 @@ function KiminleAdimi({
                   <button
                     key={g.id}
                     onClick={() => onGrupSec(secili ? null : g)}
-                    className={`w-full flex items-center gap-3 rounded-2xl p-3 border transition-all active:scale-[0.98] ${
-                      secili ? 'bg-orchid-50 border-orchid-200' : 'bg-mist-50 border-ink-100'
+                    className={`w-full flex items-center gap-3 rounded-2xl p-3 border transition-all active:opacity-80 ${
+                      secili ? 'bg-brand-50 border-brand-500' : 'bg-white border-ink-200 hover:bg-ink-50'
                     }`}
                   >
                     <GrupAvatari grup={g} boyut="sm" />
@@ -617,7 +628,7 @@ function KiminleAdimi({
                     </p>
                     <div
                       className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
-                        secili ? 'bg-orchid-500' : 'bg-mist-100 border border-ink-200'
+                        secili ? 'bg-brand-600' : 'bg-white border border-ink-300'
                       }`}
                     >
                       {secili && <Icon name="Check" className="w-3.5 h-3.5 text-white" />}
@@ -673,7 +684,7 @@ function DetayAdimi(p: {
 
   return (
     <>
-      <Bolum baslik="Ne yapacaksınız?" ikon="Sparkles">
+      <Bolum baslik="Ne yapacaksınız?" ikon="ListChecks">
         <div className="flex flex-wrap gap-2 mb-3">
           {ETKINLIKLER.map((e) => {
             const secili = p.etkinlik?.ad === e.ad
@@ -683,7 +694,7 @@ function DetayAdimi(p: {
                 onClick={() => p.onEtkinlik(e)}
                 className={`chip ${
                   secili
-                    ? 'bg-gradient-orchid text-white'
+                    ? 'bg-brand-600 text-white'
                     : 'bg-mist-100 text-ink-500 border border-ink-100'
                 }`}
               >
@@ -729,7 +740,7 @@ function DetayAdimi(p: {
                 <button
                   key={i}
                   onClick={() => p.onKonum(o.isim)}
-                  className="shrink-0 text-left bg-mist-100 border border-ink-100 rounded-2xl px-3.5 py-2.5 active:scale-95 transition-transform min-w-[160px]"
+                  className="shrink-0 text-left bg-mist-100 border border-ink-100 rounded-2xl px-3.5 py-2.5 active:opacity-80 transition-transform min-w-[160px]"
                 >
                   <p className="text-sm font-semibold text-ink-700 truncate">{o.isim}</p>
                   <p className="text-xs text-ink-400 mt-0.5">
@@ -742,7 +753,7 @@ function DetayAdimi(p: {
                 </button>
               ))}
             </div>
-            <p className="text-[11px] text-ink-300 mt-2">
+            <p className="text-[11px] text-ink-400 mt-2">
               Foursquare'den gerçek mekanlar — dokununca yukarı yazılır.
             </p>
           </div>
@@ -757,7 +768,7 @@ function DetayAdimi(p: {
               onClick={() => p.onTarih(g.deger)}
               className={`chip flex-1 justify-center ${
                 p.tarih === g.deger
-                  ? 'bg-gradient-orchid text-white'
+                  ? 'bg-brand-600 text-white'
                   : 'bg-mist-100 text-ink-500 border border-ink-100'
               }`}
             >
@@ -803,7 +814,7 @@ function DetayAdimi(p: {
                   onClick={() => p.onSure(s)}
                   className={`chip flex-1 justify-center ${
                     p.sure === s
-                      ? 'bg-gradient-orchid text-white'
+                      ? 'bg-brand-600 text-white'
                       : 'bg-mist-100 text-ink-500 border border-ink-100'
                   }`}
                 >
@@ -853,7 +864,7 @@ function DetayAdimi(p: {
                   <div
                     key={k.id}
                     className={`flex items-center gap-3 rounded-2xl p-3 border ${
-                      cakisiyor ? 'bg-amber-50 border-amber-200' : 'bg-mist-50 border-ink-100'
+                      cakisiyor ? 'bg-amber-50 border-amber-200' : 'bg-white border-ink-200'
                     }`}
                   >
                     <Avatar ad={k.ad} foto={k.avatar} emoji={k.emoji} renk={k.renk} boyut="sm" />
@@ -891,7 +902,7 @@ function DetayAdimi(p: {
             </div>
           )}
 
-          <p className="text-[11px] text-ink-300 mt-3 leading-relaxed">
+          <p className="text-[11px] text-ink-400 mt-3 leading-relaxed">
             Yalnızca dolu saat aralıkları görünür — kimsenin ne yaptığı görünmez.
           </p>
         </Bolum>
@@ -932,20 +943,20 @@ function OzetAdimi({
   return (
     <>
       <div className="card p-5">
-        <p className="font-display text-lg font-bold text-ink-700 mb-2">
+        <p className="text-title text-ink-800 mb-2">
           {emoji && <span aria-hidden="true">{emoji} </span>}
           {baslik}
         </p>
 
         <div className="space-y-1.5 text-sm text-ink-500">
           <p className="flex items-center gap-2">
-            <Icon name="CalendarDays" className="w-4 h-4 text-ink-300 shrink-0" />
+            <Icon name="CalendarDays" className="w-4 h-4 text-ink-400 shrink-0" />
             {formatDate(tarih) ?? tarih}
             {tumGun ? ' · Tüm gün' : `${saat ? ` · ${saat}` : ''} · ${sure} dk`}
           </p>
           {konum.trim() && (
             <p className="flex items-center gap-2">
-              <Icon name="MapPin" className="w-4 h-4 text-orchid-500 shrink-0" />
+              <Icon name="MapPin" className="w-4 h-4 text-ink-500 shrink-0" />
               {konum.trim()}
             </p>
           )}
@@ -965,7 +976,7 @@ function OzetAdimi({
       </div>
 
       <div className="card p-5">
-        <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-3">Kiminle</p>
+        <p className="text-label text-ink-500 mb-3">Kiminle</p>
         {kapsam === 'tek' ? (
           <p className="text-sm text-ink-500">Sadece senin takvimine eklenecek.</p>
         ) : (
@@ -999,7 +1010,7 @@ function OzetAdimi({
         )}
       </div>
 
-      <p className="text-[11px] text-ink-300 text-center leading-relaxed">
+      <p className="text-[11px] text-ink-400 text-center leading-relaxed">
         {kapsam === 'tek'
           ? 'Bu plan yalnızca cihazında saklanır, hiçbir yere gönderilmez.'
           : 'Planın detayları cihazında kalır; karşı tarafa yalnızca davet bilgisi gider.'}
@@ -1022,7 +1033,7 @@ function Bolum({
   return (
     <div className="card p-5">
       <div className="flex items-center gap-2 mb-3">
-        <Icon name={ikon} className="w-4 h-4 text-orchid-500" />
+        <Icon name={ikon} className="w-4 h-4 text-ink-500" />
         <p className="text-sm font-semibold text-ink-700">{baslik}</p>
       </div>
       {children}
@@ -1032,7 +1043,7 @@ function Bolum({
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <label className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
+    <label className="block text-label text-ink-500 mb-2">
       {children}
     </label>
   )

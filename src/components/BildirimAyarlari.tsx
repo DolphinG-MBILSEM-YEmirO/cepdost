@@ -82,8 +82,8 @@ export function BildirimAyarlari() {
   return (
     <div className="card p-5">
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 rounded-xl bg-orchid-100 flex items-center justify-center">
-          <Icon name="BellRing" className="w-5 h-5 text-orchid-600" />
+        <div className="w-10 h-10 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center">
+          <Icon name="BellRing" className="w-5 h-5 text-bolum-koyu" />
         </div>
         <div className="min-w-0">
           <h2 className="font-semibold text-ink-700">Bildirimler</h2>
@@ -110,7 +110,7 @@ export function BildirimAyarlari() {
             <button
               onClick={() => void dene()}
               disabled={calisiyor}
-              className="flex-1 bg-orchid-50 text-orchid-700 font-medium text-sm rounded-2xl py-2.5 active:scale-[0.97] transition-all disabled:opacity-60"
+              className="flex-1 bg-brand-50 text-brand-700 font-medium text-sm rounded-2xl py-2.5 active:opacity-80 transition-all disabled:opacity-60"
             >
               {denendi ? 'Gönderildi ✓' : 'Deneme bildirimi'}
             </button>
@@ -191,9 +191,9 @@ export function BildirimBandi() {
   if (kapandi || (durum !== 'kapali' && durum !== 'ana-ekran-gerekli')) return null
 
   return (
-    <div className="card p-4 mb-4 flex items-start gap-3 bg-gradient-orchid-soft border-orchid-100">
+    <div className="card p-4 mb-4 flex items-start gap-3 bg-brand-50 border-brand-100">
       <div className="w-10 h-10 rounded-xl bg-mist-50 flex items-center justify-center shrink-0">
-        <Icon name="BellRing" className="w-5 h-5 text-orchid-500" />
+        <Icon name="BellRing" className="w-5 h-5 text-ink-500" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-ink-700">Mesajlar telefonuna gelsin mi?</p>
@@ -238,9 +238,9 @@ function Anahtar({
       role="switch"
       aria-checked={acik}
       onClick={onDegistir}
-      className="w-full flex items-center gap-3 text-left active:scale-[0.98] transition-transform"
+      className="w-full flex items-center gap-3 text-left active:opacity-80 transition-transform"
     >
-      <div className={`w-11 h-6 rounded-full transition-colors shrink-0 relative ${acik ? 'bg-gradient-orchid' : 'bg-ink-200'}`}>
+      <div className={`w-11 h-6 rounded-full transition-colors shrink-0 relative ${acik ? 'bg-brand-600' : 'bg-ink-200'}`}>
         <div
           className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-soft transition-all ${
             acik ? 'left-[1.375rem]' : 'left-0.5'

@@ -14,7 +14,7 @@ import type { MesajSonucu } from '../sosyal/mesajArama'
 export function MesajSonucuSatiri({ sonuc, sorgu, onAc }: { sonuc: MesajSonucu; sorgu: string; onAc: () => void }) {
   const { sohbet } = sonuc
   return (
-    <button onClick={onAc} className="w-full card p-3 flex items-start gap-3 text-left active:scale-[0.98] transition-all lg:hover:border-orchid-200">
+    <button onClick={onAc} className="w-full px-4 py-3 flex items-start gap-3 text-left transition-colors hover:bg-ink-50/60 active:bg-ink-50">
       {sohbet.tur === 'grup' && sohbet.grup ? (
         <GrupAvatari grup={sohbet.grup} boyut="sm" />
       ) : (
@@ -23,7 +23,7 @@ export function MesajSonucuSatiri({ sonuc, sorgu, onAc }: { sonuc: MesajSonucu; 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold text-ink-700 truncate flex-1">{sohbet.ad}</p>
-          <span className="text-[11px] text-ink-300 shrink-0">{formatRelativeTime(new Date(sonuc.olusturulma).getTime())}</span>
+          <span className="text-[11px] text-ink-400 shrink-0">{formatRelativeTime(new Date(sonuc.olusturulma).getTime())}</span>
         </div>
         <p className="text-xs text-ink-500 mt-0.5 line-clamp-2 break-words">
           <span className="font-medium text-ink-600">{sonuc.gonderenAd}: </span>
@@ -82,7 +82,7 @@ export function SohbetIciArama({
 
   return (
     <div className="flex items-center gap-2 px-4 py-2 border-b border-ink-100 bg-white/90 shrink-0 animate-fade-in" role="search">
-      <Icon name="Search" className="w-4 h-4 text-ink-300 shrink-0" />
+      <Icon name="Search" className="w-4 h-4 text-ink-400 shrink-0" />
       <input
         ref={alan}
         value={girdi}

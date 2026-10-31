@@ -126,7 +126,7 @@ export function LinkEkleModal({ onClose, onEklendi }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[65] flex items-end sm:items-center justify-center bg-ink-900/40 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[65] flex items-end sm:items-center justify-center bg-ink-900/40 animate-fade-in"
       onClick={onClose}
     >
       <div
@@ -134,8 +134,8 @@ export function LinkEkleModal({ onClose, onEklendi }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2.5 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-orchid-100 flex items-center justify-center shrink-0">
-            <Icon name="LinkIcon" className="w-5 h-5 text-orchid-500" />
+          <div className="w-10 h-10 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center shrink-0">
+            <Icon name="LinkIcon" className="w-5 h-5 text-bolum-koyu" />
           </div>
           <div className="min-w-0">
             <h3 className="font-semibold text-ink-700">Link ekle</h3>
@@ -180,7 +180,7 @@ export function LinkEkleModal({ onClose, onEklendi }: Props) {
                     onClick={() => setKategori(c)}
                     className={`chip ${
                       kategori === c
-                        ? 'bg-gradient-orchid text-white'
+                        ? 'bg-brand-600 text-white'
                         : 'bg-mist-100 text-ink-500 border border-ink-100'
                     }`}
                   >
@@ -222,12 +222,12 @@ export function LinkEkleModal({ onClose, onEklendi }: Props) {
               />
             </div>
 
-            <p className="text-[11px] text-ink-300 break-all">{link.trim()}</p>
+            <p className="text-[11px] text-ink-400 break-all">{link.trim()}</p>
           </div>
         )}
 
         {hata && (
-          <div className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl px-4 py-3 mb-4">
+          <div className="flex items-start gap-2 bg-white border border-rose-200 rounded-xl px-4 py-3 mb-4">
             <Icon name="AlertCircle" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
             <p className="text-sm text-rose-700">{hata}</p>
           </div>
@@ -247,7 +247,7 @@ export function LinkEkleModal({ onClose, onEklendi }: Props) {
             className="btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-50"
           >
             <Icon
-              name={yukleniyor ? 'Loader2' : sonuc ? 'Check' : 'Sparkles'}
+              name={yukleniyor ? 'Loader2' : sonuc ? 'Check' : 'ListChecks'}
               className={`w-5 h-5 ${yukleniyor ? 'animate-spin' : ''}`}
             />
             {yukleniyor ? (sonuc ? 'Kaydediliyor' : 'Okuyorum') : sonuc ? 'Kaydet' : 'Anla'}
@@ -260,7 +260,7 @@ export function LinkEkleModal({ onClose, onEklendi }: Props) {
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <label className="block text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">
+    <label className="block text-label text-ink-500 mb-2">
       {children}
     </label>
   )

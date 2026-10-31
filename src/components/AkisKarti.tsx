@@ -40,7 +40,7 @@ export function AkisKarti({
             </p>
           )}
         </div>
-        {yeni && <span className="chip bg-orchid-100 text-orchid-700 text-[11px] font-semibold shrink-0">Yeni</span>}
+        {yeni && <span className="text-caption font-semibold text-brand-700 shrink-0">Yeni</span>}
       </div>
 
       <div className="aspect-square bg-mist-100">
@@ -49,8 +49,8 @@ export function AkisKarti({
 
       <div className="p-4">
         <div className="flex items-center gap-1.5">
-          <Icon name="MapPin" className="w-4 h-4 text-orchid-500 shrink-0" />
-          <p className="text-sm font-semibold text-ink-700 truncate">{ani.mekan_adi}</p>
+          <Icon name="MapPin" className="w-4 h-4 text-ink-500 shrink-0" />
+          <p className="text-body font-semibold text-ink-800 truncate">{ani.mekan_adi}</p>
         </div>
         <p className="text-xs text-ink-400 mt-0.5">{formatDate(ani.tarih) ?? ani.tarih}</p>
         {ani.notlar && <p className="text-sm text-ink-500 mt-2">{ani.notlar}</p>}

@@ -17,6 +17,7 @@ import type { SosyalBolum } from './components/sekmeler'
 import { KenarCubugu } from './components/KenarCubugu'
 import { ConfirmDialog } from './components/ConfirmDialog'
 import { ChatButton } from './components/ChatButton'
+import { EkranBasligi } from './ui/EkranBasligi'
 import { ChatPanel } from './components/ChatPanel'
 import { GirisEkrani } from './components/GirisEkrani'
 import { HesapKurulumu } from './components/HesapKurulumu'
@@ -401,8 +402,15 @@ export default function App() {
     setActiveTab('sohbet')
   }
 
+  // The assistant button sits next to the switch on the chats side only, as
+  // the floating button did before (Arkadaşlar has its own actions).
   const sosyalUst = (
-    <SosyalSekmeler secili={sosyalBolum} onSec={setSosyalBolum} sohbetRozeti={mesajRozeti} arkadasRozeti={rozet} />
+    <EkranBasligi
+      baslik="Sohbet"
+      eylemler={sosyalBolum === 'sohbetler' && <ChatButton onClick={() => setShowChat(true)} />}
+    >
+      <SosyalSekmeler secili={sosyalBolum} onSec={setSosyalBolum} sohbetRozeti={mesajRozeti} arkadasRozeti={rozet} />
+    </EkranBasligi>
   )
 
   // Phone: one column under a bottom bar. Desktop (lg): a sidebar and a
@@ -412,7 +420,7 @@ export default function App() {
     activeTab === 'sohbet' ? 'lg:max-w-none lg:px-0' : activeTab === 'akis' ? 'lg:max-w-4xl lg:pt-4' : 'lg:max-w-6xl lg:pt-4'
 
   return (
-    <div className="min-h-screen bg-uygulama">
+    <div className="min-h-screen bg-uygulama" data-bolum={activeTab}>
       <SekmeGeriAdimlari
         sekme={activeTab}
         sosyalBolum={sosyalBolum}
@@ -422,17 +430,23 @@ export default function App() {
 
       {banner === 'ok' && (
         <div className="fixed top-0 left-0 right-0 z-50 safe-top px-4 pt-2 animate-slide-down">
-          <div className="bg-teal-500 text-white text-sm font-medium rounded-2xl px-4 py-3 shadow-float flex items-center gap-2 max-w-md mx-auto">
-            <span className="flex-1">Paylaşım alındı, arşivde görünüyor 👇</span>
-            <button onClick={() => setBanner(null)} className="shrink-0">✕</button>
+          <div role="status" className="bg-ink-800 text-white text-sm font-medium rounded-xl px-4 py-3 shadow-float flex items-center gap-2.5 max-w-md mx-auto">
+            <Icon name="CheckCircle2" className="w-5 h-5 text-teal-300 shrink-0" />
+            <span className="flex-1">Paylaşım alındı, Arşiv'de görünüyor.</span>
+            <button onClick={() => setBanner(null)} aria-label="Kapat" className="shrink-0 -m-1 p-1 rounded-lg text-white/70 hover:text-white">
+              <Icon name="X" className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
       {banner === 'error' && (
         <div className="fixed top-0 left-0 right-0 z-50 safe-top px-4 pt-2 animate-slide-down">
-          <div className="bg-rose-500 text-white text-sm font-medium rounded-2xl px-4 py-3 shadow-float flex items-center gap-2 max-w-md mx-auto">
-            <span className="flex-1">Paylaşım alınamadı, tekrar dener misin?</span>
-            <button onClick={() => setBanner(null)} className="shrink-0">✕</button>
+          <div role="alert" className="bg-ink-800 text-white text-sm font-medium rounded-xl px-4 py-3 shadow-float flex items-center gap-2.5 max-w-md mx-auto">
+            <Icon name="AlertCircle" className="w-5 h-5 text-rose-300 shrink-0" />
+            <span className="flex-1">Paylaşım alınamadı. Paylaş menüsünden yeniden gönder.</span>
+            <button onClick={() => setBanner(null)} aria-label="Kapat" className="shrink-0 -m-1 p-1 rounded-lg text-white/70 hover:text-white">
+              <Icon name="X" className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
@@ -447,12 +461,14 @@ export default function App() {
       />
 
       <main className="lg:pl-64">
-        <div className={`min-h-screen max-w-md md:max-w-2xl mx-auto relative lg:px-6 ${icerikGenisligi}`}>
+        {/* key: every tab switch replays the page entrance. */}
+        <div key={activeTab} className={`min-h-screen max-w-md md:max-w-2xl mx-auto relative lg:px-6 animate-sayfa ${icerikGenisligi}`}>
           {activeTab === 'planlar' && (
             <PlanlarView
               kayitlar={kayitlar}
               loading={loading}
               onAddClick={() => setShowCapture(true)}
+              onAsistan={() => setShowChat(true)}
               onRecordClick={(k) => setDetailKayit(k)}
               onToggleStatus={handleToggleStatus}
               onDelete={(id) => {
@@ -480,7 +496,7 @@ export default function App() {
               />
             ))}
 
-          {activeTab === 'akis' && <AkisView onPlanAc={(k) => setDetailKayit(k)} />}
+          {activeTab === 'akis' && <AkisView onPlanAc={(k) => setDetailKayit(k)} onAsistan={() => setShowChat(true)} />}
 
           {activeTab === 'profil' && (
             <ProfilView
@@ -499,11 +515,6 @@ export default function App() {
         </div>
       </main>
 
-      {/* Sohbet butonu Profil'de ve Arkadaşlar'da gizleniyor — o ekranların
-          kendi aksiyonları var, sağ altta ikinci bir yüzen buton kalabalık yapıyor. */}
-      {activeTab !== 'profil' && !(activeTab === 'sohbet' && sosyalBolum === 'arkadaslar') && (
-        <ChatButton onClick={() => setShowChat(true)} />
-      )}
       <BottomNav
         active={activeTab}
         onChange={setActiveTab}
@@ -577,16 +588,13 @@ function TekEkran({ children }: { children: React.ReactNode }) {
 
 function MarkaPaneli() {
   const maddeler: { ikon: IconName; metin: string }[] = [
-    { ikon: 'Sparkles', metin: 'Bir link, ekran görüntüsü ya da not paylaş; saatiyle, yeriyle hazır bir plana dönüşsün.' },
+    { ikon: 'Share2', metin: 'Bir link, ekran görüntüsü ya da not paylaş; saatiyle, yeriyle hazır bir plana dönüşsün.' },
     { ikon: 'CalendarClock', metin: 'Arkadaşlarının boş saatlerini gör, herkese uyan zamanı tek dokunuşla bul.' },
     { ikon: 'MapPin', metin: "Arkadaşlarının gittiği yerleri Keşfet'te gör, sıradaki buluşmanı oradan seç." },
-    { ikon: 'Wand2', metin: 'Asistana "Cumartesi Ayşe\'yle kahvaltı" yaz; saati bulsun, davetleri hazırlasın.' },
+    { ikon: 'MessageCircle', metin: 'Asistana "Cumartesi Ayşe\'yle kahvaltı" yaz; saati bulsun, davetleri hazırlasın.' },
   ]
   return (
-    <div className="hidden lg:flex flex-col justify-between bg-gradient-orchid-deep text-white p-12 relative overflow-hidden">
-      {/* Soft light behind the text, like petals out of focus. */}
-      <div aria-hidden className="absolute -top-28 -right-20 w-96 h-96 rounded-full bg-violet-400/30 blur-3xl" />
-      <div aria-hidden className="absolute -bottom-36 -left-24 w-[28rem] h-[28rem] rounded-full bg-sky-400/20 blur-3xl" />
+    <div className="hidden lg:flex flex-col justify-between bg-ink-900 text-white p-12 relative overflow-hidden">
       <div className="relative flex items-center gap-3">
         <img src="/icons/icon-192.png" alt="" className="w-11 h-11 rounded-2xl ring-2 ring-white/30" />
         <span className="font-display text-2xl font-bold">{UYGULAMA_ADI}</span>
@@ -613,7 +621,7 @@ function MarkaPaneli() {
 function Bekleme({ metin }: { metin?: string }) {
   return (
     <div className="min-h-screen bg-uygulama max-w-md mx-auto flex flex-col items-center justify-center gap-3">
-      <Icon name="Loader2" className="w-6 h-6 animate-spin text-ink-300" />
+      <Icon name="Loader2" className="w-6 h-6 animate-spin text-ink-400" />
       {metin && <p className="text-sm text-ink-400">{metin}</p>}
     </div>
   )
@@ -627,7 +635,7 @@ function BaglantiHatasi({ onTekrar, onCikis }: { onTekrar: () => void; onCikis: 
       <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center mb-4">
         <Icon name="WifiOff" className="w-7 h-7 text-amber-600" />
       </div>
-      <h1 className="font-display text-xl font-bold text-ink-700 mb-2">Hesabın getirilemedi</h1>
+      <h1 className="text-title text-ink-800 mb-2">Hesabın getirilemedi</h1>
       <p className="text-sm text-ink-400 leading-relaxed mb-6">
         Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene; planların ve arşivin bu telefonda duruyor.
       </p>

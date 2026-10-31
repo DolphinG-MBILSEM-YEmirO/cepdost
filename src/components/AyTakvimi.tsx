@@ -53,7 +53,7 @@ export function AyTakvimi({
         <button
           onClick={() => ayDegistir(-1)}
           aria-label="Önceki ay"
-          className="w-9 h-9 rounded-full flex items-center justify-center text-ink-400 hover:bg-ink-50 active:scale-90 transition-transform"
+          className="w-9 h-9 rounded-full flex items-center justify-center text-ink-400 hover:bg-ink-50 active:opacity-80 transition-transform"
         >
           <Icon name="ChevronRight" className="w-4 h-4 rotate-180" />
         </button>
@@ -67,7 +67,7 @@ export function AyTakvimi({
               setAy({ yil: d.getFullYear(), ay: d.getMonth() })
               onSec(bugun)
             }}
-            className="text-xs font-medium text-orchid-600 px-2 py-1 rounded-full hover:bg-orchid-50"
+            className="text-xs font-medium text-brand-600 px-2 py-1 rounded-full hover:bg-brand-50"
           >
             Bu ay
           </button>
@@ -75,7 +75,7 @@ export function AyTakvimi({
         <button
           onClick={() => ayDegistir(1)}
           aria-label="Sonraki ay"
-          className="w-9 h-9 rounded-full flex items-center justify-center text-ink-400 hover:bg-ink-50 active:scale-90 transition-transform"
+          className="w-9 h-9 rounded-full flex items-center justify-center text-ink-400 hover:bg-ink-50 active:opacity-80 transition-transform"
         >
           <Icon name="ChevronRight" className="w-4 h-4" />
         </button>
@@ -83,7 +83,7 @@ export function AyTakvimi({
 
       <div className="grid grid-cols-7 mb-1" aria-hidden="true">
         {HAFTA_GUNLERI.map((g) => (
-          <span key={g} className="text-center text-[10px] font-semibold uppercase text-ink-300">
+          <span key={g} className="text-center text-[10px] font-semibold uppercase text-ink-400">
             {g}
           </span>
         ))}
@@ -124,8 +124,8 @@ export function AyTakvimi({
               aria-label={etiket}
               aria-pressed={seciliMi}
               aria-current={bugunMu ? 'date' : undefined}
-              className={`relative mx-auto w-10 h-11 rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all active:scale-90
-                ${seciliMi ? 'bg-gradient-orchid text-white shadow-soft' : bugunMu ? 'ring-2 ring-orchid-300 text-orchid-600' : 'hover:bg-ink-50'}
+              className={`relative mx-auto w-10 h-11 rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all active:opacity-80
+                ${seciliMi ? 'bg-brand-600 text-white shadow-soft' : bugunMu ? 'ring-2 ring-brand-300 text-brand-600' : 'hover:bg-ink-50'}
                 ${!g.buAy && !seciliMi ? 'text-ink-200' : ''}`}
             >
               <span className={`text-sm leading-none ${bugunMu || seciliMi ? 'font-bold' : 'font-medium'} ${g.buAy && !seciliMi && !bugunMu ? 'text-ink-600' : ''}`}>
@@ -143,7 +143,7 @@ export function AyTakvimi({
                 )}
               </span>
               {bekleyen.length > AZAMI_NOKTA && (
-                <span className={`absolute top-0.5 right-0.5 text-[8px] font-bold ${seciliMi ? 'text-white/80' : 'text-ink-300'}`} aria-hidden="true">
+                <span className={`absolute top-0.5 right-0.5 text-[8px] font-bold ${seciliMi ? 'text-white/80' : 'text-ink-400'}`} aria-hidden="true">
                   +{bekleyen.length - AZAMI_NOKTA}
                 </span>
               )}

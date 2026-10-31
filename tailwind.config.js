@@ -1,39 +1,78 @@
+import { readFileSync } from 'node:fs'
+import plugin from 'tailwindcss/plugin'
+
 /** @type {import('tailwindcss').Config} */
-// "Blue orchid" theme (2026-10-18): blue to violet accents on cool,
-// near-white surfaces with navy text. `orchid` is the brand colour, `mist`
-// the surfaces and `ink` the text; the gradients below carry the brand on
-// buttons, the sidebar and hero areas. `coral` only stays for the personal
-// "Mercan" accent people can pick (lib/kisisellestirme.ts). Animations come
-// from the earlier "Hallet" design (2026-08-05).
+// Theme "Canlı" (2026-10-31): soft lavender-white `mist` surfaces, deep
+// violet-black `ink` text, a magenta-pink `brand` and one bright gradient
+// per main tab. These come from shared/tasarim.json and are served as CSS
+// variables (R G B triplets for colours, --bolum-1/--bolum-2 for the tab
+// gradient), so a dark theme only has to redefine the variables. `coral`
+// and `orchid` only stay for the personal accents people can pick
+// (lib/kisisellestirme.ts).
+const tasarim = JSON.parse(readFileSync(new URL('./shared/tasarim.json', import.meta.url), 'utf8'))
+const DEGISKENLI_RENKLER = ['mist', 'ink', 'brand']
+
+// The gradient of each main tab, picked by data-bolum on a parent:
+// [data-bolum="sohbet"] { --bolum-1: #7C3AED; --bolum-2: #2563EB }
+// :root carries the brand gradient so screens outside a tab (sign-in,
+// sheets) are coloured too.
+const bolumDegiskenleri = {
+  ':root': {
+    '--bolum-1': tasarim.gradient.brand[0],
+    '--bolum-2': tasarim.gradient.brand[1],
+    '--bolum-3': tasarim.gradient.brand[2],
+  },
+  ...Object.fromEntries(
+    Object.entries(tasarim.gradient.bolum).map(([ad, [bir, iki]]) => [
+      `[data-bolum="${ad}"]`,
+      { '--bolum-1': bir, '--bolum-2': iki, '--bolum-3': iki },
+    ]),
+  ),
+}
+
+const rgbUclusu = (hex) =>
+  [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(' ')
+
+// { ink: { 700: 'rgb(var(--ink-700) / <alpha-value>)', ... }, ... }
+const degiskenRenkleri = Object.fromEntries(
+  DEGISKENLI_RENKLER.map((ad) => [
+    ad,
+    Object.fromEntries(Object.keys(tasarim.color[ad]).map((ton) => [ton, `rgb(var(--${ad}-${ton}) / <alpha-value>)`])),
+  ]),
+)
+
+// :root { --ink-700: 35 42 69; ... }
+const kokDegiskenleri = Object.fromEntries(
+  DEGISKENLI_RENKLER.flatMap((ad) =>
+    Object.entries(tasarim.color[ad]).map(([ton, hex]) => [`--${ad}-${ton}`, rgbUclusu(hex)]),
+  ),
+)
+
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      // The phone's own typeface (SF Pro on iOS, Roboto on Android, Segoe on
+      // Windows): reads as native on every device, needs no download, and
+      // matches what the native apps will use.
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-        display: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        sans: tasarim.font.sans,
+        display: tasarim.font.sans,
       },
+      // Named steps of the type scale (tasarim.json `type`): text-display,
+      // text-title, text-headline, text-body, text-callout, text-label,
+      // text-caption.
+      fontSize: Object.fromEntries(
+        Object.entries(tasarim.type).map(([ad, [boyut, satir, agirlik]]) => [
+          ad,
+          [boyut, { lineHeight: satir, fontWeight: agirlik }],
+        ]),
+      ),
       colors: {
-        mist: {
-          50: '#FCFDFF',
-          100: '#F4F6FD',
-          200: '#E9EDF9',
-          300: '#DCE2F4',
-          400: '#C6CEEA',
-          500: '#A6B1DA',
-        },
-        ink: {
-          50: '#F3F5FA',
-          100: '#E3E7F1',
-          200: '#C6CDDE',
-          300: '#9CA5BF',
-          400: '#6C7694',
-          500: '#4B5473',
-          600: '#353D5B',
-          700: '#232A45',
-          800: '#151A2F',
-          900: '#0B0E1D',
-        },
+        ...degiskenRenkleri,
+        // The earlier blue, kept only as one of the personal accents people
+        // can pick ("Orkide" in lib/kisisellestirme.ts). The interface uses
+        // `brand`.
         orchid: {
           50: '#EFF3FF',
           100: '#DFE7FF',
@@ -103,77 +142,121 @@ export default {
           900: '#6F111D',
         },
       },
-      backgroundImage: {
-        // Blue to violet, like a dyed blue orchid: buttons, active pills,
-        // my chat bubbles.
-        'gradient-orchid': 'linear-gradient(135deg, #2F6BFF 0%, #4A5CF0 48%, #7B5CF5 100%)',
-        // Deep version for large areas (sidebar brand panel, hero).
-        'gradient-orchid-deep': 'linear-gradient(150deg, #16205A 0%, #2C3AB5 55%, #6A47D8 100%)',
-        // Barely tinted, for headers and highlighted cards.
-        'gradient-orchid-soft': 'linear-gradient(135deg, #EEF3FF 0%, #F3F0FF 100%)',
-      },
       boxShadow: {
-        soft: '0 2px 10px -2px rgba(35, 42, 69, 0.08)',
-        card: '0 1px 2px rgba(35, 42, 69, 0.04), 0 6px 24px -8px rgba(35, 42, 69, 0.12)',
-        float: '0 12px 32px -8px rgba(35, 42, 69, 0.20)',
-        glow: '0 0 0 4px rgba(74, 98, 240, 0.15)',
-        // Coloured lift under gradient buttons.
-        brand: '0 8px 20px -6px rgba(74, 92, 240, 0.45)',
+        soft: '0 4px 16px -4px rgba(38, 33, 55, 0.10)',
+        card: '0 1px 2px rgba(38, 33, 55, 0.04), 0 6px 20px -8px rgba(38, 33, 55, 0.12)',
+        float: '0 16px 40px -10px rgba(38, 33, 55, 0.28)',
+        // A coloured glow under gradient buttons, from the tab's colour.
+        glow: '0 10px 24px -8px var(--bolum-2)',
       },
-      // Slightly tighter corners than before for a crisper, more
-      // professional outline.
+      // Corners by role (tasarim.json radius): chips, fields and buttons,
+      // cards, and the top of sheets.
       borderRadius: {
-        '2xl': '1.125rem',
-        '3xl': '1.5rem',
+        '2xl': tasarim.radius.lg,
+        '3xl': tasarim.radius.sheet,
         '4xl': '2rem',
       },
+      // Motion (tasarim.json motion): springy entrances, a page change on
+      // every tab switch, staggered lists, floating decoration. Everything is
+      // cut to a fade for people who ask for reduced motion (index.css).
       animation: {
-        'fade-in': 'fadeIn 0.4s ease-out',
-        'slide-up': 'slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
-        'slide-down': 'slideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
-        'scale-in': 'scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-        shimmer: 'shimmer 1.8s linear infinite',
-        'bounce-soft': 'bounceSoft 0.6s ease-out',
-        // Sohbet: baloncuk gönderen tarafa göre hafifçe yandan gelsin.
-        'bubble-in-left': 'bubbleInLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-        'bubble-in-right': 'bubbleInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+        'fade-in': `fadeIn ${tasarim.motion.change} ease-out`,
+        'slide-up': `slideUp ${tasarim.motion.sheet} ${tasarim.motion.spring}`,
+        'slide-down': `slideDown ${tasarim.motion.sheet} ${tasarim.motion.spring}`,
+        'scale-in': `popIn ${tasarim.motion.sheet} ${tasarim.motion.spring}`,
+        'pop-in': `popIn ${tasarim.motion.sheet} ${tasarim.motion.spring}`,
+        sayfa: `sayfaGir ${tasarim.motion.page} ${tasarim.motion.easeOut}`,
+        shimmer: 'shimmer 1.6s linear infinite',
+        'bounce-soft': `popIn ${tasarim.motion.sheet} ${tasarim.motion.spring}`,
+        'bubble-in-left': `balonSol ${tasarim.motion.sheet} ${tasarim.motion.spring}`,
+        'bubble-in-right': `balonSag ${tasarim.motion.sheet} ${tasarim.motion.spring}`,
+        yuzen: 'yuzen 6s ease-in-out infinite',
+        'yuzen-yavas': 'yuzen 9s ease-in-out infinite reverse',
+        nabiz: 'nabiz 2.4s ease-out infinite',
+        'gradyan-akis': 'gradyanAkis 8s ease infinite',
+        sallan: `sallan 500ms ${tasarim.motion.easeOut}`,
+        eri: `eri 560ms ${tasarim.motion.easeOut}`,
+        sicra: `sicra 520ms ${tasarim.motion.easeOut}`,
+        dalga: 'dalga 650ms ease-out forwards',
       },
       keyframes: {
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
         },
+        popIn: {
+          '0%': { opacity: '0', transform: 'scale(0.85)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        // The page "melts" in: out of a soft blur while rising slightly.
+        sayfaGir: {
+          '0%': { opacity: '0', filter: 'blur(10px)', transform: 'translateY(16px) scale(0.98)' },
+          '60%': { opacity: '1', filter: 'blur(0)' },
+          '100%': { opacity: '1', filter: 'blur(0)', transform: 'translateY(0) scale(1)' },
+        },
+        // The bottom bar's selection blob stretches like a drop of liquid
+        // while it slides to the new tab, then settles.
+        eri: {
+          '0%': { transform: 'scale(1, 1)' },
+          '35%': { transform: 'scale(1.9, 0.62)' },
+          '65%': { transform: 'scale(0.9, 1.12)' },
+          '100%': { transform: 'scale(1, 1)' },
+        },
+        // An icon that has just been chosen hops once.
+        sicra: {
+          '0%': { transform: 'translateY(0) scale(1)' },
+          '40%': { transform: 'translateY(-5px) scale(1.15)' },
+          '70%': { transform: 'translateY(1px) scale(0.96)' },
+          '100%': { transform: 'translateY(0) scale(1)' },
+        },
+        dalga: {
+          '0%': { transform: 'scale(0.6)', opacity: '0.55' },
+          '100%': { transform: 'scale(2.4)', opacity: '0' },
+        },
         slideUp: {
-          '0%': { opacity: '0', transform: 'translateY(16px)' },
+          '0%': { opacity: '0', transform: 'translateY(24px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         slideDown: {
           '0%': { opacity: '0', transform: 'translateY(-16px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
-        scaleIn: {
-          '0%': { opacity: '0', transform: 'scale(0.95)' },
-          '100%': { opacity: '1', transform: 'scale(1)' },
+        balonSol: {
+          '0%': { opacity: '0', transform: 'translateX(-10px) scale(0.92)' },
+          '100%': { opacity: '1', transform: 'translateX(0) scale(1)' },
+        },
+        balonSag: {
+          '0%': { opacity: '0', transform: 'translateX(10px) scale(0.92)' },
+          '100%': { opacity: '1', transform: 'translateX(0) scale(1)' },
+        },
+        yuzen: {
+          '0%, 100%': { transform: 'translate(0, 0) rotate(0deg)' },
+          '50%': { transform: 'translate(6px, -10px) rotate(6deg)' },
+        },
+        nabiz: {
+          '0%': { boxShadow: '0 0 0 0 color-mix(in srgb, var(--bolum-2) 55%, transparent)' },
+          '70%, 100%': { boxShadow: '0 0 0 14px transparent' },
+        },
+        gradyanAkis: {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+        },
+        sallan: {
+          '0%, 100%': { transform: 'rotate(0)' },
+          '25%': { transform: 'rotate(-12deg)' },
+          '75%': { transform: 'rotate(12deg)' },
         },
         shimmer: {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
         },
-        bounceSoft: {
-          '0%': { transform: 'scale(0.8)', opacity: '0' },
-          '60%': { transform: 'scale(1.05)', opacity: '1' },
-          '100%': { transform: 'scale(1)' },
-        },
-        bubbleInLeft: {
-          '0%': { opacity: '0', transform: 'translateY(8px) translateX(-10px) scale(0.96)' },
-          '100%': { opacity: '1', transform: 'translateY(0) translateX(0) scale(1)' },
-        },
-        bubbleInRight: {
-          '0%': { opacity: '0', transform: 'translateY(8px) translateX(10px) scale(0.96)' },
-          '100%': { opacity: '1', transform: 'translateY(0) translateX(0) scale(1)' },
-        },
       },
     },
   },
-  plugins: [],
+  plugins: [
+    plugin(({ addBase }) => {
+      addBase({ ':root': kokDegiskenleri })
+      addBase(bolumDegiskenleri)
+    }),
+  ],
 }

@@ -1,3 +1,22 @@
+/* The tab colours are registered as real colours so the browser can
+   animate them: switching tabs melts one gradient into the next instead of
+   jumping (data-bolum on the app root changes, the values glide). */
+@property --bolum-1 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ea580c;
+}
+@property --bolum-2 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #e11d48;
+}
+@property --bolum-3 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #7c3aed;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -34,7 +53,33 @@
   }
 
   ::selection {
-    @apply bg-orchid-200 text-ink-800;
+    @apply bg-brand-200 text-ink-800;
+  }
+
+  /* Keyboard focus is always visible; touches and clicks don't draw it. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-600 ring-offset-2 ring-offset-mist-100;
+  }
+
+  /* People who ask for less motion get no movement: animations and
+     transitions finish at once, floating decoration stands still. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 1ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  :root,
+  [data-bolum] {
+    transition:
+      --bolum-1 700ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      --bolum-2 700ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      --bolum-3 700ms cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
   input,
@@ -56,52 +101,100 @@
     padding-right: var(--safe-right);
   }
 
-  /* The app's backdrop: cool mist with soft blue and violet light at the
-     top, so screens don't sit on a flat grey. */
+  /* The app's backdrop: a soft lavender-white surface with a faint wash of
+     the current tab's colour at the top. */
   .bg-uygulama {
     @apply bg-mist-100;
-    background-image:
-      radial-gradient(56rem 28rem at 100% -6rem, rgba(123, 92, 245, 0.10), transparent 70%),
-      radial-gradient(48rem 26rem at -12% -4rem, rgba(47, 107, 255, 0.10), transparent 70%);
-    background-repeat: no-repeat;
+    background-image: radial-gradient(
+      120% 60% at 50% -10%,
+      color-mix(in srgb, var(--bolum-1) 10%, transparent),
+      transparent 70%
+    );
+    background-attachment: fixed;
   }
 
+  /* The current tab's gradient (--bolum-1 to --bolum-2, set by data-bolum
+     on a parent; the brand gradient outside the tabs). */
+  .bg-bolum {
+    background-image: linear-gradient(135deg, var(--bolum-1), var(--bolum-2));
+  }
+  /* The same gradient, slowly moving: heroes and the main button. */
+  .bg-bolum-canli {
+    background-image: linear-gradient(120deg, var(--bolum-1), var(--bolum-2), var(--bolum-3), var(--bolum-1));
+    background-size: 300% 300%;
+    @apply animate-gradyan-akis;
+  }
+  .text-bolum {
+    background-image: linear-gradient(135deg, var(--bolum-1), var(--bolum-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  /* A light tint of the tab colour for selected rows and icon tiles. */
+  .bg-bolum-soluk {
+    background-color: color-mix(in srgb, var(--bolum-1) 12%, white);
+  }
+  .text-bolum-koyu {
+    color: color-mix(in srgb, var(--bolum-2) 85%, black);
+  }
+
+  /* Bars that sit over content (bottom bar, sidebar): frosted white. */
   .glass {
-    @apply bg-white/75 backdrop-blur-xl border border-ink-100/70;
+    @apply bg-white/85 border-white/60;
+    -webkit-backdrop-filter: saturate(180%) blur(18px);
+    backdrop-filter: saturate(180%) blur(18px);
   }
 
+  /* White surface lifted by a soft shadow. */
   .card {
-    @apply bg-mist-50 rounded-3xl shadow-card border border-ink-100/70;
+    @apply bg-white rounded-2xl shadow-card;
   }
 
+  /* Anything tappable gets a springy press. */
+  .basinca {
+    transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .basinca:active {
+    transform: scale(0.96);
+  }
+
+  /* The main action on a screen: the tab's gradient with a coloured glow. */
   .btn-primary {
-    @apply bg-gradient-orchid text-white font-semibold rounded-2xl px-5 py-3.5
-           active:scale-[0.97] transition-all duration-150
-           shadow-brand hover:brightness-110;
-  }
-
-  /* Brand-coloured text for titles and highlights. */
-  .text-gradient-orchid {
-    @apply bg-gradient-orchid bg-clip-text text-transparent;
+    @apply bg-bolum text-white font-semibold rounded-2xl px-4 py-3 shadow-glow basinca
+           transition-[filter,transform,box-shadow] duration-200
+           hover:brightness-110
+           disabled:bg-none disabled:bg-ink-200 disabled:text-ink-500 disabled:shadow-none disabled:cursor-not-allowed;
   }
 
   .btn-ghost {
-    @apply bg-transparent text-ink-500 font-medium rounded-2xl px-4 py-3
-           active:scale-[0.97] transition-all duration-150
-           hover:bg-ink-50;
+    @apply bg-transparent text-ink-500 font-medium rounded-2xl px-4 py-3 basinca
+           transition-colors duration-150
+           hover:bg-ink-50 active:bg-ink-100;
   }
 
   .chip {
-    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1.5
-           text-sm font-medium transition-all duration-150
-           active:scale-95;
+    @apply inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5
+           text-sm font-medium transition-all duration-200 basinca;
   }
 
+  /* Children of a list arrive one after another. */
+  .kademeli > * {
+    animation: slideUp 460ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  .kademeli > *:nth-child(1) { animation-delay: 30ms; }
+  .kademeli > *:nth-child(2) { animation-delay: 70ms; }
+  .kademeli > *:nth-child(3) { animation-delay: 110ms; }
+  .kademeli > *:nth-child(4) { animation-delay: 150ms; }
+  .kademeli > *:nth-child(5) { animation-delay: 190ms; }
+  .kademeli > *:nth-child(6) { animation-delay: 230ms; }
+  .kademeli > *:nth-child(7) { animation-delay: 270ms; }
+  .kademeli > *:nth-child(n + 8) { animation-delay: 300ms; }
+
   .input-field {
-    @apply w-full bg-mist-100 border border-ink-100 rounded-xl px-3 py-2.5
-           text-ink-700 font-medium placeholder:text-ink-300
-           focus:outline-none focus:bg-white focus:border-orchid-300 focus:ring-4 focus:ring-orchid-100
-           transition-all;
+    @apply w-full bg-white border border-ink-200 rounded-2xl px-3.5 py-2.5
+           text-ink-800 placeholder:text-ink-400
+           focus:outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100
+           transition-colors;
   }
 
   .skeleton {
@@ -120,7 +213,7 @@
      over the dimmed page (the 100vmax shadow is the backdrop), so the
      sidebar and the page under it stay in place. */
   .panel-tam {
-    @apply fixed inset-0 flex flex-col bg-mist-100/95 backdrop-blur-md animate-slide-up;
+    @apply fixed inset-0 flex flex-col bg-mist-100 animate-slide-up;
   }
   @media (min-width: 1024px) {
     .panel-tam {

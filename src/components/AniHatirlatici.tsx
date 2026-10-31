@@ -43,12 +43,12 @@ export function AniHatirlatici({ kayitlar }: { kayitlar: Kayit[] }) {
 
   return (
     <>
-      <div className="px-5 pb-3 space-y-2">
+      <div className="px-4 pb-3 space-y-2">
         {adaylar.map((k) => (
-          <div key={k.id} className="card p-4 bg-orchid-50/70 border-orchid-100">
+          <div key={k.id} className="card p-4 bg-brand-50/70 border-brand-100">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-orchid-100 flex items-center justify-center shrink-0">
-                <Icon name="Camera" className="w-5 h-5 text-orchid-500" />
+              <div className="w-10 h-10 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center shrink-0">
+                <Icon name="Camera" className="w-5 h-5 text-bolum-koyu" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-ink-700 truncate">
@@ -62,11 +62,11 @@ export function AniHatirlatici({ kayitlar }: { kayitlar: Kayit[] }) {
                 <div className="flex gap-2 mt-3">
                   <button
                     onClick={() => setGizlenen((e) => [...e, k.id])}
-                    className="chip bg-mist-100 text-ink-400 border border-ink-100 text-xs"
+                    className="chip bg-white text-ink-600 border border-ink-200 text-xs"
                   >
                     Şimdi değil
                   </button>
-                  <button onClick={() => setAcik(k)} className="chip bg-gradient-orchid text-white text-xs">
+                  <button onClick={() => setAcik(k)} className="chip bg-brand-600 text-white text-xs">
                     <Icon name="ImageIcon" className="w-4 h-4" />
                     Fotoğraf ekle
                   </button>

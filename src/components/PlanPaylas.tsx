@@ -20,7 +20,7 @@ function Sheet({ baslik, onKapat, children }: { baslik: string; onKapat: () => v
   useGeriIleKapat(onKapat)
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-ink-900/40 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-ink-900/40 animate-fade-in"
       onClick={onKapat}
     >
       <div
@@ -35,7 +35,7 @@ function Sheet({ baslik, onKapat, children }: { baslik: string; onKapat: () => v
           <button
             onClick={onKapat}
             aria-label="Kapat"
-            className="w-8 h-8 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform"
+            className="w-8 h-8 rounded-full bg-ink-50 flex items-center justify-center active:opacity-80 transition-transform"
           >
             <Icon name="X" className="w-4 h-4 text-ink-500" />
           </button>
@@ -65,7 +65,7 @@ function Satir({
     <button
       onClick={onClick}
       disabled={disabled}
-      className="w-full flex items-center gap-3 rounded-2xl p-2.5 text-left hover:bg-mist-100 active:scale-[0.98] transition-all disabled:opacity-50"
+      className="w-full flex items-center gap-3 rounded-2xl p-2.5 text-left hover:bg-mist-100 active:opacity-80 transition-all disabled:opacity-50"
     >
       {sol}
       <div className="flex-1 min-w-0">
@@ -115,17 +115,17 @@ export function PlanPaylasSheet({
         <Satir
           onClick={onUygunSaat}
           sol={
-            <span className="w-10 h-10 rounded-xl bg-orchid-100 flex items-center justify-center shrink-0">
-              <Icon name="Wand2" className="w-5 h-5 text-orchid-500" />
+            <span className="w-10 h-10 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center shrink-0">
+              <Icon name="Wand2" className="w-5 h-5 text-bolum-koyu" />
             </span>
           }
           baslik="Herkese uyan saati bul"
           alt="Ne yapmak istediğini yaz, gerisini yapay zekâ halletsin"
-          sag={<Icon name="ChevronRight" className="w-4 h-4 text-ink-300" />}
+          sag={<Icon name="ChevronRight" className="w-4 h-4 text-ink-400" />}
         />
       )}
 
-      <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mt-3 mb-1 px-1">Takvimimden</p>
+      <p className="text-label text-ink-500 mt-3 mb-1 px-1">Takvimimden</p>
       {planlar === null ? (
         <div className="skeleton h-14 rounded-2xl" />
       ) : planlar.length === 0 ? (
@@ -147,9 +147,9 @@ export function PlanPaylasSheet({
             alt={planOzeti(k)}
             sag={
               gonderilen === k.id ? (
-                <Icon name="Loader2" className="w-4 h-4 animate-spin text-ink-300" />
+                <Icon name="Loader2" className="w-4 h-4 animate-spin text-ink-400" />
               ) : (
-                <Icon name="Send" className="w-4 h-4 text-orchid-500" />
+                <Icon name="Send" className="w-4 h-4 text-ink-500" />
               )
             }
           />
@@ -205,7 +205,7 @@ export function PaylasimHedefiSheet({ kayit, onKapat }: { kayit: Kayit; onKapat:
     return (
       <Sheet baslik="Paylaşıldı" onKapat={onKapat}>
         <div className="text-center py-4">
-          <div className="w-14 h-14 rounded-full bg-teal-100 flex items-center justify-center mx-auto mb-3">
+          <div className="w-12 h-12 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center mx-auto mb-3">
             <Icon name="CheckCircle2" className="w-7 h-7 text-teal-600" />
           </div>
           <p className="text-sm text-ink-500 mb-5">
@@ -222,9 +222,9 @@ export function PaylasimHedefiSheet({ kayit, onKapat }: { kayit: Kayit; onKapat:
   const bos = arkadaslar !== null && arkadaslar.length === 0 && gruplar.length === 0
   const sag = (anahtar: string) =>
     gonderilen === anahtar ? (
-      <Icon name="Loader2" className="w-4 h-4 animate-spin text-ink-300" />
+      <Icon name="Loader2" className="w-4 h-4 animate-spin text-ink-400" />
     ) : (
-      <Icon name="Send" className="w-4 h-4 text-orchid-500" />
+      <Icon name="Send" className="w-4 h-4 text-ink-500" />
     )
 
   return (
@@ -242,7 +242,7 @@ export function PaylasimHedefiSheet({ kayit, onKapat }: { kayit: Kayit; onKapat:
       ) : (
         <>
           {gruplar.length > 0 && (
-            <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-1 px-1">Gruplar</p>
+            <p className="text-label text-ink-500 mb-1 px-1">Gruplar</p>
           )}
           {gruplar.map((g) => (
             <Satir
@@ -256,7 +256,7 @@ export function PaylasimHedefiSheet({ kayit, onKapat }: { kayit: Kayit; onKapat:
             />
           ))}
           {arkadaslar.length > 0 && (
-            <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mt-3 mb-1 px-1">Arkadaşlar</p>
+            <p className="text-label text-ink-500 mt-3 mb-1 px-1">Arkadaşlar</p>
           )}
           {arkadaslar.map((p) => (
             <Satir
