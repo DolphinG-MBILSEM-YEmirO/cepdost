@@ -141,7 +141,7 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
               aria-label="Ay görünümü"
               aria-pressed={gorunum === 'ay'}
               title={gorunum === 'ay' ? 'Haftaya dön' : 'Ayı göster'}
-              className={`w-11 h-11 rounded-full flex items-center justify-center active:scale-90 transition-all border ${
+              className={`w-11 h-11 rounded-full flex items-center justify-center active:opacity-80 transition-all border ${
                 gorunum === 'ay' ? 'bg-orchid-100 border-orchid-200 text-orchid-600' : 'bg-mist-50 border-ink-100 text-ink-400'
               }`}
             >
@@ -150,7 +150,7 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
             <button
               onClick={onAddClick}
               aria-label="Yeni kayıt ekle"
-              className="w-11 h-11 rounded-full bg-gradient-orchid text-white flex items-center justify-center shadow-soft active:scale-90 transition-transform"
+              className="w-11 h-11 rounded-full bg-orchid-600 text-white flex items-center justify-center shadow-soft active:opacity-80 transition-transform"
             >
               <Icon name="Plus" className="w-5 h-5" />
             </button>
@@ -173,7 +173,7 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
           <button
             onClick={() => setSelectedDate((d) => addDays(d, -1))}
             aria-label="Önceki gün"
-            className="w-9 h-9 rounded-full bg-mist-50 border border-ink-100 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+            className="w-9 h-9 rounded-full bg-mist-50 border border-ink-100 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
           >
             <Icon name="ChevronRight" className="w-4 h-4 text-ink-400 rotate-180" />
           </button>
@@ -190,10 +190,10 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
                   aria-label={`${d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' })}${count > 0 ? `, ${count} plan` : ''}`}
                   aria-pressed={active}
                   aria-current={today ? 'date' : undefined}
-                  className={`flex flex-col items-center gap-0.5 py-2 px-2.5 rounded-2xl transition-all active:scale-95 min-w-[52px]
-                    ${active ? 'bg-gradient-orchid text-white shadow-soft' : 'bg-mist-50 text-ink-400 border border-ink-100'}`}
+                  className={`flex flex-col items-center gap-0.5 py-2 px-2.5 rounded-2xl transition-all active:opacity-80 min-w-[52px]
+                    ${active ? 'bg-orchid-600 text-white shadow-soft' : 'bg-mist-50 text-ink-400 border border-ink-100'}`}
                 >
-                  <span className={`text-[10px] font-medium uppercase ${active ? 'text-mist-100' : 'text-ink-300'}`}>
+                  <span className={`text-[10px] font-medium uppercase ${active ? 'text-mist-100' : 'text-ink-400'}`}>
                     {d.toLocaleDateString('tr-TR', { weekday: 'short' })}
                   </span>
                   <span className={`text-lg font-bold font-display ${today && !active ? 'text-orchid-500' : ''}`}>{d.getDate()}</span>
@@ -206,7 +206,7 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
           <button
             onClick={() => setSelectedDate((d) => addDays(d, 1))}
             aria-label="Sonraki gün"
-            className="w-9 h-9 rounded-full bg-mist-50 border border-ink-100 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+            className="w-9 h-9 rounded-full bg-mist-50 border border-ink-100 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
           >
             <Icon name="ChevronRight" className="w-4 h-4 text-ink-400" />
           </button>
@@ -218,7 +218,7 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
             {!isTodayView && (
               <button
                 onClick={() => setSelectedDate(new Date())}
-                className="text-sm text-orchid-600 font-medium flex items-center gap-1 active:scale-95 transition-transform"
+                className="text-sm text-orchid-600 font-medium flex items-center gap-1 active:opacity-80 transition-transform"
               >
                 <Icon name="Calendar" className="w-4 h-4" />
                 Bugüne dön
@@ -228,7 +228,7 @@ export function BugunView({ kayitlar, loading, onAddClick, onRecordClick, onTogg
               <button
                 onClick={() => setGunuErtele(!gunuErtele)}
                 aria-expanded={gunuErtele}
-                className="ml-auto text-sm text-ink-400 font-medium flex items-center gap-1 active:scale-95 transition-transform"
+                className="ml-auto text-sm text-ink-400 font-medium flex items-center gap-1 active:opacity-80 transition-transform"
               >
                 <Icon name="CalendarClock" className="w-4 h-4" />
                 {gunuErtele ? 'Vazgeç' : isPastView ? 'Hepsini taşı' : 'Günü ertele'}
@@ -335,7 +335,7 @@ function Section({ title, icon, count, children, muted }: { title: string; icon:
       <div className="flex items-center gap-2 mb-3 px-1">
         <Icon name={icon} className={`w-4 h-4 ${muted ? 'text-teal-500' : 'text-orchid-500'}`} />
         <h2 className={`text-sm font-semibold ${muted ? 'text-teal-600' : 'text-ink-500'}`}>{title}</h2>
-        <span className="text-xs text-ink-300">{count}</span>
+        <span className="text-xs text-ink-400">{count}</span>
       </div>
       {children}
     </div>
@@ -355,15 +355,15 @@ function TimelineItem({ kayit, onClick, onToggle, onReschedule, rescheduling }: 
         <span className={`font-bold font-display text-center ${kayit.tumGun ? 'text-xs text-orchid-600 leading-tight' : 'text-sm text-ink-600'}`}>
           {timeLabel}
         </span>
-        {durLabel && <span className="text-[10px] text-ink-300 mt-0.5">{durLabel}</span>}
+        {durLabel && <span className="text-[10px] text-ink-400 mt-0.5">{durLabel}</span>}
       </div>
       <div className="relative">
         <div className={`w-3 h-3 rounded-full ${kayit.oncelik === 'yuksek' ? 'bg-rose-400' : kayit.oncelik === 'orta' ? 'bg-amber-400' : 'bg-ink-200'} ring-4 ring-mist-100 mt-2`} />
       </div>
       <div className="flex-1 min-w-0">
-        <div {...tiklanabilir(onClick)} className="card p-3.5 w-full text-left cursor-pointer active:scale-[0.98] transition-transform">
+        <div {...tiklanabilir(onClick)} className="card p-3.5 w-full text-left cursor-pointer active:opacity-80 transition-transform">
           <div className="flex items-start gap-2">
-            <button onClick={(e) => { e.stopPropagation(); onToggle() }} aria-label="Yapıldı olarak işaretle" className="shrink-0 mt-0.5 transition-transform active:scale-90 text-ink-200">
+            <button onClick={(e) => { e.stopPropagation(); onToggle() }} aria-label="Yapıldı olarak işaretle" className="shrink-0 mt-0.5 transition-transform active:opacity-80 text-ink-200">
               <Icon name="Circle" className="w-5 h-5" />
             </button>
             <div className="flex-1 min-w-0">
@@ -394,7 +394,7 @@ function TimelineItem({ kayit, onClick, onToggle, onReschedule, rescheduling }: 
             </div>
           </div>
         </div>
-        <button onClick={() => setShowReschedule(!showReschedule)} className="mt-1 text-xs text-ink-300 font-medium flex items-center gap-1 active:scale-95 transition-transform">
+        <button onClick={() => setShowReschedule(!showReschedule)} className="mt-1 text-xs text-ink-400 font-medium flex items-center gap-1 active:opacity-80 transition-transform">
           <Icon name="Calendar" className="w-3.5 h-3.5" />
           {showReschedule ? 'Vazgeç' : 'Ertele'}
         </button>
@@ -415,9 +415,9 @@ function UnscheduledItem({ kayit, onClick, onToggle, onReschedule, rescheduling 
 
   return (
     <div>
-      <div {...tiklanabilir(onClick)} className="card p-3.5 w-full text-left cursor-pointer active:scale-[0.98] transition-transform">
+      <div {...tiklanabilir(onClick)} className="card p-3.5 w-full text-left cursor-pointer active:opacity-80 transition-transform">
         <div className="flex items-start gap-2">
-          <button onClick={(e) => { e.stopPropagation(); onToggle() }} aria-label="Yapıldı olarak işaretle" className="shrink-0 mt-0.5 transition-transform active:scale-90 text-ink-200">
+          <button onClick={(e) => { e.stopPropagation(); onToggle() }} aria-label="Yapıldı olarak işaretle" className="shrink-0 mt-0.5 transition-transform active:opacity-80 text-ink-200">
             <Icon name="Circle" className="w-5 h-5" />
           </button>
           <div className="flex-1 min-w-0">
@@ -443,7 +443,7 @@ function UnscheduledItem({ kayit, onClick, onToggle, onReschedule, rescheduling 
           </div>
         </div>
       </div>
-      <button onClick={() => setShowReschedule(!showReschedule)} className="mt-1 ml-12 text-xs text-ink-300 font-medium flex items-center gap-1 active:scale-95 transition-transform">
+      <button onClick={() => setShowReschedule(!showReschedule)} className="mt-1 ml-12 text-xs text-ink-400 font-medium flex items-center gap-1 active:opacity-80 transition-transform">
         <Icon name="Calendar" className="w-3.5 h-3.5" />
         {showReschedule ? 'Vazgeç' : 'Ertele'}
       </button>
@@ -462,15 +462,15 @@ function DoneItem({ kayit, onClick, onToggle }: { kayit: Kayit; onClick: () => v
   const baslik = goruntulemeBasligi(kayit)
 
   return (
-    <div {...tiklanabilir(onClick)} className="card p-3 w-full text-left cursor-pointer active:scale-[0.98] transition-transform opacity-60">
+    <div {...tiklanabilir(onClick)} className="card p-3 w-full text-left cursor-pointer active:opacity-80 transition-transform opacity-60">
       <div className="flex items-center gap-2">
-        <button onClick={(e) => { e.stopPropagation(); onToggle() }} aria-label="Bekliyor olarak işaretle" className="shrink-0 transition-transform active:scale-90 text-teal-500">
+        <button onClick={(e) => { e.stopPropagation(); onToggle() }} aria-label="Bekliyor olarak işaretle" className="shrink-0 transition-transform active:opacity-80 text-teal-500">
           <Icon name="CheckCircle2" className="w-5 h-5" />
         </button>
         <span className={`chip ${colors.bg} ${colors.text} text-xs py-0.5`}>
           <Icon name={CATEGORY_ICON_NAME[kayit.kategori ?? 'not']} className="w-3 h-3" />
         </span>
-        {timeLabel && <span className="text-xs text-ink-300">{timeLabel}</span>}
+        {timeLabel && <span className="text-xs text-ink-400">{timeLabel}</span>}
         <span className="text-sm text-ink-500 truncate flex-1 line-through">{baslik}</span>
       </div>
     </div>

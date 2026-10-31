@@ -131,7 +131,7 @@ export function MesajSatiri({
         <span title={mesaj.okundu ? 'Okundu' : 'Gönderildi'} aria-label={mesaj.okundu ? 'Okundu' : 'Gönderildi'}>
           <Icon
             name={mesaj.okundu ? 'CheckCheck' : 'Check'}
-            className={`w-3.5 h-3.5 ${mesaj.okundu ? 'text-orchid-500' : 'text-ink-300'}`}
+            className={`w-3.5 h-3.5 ${mesaj.okundu ? 'text-orchid-500' : 'text-ink-400'}`}
           />
         </span>
       )}
@@ -239,7 +239,7 @@ function TepkiRozeti({ mesaj, islemler }: { mesaj: SohbetMesaji; islemler: Mesaj
       type="button"
       onClick={() => islemler.tepkileriAc(mesaj)}
       aria-label={`${mesaj.tepkiler.length} tepki: ${emojiler.join(' ')}. Kimlerin bıraktığını gör`}
-      className={`relative z-[1] inline-flex items-center gap-1 rounded-full bg-mist-50 border px-1.5 py-0.5 text-sm leading-none shadow-sm active:scale-95 transition-transform ${
+      className={`relative z-[1] inline-flex items-center gap-1 rounded-full bg-mist-50 border px-1.5 py-0.5 text-sm leading-none shadow-sm active:opacity-80 transition-transform ${
         benimki ? 'border-orchid-300' : 'border-ink-100'
       }`}
     >
@@ -280,7 +280,7 @@ export function SohbetUstSeridi({ islemler }: { islemler: MesajIslemleri }) {
             type="button"
             onClick={() => islemler.sabitDegistir(null)}
             aria-label="Sabitlemeyi kaldır"
-            className="w-8 h-8 rounded-full flex items-center justify-center text-ink-400 hover:bg-ink-50 active:scale-90 transition shrink-0"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-ink-400 hover:bg-ink-50 active:opacity-80 transition shrink-0"
           >
             <Icon name="PinOff" className="w-4 h-4" />
           </button>
@@ -324,7 +324,7 @@ export function MesajYazmaAlani({ islemler, onPlanPaylas }: { islemler: MesajIsl
             type="button"
             onClick={islemler.yazmaCubugunuKapat}
             aria-label={duzenlenen ? 'Düzenlemeyi bırak' : 'Yanıtı bırak'}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-ink-400 hover:bg-ink-50 active:scale-90 transition shrink-0"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-ink-400 hover:bg-ink-50 active:opacity-80 transition shrink-0"
           >
             <Icon name="X" className="w-4 h-4" />
           </button>
@@ -334,7 +334,7 @@ export function MesajYazmaAlani({ islemler, onPlanPaylas }: { islemler: MesajIsl
         <button
           onClick={onPlanPaylas}
           aria-label="Plan paylaş"
-          className="w-11 h-11 rounded-full bg-orchid-100 text-orchid-600 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          className="w-11 h-11 rounded-full bg-orchid-100 text-orchid-600 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
         >
           <Icon name="CalendarPlus" className="w-5 h-5" />
         </button>
@@ -451,7 +451,7 @@ function MenuIcerigi({ mesaj, islemler, buyuk = false }: { mesaj: SohbetMesaji; 
       onClick={() => islemler.tepkiSec(mesaj, emoji)}
       aria-label={`${emoji} bırak`}
       aria-pressed={benimTepkim === emoji}
-      className={`${buyuk ? 'w-11 h-11 text-2xl' : 'w-9 h-9 text-xl'} rounded-full flex items-center justify-center hover:bg-ink-50 active:scale-90 transition ${
+      className={`${buyuk ? 'w-11 h-11 text-2xl' : 'w-9 h-9 text-xl'} rounded-full flex items-center justify-center hover:bg-ink-50 active:opacity-80 transition ${
         benimTepkim === emoji ? 'bg-orchid-100' : ''
       }`}
     >
@@ -473,7 +473,7 @@ function MenuIcerigi({ mesaj, islemler, buyuk = false }: { mesaj: SohbetMesaji; 
               type="button"
               onClick={() => setTumEmojiler(true)}
               aria-label="Başka bir emoji seç"
-              className={`${buyuk ? 'w-11 h-11' : 'w-9 h-9'} rounded-full bg-ink-50 text-ink-500 flex items-center justify-center hover:bg-ink-100 active:scale-90 transition`}
+              className={`${buyuk ? 'w-11 h-11' : 'w-9 h-9'} rounded-full bg-ink-50 text-ink-500 flex items-center justify-center hover:bg-ink-100 active:opacity-80 transition`}
             >
               <Icon name="SmilePlus" className="w-5 h-5" />
             </button>
@@ -553,7 +553,7 @@ function AltSayfa({
   useGeriIleKapat(onKapat)
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-end justify-center bg-ink-900/40 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[80] flex items-end justify-center bg-ink-900/40 animate-fade-in"
       onClick={onKapat}
     >
       <div
@@ -585,7 +585,7 @@ function SilmeSayfasi({ mesaj, islemler }: { mesaj: SohbetMesaji; islemler: Mesa
           <button
             type="button"
             onClick={() => islemler.sil(mesaj, true)}
-            className="w-full rounded-2xl bg-rose-50 text-rose-700 font-semibold px-4 py-3 active:scale-[0.98] transition"
+            className="w-full rounded-2xl bg-rose-50 text-rose-700 font-semibold px-4 py-3 active:opacity-80 transition"
           >
             Herkesten sil
           </button>
@@ -593,7 +593,7 @@ function SilmeSayfasi({ mesaj, islemler }: { mesaj: SohbetMesaji; islemler: Mesa
         <button
           type="button"
           onClick={() => islemler.sil(mesaj, false)}
-          className="w-full rounded-2xl bg-ink-50 text-ink-700 font-semibold px-4 py-3 active:scale-[0.98] transition"
+          className="w-full rounded-2xl bg-ink-50 text-ink-700 font-semibold px-4 py-3 active:opacity-80 transition"
         >
           Benden sil
         </button>
@@ -664,7 +664,7 @@ function IletmeSayfasi({ mesaj, islemler }: { mesaj: SohbetMesaji; islemler: Mes
       <div className="max-h-72 overflow-y-auto -mx-1">
         {sohbetler === null ? (
           <div className="flex justify-center py-6">
-            <Icon name="Loader2" className="w-5 h-5 animate-spin text-ink-300" />
+            <Icon name="Loader2" className="w-5 h-5 animate-spin text-ink-400" />
           </div>
         ) : gorunen.length === 0 ? (
           <p className="text-sm text-ink-400 text-center py-6">Sohbet bulunamadı.</p>
@@ -765,12 +765,12 @@ function BilgiSayfasi({ mesaj, islemler }: { mesaj: SohbetMesaji; islemler: Mesa
         <p className="text-sm text-rose-600 px-1">{hata}</p>
       ) : !bilgi ? (
         <div className="flex justify-center py-4">
-          <Icon name="Loader2" className="w-5 h-5 animate-spin text-ink-300" />
+          <Icon name="Loader2" className="w-5 h-5 animate-spin text-ink-400" />
         </div>
       ) : (
         <>
           {liste('Okudu', bilgi.okuyanlar, 'CheckCheck', 'text-orchid-500')}
-          {liste('Henüz okumadı', bilgi.bekleyenler, 'Check', 'text-ink-300')}
+          {liste('Henüz okumadı', bilgi.bekleyenler, 'Check', 'text-ink-400')}
         </>
       )}
     </AltSayfa>
@@ -841,7 +841,7 @@ function YildizliSayfasi({ islemler }: { islemler: MesajIslemleri }) {
                 type="button"
                 onClick={() => islemler.yildizDegistir(m)}
                 aria-label="Yıldızı kaldır"
-                className="w-9 h-9 rounded-full flex items-center justify-center text-amber-500 hover:bg-amber-50 active:scale-90 transition shrink-0"
+                className="w-9 h-9 rounded-full flex items-center justify-center text-amber-500 hover:bg-amber-50 active:opacity-80 transition shrink-0"
               >
                 <Icon name="StarOff" className="w-4 h-4" />
               </button>

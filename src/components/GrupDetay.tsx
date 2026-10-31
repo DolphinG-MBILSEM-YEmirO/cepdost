@@ -126,7 +126,7 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
         <button
           onClick={onClose}
           aria-label="Geri"
-          className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
         >
           <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />
         </button>
@@ -145,7 +145,7 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
               setAramaAcik(true)
             }}
             aria-label="Sohbette ara"
-            className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+            className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
           >
             <Icon name="Search" className="w-5 h-5 text-ink-400" />
           </button>
@@ -154,7 +154,7 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
           <button
             onClick={() => setTemaAcik(true)}
             aria-label="Sohbet temasını değiştir"
-            className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+            className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
           >
             <Icon name="Palette" className="w-5 h-5 text-ink-400" />
           </button>
@@ -162,7 +162,7 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
         <button
           onClick={() => setDuzenleAcik(true)}
           aria-label="Grubu düzenle"
-          className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
         >
           <Icon name="Pencil" className="w-4 h-4 text-ink-400" />
         </button>
@@ -186,7 +186,7 @@ export function GrupDetay({ grup: acilanGrup, benimId, arkadaslar, onClose, onAy
             key={s.id}
             onClick={() => setSekme(s.id)}
             className={`chip shrink-0 ${
-              sekme === s.id ? 'bg-gradient-orchid text-white' : 'bg-mist-50 text-ink-400 border border-ink-100'
+              sekme === s.id ? 'bg-orchid-600 text-white' : 'bg-mist-50 text-ink-400 border border-ink-100'
             }`}
           >
             <Icon name={s.ikon} className="w-4 h-4" />
@@ -391,7 +391,7 @@ function PlanlarSekmesi({
           ].map((p, i, liste) => (
             <div key={p.id}>
               {planGectiMi(p.tarih) && (i === 0 || !planGectiMi(liste[i - 1].tarih)) && (
-                <p className="text-xs font-semibold text-ink-300 uppercase tracking-wide mt-2 mb-3 px-1">Geçmiş planlar</p>
+                <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mt-2 mb-3 px-1">Geçmiş planlar</p>
               )}
               <PlanKarti
                 plan={p}
@@ -461,13 +461,13 @@ function PlanKarti({
   const secenekler: { d: YanitDurumu; etiket: string; renk: string }[] = [
     { d: 'geliyorum', etiket: 'Geliyorum', renk: 'bg-teal-500 text-white' },
     { d: 'belki', etiket: 'Belki', renk: 'bg-amber-400 text-amber-900' },
-    { d: 'gelmiyorum', etiket: 'Yokum', renk: 'bg-ink-200 text-ink-600' },
+    { d: 'gelmiyorum', etiket: 'Gelemem', renk: 'bg-ink-200 text-ink-600' },
   ]
 
   return (
     <div className="card p-4">
       {/* The plan's own page: everyone's answer and who brings what. */}
-      <button onClick={onAc} className="w-full flex items-start gap-2 text-left active:scale-[0.99] transition-transform">
+      <button onClick={onAc} className="w-full flex items-start gap-2 text-left active:opacity-80 transition-transform">
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-ink-700">
             {plan.emoji && <span aria-hidden="true">{plan.emoji} </span>}
@@ -491,7 +491,7 @@ function PlanKarti({
       </p>
 
       {planGectiMi(plan.tarih) ? (
-        <p className="text-xs font-semibold text-ink-300">Bu plan geçti</p>
+        <p className="text-xs font-semibold text-ink-400">Bu plan geçti</p>
       ) : (
         <div className="flex gap-2">
           {secenekler.map((s) => (
@@ -499,7 +499,7 @@ function PlanKarti({
               key={s.d}
               onClick={() => onYanit(s.d)}
               aria-pressed={benimYanit === s.d}
-              className={`flex-1 rounded-xl py-2 text-xs font-semibold active:scale-95 transition-all ${
+              className={`flex-1 rounded-xl py-2 text-xs font-semibold active:opacity-80 transition-all ${
                 benimYanit === s.d ? s.renk : 'bg-mist-100 text-ink-400 border border-ink-100'
               }`}
             >
@@ -555,7 +555,7 @@ function PlanEkleModal({
       // Hangi yoldan oluşturulursa oluşturulsun plan sohbete düşsün —
       // yoksa üyeler Planlar sekmesine bakmadan haberdar olmuyor.
       try {
-        await mesajGonder(grup.id, 'Yeni bir plan 👇', planId)
+        await mesajGonder(grup.id, 'Yeni bir plan', planId)
       } catch {
         /* plan oluştu; sohbet kartı isteğe bağlı bir ekstra */
       }
@@ -573,7 +573,7 @@ function PlanEkleModal({
 
   return (
     <div
-      className="fixed inset-0 z-[65] flex items-end sm:items-center justify-center bg-ink-900/40 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[65] flex items-end sm:items-center justify-center bg-ink-900/40 animate-fade-in"
       onClick={onClose}
     >
       <div
@@ -881,7 +881,7 @@ function UyelerSekmesi({
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-ink-700 truncate">
                   {u.profil?.ad ?? `${UYGULAMA_ADI} kullanıcısı`}
-                  {ben && <span className="text-ink-300 font-normal"> (sen)</span>}
+                  {ben && <span className="text-ink-400 font-normal"> (sen)</span>}
                 </p>
                 <p className="text-xs text-ink-400">{bag ? `${rol} · ${bag}` : rol}</p>
               </div>
@@ -896,10 +896,10 @@ function UyelerSekmesi({
             <button
               key={u.kullanici_id}
               onClick={() => onUyeAc(u)}
-              className="w-full card p-4 flex items-center gap-3 text-left active:scale-[0.99] transition-transform lg:hover:border-orchid-200"
+              className="w-full card p-4 flex items-center gap-3 text-left active:opacity-80 transition-transform lg:hover:border-orchid-200"
             >
               {icerik}
-              <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />
+              <Icon name="ChevronRight" className="w-4 h-4 text-ink-400 shrink-0" />
             </button>
           )
         })}
@@ -943,7 +943,7 @@ function UyelerSekmesi({
           await gruptanAyril(grup.id, benimId)
           await onAyrildi()
         }}
-        className={`w-full rounded-2xl py-3 text-sm font-semibold transition-all active:scale-[0.97] ${
+        className={`w-full rounded-2xl py-3 text-sm font-semibold transition-all active:opacity-80 ${
           ayrilOnay ? 'bg-rose-500 text-white' : 'bg-mist-50 text-rose-600 border border-rose-100'
         }`}
       >

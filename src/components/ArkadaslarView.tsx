@@ -194,7 +194,7 @@ function ArkadaslarIcerik({
               {kabulEdilmis.length > 0 && (
                 <button
                   onClick={() => setSihirbazAcik(true)}
-                  className="w-full card p-4 flex items-center gap-3 text-left active:scale-[0.98] transition-transform"
+                  className="w-full card p-4 flex items-center gap-3 text-left active:opacity-80 transition-transform"
                 >
                   <div className="w-10 h-10 rounded-2xl bg-orchid-100 flex items-center justify-center shrink-0">
                     <Icon name="Wand2" className="w-5 h-5 text-orchid-500" />
@@ -205,7 +205,7 @@ function ArkadaslarIcerik({
                       Arkadaşlarını seç, gerisini yapay zekâ halletsin
                     </p>
                   </div>
-                  <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />
+                  <Icon name="ChevronRight" className="w-4 h-4 text-ink-400 shrink-0" />
                 </button>
               )}
             </div>
@@ -249,14 +249,14 @@ function ArkadaslarIcerik({
                     <button
                       key={g.id}
                       onClick={() => setSeciliGrup(g)}
-                      className="card p-4 w-full flex items-center gap-3 text-left active:scale-[0.98] transition-transform"
+                      className="card p-4 w-full flex items-center gap-3 text-left active:opacity-80 transition-transform"
                     >
                       <GrupAvatari grup={g} boyut="sm" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-ink-700 truncate">{g.ad}</p>
                         <GrupAltSatiri grup={g} siradaki={ozetler?.siradakiler.get(g.id)} bugun={bugun} />
                       </div>
-                      <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />
+                      <Icon name="ChevronRight" className="w-4 h-4 text-ink-400 shrink-0" />
                     </button>
                   ))}
                   <button
@@ -278,14 +278,14 @@ function ArkadaslarIcerik({
                         <Avatar ad={a.profil.ad} foto={a.profil.avatar} emoji={a.profil.emoji} renk={a.profil.renk} boyut="sm" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-ink-600 truncate">{a.profil.ad}</p>
-                          <p className="text-xs text-ink-300">Onay bekleniyor</p>
+                          <p className="text-xs text-ink-400">Onay bekleniyor</p>
                         </div>
                         <button
                           onClick={async () => {
                             await arkadasliktanCik(a.arkadaslikId)
                             await tazele()
                           }}
-                          className="text-xs font-medium text-ink-400 active:scale-95 transition-transform"
+                          className="text-xs font-medium text-ink-400 active:opacity-80 transition-transform"
                         >
                           İptal
                         </button>
@@ -407,7 +407,7 @@ function GrupKurModal({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink-900/40 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink-900/40 animate-fade-in"
       onClick={onClose}
     >
       <div
@@ -462,7 +462,7 @@ function GrupKurModal({
               <button
                 key={a.profil.id}
                 onClick={() => degistir(a.profil.id)}
-                className={`w-full flex items-center gap-3 rounded-2xl p-3 border transition-all active:scale-[0.98] ${
+                className={`w-full flex items-center gap-3 rounded-2xl p-3 border transition-all active:opacity-80 ${
                   secili ? 'bg-orchid-50 border-orchid-200' : 'bg-mist-100 border-ink-100'
                 }`}
               >
@@ -564,7 +564,7 @@ function BeniPaylas({ kod, kullaniciAdi }: { kod: string; kullaniciAdi: string |
         {kullaniciAdi && (
           <button
             onClick={() => void kopyala()}
-            className="w-9 h-9 rounded-xl bg-mist-100 border border-ink-100 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+            className="w-9 h-9 rounded-xl bg-mist-100 border border-ink-100 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
             aria-label="Kullanıcı adını kopyala"
           >
             <Icon
@@ -805,7 +805,7 @@ function ArkadasKarti({
 
   return (
     <div className="card p-4 flex items-center gap-3">
-      <button onClick={onAc} className="flex items-center gap-3 flex-1 min-w-0 text-left active:scale-[0.98] transition-transform">
+      <button onClick={onAc} className="flex items-center gap-3 flex-1 min-w-0 text-left active:opacity-80 transition-transform">
         <Avatar ad={arkadas.profil.ad} foto={arkadas.profil.avatar} emoji={arkadas.profil.emoji} renk={arkadas.profil.renk} boyut="sm" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-ink-700 truncate">{arkadas.profil.ad}</p>
@@ -826,7 +826,7 @@ function ArkadasKarti({
             </p>
           ) : null}
         </div>
-        <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />
+        <Icon name="ChevronRight" className="w-4 h-4 text-ink-400 shrink-0" />
       </button>
       {onay ? (
         <div className="flex gap-1.5 shrink-0">
@@ -849,10 +849,10 @@ function ArkadasKarti({
       ) : (
         <button
           onClick={() => setOnay(true)}
-          className="w-8 h-8 rounded-lg flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          className="w-8 h-8 rounded-lg flex items-center justify-center active:opacity-80 transition-transform shrink-0"
           aria-label="Arkadaşlıktan çıkar"
         >
-          <Icon name="Trash2" className="w-4 h-4 text-ink-300" />
+          <Icon name="Trash2" className="w-4 h-4 text-ink-400" />
         </button>
       )}
     </div>
@@ -883,7 +883,7 @@ function UzunAraKarti({
           const son = gecmisler.get(a.profil.id)?.sonBulusma
           return (
             <div key={a.arkadaslikId} className="flex items-center gap-3">
-              <button onClick={() => onAc(a)} className="flex items-center gap-3 flex-1 min-w-0 text-left active:scale-[0.98] transition-transform">
+              <button onClick={() => onAc(a)} className="flex items-center gap-3 flex-1 min-w-0 text-left active:opacity-80 transition-transform">
                 <Avatar ad={a.profil.ad} foto={a.profil.avatar} emoji={a.profil.emoji} renk={a.profil.renk} boyut="sm" />
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-ink-700 truncate">{a.profil.ad}</p>
@@ -897,7 +897,7 @@ function UzunAraKarti({
               <button
                 onClick={() => onPlanla(a.profil)}
                 aria-label={`${a.profil.ad} ile plan yap`}
-                className="chip bg-orchid-50 text-orchid-600 border border-orchid-100 text-xs shrink-0 active:scale-95"
+                className="chip bg-orchid-50 text-orchid-600 border border-orchid-100 text-xs shrink-0 active:opacity-80"
               >
                 <Icon name="CalendarPlus" className="w-3.5 h-3.5" />
                 Plan yap
@@ -1003,12 +1003,12 @@ function Bolum({
   soluk?: boolean
   children: React.ReactNode
 }) {
-  const renk = soluk ? 'text-ink-300' : 'text-ink-400'
+  const renk = soluk ? 'text-ink-400' : 'text-ink-400'
   return (
     <div>
       <div className="flex items-center gap-2 mb-3 px-1">
         <Icon name={ikon} className={`w-4 h-4 ${renk}`} />
-        <h2 className={`text-sm font-semibold ${soluk ? 'text-ink-300' : 'text-ink-500'}`}>{baslik}</h2>
+        <h2 className={`text-sm font-semibold ${soluk ? 'text-ink-400' : 'text-ink-500'}`}>{baslik}</h2>
         <span className={`text-xs ${renk}`}>{sayi}</span>
       </div>
       {children}

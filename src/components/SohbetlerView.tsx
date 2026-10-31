@@ -167,7 +167,7 @@ export function SohbetlerView({ onDegisti, ust, onArkadasEkle, acilacak, onAcild
 
           {sohbetler && sohbetler.length > 0 && (
             <div className="relative mb-3" role="search">
-              <Icon name="Search" className="w-4 h-4 text-ink-300 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Icon name="Search" className="w-4 h-4 text-ink-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="search"
                 value={arama}
@@ -226,7 +226,7 @@ export function SohbetlerView({ onDegisti, ust, onArkadasEkle, acilacak, onAcild
               {bos.length > 0 && (
                 <>
                   {yazisilmis.length > 0 && (
-                    <p className="text-xs font-semibold text-ink-300 uppercase tracking-wide pt-4 pb-1 px-1">
+                    <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide pt-4 pb-1 px-1">
                       Yeni sohbet başlat
                     </p>
                   )}
@@ -271,7 +271,7 @@ function AramaSonuclari({
   onSohbet: (s: Sohbet) => void
   onMesaj: (r: MesajSonucu) => void
 }) {
-  const baslik = 'text-xs font-semibold text-ink-300 uppercase tracking-wide pt-2 pb-1 px-1'
+  const baslik = 'text-xs font-semibold text-ink-400 uppercase tracking-wide pt-2 pb-1 px-1'
   if (sohbetler.length === 0 && mesajlar?.length === 0) {
     return <p className="text-sm text-ink-400 text-center py-10">Bir şey bulunamadı.</p>
   }
@@ -288,7 +288,7 @@ function AramaSonuclari({
       <p className={baslik}>Mesajlar</p>
       {mesajlar === null ? (
         <div className="flex justify-center py-4">
-          <Icon name="Loader2" className="w-5 h-5 animate-spin text-ink-300" />
+          <Icon name="Loader2" className="w-5 h-5 animate-spin text-ink-400" />
         </div>
       ) : mesajlar.length === 0 ? (
         <p className="text-sm text-ink-400 px-1 py-2">Mesajlarda geçmiyor.</p>
@@ -318,7 +318,7 @@ function SohbetSatiri({ sohbet, secili = false, onAc }: { sohbet: Sohbet; secili
     <button
       onClick={onAc}
       aria-current={secili ? 'true' : undefined}
-      className={`w-full card p-3 flex items-center gap-3 text-left active:scale-[0.98] transition-all lg:hover:border-orchid-200 ${
+      className={`w-full card p-3 flex items-center gap-3 text-left active:opacity-80 transition-all lg:hover:border-orchid-200 ${
         secili ? 'ring-2 ring-orchid-300 border-transparent' : ''
       }`}
     >
@@ -332,7 +332,7 @@ function SohbetSatiri({ sohbet, secili = false, onAc }: { sohbet: Sohbet; secili
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold text-ink-700 truncate flex-1">{sohbet.ad}</p>
           {sohbet.sonZaman && (
-            <span className="text-[11px] text-ink-300 shrink-0">
+            <span className="text-[11px] text-ink-400 shrink-0">
               {formatRelativeTime(new Date(sohbet.sonZaman).getTime())}
             </span>
           )}

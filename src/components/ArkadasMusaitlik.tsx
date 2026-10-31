@@ -109,7 +109,7 @@ export function ArkadasMusaitlik({ arkadas }: { arkadas: Profil }) {
         ))
       )}
 
-      <p className="text-[11px] text-ink-300 text-center pt-2 leading-relaxed">
+      <p className="text-[11px] text-ink-400 text-center pt-2 leading-relaxed">
         Sadece dolu saat aralıkları görünür — {arkadas.ad} o saatte ne yaptığını paylaşmıyor.
       </p>
 
@@ -170,14 +170,14 @@ function GunSatiri({
         </div>
         <button
           onClick={onDavet}
-          className="text-xs font-semibold text-orchid-600 active:scale-95 transition-transform shrink-0"
+          className="text-xs font-semibold text-orchid-600 active:opacity-80 transition-transform shrink-0"
         >
           Davet et
         </button>
       </div>
 
       {bilgiYok ? (
-        <p className="text-xs text-ink-300">
+        <p className="text-xs text-ink-400">
           {paylasimKapali ? 'Müsaitlik bilgisi paylaşılmıyor' : 'Müsaitlik bilgisi henüz yok'}
         </p>
       ) : bos ? (
@@ -189,7 +189,7 @@ function GunSatiri({
               key={b.id}
               className="inline-flex items-center gap-1.5 rounded-xl bg-mist-100 border border-ink-100 px-2.5 py-1.5 text-xs font-medium text-ink-500"
             >
-              <Icon name="Clock" className="w-3.5 h-3.5 text-ink-300" />
+              <Icon name="Clock" className="w-3.5 h-3.5 text-ink-400" />
               {b.baslangic.slice(0, 5) === '00:00' && b.bitis.slice(0, 5) >= '23:59'
                 ? 'Bütün gün'
                 : `${b.baslangic.slice(0, 5)} – ${b.bitis.slice(0, 5)}`}
@@ -253,7 +253,7 @@ function DavetModal({
 
   if (basarili) {
     return (
-      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-ink-900/40 backdrop-blur-sm animate-fade-in px-4">
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-ink-900/40 animate-fade-in px-4">
         <div className="card w-full max-w-sm p-6 text-center animate-slide-up">
           <div className="w-14 h-14 rounded-full bg-teal-100 flex items-center justify-center mx-auto mb-4">
             <Icon name="CheckCircle2" className="w-7 h-7 text-teal-600" />
@@ -272,7 +272,7 @@ function DavetModal({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink-900/40 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink-900/40 animate-fade-in"
       onClick={onClose}
     >
       <div

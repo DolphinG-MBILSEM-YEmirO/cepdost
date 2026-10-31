@@ -54,7 +54,7 @@ export function PlanTercihleri({ paylasimAcik }: { paylasimAcik: boolean }) {
             onChange={(e) => saatleriKaydet(e.target.value, bitis)}
             className="input-field flex-1 min-w-0 px-3 text-sm"
           />
-          <span className="text-ink-300" aria-hidden="true">–</span>
+          <span className="text-ink-400" aria-hidden="true">–</span>
           <input
             type="time"
             aria-label="En geç saat"
@@ -66,7 +66,7 @@ export function PlanTercihleri({ paylasimAcik }: { paylasimAcik: boolean }) {
             <button
               onClick={() => saatleriKaydet('', '')}
               aria-label="Saat aralığını temizle"
-              className="w-9 h-9 rounded-xl bg-mist-50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+              className="w-9 h-9 rounded-xl bg-mist-50 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
             >
               <Icon name="X" className="w-4 h-4 text-ink-400" />
             </button>
@@ -88,7 +88,7 @@ export function PlanTercihleri({ paylasimAcik }: { paylasimAcik: boolean }) {
               onClick={() => planAyarlariniKaydet({ ...ayar, yolPayiDk: dk })}
               aria-pressed={ayar.yolPayiDk === dk}
               className={`chip flex-1 justify-center ${
-                ayar.yolPayiDk === dk ? 'bg-gradient-orchid text-white' : 'bg-mist-50 text-ink-500 border border-ink-100'
+                ayar.yolPayiDk === dk ? 'bg-orchid-600 text-white' : 'bg-mist-50 text-ink-500 border border-ink-100'
               }`}
             >
               {dk === 0 ? 'Yok' : `${dk} dk`}

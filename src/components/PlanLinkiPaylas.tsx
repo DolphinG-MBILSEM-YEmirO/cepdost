@@ -53,9 +53,9 @@ export function LinkSatiri({ kayit }: { kayit: Kayit }) {
       <button
         onClick={() => void paylas()}
         disabled={durum === 'calisiyor'}
-        className="w-full flex items-center gap-3 rounded-2xl p-2.5 text-left bg-orchid-50/60 hover:bg-orchid-50 active:scale-[0.98] transition-all disabled:opacity-60"
+        className="w-full flex items-center gap-3 rounded-2xl p-2.5 text-left bg-orchid-50/60 hover:bg-orchid-50 active:opacity-80 transition-all disabled:opacity-60"
       >
-        <span className="w-10 h-10 rounded-xl bg-gradient-orchid flex items-center justify-center shrink-0">
+        <span className="w-10 h-10 rounded-xl bg-orchid-600 flex items-center justify-center shrink-0">
           <Icon name="Link2" className="w-5 h-5 text-white" />
         </span>
         <div className="flex-1 min-w-0">
@@ -64,7 +64,7 @@ export function LinkSatiri({ kayit }: { kayit: Kayit }) {
         </div>
         <Icon
           name={durum === 'calisiyor' ? 'Loader2' : durum === 'bos' ? 'Share2' : 'Check'}
-          className={`w-4 h-4 shrink-0 ${durum === 'calisiyor' ? 'animate-spin text-ink-300' : 'text-orchid-500'}`}
+          className={`w-4 h-4 shrink-0 ${durum === 'calisiyor' ? 'animate-spin text-ink-400' : 'text-orchid-500'}`}
         />
       </button>
       {hata && <p className="text-xs text-rose-600 mt-2 px-1">{hata}</p>}
@@ -132,7 +132,7 @@ export function LinkYanitlari({ kayit }: { kayit: Kayit }) {
       <div className="flex gap-2">
         <button
           onClick={() => void paylas()}
-          className="flex-1 bg-orchid-50 text-orchid-700 font-medium rounded-2xl px-4 py-3 flex items-center justify-center gap-2 active:scale-[0.97] transition-all hover:bg-orchid-100"
+          className="flex-1 bg-orchid-50 text-orchid-700 font-medium rounded-2xl px-4 py-3 flex items-center justify-center gap-2 active:opacity-80 transition-all hover:bg-orchid-100"
         >
           <Icon name="Share2" className="w-4 h-4" />
           Linki paylaş
@@ -140,7 +140,7 @@ export function LinkYanitlari({ kayit }: { kayit: Kayit }) {
         <button
           onClick={() => void kopyala()}
           aria-label="Linki kopyala"
-          className="w-12 rounded-2xl bg-mist-100 border border-ink-100 flex items-center justify-center active:scale-95 transition-transform"
+          className="w-12 rounded-2xl bg-mist-100 border border-ink-100 flex items-center justify-center active:opacity-80 transition-transform"
         >
           <Icon name={kopyalandi ? 'Check' : 'Copy'} className={`w-4 h-4 ${kopyalandi ? 'text-teal-600' : 'text-ink-400'}`} />
         </button>

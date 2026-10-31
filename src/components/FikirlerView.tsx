@@ -72,7 +72,7 @@ export function FikirlerView({ kayitlar, onRecordClick }: Props) {
               onClick={() => setFiltre(f)}
               aria-pressed={filtre === f}
               className={`chip text-xs shrink-0 ${
-                filtre === f ? 'bg-gradient-orchid text-white' : 'bg-mist-50 text-ink-400 border border-ink-100'
+                filtre === f ? 'bg-orchid-600 text-white' : 'bg-mist-50 text-ink-400 border border-ink-100'
               }`}
             >
               {f === 'hepsi' ? 'Hepsi' : CATEGORY_LABELS[f]}
@@ -163,7 +163,7 @@ function FikirKarti({
   }
 
   return (
-    <div {...tiklanabilir(onAc)} className="card p-4 cursor-pointer transition-all duration-200 active:scale-[0.99]">
+    <div {...tiklanabilir(onAc)} className="card p-4 cursor-pointer transition-all duration-200 active:opacity-80">
       <div className="flex items-start gap-3">
         <div className={`w-11 h-11 rounded-2xl ${renk.bg} ${renk.text} flex items-center justify-center text-xl shrink-0`}>
           {fikir.emoji ? <span aria-hidden="true">{fikir.emoji}</span> : <Icon name={CATEGORY_ICON_NAME[kategori]} className="w-5 h-5" />}
@@ -200,7 +200,7 @@ function FikirKarti({
         <button
           onClick={durdur(onGunSecici)}
           aria-expanded={gunSeciliyor}
-          className={`chip text-xs active:scale-95 ${
+          className={`chip text-xs active:opacity-80 ${
             gunSeciliyor ? 'bg-orchid-50 text-orchid-700 border border-orchid-100' : 'bg-mist-50 text-ink-500 border border-ink-100'
           }`}
         >
@@ -208,7 +208,7 @@ function FikirKarti({
           Gün seç
         </button>
         {onBirliktePlanla && (
-          <button onClick={durdur(onBirliktePlanla)} className="chip text-xs bg-teal-50 text-teal-700 border border-teal-100 active:scale-95">
+          <button onClick={durdur(onBirliktePlanla)} className="chip text-xs bg-teal-50 text-teal-700 border border-teal-100 active:opacity-80">
             <Icon name="Users" className="w-3.5 h-3.5" />
             Birlikte planla
           </button>

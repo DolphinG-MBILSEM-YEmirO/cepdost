@@ -48,7 +48,7 @@ export function AniArsivi({ grupId, arkadasId, benimId, baslik }: Props) {
         </div>
         <button
           onClick={() => setEkleAcik(true)}
-          className="text-xs font-semibold text-orchid-600 active:scale-95 transition-transform"
+          className="text-xs font-semibold text-orchid-600 active:opacity-80 transition-transform"
         >
           Fotoğraf ekle
         </button>
@@ -70,11 +70,11 @@ export function AniArsivi({ grupId, arkadasId, benimId, baslik }: Props) {
                 key={y.ad ?? ''}
                 onClick={() => setYer(y.ad)}
                 aria-pressed={secili}
-                className={`chip text-xs shrink-0 ${secili ? 'bg-gradient-orchid text-white' : 'bg-mist-50 text-ink-500 border border-ink-100'}`}
+                className={`chip text-xs shrink-0 ${secili ? 'bg-orchid-600 text-white' : 'bg-mist-50 text-ink-500 border border-ink-100'}`}
               >
                 {y.ad ? <Icon name="MapPin" className="w-3.5 h-3.5" /> : null}
                 {y.ad ?? 'Hepsi'}
-                <span className={secili ? 'text-white/80' : 'text-ink-300'}>{y.sayi}</span>
+                <span className={secili ? 'text-white/80' : 'text-ink-400'}>{y.sayi}</span>
               </button>
             )
           })}
@@ -167,7 +167,7 @@ function AniKarti({
       <button
         onClick={onAc}
         aria-label={`${ani.mekan_adi}, ${kim}`}
-        className="block w-full text-left active:scale-[0.98] transition-transform"
+        className="block w-full text-left active:opacity-80 transition-transform"
       >
         <div className="aspect-square bg-mist-100">
           <AniGorseli ani={ani} />
@@ -208,7 +208,7 @@ function AniKarti({
             await onSilindi()
           }}
           aria-label={onay ? 'Silmek için tekrar dokun' : 'Anıyı sil'}
-          className={`absolute top-2 right-2 rounded-lg flex items-center justify-center active:scale-90 transition-all ${
+          className={`absolute top-2 right-2 rounded-lg flex items-center justify-center active:opacity-80 transition-all ${
             onay ? 'bg-rose-500 text-white px-2 h-7 text-xs font-semibold' : 'w-7 h-7 bg-ink-900/40 text-white'
           }`}
         >
@@ -293,7 +293,7 @@ export function AniEkleModal({
 
   return (
     <div
-      className="fixed inset-0 z-[65] flex items-end sm:items-center justify-center bg-ink-900/40 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[65] flex items-end sm:items-center justify-center bg-ink-900/40 animate-fade-in"
       onClick={onClose}
     >
       <div
@@ -306,7 +306,7 @@ export function AniEkleModal({
         <input ref={dosyaRef} type="file" accept="image/*" onChange={dosyaSecildi} className="hidden" />
         <button
           onClick={() => dosyaRef.current?.click()}
-          className="w-full aspect-[4/3] rounded-2xl border-2 border-dashed border-ink-200 bg-mist-100 flex flex-col items-center justify-center gap-2 active:scale-[0.98] transition-transform overflow-hidden mb-4"
+          className="w-full aspect-[4/3] rounded-2xl border-2 border-dashed border-ink-200 bg-mist-100 flex flex-col items-center justify-center gap-2 active:opacity-80 transition-transform overflow-hidden mb-4"
         >
           {onizleme ? (
             <img src={onizleme} alt="Seçilen" className="w-full h-full object-cover" />
@@ -344,9 +344,9 @@ export function AniEkleModal({
         <div className="flex gap-2 mb-4">
           <button
             onClick={() => setGorunurluk('arkadaslar')}
-            className={`flex-1 rounded-xl py-2.5 text-xs font-semibold transition-all active:scale-95 ${
+            className={`flex-1 rounded-xl py-2.5 text-xs font-semibold transition-all active:opacity-80 ${
               gorunurluk === 'arkadaslar'
-                ? 'bg-gradient-orchid text-white'
+                ? 'bg-orchid-600 text-white'
                 : 'bg-mist-100 text-ink-400 border border-ink-100'
             }`}
           >
@@ -354,7 +354,7 @@ export function AniEkleModal({
           </button>
           <button
             onClick={() => setGorunurluk('herkes')}
-            className={`flex-1 rounded-xl py-2.5 text-xs font-semibold transition-all active:scale-95 ${
+            className={`flex-1 rounded-xl py-2.5 text-xs font-semibold transition-all active:opacity-80 ${
               gorunurluk === 'herkes'
                 ? 'bg-sky-500 text-white'
                 : 'bg-mist-100 text-ink-400 border border-ink-100'

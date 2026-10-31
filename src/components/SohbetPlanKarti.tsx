@@ -152,14 +152,14 @@ export function DavetKartiSohbet({
         <button
           onClick={() => void calistir(() => onYanit(false))}
           disabled={isleniyor}
-          className="flex-1 rounded-xl bg-mist-100 border border-ink-100 text-ink-500 text-xs font-semibold py-2 active:scale-95 transition-transform disabled:opacity-50"
+          className="flex-1 rounded-xl bg-mist-100 border border-ink-100 text-ink-500 text-xs font-semibold py-2 active:opacity-80 transition-transform disabled:opacity-50"
         >
           Uymuyor
         </button>
         <button
           onClick={() => void calistir(() => onYanit(true))}
           disabled={isleniyor}
-          className="flex-1 rounded-xl bg-gradient-orchid text-white text-xs font-semibold py-2 active:scale-95 transition-transform disabled:opacity-50"
+          className="flex-1 rounded-xl bg-orchid-600 text-white text-xs font-semibold py-2 active:opacity-80 transition-transform disabled:opacity-50"
         >
           Geliyorum
         </button>
@@ -174,7 +174,7 @@ export function DavetKartiSohbet({
           ) : davet.durum === 'red' ? (
             <Durum renk="text-ink-400">Gelmiyorsun</Durum>
           ) : (
-            <Durum renk="text-ink-300">Bu plan geçti</Durum>
+            <Durum renk="text-ink-400">Bu plan geçti</Durum>
           )}
           {!gecti && davet.durum !== 'bekliyor' && (
             <button
@@ -198,7 +198,7 @@ export function DavetKartiSohbet({
           ) : davet.durum === 'red' ? (
             <Durum renk="text-ink-400">{karsiAd} gelemiyor</Durum>
           ) : (
-            <Durum renk="text-ink-300">{gecti ? 'Bu plan geçti' : 'Yanıt bekleniyor'}</Durum>
+            <Durum renk="text-ink-400">{gecti ? 'Bu plan geçti' : 'Yanıt bekleniyor'}</Durum>
           )}
           {!gecti && (
             <button onClick={() => void calistir(onIptal)} disabled={isleniyor} className={kucukDugme}>
@@ -234,7 +234,7 @@ export function DavetKartiSohbet({
 const SECENEKLER: { d: YanitDurumu; etiket: string; renk: string }[] = [
   { d: 'geliyorum', etiket: 'Geliyorum', renk: 'bg-teal-500 text-white' },
   { d: 'belki', etiket: 'Belki', renk: 'bg-amber-400 text-amber-900' },
-  { d: 'gelmiyorum', etiket: 'Yokum', renk: 'bg-ink-200 text-ink-600' },
+  { d: 'gelmiyorum', etiket: 'Gelemem', renk: 'bg-ink-200 text-ink-600' },
 ]
 
 export function GrupPlanKartiSohbet({
@@ -278,7 +278,7 @@ export function GrupPlanKartiSohbet({
         {belkiler.length > 0 && ` · ${belkiler.length} belki`}
       </p>
       {gecti ? (
-        <Durum renk="text-ink-300">Bu plan geçti</Durum>
+        <Durum renk="text-ink-400">Bu plan geçti</Durum>
       ) : (
         <>
           <div className="flex gap-1.5">
@@ -298,7 +298,7 @@ export function GrupPlanKartiSohbet({
                 }}
                 disabled={isleniyor}
                 aria-pressed={benimYanit === s.d}
-                className={`flex-1 rounded-lg py-1.5 text-[11px] font-semibold active:scale-95 transition-all disabled:opacity-60 ${
+                className={`flex-1 rounded-lg py-1.5 text-[11px] font-semibold active:opacity-80 transition-all disabled:opacity-60 ${
                   benimYanit === s.d ? s.renk : 'bg-mist-100 text-ink-400 border border-ink-100'
                 }`}
               >

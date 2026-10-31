@@ -164,7 +164,7 @@ export function EpostaDogrulama({
         <button
           onClick={() => void kodGonder()}
           disabled={bekleme > 0 || calisiyor !== null}
-          className="text-orchid-600 disabled:text-ink-300"
+          className="text-orchid-600 disabled:text-ink-400"
         >
           {calisiyor === 'kod' ? 'Gönderiliyor...' : bekleme > 0 ? `Tekrar gönder (${bekleme})` : 'Kodu tekrar gönder'}
         </button>

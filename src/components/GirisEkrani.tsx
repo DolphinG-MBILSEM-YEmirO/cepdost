@@ -71,7 +71,7 @@ export function GirisEkrani({
             Kullanıcı adı
           </label>
           <div className="flex items-center bg-mist-50 border border-ink-100 rounded-2xl px-4">
-            <span className="text-ink-300">@</span>
+            <span className="text-ink-400">@</span>
             <input
               id="giris-kullanici"
               value={kullaniciAdi}
@@ -211,7 +211,7 @@ export function GirisEkrani({
         disabled={yukleniyor}
         className="w-full btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
       >
-        <Icon name="Sparkles" className="w-5 h-5" />
+        <Icon name="UserPlus" className="w-5 h-5" />
         Hesap oluştur
       </button>
       <button
@@ -226,7 +226,7 @@ export function GirisEkrani({
       </button>
       {hataKutusu}
 
-      <p className="text-xs text-ink-300 text-center mt-6 leading-relaxed">{altNot}</p>
+      <p className="text-xs text-ink-400 text-center mt-6 leading-relaxed">{altNot}</p>
     </Cerceve>
   )
 }
@@ -249,7 +249,7 @@ function Cerceve({
           <button
             onClick={onGeri}
             aria-label="Geri"
-            className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+            className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
           >
             <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />
           </button>

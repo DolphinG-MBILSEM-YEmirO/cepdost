@@ -65,7 +65,7 @@ export function GrupOzetKarti({ grup, benimId, uyeler, planlar, yanitlar, onPlan
   return (
     <>
       <section className="card p-4" aria-label="Grup özeti">
-        <button onClick={onUyeler} aria-label={`Üyeler: ${uyeAdlari}`} className="w-full flex items-center gap-3 text-left active:scale-[0.99] transition-transform">
+        <button onClick={onUyeler} aria-label={`Üyeler: ${uyeAdlari}`} className="w-full flex items-center gap-3 text-left active:opacity-80 transition-transform">
           <div className="flex -space-x-2 shrink-0" aria-hidden="true">
             {sirali.slice(0, YUZ_SAYISI).map((u) => (
               <div key={u.kullanici_id} className="rounded-2xl ring-2 ring-white">
@@ -80,12 +80,12 @@ export function GrupOzetKarti({ grup, benimId, uyeler, planlar, yanitlar, onPlan
             ))}
           </div>
           <p className="flex-1 min-w-0 text-xs text-ink-500 line-clamp-2">{uyeAdlari}</p>
-          <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />
+          <Icon name="ChevronRight" className="w-4 h-4 text-ink-400 shrink-0" />
         </button>
 
         <div className="mt-3 pt-3 border-t border-ink-100">
           {siradaki ? (
-            <button onClick={() => onPlanAc(siradaki)} className="w-full flex items-center gap-3 text-left active:scale-[0.99] transition-transform">
+            <button onClick={() => onPlanAc(siradaki)} className="w-full flex items-center gap-3 text-left active:opacity-80 transition-transform">
               <div className="w-11 h-11 rounded-2xl bg-orchid-100 flex items-center justify-center text-xl shrink-0">
                 {siradaki.emoji ?? <Icon name="CalendarClock" className="w-5 h-5 text-orchid-500" />}
               </div>
@@ -100,12 +100,12 @@ export function GrupOzetKarti({ grup, benimId, uyeler, planlar, yanitlar, onPlan
                   {!yanitimVar && <span className="text-amber-700"> · Yanıtın bekleniyor</span>}
                 </p>
               </div>
-              <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />
+              <Icon name="ChevronRight" className="w-4 h-4 text-ink-400 shrink-0" />
             </button>
           ) : (
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-2xl bg-mist-100 flex items-center justify-center shrink-0">
-                <Icon name="CalendarClock" className="w-5 h-5 text-ink-300" />
+                <Icon name="CalendarClock" className="w-5 h-5 text-ink-400" />
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-ink-600">Sıradaki plan yok</p>
@@ -117,7 +117,7 @@ export function GrupOzetKarti({ grup, benimId, uyeler, planlar, yanitlar, onPlan
 
         {sonAni && (
           <div className="mt-3 pt-3 border-t border-ink-100">
-            <button onClick={() => setAcikAniId(sonAni.id)} className="w-full flex items-center gap-3 text-left active:scale-[0.99] transition-transform">
+            <button onClick={() => setAcikAniId(sonAni.id)} className="w-full flex items-center gap-3 text-left active:opacity-80 transition-transform">
               <div className="w-11 h-11 rounded-2xl overflow-hidden bg-mist-100 shrink-0">
                 <AniGorseli ani={sonAni} />
               </div>
@@ -128,7 +128,7 @@ export function GrupOzetKarti({ grup, benimId, uyeler, planlar, yanitlar, onPlan
                   {sonAniSahibi} · {neKadarOnce(gunFarki(sonAni.tarih, bugun))}
                 </p>
               </div>
-              <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />
+              <Icon name="ChevronRight" className="w-4 h-4 text-ink-400 shrink-0" />
             </button>
           </div>
         )}

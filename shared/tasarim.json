@@ -1,0 +1,21 @@
+{
+  "$comment": "Sharloop design tokens (single source). Tailwind reads this file; Davet and the native apps will read it too. Colours are hex; ink/mist/orchid are exposed as CSS variables so a dark theme can redefine them later.",
+  "color": {
+    "mist": { "50": "#FCFDFF", "100": "#F4F6FD", "200": "#E9EDF9", "300": "#DCE2F4", "400": "#C6CEEA", "500": "#A6B1DA" },
+    "ink": {
+      "50": "#F3F5FA", "100": "#E3E7F1", "200": "#C6CDDE", "300": "#7F89A6", "400": "#5E6787",
+      "500": "#4B5473", "600": "#353D5B", "700": "#232A45", "800": "#151A2F", "900": "#0B0E1D"
+    },
+    "orchid": {
+      "50": "#EFF3FF", "100": "#DFE7FF", "200": "#C3D1FF", "300": "#9BB1FD", "400": "#6F88F9",
+      "500": "#4A62F0", "600": "#3549DB", "700": "#2C3AB5", "800": "#28338F", "900": "#222B6B"
+    }
+  },
+  "radius": { "sm": "0.5rem", "md": "0.75rem", "lg": "1rem", "sheet": "1.5rem" },
+  "motion": {
+    "press": "80ms",
+    "change": "160ms",
+    "sheet": "280ms",
+    "easeOut": "cubic-bezier(0.2, 0.8, 0.2, 1)"
+  }
+}

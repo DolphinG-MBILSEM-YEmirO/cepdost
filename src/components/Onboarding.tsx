@@ -13,19 +13,16 @@ const steps = [
     icon: 'Users' as IconName,
     title: 'Arkadaşlarınla planla',
     desc: 'Arkadaşlarını kullanıcı adıyla ekle, planı gönder; kimin geldiğini anında gör.',
-    color: 'bg-gradient-orchid',
   },
   {
-    icon: 'Sparkles' as IconName,
+    icon: 'CalendarClock' as IconName,
     title: 'Saati asistan bulsun',
     desc: '"Cumartesi Ayşe\'yle kahvaltı" yaz; herkesin boş olduğu saati bulup planı hazırlar.',
-    color: 'bg-gradient-to-br from-sky-400 to-orchid-500',
   },
   {
     icon: 'Share2' as IconName,
     title: 'Gördüğünü kaydet',
     desc: 'Reel, TikTok, ekran görüntüsü ya da link; telefonun paylaş menüsünden gönder, saatiyle yeriyle plana dönüşsün.',
-    color: 'bg-gradient-to-br from-orchid-500 to-violet-500',
   },
 ]
 
@@ -42,7 +39,7 @@ export function Onboarding({ onDone }: OnboardingProps) {
         <div className="flex justify-end px-5 pt-[calc(1rem+var(--safe-top))]">
           <button
             onClick={onDone}
-            className="text-sm text-ink-400 font-medium active:scale-95 transition-transform"
+            className="text-sm text-ink-400 font-medium active:opacity-80 transition-transform"
           >
             Geç
           </button>
@@ -51,9 +48,9 @@ export function Onboarding({ onDone }: OnboardingProps) {
         <div className="flex-1 flex flex-col items-center justify-center px-8">
           <div
             key={step}
-            className={`w-24 h-24 rounded-3xl ${current.color} shadow-brand flex items-center justify-center mb-8 animate-bounce-soft`}
+            className="w-20 h-20 rounded-2xl bg-orchid-50 flex items-center justify-center mb-8 animate-bounce-soft"
           >
-            <Icon name={current.icon} className="w-12 h-12 text-white" />
+            <Icon name={current.icon} className="w-10 h-10 text-orchid-600" />
           </div>
 
           <h2 key={`title-${step}`} className="font-display text-2xl font-bold text-ink-700 text-center mb-3 animate-slide-up">
@@ -69,7 +66,7 @@ export function Onboarding({ onDone }: OnboardingProps) {
             {steps.map((_, i) => (
               <div
                 key={i}
-                className={`h-2 rounded-full transition-all duration-300 ${i === step ? 'w-8 bg-gradient-orchid' : 'w-2 bg-ink-200'}`}
+                className={`h-2 rounded-full transition-all duration-300 ${i === step ? 'w-8 bg-orchid-600' : 'w-2 bg-ink-200'}`}
               />
             ))}
           </div>

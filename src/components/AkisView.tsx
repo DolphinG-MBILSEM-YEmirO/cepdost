@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Icon } from './Icon'
+import { ChatButton } from './ChatButton'
+import { SegmentedControl } from '../ui/SegmentedControl'
 import { AkisKarti } from './AkisKarti'
 import { AniYanitlari } from './AniYanitlari'
 import { motor, motorVarMi, useSosyalSurum } from '../sosyal/cekirdek'
@@ -40,7 +42,7 @@ function sonBakisiYaz(benimId: string) {
   }
 }
 
-export function AkisView({ onPlanAc }: { onPlanAc: (kayit: Kayit) => void }) {
+export function AkisView({ onPlanAc, onAsistan }: { onPlanAc: (kayit: Kayit) => void; onAsistan?: () => void }) {
   const [kapsam, setKapsam] = useState<AkisKapsami>('arkadaslar')
   const [anilar, setAnilar] = useState<Ani[] | null>(null)
   const [profiller, setProfiller] = useState<Map<string, Profil>>(new Map())
@@ -129,30 +131,27 @@ export function AkisView({ onPlanAc }: { onPlanAc: (kayit: Kayit) => void }) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3">
-        <h1 className="font-display text-2xl font-bold text-ink-700">Akış</h1>
-        <p className="text-sm text-ink-400 mt-0.5">
-          Paylaşılan mekanlar
-          {yeniSayisi > 0 && <span className="text-orchid-600 font-medium"> · {yeniSayisi} yeni</span>}
-        </p>
+      <div className="px-5 pt-[calc(1rem+var(--safe-top))] pb-3 flex items-start gap-3">
+        <div className="flex-1 min-w-0">
+          <h1 className="font-display text-2xl font-bold text-ink-700">Akış</h1>
+          <p className="text-sm text-ink-400 mt-0.5">
+            Paylaşılan mekanlar
+            {yeniSayisi > 0 && <span className="text-orchid-600 font-medium"> · {yeniSayisi} yeni</span>}
+          </p>
+        </div>
+        {onAsistan && <ChatButton onClick={onAsistan} />}
       </div>
 
-      <div className="flex gap-1.5 px-5 pb-3 shrink-0">
-        {([
-          { id: 'arkadaslar' as const, etiket: 'Arkadaşlar', ikon: 'Users' as const },
-          { id: 'herkes' as const, etiket: 'Keşfet', ikon: 'ImageIcon' as const },
-        ]).map((s) => (
-          <button
-            key={s.id}
-            onClick={() => kapsamSec(s.id)}
-            className={`chip ${
-              kapsam === s.id ? 'bg-gradient-orchid text-white' : 'bg-mist-50 text-ink-400 border border-ink-100'
-            }`}
-          >
-            <Icon name={s.ikon} className="w-4 h-4" />
-            {s.etiket}
-          </button>
-        ))}
+      <div className="px-5 pb-3 shrink-0 lg:max-w-sm">
+        <SegmentedControl
+          etiket="Akış kapsamı"
+          secili={kapsam}
+          onSec={kapsamSec}
+          segmentler={[
+            { id: 'arkadaslar', etiket: 'Arkadaşlar' },
+            { id: 'herkes', etiket: 'Keşfet' },
+          ]}
+        />
       </div>
 
       {secenekler.length > 0 && (
@@ -172,7 +171,7 @@ export function AkisView({ onPlanAc }: { onPlanAc: (kayit: Kayit) => void }) {
               >
                 {s?.tur === 'grup' && <Icon name="Users" className="w-3.5 h-3.5" />}
                 {s ? s.ad : 'Hepsi'}
-                <span className={secili ? 'text-mist-200' : 'text-ink-300'}>{s ? s.sayi : anilar?.length}</span>
+                <span className={secili ? 'text-mist-200' : 'text-ink-400'}>{s ? s.sayi : anilar?.length}</span>
               </button>
             )
           })}
@@ -239,7 +238,7 @@ export function AkisView({ onPlanAc }: { onPlanAc: (kayit: Kayit) => void }) {
                 onPlanAc(eklenen)
                 setEklenen(null)
               }}
-              className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold text-orchid-200 hover:bg-white/10 active:scale-95"
+              className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold text-orchid-200 hover:bg-white/10 active:opacity-80"
             >
               Aç
             </button>

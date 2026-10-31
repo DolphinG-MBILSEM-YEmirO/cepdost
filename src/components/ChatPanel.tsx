@@ -195,7 +195,7 @@ export function ChatPanel({ kayitlar, onClose }: ChatPanelProps) {
         <button
           onClick={onClose}
           aria-label="Kapat"
-          className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform"
+          className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:opacity-80 transition-transform"
         >
           <Icon name="X" className="w-5 h-5 text-ink-500" />
         </button>
@@ -233,9 +233,9 @@ export function ChatPanel({ kayitlar, onClose }: ChatPanelProps) {
               <button
                 key={o}
                 onClick={() => void gonder(o)}
-                className="chip bg-sky-50 text-sky-700 border border-sky-100 text-left active:scale-95"
+                className="chip bg-sky-50 text-sky-700 border border-sky-100 text-left active:opacity-80"
               >
-                <Icon name="Sparkles" className="w-4 h-4 shrink-0" />
+                <Icon name="MessageCircle" className="w-4 h-4 shrink-0" />
                 {o}
               </button>
             ))}
@@ -281,7 +281,7 @@ export function ChatPanel({ kayitlar, onClose }: ChatPanelProps) {
             onClick={() => void gonder()}
             disabled={loading || !girdi.trim()}
             aria-label="Gönder"
-            className="w-11 h-11 rounded-full bg-sky-500 text-white flex items-center justify-center active:scale-90 transition-transform disabled:opacity-40 shrink-0"
+            className="w-11 h-11 rounded-full bg-sky-500 text-white flex items-center justify-center active:opacity-80 transition-transform disabled:opacity-40 shrink-0"
           >
             <Icon name="Send" className="w-5 h-5" />
           </button>

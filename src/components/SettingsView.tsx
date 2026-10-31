@@ -59,14 +59,14 @@ export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
           <p className="text-sm text-ink-400">
             Uygulamayı ana ekrana ekle, sonra herhangi bir yerden paylaş menüsünde "{UYGULAMA_ADI}" görünecek. Reel, TikTok, ekran görüntüsü — hepsi direkt arşive.
           </p>
-          <p className="text-xs text-ink-300 mt-3">
+          <p className="text-xs text-ink-400 mt-3">
             Chrome'da sağ üstteki ⋮ menüsünden "Ana ekrana ekle" seçeneğini seç.
           </p>
         </div>
 
         <div className="text-center pt-2">
-          <p className="text-xs text-ink-300">{UYGULAMA_ADI} · Faz 0 MVP</p>
-          <p className="text-xs text-ink-300 mt-1">{SLOGAN}</p>
+          <p className="text-xs text-ink-400">{UYGULAMA_ADI} · Faz 0 MVP</p>
+          <p className="text-xs text-ink-400 mt-1">{SLOGAN}</p>
         </div>
       </div>
     </div>

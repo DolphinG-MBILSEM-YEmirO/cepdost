@@ -18,7 +18,7 @@ export function PlanRozetleri({ kayit, yakinsaSayim = false }: { kayit: Kayit; y
       {yakin && <span className="text-xs font-medium text-orchid-600 truncate">{yakin.metin}</span>}
       {liste.length > 0 && (
         <span
-          className={`flex items-center gap-1 text-xs shrink-0 ${biten === liste.length ? 'text-teal-600' : 'text-ink-300'}`}
+          className={`flex items-center gap-1 text-xs shrink-0 ${biten === liste.length ? 'text-teal-600' : 'text-ink-400'}`}
           aria-label={`${liste.length} maddeden ${biten} tanesi yapıldı`}
         >
           <Icon name="ListChecks" className="w-3.5 h-3.5" />

@@ -55,7 +55,7 @@ export function ArkadasProfili({ arkadas, benimId, onClose, onMesaj, onGrupAc, a
         <button
           onClick={onClose}
           aria-label="Kapat"
-          className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:scale-90 transition-transform"
+          className="w-10 h-10 rounded-full bg-mist-50/80 flex items-center justify-center active:opacity-80 transition-transform"
         >
           <Icon name="X" className="w-5 h-5 text-ink-500" />
         </button>
@@ -80,7 +80,7 @@ export function ArkadasProfili({ arkadas, benimId, onClose, onMesaj, onGrupAc, a
             </button>
             <button
               onClick={() => setPaylasAcik(true)}
-              className="bg-mist-50 text-orchid-700 font-semibold text-sm rounded-2xl py-2.5 flex items-center justify-center gap-2 border border-orchid-100 active:scale-[0.97] transition-all hover:bg-orchid-50"
+              className="bg-mist-50 text-orchid-700 font-semibold text-sm rounded-2xl py-2.5 flex items-center justify-center gap-2 border border-orchid-100 active:opacity-80 transition-all hover:bg-orchid-50"
             >
               <Icon name="CalendarPlus" className="w-4 h-4" />
               Plan yap
@@ -97,7 +97,7 @@ export function ArkadasProfili({ arkadas, benimId, onClose, onMesaj, onGrupAc, a
               aria-selected={sekme === s.id}
               onClick={() => setSekme(s.id)}
               className={`chip ${
-                sekme === s.id ? 'bg-gradient-orchid text-white' : 'bg-mist-50 text-ink-400 border border-ink-100'
+                sekme === s.id ? 'bg-orchid-600 text-white' : 'bg-mist-50 text-ink-400 border border-ink-100'
               }`}
             >
               <Icon name={s.ikon} className="w-4 h-4" />
@@ -264,14 +264,14 @@ function Birlikte({
                 key={g.id}
                 onClick={() => onGrupAc?.(g)}
                 disabled={!onGrupAc}
-                className="card p-3 w-full flex items-center gap-3 text-left active:scale-[0.98] transition-transform disabled:active:scale-100"
+                className="card p-3 w-full flex items-center gap-3 text-left active:opacity-80 transition-transform disabled:active:opacity-100"
               >
                 <GrupAvatari grup={g} boyut="sm" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-ink-700 truncate">{g.ad}</p>
                   {g.aciklama && <p className="text-xs text-ink-400 truncate">{g.aciklama}</p>}
                 </div>
-                {onGrupAc && <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />}
+                {onGrupAc && <Icon name="ChevronRight" className="w-4 h-4 text-ink-400 shrink-0" />}
               </button>
             ))}
           </div>
@@ -299,7 +299,7 @@ function ArkadasliktanCik({
     return (
       <button
         onClick={() => setOnay(true)}
-        className="w-full flex items-center justify-center gap-2 text-sm font-medium text-ink-400 py-2 active:scale-95 transition-transform"
+        className="w-full flex items-center justify-center gap-2 text-sm font-medium text-ink-400 py-2 active:opacity-80 transition-transform"
       >
         <Icon name="UserMinus" className="w-4 h-4" />
         Arkadaşlıktan çıkar
@@ -326,7 +326,7 @@ function ArkadasliktanCik({
             }
           }}
           disabled={calisiyor}
-          className="flex-1 rounded-2xl bg-rose-50 text-rose-600 font-semibold text-sm py-2.5 active:scale-[0.97] transition-all disabled:opacity-60"
+          className="flex-1 rounded-2xl bg-rose-50 text-rose-600 font-semibold text-sm py-2.5 active:opacity-80 transition-all disabled:opacity-60"
         >
           {calisiyor ? '...' : 'Çıkar'}
         </button>

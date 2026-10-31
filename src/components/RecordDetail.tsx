@@ -124,13 +124,13 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
   return (
     <div className="panel-tam z-50">
       <div className="flex items-center justify-between px-5 pt-[calc(1rem+var(--safe-top))] pb-3">
-        <button onClick={onClose} aria-label="Geri" className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform">
+        <button onClick={onClose} aria-label="Geri" className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:opacity-80 transition-transform">
           <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />
         </button>
         <div className="flex items-center gap-2">
           <button
             onClick={handleToggleStatus}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all active:scale-95 flex items-center gap-1.5
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all active:opacity-80 flex items-center gap-1.5
               ${done ? 'bg-teal-100 text-teal-700' : 'bg-mist-50 text-ink-400 border border-ink-100'}`}
           >
             <Icon name={done ? 'CheckCircle2' : 'Circle'} className="w-4 h-4" />
@@ -141,12 +141,12 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
               onClick={handleSave}
               disabled={saving}
               aria-label="Kaydet"
-              className="w-10 h-10 rounded-full bg-gradient-orchid text-white flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
+              className="w-10 h-10 rounded-full bg-orchid-600 text-white flex items-center justify-center active:opacity-80 transition-transform disabled:opacity-50"
             >
               <Icon name={saving ? 'Loader2' : 'Save'} className={`w-5 h-5 ${saving ? 'animate-spin' : ''}`} />
             </button>
           ) : (
-            <button onClick={() => setEditing(true)} aria-label="Düzenle" className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform">
+            <button onClick={() => setEditing(true)} aria-label="Düzenle" className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:opacity-80 transition-transform">
               <Icon name="Pencil" className="w-5 h-5 text-ink-500" />
             </button>
           )}
@@ -263,7 +263,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
                     </div>
                   )}
                   {kayit.konum && (
-                    <a href={mapsLink ?? '#'} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 active:scale-[0.98] transition-transform">
+                    <a href={mapsLink ?? '#'} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 active:opacity-80 transition-transform">
                       <div className="w-8 h-8 rounded-lg bg-teal-100 flex items-center justify-center">
                         <Icon name="MapPin" className="w-4 h-4 text-teal-600" />
                       </div>
@@ -346,7 +346,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
         {kayit.hamLink && (
           <div className="card p-5 mb-4">
             <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-3">Kaynak</p>
-            <a href={kayit.hamLink} target="_blank" rel="noopener noreferrer" className="text-sm text-orchid-600 font-medium flex items-center gap-2 break-all active:scale-[0.98] transition-transform">
+            <a href={kayit.hamLink} target="_blank" rel="noopener noreferrer" className="text-sm text-orchid-600 font-medium flex items-center gap-2 break-all active:opacity-80 transition-transform">
               <Icon name="LinkIcon" className="w-4 h-4 shrink-0" />
               {kayit.hamLink}
               <Icon name="ExternalLink" className="w-3 h-3 shrink-0" />
@@ -377,7 +377,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
         )}
 
         <div className="flex items-center justify-between px-1 mb-4">
-          <span className="text-xs text-ink-300">
+          <span className="text-xs text-ink-400">
             {kayit.kaynakTipi === 'gorsel' ? 'Görselden' : kayit.kaynakTipi === 'link' ? 'Linkten' : 'Metinden'} · {formatRelativeTime(kayit.olusturulmaTarihi)}
           </span>
         </div>
@@ -385,7 +385,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
         {paylasilabilir && !editing && (
           <button
             onClick={() => setPaylasAcik(true)}
-            className="w-full bg-orchid-50 text-orchid-700 font-medium rounded-2xl px-5 py-3.5 flex items-center justify-center gap-2 active:scale-[0.97] transition-all hover:bg-orchid-100 mb-3"
+            className="w-full bg-orchid-50 text-orchid-700 font-medium rounded-2xl px-5 py-3.5 flex items-center justify-center gap-2 active:opacity-80 transition-all hover:bg-orchid-100 mb-3"
           >
             <Icon name="Send" className="w-5 h-5" />
             Arkadaşlarınla paylaş
@@ -397,7 +397,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
 
         <button
           onClick={() => setShowDelete(true)}
-          className="w-full bg-rose-50 text-rose-600 font-medium rounded-2xl px-5 py-3.5 flex items-center justify-center gap-2 active:scale-[0.97] transition-all hover:bg-rose-100"
+          className="w-full bg-rose-50 text-rose-600 font-medium rounded-2xl px-5 py-3.5 flex items-center justify-center gap-2 active:opacity-80 transition-all hover:bg-rose-100"
         >
           <Icon name="Trash2" className="w-5 h-5" />
           Kaydı sil

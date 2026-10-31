@@ -32,13 +32,13 @@ export const TEMALAR: SohbetTemasi[] = [
   {
     id: 'orkide',
     ad: 'Mavi orkide',
-    benim: 'bg-gradient-orchid shadow-brand',
+    benim: 'bg-orchid-600',
     benimMetin: 'text-white',
     karsi: 'bg-white border border-ink-100/70',
     karsiMetin: 'text-ink-700',
     zemin: 'bg-mist-100',
     desen: NOKTA_DESENI,
-    onizleme: 'bg-gradient-orchid',
+    onizleme: 'bg-orchid-600',
   },
   {
     id: 'okyanus',
@@ -76,7 +76,7 @@ export const TEMALAR: SohbetTemasi[] = [
   {
     id: 'gece',
     ad: 'Gece',
-    benim: 'bg-gradient-orchid',
+    benim: 'bg-orchid-600',
     benimMetin: 'text-white',
     karsi: 'bg-ink-700/90 border border-ink-500/40',
     karsiMetin: 'text-mist-50',

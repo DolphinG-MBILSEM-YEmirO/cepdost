@@ -60,7 +60,7 @@ export function PlanOzetiKarti({ kayitlar }: { kayitlar: Kayit[] }) {
   return (
     <section className="card p-5" aria-label="Planların">
       <div className="flex items-center gap-2 mb-4">
-        <Icon name="Sparkles" className="w-4 h-4 text-orchid-500" />
+        <Icon name="CalendarDays" className="w-4 h-4 text-orchid-600" />
         <h2 className="text-sm font-semibold text-ink-600">Planların</h2>
         <span className="ml-auto text-xs text-ink-400 capitalize">{ayAdi}</span>
       </div>
@@ -126,7 +126,7 @@ export function PlanOzetiKarti({ kayitlar }: { kayitlar: Kayit[] }) {
             </div>
           )}
 
-          <p className="text-[11px] text-ink-300">Planlarından hesaplanır, yalnızca sen görürsün.</p>
+          <p className="text-[11px] text-ink-400">Planlarından hesaplanır, yalnızca sen görürsün.</p>
         </div>
       )}
     </section>

@@ -57,7 +57,7 @@ export function SifreBelirle({
           <button
             onClick={onVazgec}
             aria-label="Geri"
-            className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+            className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
           >
             <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />
           </button>
@@ -106,7 +106,7 @@ export function SifreBelirle({
           <div className="flex items-center gap-1.5 mb-4">
             <Icon
               name={yeterliUzunluk ? 'CheckCircle2' : 'Circle'}
-              className={`w-3.5 h-3.5 ${yeterliUzunluk ? 'text-teal-600' : 'text-ink-300'}`}
+              className={`w-3.5 h-3.5 ${yeterliUzunluk ? 'text-teal-600' : 'text-ink-400'}`}
             />
             <span className={`text-xs ${yeterliUzunluk ? 'text-teal-700' : 'text-ink-400'}`}>
               En az {SIFRE_MIN} karakter

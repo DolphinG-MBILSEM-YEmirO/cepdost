@@ -20,7 +20,7 @@ import { grupPlaniKatilimi, type PlanKatilimi } from '../sosyal/planKatilimi'
 const SECENEKLER: { d: YanitDurumu; etiket: string; renk: string }[] = [
   { d: 'geliyorum', etiket: 'Geliyorum', renk: 'bg-teal-500 text-white' },
   { d: 'belki', etiket: 'Belki', renk: 'bg-amber-400 text-amber-900' },
-  { d: 'gelmiyorum', etiket: 'Yokum', renk: 'bg-ink-200 text-ink-600' },
+  { d: 'gelmiyorum', etiket: 'Gelemem', renk: 'bg-ink-200 text-ink-600' },
 ]
 
 interface Props {
@@ -77,7 +77,7 @@ export function GrupPlanDetayi({ plan, grup, benimId, onClose }: Props) {
         <button
           onClick={onClose}
           aria-label="Geri"
-          className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
         >
           <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />
         </button>
@@ -120,7 +120,7 @@ export function GrupPlanDetayi({ plan, grup, benimId, onClose }: Props) {
 
           <div className="mt-4 pt-4 border-t border-ink-100">
             {gecti ? (
-              <p className="text-sm font-semibold text-ink-300">Bu plan geçti</p>
+              <p className="text-sm font-semibold text-ink-400">Bu plan geçti</p>
             ) : (
               <>
                 <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-2">Yanıtın</p>
@@ -131,7 +131,7 @@ export function GrupPlanDetayi({ plan, grup, benimId, onClose }: Props) {
                       onClick={() => void yanitla(s.d)}
                       disabled={isleniyor}
                       aria-pressed={benimYanit === s.d}
-                      className={`flex-1 rounded-xl py-2.5 text-sm font-semibold active:scale-95 transition-all disabled:opacity-60 ${
+                      className={`flex-1 rounded-xl py-2.5 text-sm font-semibold active:opacity-80 transition-all disabled:opacity-60 ${
                         benimYanit === s.d ? s.renk : 'bg-mist-100 text-ink-400 border border-ink-100'
                       }`}
                     >

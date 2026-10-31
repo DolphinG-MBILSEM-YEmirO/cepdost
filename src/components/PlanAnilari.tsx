@@ -52,7 +52,7 @@ export function PlanAnilariKarti({ grupId, arkadasId, tarih, konum, planBasligi,
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-ink-700">Nasıl geçti?</p>
               <p className="text-xs text-ink-500 mt-0.5">Bir fotoğraf ekle, {hedefAdi} arşivinde kalsın.</p>
-              <button onClick={() => setEkleAcik(true)} className="mt-3 chip bg-gradient-orchid text-white">
+              <button onClick={() => setEkleAcik(true)} className="mt-3 chip bg-orchid-600 text-white">
                 <Icon name="ImageIcon" className="w-4 h-4" />
                 Fotoğraf ekle
               </button>
@@ -65,13 +65,13 @@ export function PlanAnilariKarti({ grupId, arkadasId, tarih, konum, planBasligi,
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline gap-2">
                 <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide">O günden anılar</p>
-                <span className="text-xs text-ink-300">{anilar.length}</span>
+                <span className="text-xs text-ink-400">{anilar.length}</span>
               </div>
               <p className="text-xs text-ink-500 mt-1">{ekleyenler} ekledi</p>
             </div>
             <button
               onClick={() => setEkleAcik(true)}
-              className="chip text-xs bg-orchid-50 text-orchid-700 border border-orchid-100 shrink-0 active:scale-95"
+              className="chip text-xs bg-orchid-50 text-orchid-700 border border-orchid-100 shrink-0 active:opacity-80"
             >
               <Icon name="Plus" className="w-3.5 h-3.5" />
               Anı ekle
@@ -88,7 +88,7 @@ export function PlanAnilariKarti({ grupId, arkadasId, tarih, konum, planBasligi,
                   <button
                     onClick={() => setAcikId(a.id)}
                     aria-label={`${a.mekan_adi}, ${kim}${yanit ? `, ${yanit} yanıt` : ''}`}
-                    className="relative block w-24 h-24 rounded-2xl overflow-hidden bg-mist-100 active:scale-95 transition-transform"
+                    className="relative block w-24 h-24 rounded-2xl overflow-hidden bg-mist-100 active:opacity-80 transition-transform"
                   >
                     <AniGorseli ani={a} />
                     {yanit > 0 && (

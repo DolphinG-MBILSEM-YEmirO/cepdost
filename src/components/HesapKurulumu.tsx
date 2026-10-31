@@ -90,7 +90,7 @@ export function HesapKurulumu({ profil, onTamamlandi }: Props) {
             Kullanıcı adın
           </label>
           <div className="flex items-center bg-mist-100 border border-ink-100 rounded-xl px-3 mb-2">
-            <span className="text-ink-300">@</span>
+            <span className="text-ink-400">@</span>
             <input
               value={kullaniciAdi}
               onChange={(e) => setKullaniciAdi(e.target.value)}
@@ -154,7 +154,7 @@ export function HesapKurulumu({ profil, onTamamlandi }: Props) {
               ikon="Users"
             />
           </div>
-          <p className="text-xs text-ink-300 mt-3">
+          <p className="text-xs text-ink-400 mt-3">
             Bunu daha sonra Hesabım sekmesinden değiştirebilirsin.
           </p>
         </div>
@@ -204,13 +204,13 @@ function GizlilikSecenegi({
   return (
     <button
       onClick={onSec}
-      className={`w-full text-left rounded-2xl p-3.5 border transition-all active:scale-[0.98] flex gap-3 ${
+      className={`w-full text-left rounded-2xl p-3.5 border transition-all active:opacity-80 flex gap-3 ${
         secili ? 'bg-orchid-50 border-orchid-200' : 'bg-mist-100 border-ink-100'
       }`}
     >
       <Icon
         name={ikon}
-        className={`w-5 h-5 shrink-0 mt-0.5 ${secili ? 'text-orchid-600' : 'text-ink-300'}`}
+        className={`w-5 h-5 shrink-0 mt-0.5 ${secili ? 'text-orchid-600' : 'text-ink-400'}`}
       />
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-semibold ${secili ? 'text-orchid-800' : 'text-ink-600'}`}>{baslik}</p>

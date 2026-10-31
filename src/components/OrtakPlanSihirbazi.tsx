@@ -124,7 +124,7 @@ export function OrtakPlanSihirbazi({
       await planiKur(
         { ...plan, not: plan.gerekce, emoji: null },
         grupModu && grup ? { tur: 'grup', grup } : { tur: 'arkadaslar', kisiler: katilimcilar },
-        grupModu ? `${benimAdim} bir plan önerdi 👇` : undefined,
+        grupModu ? `${benimAdim} bir plan önerdi` : undefined,
       )
 
       setGonderildi(true)
@@ -199,7 +199,7 @@ export function OrtakPlanSihirbazi({
                           isaretli ? eski.filter((x) => x !== p.id) : [...eski, p.id],
                         )
                       }
-                      className={`w-full flex items-center gap-3 rounded-2xl p-3 border transition-all active:scale-[0.98] ${
+                      className={`w-full flex items-center gap-3 rounded-2xl p-3 border transition-all active:opacity-80 ${
                         isaretli ? 'bg-orchid-50 border-orchid-200' : 'bg-mist-100 border-ink-100'
                       }`}
                     >
@@ -252,7 +252,7 @@ export function OrtakPlanSihirbazi({
                 </span>
               ))}
               {katilimcilar.length > 6 && (
-                <span className="text-xs text-ink-300">+{katilimcilar.length - 6}</span>
+                <span className="text-xs text-ink-400">+{katilimcilar.length - 6}</span>
               )}
             </div>
 
@@ -277,7 +277,7 @@ export function OrtakPlanSihirbazi({
                     onClick={() => setGunSayisi(s.gun)}
                     className={`chip flex-1 justify-center ${
                       gunSayisi === s.gun
-                        ? 'bg-gradient-orchid text-white'
+                        ? 'bg-orchid-600 text-white'
                         : 'bg-mist-100 text-ink-500 border border-ink-100'
                     }`}
                   >
@@ -296,7 +296,7 @@ export function OrtakPlanSihirbazi({
                     onClick={() => setSure(s)}
                     className={`chip flex-1 justify-center ${
                       sure === s
-                        ? 'bg-gradient-orchid text-white'
+                        ? 'bg-orchid-600 text-white'
                         : 'bg-mist-100 text-ink-500 border border-ink-100'
                     }`}
                   >
@@ -343,11 +343,11 @@ export function OrtakPlanSihirbazi({
                   <p className="font-display text-lg font-bold text-ink-700 mb-1">{plan.baslik}</p>
                   <div className="flex items-center gap-3 text-sm text-ink-500 mb-3">
                     <span className="flex items-center gap-1.5">
-                      <Icon name="CalendarDays" className="w-4 h-4 text-ink-300" />
+                      <Icon name="CalendarDays" className="w-4 h-4 text-ink-400" />
                       {formatDate(plan.tarih) ?? plan.tarih}
                     </span>
                     <span className="flex items-center gap-1.5">
-                      <Icon name="Clock" className="w-4 h-4 text-ink-300" />
+                      <Icon name="Clock" className="w-4 h-4 text-ink-400" />
                       {plan.saat} · {plan.sure} dk
                     </span>
                   </div>
@@ -376,7 +376,7 @@ export function OrtakPlanSihirbazi({
                           <button
                             key={i}
                             onClick={() => setPlan(s)}
-                            className="w-full card p-3 text-left active:scale-[0.98] transition-transform"
+                            className="w-full card p-3 text-left active:opacity-80 transition-transform"
                           >
                             <p className="text-sm font-semibold text-ink-700 truncate">{s.baslik}</p>
                             <p className="text-xs text-ink-400 mt-0.5">
@@ -409,7 +409,7 @@ export function OrtakPlanSihirbazi({
                               sure: Math.min(plan.sure, dakikaFarki(b.baslangic, b.bitis)),
                             })
                           }
-                          className="chip bg-mist-100 text-ink-500 border border-ink-100 text-xs active:scale-95"
+                          className="chip bg-mist-100 text-ink-500 border border-ink-100 text-xs active:opacity-80"
                         >
                           {formatDate(b.tarih) ?? b.tarih} {b.baslangic}
                         </button>
@@ -449,7 +449,7 @@ export function OrtakPlanSihirbazi({
           </>
         )}
 
-        <p className="text-[11px] text-ink-300 text-center leading-relaxed pt-2">
+        <p className="text-[11px] text-ink-400 text-center leading-relaxed pt-2">
           Yalnızca kimin ne zaman dolu olduğuna bakıyorum — kimsenin plan başlığını,
           yerini ya da detayını görmüyorum.
         </p>
@@ -509,7 +509,7 @@ function Kabuk({
         <h2 className="font-display text-base font-bold text-ink-700 truncate">{baslik}</h2>
         <button
           onClick={onKapat}
-          className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
         >
           <Icon name="X" className="w-5 h-5 text-ink-500" />
         </button>

@@ -24,7 +24,7 @@ import { localDateString } from './format'
 
 export type PaylasimHedefi = { tur: 'arkadas'; id: string; ad: string } | { tur: 'grup'; grup: Grup }
 
-const PAYLASIM_MESAJI = 'Bir plan paylaştım 👇'
+const PAYLASIM_MESAJI = 'Bir plan paylaştım'
 
 // Fields every calendar entry made from a shared plan has in common.
 function ortakAlanlar() {
@@ -108,8 +108,8 @@ export interface KurulacakPlan {
   yakinOneriler?: YakinOneri[] | null
 }
 
-const DAVET_MESAJI = 'Bir plan önerdim 👇'
-const GRUP_PLANI_MESAJI = 'Yeni bir plan 👇'
+const DAVET_MESAJI = 'Bir plan önerdim'
+const GRUP_PLANI_MESAJI = 'Yeni bir plan'
 
 // Sets up a new plan in one go: the group plan or the invites (each with a
 // card in the chat), then my own calendar entry, linked so later answers and

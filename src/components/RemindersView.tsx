@@ -126,7 +126,7 @@ export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, 
                         onClick={() => void islem.uygula(groups.overdue, { tur: 'tasi', tarih: bugun })}
                         disabled={islem.mesgul}
                         aria-label="Hepsini bugüne al"
-                        className="chip text-xs bg-mist-50 text-ink-500 border border-ink-100 active:scale-95 disabled:opacity-50"
+                        className="chip text-xs bg-mist-50 text-ink-500 border border-ink-100 active:opacity-80 disabled:opacity-50"
                       >
                         Bugüne al
                       </button>
@@ -134,7 +134,7 @@ export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, 
                         onClick={() => void islem.uygula(groups.overdue, { tur: 'tasi', tarih: gunEkle(bugun, 1) })}
                         disabled={islem.mesgul}
                         aria-label="Hepsini yarına ertele"
-                        className="chip text-xs bg-mist-50 text-ink-500 border border-ink-100 active:scale-95 disabled:opacity-50"
+                        className="chip text-xs bg-mist-50 text-ink-500 border border-ink-100 active:opacity-80 disabled:opacity-50"
                       >
                         Yarına ertele
                       </button>
@@ -142,7 +142,7 @@ export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, 
                         onClick={() => void islem.uygula(groups.overdue, { tur: 'yapildi' })}
                         disabled={islem.mesgul}
                         aria-label="Hepsini yapıldı say"
-                        className="chip text-xs bg-mist-50 text-ink-500 border border-ink-100 active:scale-95 disabled:opacity-50"
+                        className="chip text-xs bg-mist-50 text-ink-500 border border-ink-100 active:opacity-80 disabled:opacity-50"
                       >
                         <Icon name="CheckCheck" className="w-3.5 h-3.5" />
                         Yapıldı say
@@ -169,7 +169,7 @@ export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, 
         {onFikirler && groups.noDate.length > 0 && (
           <button
             onClick={onFikirler}
-            className="w-full card px-4 py-3 flex items-center gap-3 text-left active:scale-[0.99] transition-transform"
+            className="w-full card px-4 py-3 flex items-center gap-3 text-left active:opacity-80 transition-transform"
           >
             <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
               <Icon name="Lightbulb" className="w-[18px] h-[18px] text-amber-600" />
@@ -178,7 +178,7 @@ export function RemindersView({ kayitlar, onToggleStatus, onDelete, onAddClick, 
               <span className="block text-sm font-semibold text-ink-600">Fikirler</span>
               <span className="block text-xs text-ink-400">Günü belli olmayan {groups.noDate.length} plan</span>
             </span>
-            <Icon name="ChevronRight" className="w-4 h-4 text-ink-300 shrink-0" />
+            <Icon name="ChevronRight" className="w-4 h-4 text-ink-400 shrink-0" />
           </button>
         )}
       </div>
@@ -212,8 +212,8 @@ function Section({
   // Buttons that act on the whole section, under its title.
   eylemler?: React.ReactNode
 }) {
-  const color = accent === 'rose' ? 'text-rose-500' : accent === 'orchid' ? 'text-orchid-500' : muted ? 'text-ink-300' : 'text-ink-400'
-  const textColor = accent === 'rose' ? 'text-rose-600' : accent === 'orchid' ? 'text-orchid-600' : muted ? 'text-ink-300' : 'text-ink-500'
+  const color = accent === 'rose' ? 'text-rose-500' : accent === 'orchid' ? 'text-orchid-500' : muted ? 'text-ink-400' : 'text-ink-400'
+  const textColor = accent === 'rose' ? 'text-rose-600' : accent === 'orchid' ? 'text-orchid-600' : muted ? 'text-ink-400' : 'text-ink-500'
 
   return (
     <div>

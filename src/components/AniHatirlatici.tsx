@@ -66,7 +66,7 @@ export function AniHatirlatici({ kayitlar }: { kayitlar: Kayit[] }) {
                   >
                     Şimdi değil
                   </button>
-                  <button onClick={() => setAcik(k)} className="chip bg-gradient-orchid text-white text-xs">
+                  <button onClick={() => setAcik(k)} className="chip bg-orchid-600 text-white text-xs">
                     <Icon name="ImageIcon" className="w-4 h-4" />
                     Fotoğraf ekle
                   </button>

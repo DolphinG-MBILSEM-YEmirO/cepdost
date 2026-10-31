@@ -335,7 +335,7 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
         </div>
         <button
           onClick={onClose}
-          className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
         >
           <Icon name="X" className="w-5 h-5 text-ink-500" />
         </button>
@@ -522,13 +522,13 @@ function KiminleAdimi({
             <button
               key={s.id}
               onClick={() => onKapsam(s.id)}
-              className={`w-full flex items-center gap-3 rounded-2xl p-4 border text-left transition-all active:scale-[0.98] ${
+              className={`w-full flex items-center gap-3 rounded-2xl p-4 border text-left transition-all active:opacity-80 ${
                 aktif ? 'bg-orchid-50 border-orchid-200' : 'bg-mist-50 border-ink-100'
               }`}
             >
               <div
                 className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${
-                  aktif ? 'bg-gradient-orchid text-white' : 'bg-mist-100 text-ink-400'
+                  aktif ? 'bg-orchid-600 text-white' : 'bg-mist-100 text-ink-400'
                 }`}
               >
                 <Icon name={s.ikon} className="w-5 h-5" />
@@ -562,7 +562,7 @@ function KiminleAdimi({
                   <button
                     key={a.profil.id}
                     onClick={() => onArkadasDegistir(a.profil.id)}
-                    className={`w-full flex items-center gap-3 rounded-2xl p-3 border transition-all active:scale-[0.98] ${
+                    className={`w-full flex items-center gap-3 rounded-2xl p-3 border transition-all active:opacity-80 ${
                       secili ? 'bg-orchid-50 border-orchid-200' : 'bg-mist-50 border-ink-100'
                     }`}
                   >
@@ -607,7 +607,7 @@ function KiminleAdimi({
                   <button
                     key={g.id}
                     onClick={() => onGrupSec(secili ? null : g)}
-                    className={`w-full flex items-center gap-3 rounded-2xl p-3 border transition-all active:scale-[0.98] ${
+                    className={`w-full flex items-center gap-3 rounded-2xl p-3 border transition-all active:opacity-80 ${
                       secili ? 'bg-orchid-50 border-orchid-200' : 'bg-mist-50 border-ink-100'
                     }`}
                   >
@@ -673,7 +673,7 @@ function DetayAdimi(p: {
 
   return (
     <>
-      <Bolum baslik="Ne yapacaksınız?" ikon="Sparkles">
+      <Bolum baslik="Ne yapacaksınız?" ikon="ListChecks">
         <div className="flex flex-wrap gap-2 mb-3">
           {ETKINLIKLER.map((e) => {
             const secili = p.etkinlik?.ad === e.ad
@@ -683,7 +683,7 @@ function DetayAdimi(p: {
                 onClick={() => p.onEtkinlik(e)}
                 className={`chip ${
                   secili
-                    ? 'bg-gradient-orchid text-white'
+                    ? 'bg-orchid-600 text-white'
                     : 'bg-mist-100 text-ink-500 border border-ink-100'
                 }`}
               >
@@ -729,7 +729,7 @@ function DetayAdimi(p: {
                 <button
                   key={i}
                   onClick={() => p.onKonum(o.isim)}
-                  className="shrink-0 text-left bg-mist-100 border border-ink-100 rounded-2xl px-3.5 py-2.5 active:scale-95 transition-transform min-w-[160px]"
+                  className="shrink-0 text-left bg-mist-100 border border-ink-100 rounded-2xl px-3.5 py-2.5 active:opacity-80 transition-transform min-w-[160px]"
                 >
                   <p className="text-sm font-semibold text-ink-700 truncate">{o.isim}</p>
                   <p className="text-xs text-ink-400 mt-0.5">
@@ -742,7 +742,7 @@ function DetayAdimi(p: {
                 </button>
               ))}
             </div>
-            <p className="text-[11px] text-ink-300 mt-2">
+            <p className="text-[11px] text-ink-400 mt-2">
               Foursquare'den gerçek mekanlar — dokununca yukarı yazılır.
             </p>
           </div>
@@ -757,7 +757,7 @@ function DetayAdimi(p: {
               onClick={() => p.onTarih(g.deger)}
               className={`chip flex-1 justify-center ${
                 p.tarih === g.deger
-                  ? 'bg-gradient-orchid text-white'
+                  ? 'bg-orchid-600 text-white'
                   : 'bg-mist-100 text-ink-500 border border-ink-100'
               }`}
             >
@@ -803,7 +803,7 @@ function DetayAdimi(p: {
                   onClick={() => p.onSure(s)}
                   className={`chip flex-1 justify-center ${
                     p.sure === s
-                      ? 'bg-gradient-orchid text-white'
+                      ? 'bg-orchid-600 text-white'
                       : 'bg-mist-100 text-ink-500 border border-ink-100'
                   }`}
                 >
@@ -891,7 +891,7 @@ function DetayAdimi(p: {
             </div>
           )}
 
-          <p className="text-[11px] text-ink-300 mt-3 leading-relaxed">
+          <p className="text-[11px] text-ink-400 mt-3 leading-relaxed">
             Yalnızca dolu saat aralıkları görünür — kimsenin ne yaptığı görünmez.
           </p>
         </Bolum>
@@ -939,7 +939,7 @@ function OzetAdimi({
 
         <div className="space-y-1.5 text-sm text-ink-500">
           <p className="flex items-center gap-2">
-            <Icon name="CalendarDays" className="w-4 h-4 text-ink-300 shrink-0" />
+            <Icon name="CalendarDays" className="w-4 h-4 text-ink-400 shrink-0" />
             {formatDate(tarih) ?? tarih}
             {tumGun ? ' · Tüm gün' : `${saat ? ` · ${saat}` : ''} · ${sure} dk`}
           </p>
@@ -999,7 +999,7 @@ function OzetAdimi({
         )}
       </div>
 
-      <p className="text-[11px] text-ink-300 text-center leading-relaxed">
+      <p className="text-[11px] text-ink-400 text-center leading-relaxed">
         {kapsam === 'tek'
           ? 'Bu plan yalnızca cihazında saklanır, hiçbir yere gönderilmez.'
           : 'Planın detayları cihazında kalır; karşı tarafa yalnızca davet bilgisi gider.'}

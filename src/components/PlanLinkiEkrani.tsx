@@ -104,12 +104,12 @@ export function PlanLinkiEkrani({ link, girisli, onKapat, onSahibiEkle }: Props)
       <header className="max-w-md mx-auto px-5 pt-[calc(1rem+var(--safe-top))] flex items-center justify-between">
         <div className="flex items-center gap-2">
           <img src="/icons/icon-192.png" alt="" className="w-8 h-8 rounded-xl" />
-          <span className="font-display text-lg font-bold text-gradient-orchid">{UYGULAMA_ADI}</span>
+          <span className="font-display text-lg font-bold text-ink-800">{UYGULAMA_ADI}</span>
         </div>
         {girisli && (
           <button
             onClick={onKapat}
-            className="text-sm font-semibold text-ink-500 rounded-xl px-3 py-2 hover:bg-ink-50 active:scale-95 transition-all"
+            className="text-sm font-semibold text-ink-500 rounded-xl px-3 py-2 hover:bg-ink-50 active:opacity-80 transition-all"
           >
             Uygulamaya dön
           </button>
@@ -182,9 +182,9 @@ export function PlanLinkiEkrani({ link, girisli, onKapat, onSahibiEkle }: Props)
                         onClick={() => void yanitla(s.yanit)}
                         disabled={gonderiliyor !== null}
                         aria-pressed={secili}
-                        className={`flex flex-col items-center gap-1 rounded-2xl py-3 text-sm font-semibold transition-all active:scale-95 disabled:opacity-60 ${
+                        className={`flex flex-col items-center gap-1 rounded-2xl py-3 text-sm font-semibold transition-all active:opacity-80 disabled:opacity-60 ${
                           secili
-                            ? 'bg-gradient-orchid text-white shadow-brand'
+                            ? 'bg-orchid-600 text-white'
                             : 'bg-mist-100 text-ink-500 border border-ink-100 hover:border-orchid-200'
                         }`}
                       >
@@ -213,7 +213,7 @@ export function PlanLinkiEkrani({ link, girisli, onKapat, onSahibiEkle }: Props)
             )}
 
             {!plan.sahipKodu ? null : !girisli ? (
-              <div className="card p-5 bg-gradient-orchid-soft border-orchid-100">
+              <div className="card p-5 bg-orchid-50 border-orchid-100">
                 <p className="font-semibold text-ink-700 mb-1">Planlarını {UYGULAMA_ADI} ile kur</p>
                 <p className="text-sm text-ink-500 mb-4">
                   {plan.sahipAdi} ile arkadaş ol; boş saatlerinizi görün, sonraki planı birlikte ayarlayın. Ücretsiz.
@@ -227,7 +227,7 @@ export function PlanLinkiEkrani({ link, girisli, onKapat, onSahibiEkle }: Props)
               !sahibimMi && (
                 <button
                   onClick={() => onSahibiEkle(plan.sahipKodu!)}
-                  className="w-full card p-4 flex items-center gap-3 text-left active:scale-[0.98] transition-transform"
+                  className="w-full card p-4 flex items-center gap-3 text-left active:opacity-80 transition-transform"
                 >
                   <Avatar ad={plan.sahipAdi} boyut="sm" />
                   <div className="flex-1 min-w-0">
@@ -252,7 +252,7 @@ function PlanKarti({ plan }: { plan: LinkPlani }) {
 
   return (
     <div className="card overflow-hidden">
-      <div className="bg-gradient-orchid-soft px-5 pt-6 pb-5 text-center">
+      <div className="bg-orchid-50 px-5 pt-6 pb-5 text-center">
         <div className="w-16 h-16 rounded-3xl bg-mist-50 shadow-soft flex items-center justify-center mx-auto mb-3">
           {plan.emoji ? (
             <span className="text-3xl" aria-hidden="true">

@@ -91,11 +91,11 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
       <button
         onClick={() => void izniDegistir()}
         disabled={calisiyor}
-        className="w-full flex items-center gap-3 text-left active:scale-[0.98] transition-transform disabled:opacity-60 mb-4"
+        className="w-full flex items-center gap-3 text-left active:opacity-80 transition-transform disabled:opacity-60 mb-4"
       >
         <div
           className={`w-11 h-6 rounded-full transition-colors shrink-0 relative ${
-            ayar.izin ? 'bg-gradient-orchid' : 'bg-ink-200'
+            ayar.izin ? 'bg-orchid-600' : 'bg-ink-200'
           }`}
         >
           <div
@@ -149,7 +149,7 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
               {ayar.sonSenkron ? 'Yeniden içe aktar' : 'İçe aktar'}
             </button>
 
-            <p className="text-[11px] text-ink-300 mt-2.5 leading-relaxed">
+            <p className="text-[11px] text-ink-400 mt-2.5 leading-relaxed">
               Google Takvim → Ayarlar → takvimini seç → "Gizli adres (iCal biçimi)".
               Bu adres bir şifre gibidir, kimseyle paylaşma.
             </p>
@@ -157,7 +157,7 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
 
           <div className="flex items-center gap-2">
             <div className="h-px bg-ink-100 flex-1" />
-            <span className="text-[11px] text-ink-300">ya da</span>
+            <span className="text-[11px] text-ink-400">ya da</span>
             <div className="h-px bg-ink-100 flex-1" />
           </div>
 
@@ -207,7 +207,7 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
         </div>
       )}
 
-      <p className="text-[11px] text-ink-300 mt-4 leading-relaxed">
+      <p className="text-[11px] text-ink-400 mt-4 leading-relaxed">
         Etkinlikler yalnızca telefonunda saklanır. Arkadaşlarına giden tek şey, tıpkı
         {UYGULAMA_ADI} planlarında olduğu gibi, dolu saat aralıkları — etkinliğin adı ya da
         yeri asla gönderilmez.

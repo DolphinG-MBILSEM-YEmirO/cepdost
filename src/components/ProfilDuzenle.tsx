@@ -45,7 +45,7 @@ export function ProfilDuzenle({
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink-900/40 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink-900/40 animate-fade-in"
       onClick={onKapat}
     >
       <div
@@ -82,7 +82,7 @@ export function ProfilDuzenle({
           placeholder="Hafta sonları kahve ve yürüyüş ☕"
           className="input-field resize-none"
         />
-        <p className="text-[11px] text-ink-300 text-right mb-3">
+        <p className="text-[11px] text-ink-400 text-right mb-3">
           {biyografi.length}/{BIYOGRAFI_MAKS}
         </p>
 

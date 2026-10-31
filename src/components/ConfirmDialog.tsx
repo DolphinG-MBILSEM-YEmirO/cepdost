@@ -21,7 +21,7 @@ export function ConfirmDialog({
   useGeriIleKapat(onCancel)
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink-900/40 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink-900/40 animate-fade-in"
       onClick={onCancel}
     >
       <div
@@ -43,7 +43,7 @@ export function ConfirmDialog({
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 bg-rose-500 text-white font-semibold rounded-2xl px-5 py-3.5 active:scale-[0.97] transition-all hover:bg-rose-600"
+            className="flex-1 bg-rose-500 text-white font-semibold rounded-2xl px-5 py-3.5 active:opacity-80 transition-all hover:bg-rose-600"
           >
             {confirmLabel}
           </button>

@@ -52,7 +52,7 @@ export function KayitCard({ kayit, onToggleStatus, onDelete, onClick, sorgu = nu
   return (
     <div
       {...tiklama}
-      className={`card p-4 ${onClick || secim ? 'cursor-pointer' : ''} transition-all duration-200 active:scale-[0.98] ${
+      className={`card p-4 ${onClick || secim ? 'cursor-pointer' : ''} transition-all duration-200 active:opacity-80 ${
         done && !secim?.secili ? 'opacity-60' : ''
       } ${secim?.secili ? 'ring-2 ring-orchid-300' : ''}`}
     >
@@ -70,7 +70,7 @@ export function KayitCard({ kayit, onToggleStatus, onDelete, onClick, sorgu = nu
           <button
             onClick={(e) => { e.stopPropagation(); onToggleStatus() }}
             aria-label={done ? 'Bekliyor olarak işaretle' : 'Yapıldı olarak işaretle'}
-            className={`shrink-0 mt-0.5 transition-transform active:scale-90 ${done ? 'text-teal-500' : 'text-ink-200'}`}
+            className={`shrink-0 mt-0.5 transition-transform active:opacity-80 ${done ? 'text-teal-500' : 'text-ink-200'}`}
           >
             <Icon name={done ? 'CheckCircle2' : 'Circle'} className="w-6 h-6" />
           </button>
@@ -122,7 +122,7 @@ export function KayitCard({ kayit, onToggleStatus, onDelete, onClick, sorgu = nu
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="flex items-center gap-1 text-xs text-teal-600 font-medium active:scale-95 transition-transform"
+                    className="flex items-center gap-1 text-xs text-teal-600 font-medium active:opacity-80 transition-transform"
                   >
                     <Icon name="MapPin" className="w-3.5 h-3.5" />
                     <Vurgulu metin={kayit.konum} sorgu={sorgu} />
@@ -134,11 +134,11 @@ export function KayitCard({ kayit, onToggleStatus, onDelete, onClick, sorgu = nu
           <div className="mt-2 flex items-center justify-between">
             <div className="flex items-center gap-2 min-w-0">
               {kalan ? (
-                <span className={`text-xs font-medium ${kalan.durum === 'yakin' || kalan.durum === 'suruyor' ? 'text-orchid-600' : 'text-ink-300'}`}>
+                <span className={`text-xs font-medium ${kalan.durum === 'yakin' || kalan.durum === 'suruyor' ? 'text-orchid-600' : 'text-ink-400'}`}>
                   {kalan.metin}
                 </span>
               ) : (
-                <span className="text-xs text-ink-300">{formatRelativeTime(kayit.olusturulmaTarihi)}</span>
+                <span className="text-xs text-ink-400">{formatRelativeTime(kayit.olusturulmaTarihi)}</span>
               )}
               <PlanRozetleri kayit={kayit} />
               {kayit.oncelik !== 'orta' && (
@@ -149,7 +149,7 @@ export function KayitCard({ kayit, onToggleStatus, onDelete, onClick, sorgu = nu
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete() }}
                 aria-label="Kaydı sil"
-                className="w-8 h-8 rounded-full flex items-center justify-center text-ink-200 hover:text-rose-500 hover:bg-rose-50 transition-all active:scale-90"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-ink-200 hover:text-rose-500 hover:bg-rose-50 transition-all active:opacity-80"
               >
                 <Icon name="Trash2" className="w-4 h-4" />
               </button>

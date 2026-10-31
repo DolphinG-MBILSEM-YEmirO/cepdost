@@ -101,7 +101,7 @@ export function AniYanitlari({
             onClick={() => setSecici(!secici)}
             aria-expanded={secici}
             aria-label={tepkim ? `Tepkin: ${tepkim}` : 'Tepki ver'}
-            className={`chip text-xs active:scale-95 ${tepkim ? 'bg-orchid-50 text-orchid-700 border border-orchid-100' : 'bg-mist-50 text-ink-500 border border-ink-100'}`}
+            className={`chip text-xs active:opacity-80 ${tepkim ? 'bg-orchid-50 text-orchid-700 border border-orchid-100' : 'bg-mist-50 text-ink-500 border border-ink-100'}`}
           >
             {tepkim ? <span aria-hidden="true">{tepkim}</span> : <Icon name="SmilePlus" className="w-3.5 h-3.5" />}
             Tepki
@@ -111,7 +111,7 @@ export function AniYanitlari({
           <button
             onClick={() => setYorumlarAcik(!yorumlarAcik)}
             aria-expanded={yorumlarAcik}
-            className="chip text-xs bg-mist-50 text-ink-500 border border-ink-100 active:scale-95"
+            className="chip text-xs bg-mist-50 text-ink-500 border border-ink-100 active:opacity-80"
           >
             <Icon name="MessageCircle" className="w-3.5 h-3.5" />
             Yorum{etkilesim.yorumlar.length > 0 ? ` (${etkilesim.yorumlar.length})` : ''}
@@ -122,7 +122,7 @@ export function AniYanitlari({
             onClick={() => void calistir('gitmek', () => onGitmek(ani, !gitmekIstiyorum))}
             disabled={isleniyor === 'gitmek'}
             aria-pressed={gitmekIstiyorum}
-            className={`chip text-xs active:scale-95 disabled:opacity-50 ${
+            className={`chip text-xs active:opacity-80 disabled:opacity-50 ${
               gitmekIstiyorum ? 'bg-teal-100 text-teal-700' : 'bg-mist-50 text-ink-500 border border-ink-100'
             }`}
           >
@@ -143,7 +143,7 @@ export function AniYanitlari({
               }}
               aria-label={`${emoji} bırak`}
               aria-pressed={tepkim === emoji}
-              className={`w-10 h-10 rounded-full text-xl flex items-center justify-center active:scale-90 transition-transform ${
+              className={`w-10 h-10 rounded-full text-xl flex items-center justify-center active:opacity-80 transition-transform ${
                 tepkim === emoji ? 'bg-orchid-100 ring-2 ring-orchid-300' : 'bg-mist-100 hover:bg-mist-200'
               }`}
             >
@@ -163,7 +163,7 @@ export function AniYanitlari({
             <button
               onClick={() => void calistir('planla', () => onPlanla(ani))}
               disabled={isleniyor === 'planla'}
-              className="chip text-xs py-1 bg-white text-teal-700 border border-teal-200 shrink-0 active:scale-95 disabled:opacity-50"
+              className="chip text-xs py-1 bg-white text-teal-700 border border-teal-200 shrink-0 active:opacity-80 disabled:opacity-50"
             >
               <Icon name="CalendarPlus" className="w-3.5 h-3.5" />
               Plan yap
@@ -186,7 +186,7 @@ export function AniYanitlari({
               <p className="flex-1 min-w-0 break-words text-ink-600">
                 <span className="font-semibold text-ink-700">{y.yazar === benimId ? 'Sen' : (profiller.get(y.yazar)?.ad ?? 'Bir arkadaşın')}</span>{' '}
                 {y.metin}
-                <span className="text-[11px] text-ink-300 ml-1.5">{formatRelativeTime(y.zaman)}</span>
+                <span className="text-[11px] text-ink-400 ml-1.5">{formatRelativeTime(y.zaman)}</span>
               </p>
               {y.yazar === benimId && (
                 <button
@@ -223,7 +223,7 @@ export function AniYanitlari({
             type="submit"
             disabled={!yorum.trim() || isleniyor === 'yorum'}
             aria-label="Yorumu gönder"
-            className="w-10 shrink-0 rounded-2xl bg-gradient-orchid text-white flex items-center justify-center active:scale-95 transition-transform disabled:opacity-40"
+            className="w-10 shrink-0 rounded-2xl bg-orchid-600 text-white flex items-center justify-center active:opacity-80 transition-transform disabled:opacity-40"
           >
             <Icon name={isleniyor === 'yorum' ? 'Loader2' : 'Send'} className={`w-4 h-4 ${isleniyor === 'yorum' ? 'animate-spin' : ''}`} />
           </button>

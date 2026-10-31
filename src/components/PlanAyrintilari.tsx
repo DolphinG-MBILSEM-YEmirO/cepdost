@@ -60,7 +60,7 @@ export function KartBasligi({ ikon, baslik, sag }: { ikon: IconName; baslik: str
 // ---------- countdown ----------
 
 const ROZET_RENKLERI: Record<GeriSayimDurumu, string> = {
-  yakin: 'bg-gradient-orchid text-white',
+  yakin: 'bg-orchid-600 text-white',
   suruyor: 'bg-teal-100 text-teal-700',
   gelecek: 'bg-orchid-50 text-orchid-700',
   gecti: 'bg-mist-100 text-ink-400',
@@ -72,7 +72,7 @@ export function GeriSayimRozeti({ kayit }: { kayit: Pick<Kayit, 'tarih' | 'saat'
   if (!sayim) return null
   return (
     <span role="timer" className={`chip font-semibold ${ROZET_RENKLERI[sayim.durum]}`}>
-      <Icon name={sayim.durum === 'suruyor' ? 'Sparkles' : 'Clock'} className="w-3.5 h-3.5" />
+      <Icon name={sayim.durum === 'suruyor' ? 'CalendarClock' : 'Clock'} className="w-3.5 h-3.5" />
       {sayim.metin}
     </span>
   )
@@ -119,7 +119,7 @@ export function YapilacaklarKarti({ kayit }: { kayit: Kayit }) {
         <>
           <div className="h-1.5 rounded-full bg-mist-100 overflow-hidden mb-3" aria-hidden="true">
             <div
-              className="h-full rounded-full bg-gradient-orchid transition-all duration-300"
+              className="h-full rounded-full bg-orchid-600 transition-all duration-300"
               style={{ width: `${Math.round((biten / liste.length) * 100)}%` }}
             />
           </div>
@@ -130,17 +130,17 @@ export function YapilacaklarKarti({ kayit }: { kayit: Kayit }) {
                   onClick={() => degistir((l) => maddeyiIsaretle(l, m.id))}
                   aria-label={m.tamam ? `${m.metin}: yapılmadı olarak işaretle` : `${m.metin}: yapıldı olarak işaretle`}
                   aria-pressed={m.tamam}
-                  className={`shrink-0 transition-transform active:scale-90 ${m.tamam ? 'text-teal-500' : 'text-ink-200'}`}
+                  className={`shrink-0 transition-transform active:opacity-80 ${m.tamam ? 'text-teal-500' : 'text-ink-200'}`}
                 >
                   <Icon name={m.tamam ? 'CheckCircle2' : 'Circle'} className="w-5 h-5" />
                 </button>
-                <span className={`flex-1 min-w-0 text-sm break-words ${m.tamam ? 'line-through text-ink-300' : 'text-ink-600'}`}>
+                <span className={`flex-1 min-w-0 text-sm break-words ${m.tamam ? 'line-through text-ink-400' : 'text-ink-600'}`}>
                   {m.metin}
                 </span>
                 <button
                   onClick={() => degistir((l) => maddeyiSil(l, m.id))}
                   aria-label={`${m.metin} maddesini sil`}
-                  className="w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-ink-200 hover:text-rose-500 hover:bg-rose-50 active:scale-90 transition-all"
+                  className="w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-ink-200 hover:text-rose-500 hover:bg-rose-50 active:opacity-80 transition-all"
                 >
                   <Icon name="X" className="w-4 h-4" />
                 </button>
@@ -170,7 +170,7 @@ export function YapilacaklarKarti({ kayit }: { kayit: Kayit }) {
             type="submit"
             disabled={!yeni.trim()}
             aria-label="Maddeyi ekle"
-            className="w-11 shrink-0 rounded-2xl bg-gradient-orchid text-white flex items-center justify-center active:scale-95 transition-transform disabled:opacity-40"
+            className="w-11 shrink-0 rounded-2xl bg-orchid-600 text-white flex items-center justify-center active:opacity-80 transition-transform disabled:opacity-40"
           >
             <Icon name="Plus" className="w-5 h-5" />
           </button>
@@ -180,7 +180,7 @@ export function YapilacaklarKarti({ kayit }: { kayit: Kayit }) {
       {oneriler.length > 0 && (
         <div className="flex flex-wrap gap-2 mt-3">
           {oneriler.map((o) => (
-            <button key={o} onClick={() => ekle(o)} className="chip bg-mist-50 text-ink-500 border border-ink-100 active:scale-95">
+            <button key={o} onClick={() => ekle(o)} className="chip bg-mist-50 text-ink-500 border border-ink-100 active:opacity-80">
               <Icon name="Plus" className="w-3.5 h-3.5" />
               {o}
             </button>
@@ -188,7 +188,7 @@ export function YapilacaklarKarti({ kayit }: { kayit: Kayit }) {
         </div>
       )}
 
-      <p className="text-[11px] text-ink-300 mt-3">Yalnızca sen görürsün; tüm cihazlarında aynı kalır.</p>
+      <p className="text-[11px] text-ink-400 mt-3">Yalnızca sen görürsün; tüm cihazlarında aynı kalır.</p>
     </section>
   )
 }
@@ -221,7 +221,7 @@ export function NotlarKarti({ kayit }: { kayit: Kayit }) {
     return (
       <button
         onClick={() => setDuzenleniyor(true)}
-        className="w-full mb-4 rounded-3xl border-2 border-dashed border-ink-100 px-5 py-4 flex items-center gap-2 text-sm font-medium text-ink-400 hover:bg-mist-50 active:scale-[0.98] transition-all"
+        className="w-full mb-4 rounded-3xl border-2 border-dashed border-ink-100 px-5 py-4 flex items-center gap-2 text-sm font-medium text-ink-400 hover:bg-mist-50 active:opacity-80 transition-all"
       >
         <Icon name="Pencil" className="w-4 h-4" />
         Not ekle
@@ -236,7 +236,7 @@ export function NotlarKarti({ kayit }: { kayit: Kayit }) {
         baslik="Notlar"
         sag={
           !duzenleniyor && (
-            <button onClick={() => setDuzenleniyor(true)} className="text-xs font-semibold text-orchid-600 active:scale-95">
+            <button onClick={() => setDuzenleniyor(true)} className="text-xs font-semibold text-orchid-600 active:opacity-80">
               Düzenle
             </button>
           )
@@ -259,14 +259,14 @@ export function NotlarKarti({ kayit }: { kayit: Kayit }) {
           <div className="flex gap-2 mt-3">
             <button
               onClick={() => setDuzenleniyor(false)}
-              className="flex-1 rounded-2xl bg-mist-100 text-ink-500 font-medium py-2.5 active:scale-[0.97] transition-transform"
+              className="flex-1 rounded-2xl bg-mist-100 text-ink-500 font-medium py-2.5 active:opacity-80 transition-transform"
             >
               Vazgeç
             </button>
             <button
               onClick={() => void kaydet()}
               disabled={kaydediliyor}
-              className="flex-1 rounded-2xl bg-gradient-orchid text-white font-medium py-2.5 flex items-center justify-center gap-2 active:scale-[0.97] transition-transform disabled:opacity-50"
+              className="flex-1 rounded-2xl bg-orchid-600 text-white font-medium py-2.5 flex items-center justify-center gap-2 active:opacity-80 transition-transform disabled:opacity-50"
             >
               {kaydediliyor && <Icon name="Loader2" className="w-4 h-4 animate-spin" />}
               Kaydet
@@ -315,7 +315,7 @@ export function HatirlatmaKarti({ kayit }: { kayit: Kayit }) {
       <KartBasligi
         ikon="BellRing"
         baslik="Hatırlatma"
-        sag={<span className={`text-xs font-semibold ${etiket ? 'text-orchid-600' : 'text-ink-300'}`}>{etiket ?? 'Kapalı'}</span>}
+        sag={<span className={`text-xs font-semibold ${etiket ? 'text-orchid-600' : 'text-ink-400'}`}>{etiket ?? 'Kapalı'}</span>}
       />
 
       {!bitti && (
@@ -327,7 +327,7 @@ export function HatirlatmaKarti({ kayit }: { kayit: Kayit }) {
                 key={s.dk ?? 'kapali'}
                 onClick={() => sec(s.dk)}
                 aria-pressed={aktif}
-                className={`chip active:scale-95 ${aktif ? 'bg-orchid-100 text-orchid-700 ring-2 ring-orchid-200' : 'bg-mist-50 text-ink-500 border border-ink-100'}`}
+                className={`chip active:opacity-80 ${aktif ? 'bg-orchid-100 text-orchid-700 ring-2 ring-orchid-200' : 'bg-mist-50 text-ink-500 border border-ink-100'}`}
               >
                 {s.etiket}
               </button>
@@ -343,7 +343,7 @@ export function HatirlatmaKarti({ kayit }: { kayit: Kayit }) {
           as an alarm, which rings even when Sharloop is closed. */}
       <button
         onClick={() => kayittanIcsIndir(kayit)}
-        className="w-full bg-sky-50 text-sky-700 font-medium rounded-2xl px-5 py-3.5 flex items-center justify-center gap-2 active:scale-[0.97] transition-all hover:bg-sky-100"
+        className="w-full bg-sky-50 text-sky-700 font-medium rounded-2xl px-5 py-3.5 flex items-center justify-center gap-2 active:opacity-80 transition-all hover:bg-sky-100"
       >
         <Icon name="CalendarPlus" className="w-5 h-5" />
         {secili != null && !bitti ? 'Takvimime alarmıyla ekle' : 'Telefon takvimime ekle'}
@@ -480,7 +480,7 @@ export function KatilimListesi({
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-ink-700 truncate">
                 {k.ad}
-                {k.ben && <span className="text-ink-300 font-normal"> (sen)</span>}
+                {k.ben && <span className="text-ink-400 font-normal"> (sen)</span>}
               </p>
               {k.sahip && <p className="text-[11px] text-ink-400 leading-tight">Düzenleyen</p>}
             </div>
@@ -495,7 +495,7 @@ export function KatilimListesi({
             <button
               onClick={() => void durt()}
               disabled={durtme !== null || yakinDaDurttum}
-              className="flex-1 rounded-2xl bg-orchid-50 text-orchid-700 font-medium px-4 py-3 flex items-center justify-center gap-2 active:scale-[0.97] transition-all hover:bg-orchid-100 disabled:opacity-50"
+              className="flex-1 rounded-2xl bg-orchid-50 text-orchid-700 font-medium px-4 py-3 flex items-center justify-center gap-2 active:opacity-80 transition-all hover:bg-orchid-100 disabled:opacity-50"
             >
               <Icon name={durtme === 'gonderiliyor' ? 'Loader2' : 'BellRing'} className={`w-4 h-4 ${durtme === 'gonderiliyor' ? 'animate-spin' : ''}`} />
               {yakinDaDurttum || durtme === 'gonderildi' || durtme === 'ulasmadi' ? 'Dürtüldü' : `Dürt (${bekleyenler.length})`}
@@ -504,7 +504,7 @@ export function KatilimListesi({
           {katilim.sohbet && onSohbeteGit && (
             <button
               onClick={() => onSohbeteGit(katilim.sohbet!)}
-              className="flex-1 rounded-2xl bg-mist-100 text-ink-600 font-medium px-4 py-3 flex items-center justify-center gap-2 active:scale-[0.97] transition-all hover:bg-mist-200"
+              className="flex-1 rounded-2xl bg-mist-100 text-ink-600 font-medium px-4 py-3 flex items-center justify-center gap-2 active:opacity-80 transition-all hover:bg-mist-200"
             >
               <Icon name="MessageCircle" className="w-4 h-4" />
               Sohbete git

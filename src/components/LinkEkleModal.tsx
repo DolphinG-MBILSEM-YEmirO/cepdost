@@ -126,7 +126,7 @@ export function LinkEkleModal({ onClose, onEklendi }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[65] flex items-end sm:items-center justify-center bg-ink-900/40 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[65] flex items-end sm:items-center justify-center bg-ink-900/40 animate-fade-in"
       onClick={onClose}
     >
       <div
@@ -180,7 +180,7 @@ export function LinkEkleModal({ onClose, onEklendi }: Props) {
                     onClick={() => setKategori(c)}
                     className={`chip ${
                       kategori === c
-                        ? 'bg-gradient-orchid text-white'
+                        ? 'bg-orchid-600 text-white'
                         : 'bg-mist-100 text-ink-500 border border-ink-100'
                     }`}
                   >
@@ -222,7 +222,7 @@ export function LinkEkleModal({ onClose, onEklendi }: Props) {
               />
             </div>
 
-            <p className="text-[11px] text-ink-300 break-all">{link.trim()}</p>
+            <p className="text-[11px] text-ink-400 break-all">{link.trim()}</p>
           </div>
         )}
 
@@ -247,7 +247,7 @@ export function LinkEkleModal({ onClose, onEklendi }: Props) {
             className="btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-50"
           >
             <Icon
-              name={yukleniyor ? 'Loader2' : sonuc ? 'Check' : 'Sparkles'}
+              name={yukleniyor ? 'Loader2' : sonuc ? 'Check' : 'ListChecks'}
               className={`w-5 h-5 ${yukleniyor ? 'animate-spin' : ''}`}
             />
             {yukleniyor ? (sonuc ? 'Kaydediliyor' : 'Okuyorum') : sonuc ? 'Kaydet' : 'Anla'}

@@ -43,7 +43,7 @@ export function GrupUyesiKarti({ uye, grupAdi, iliski, onKapat }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink-900/40 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-ink-900/40 animate-fade-in"
       onClick={onKapat}
     >
       <div
@@ -56,7 +56,7 @@ export function GrupUyesiKarti({ uye, grupAdi, iliski, onKapat }: Props) {
         <button
           onClick={onKapat}
           aria-label="Kapat"
-          className="absolute top-3 right-3 w-9 h-9 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform"
+          className="absolute top-3 right-3 w-9 h-9 rounded-full bg-ink-50 flex items-center justify-center active:opacity-80 transition-transform"
         >
           <Icon name="X" className="w-4 h-4 text-ink-500" />
         </button>

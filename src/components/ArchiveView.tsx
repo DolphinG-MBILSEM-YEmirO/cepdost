@@ -124,7 +124,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
               <button
                 onClick={() => setSecilenler(null)}
                 aria-label="Seçimi bitir"
-                className="w-11 h-11 rounded-full bg-mist-50 border border-ink-100 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+                className="w-11 h-11 rounded-full bg-mist-50 border border-ink-100 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
               >
                 <Icon name="X" className="w-5 h-5 text-ink-400" />
               </button>
@@ -135,7 +135,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
                 <button
                   onClick={() => setSecilenler(hepsiSecili ? new Set() : new Set(filtered.map((k) => k.id)))}
                   disabled={filtered.length === 0}
-                  className="text-xs font-semibold text-orchid-600 disabled:text-ink-300"
+                  className="text-xs font-semibold text-orchid-600 disabled:text-ink-400"
                 >
                   {hepsiSecili ? 'Seçimi kaldır' : 'Tümünü seç'}
                 </button>
@@ -156,7 +156,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
                     setSecilenler(new Set())
                   }}
                   aria-label="Seç"
-                  className="w-11 h-11 rounded-full bg-mist-50 border border-ink-100 flex items-center justify-center active:scale-90 transition-transform"
+                  className="w-11 h-11 rounded-full bg-mist-50 border border-ink-100 flex items-center justify-center active:opacity-80 transition-transform"
                 >
                   <Icon name="ListChecks" className="w-5 h-5 text-ink-400" />
                 </button>
@@ -166,7 +166,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
                   onClick={() => setShowSortMenu(!showSortMenu)}
                   aria-label={`Sırala: ${sortLabels[sortMode]}`}
                   aria-expanded={showSortMenu}
-                  className="w-11 h-11 rounded-full bg-mist-50 border border-ink-100 flex items-center justify-center active:scale-90 transition-transform"
+                  className="w-11 h-11 rounded-full bg-mist-50 border border-ink-100 flex items-center justify-center active:opacity-80 transition-transform"
                 >
                   <Icon name="Filter" className="w-5 h-5 text-ink-400" />
                 </button>
@@ -194,7 +194,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
               <button
                 onClick={() => setLinkEkleAcik(true)}
                 aria-label="Arşive link ekle"
-                className="w-11 h-11 rounded-full bg-gradient-orchid text-white flex items-center justify-center shadow-soft active:scale-90 transition-transform"
+                className="w-11 h-11 rounded-full bg-orchid-600 text-white flex items-center justify-center shadow-soft active:opacity-80 transition-transform"
               >
                 <Icon name="LinkIcon" className="w-5 h-5" />
               </button>
@@ -203,7 +203,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
         )}
 
         <div className="relative">
-          <Icon name="Search" className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-300" />
+          <Icon name="Search" className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -215,7 +215,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
             <button
               onClick={() => setSearch('')}
               aria-label="Aramayı temizle"
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-ink-300 hover:bg-ink-50"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-ink-400 hover:bg-ink-50"
             >
               <Icon name="X" className="w-4 h-4" />
             </button>
@@ -236,7 +236,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
                 }`}
               >
                 {d.etiket}{' '}
-                <span className={d.id === 'kacti' && sayi > 0 ? 'text-rose-500' : secili ? 'text-ink-400' : 'text-ink-300'}>{sayi}</span>
+                <span className={d.id === 'kacti' && sayi > 0 ? 'text-rose-500' : secili ? 'text-ink-400' : 'text-ink-400'}>{sayi}</span>
               </button>
             )
           })}
@@ -281,7 +281,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
               <section key={bolum.anahtar} aria-label={bolum.baslik}>
                 <h2 className="text-xs font-semibold text-ink-400 uppercase tracking-wide px-1 mb-2">
                   {bolum.baslik}
-                  <span className="ml-1.5 text-ink-300 font-normal">{bolum.kayitlar.length}</span>
+                  <span className="ml-1.5 text-ink-400 font-normal">{bolum.kayitlar.length}</span>
                 </h2>
                 <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0 lg:items-start">
                   {bolum.kayitlar.map((kayit) => (
@@ -314,7 +314,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
             <button
               onClick={() => void topluYapildi()}
               disabled={secilenKayitlar.length === 0 || islem.mesgul}
-              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold text-teal-200 hover:bg-white/10 active:scale-95 disabled:opacity-40"
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold text-teal-200 hover:bg-white/10 active:opacity-80 disabled:opacity-40"
             >
               <Icon name="CheckCircle2" className="w-4 h-4" />
               Yapıldı
@@ -322,7 +322,7 @@ export function ArchiveView({ kayitlar, loading, onToggleStatus, onDelete, onRec
             <button
               onClick={topluSil}
               disabled={secilenKayitlar.length === 0}
-              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold text-rose-200 hover:bg-white/10 active:scale-95 disabled:opacity-40"
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold text-rose-200 hover:bg-white/10 active:opacity-80 disabled:opacity-40"
             >
               <Icon name="Trash2" className="w-4 h-4" />
               Sil
@@ -349,7 +349,7 @@ function FilterChip({ label, count, active, onClick, icon }: { label: string; co
     >
       <Icon name={icon} className="w-4 h-4" />
       {label}
-      <span className={`text-xs ${active ? 'text-mist-200' : 'text-ink-300'}`}>{count}</span>
+      <span className={`text-xs ${active ? 'text-mist-200' : 'text-ink-400'}`}>{count}</span>
     </button>
   )
 }
@@ -372,7 +372,7 @@ function EmptyState({
     return (
       <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-fade-in">
         <div className="w-16 h-16 rounded-full bg-ink-50 flex items-center justify-center mb-4">
-          <Icon name="Search" className="w-8 h-8 text-ink-300" />
+          <Icon name="Search" className="w-8 h-8 text-ink-400" />
         </div>
         <p className="font-semibold text-ink-500 mb-1">Sonuç bulunamadı</p>
         <p className="text-sm text-ink-400">{hasSearch ? 'Başka bir kelime dene.' : durum !== 'hepsi' ? 'Bu süzgeçte kayıt yok.' : 'Bu kategoride kayıt yok.'}</p>
@@ -383,7 +383,7 @@ function EmptyState({
   return (
     <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-fade-in">
       <div className="w-20 h-20 rounded-full bg-orchid-100 flex items-center justify-center mb-5">
-        <Icon name="Sparkles" className="w-10 h-10 text-orchid-500" />
+        <Icon name="Share2" className="w-10 h-10 text-orchid-600" />
       </div>
       <p className="font-display text-lg font-bold text-ink-600 mb-2">Kaydettiğin şey burada işe yarasın</p>
       <p className="text-sm text-ink-400 mb-6 max-w-xs">

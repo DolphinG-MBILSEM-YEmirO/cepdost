@@ -133,7 +133,7 @@ function ProfilKarti({
           <div className="w-full max-w-xs mt-2">
             <div className="flex gap-2">
               <div className="flex-1 flex items-center bg-mist-50 border border-ink-100 rounded-xl px-3">
-                <span className="text-ink-300 text-sm">@</span>
+                <span className="text-ink-400 text-sm">@</span>
                 <input
                   value={kullaniciAdi}
                   onChange={(e) => setKullaniciAdi(e.target.value)}
@@ -166,7 +166,7 @@ function ProfilKarti({
           <button
             onClick={() => setDuzenle(true)}
             aria-label={profil.kullanici_adi ? 'Kullanıcı adını değiştir' : undefined}
-            className="text-sm text-orchid-600 font-medium mt-0.5 active:scale-95 transition-transform"
+            className="text-sm text-orchid-600 font-medium mt-0.5 active:opacity-80 transition-transform"
           >
             {profil.kullanici_adi ? `@${profil.kullanici_adi}` : 'Kullanıcı adı belirle'}
           </button>
@@ -176,7 +176,7 @@ function ProfilKarti({
 
         <button
           onClick={() => setProfilDuzenle(true)}
-          className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-mist-50 border border-ink-100 px-4 py-2 text-sm font-semibold text-ink-600 active:scale-95 transition-transform"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-mist-50 border border-ink-100 px-4 py-2 text-sm font-semibold text-ink-600 active:opacity-80 transition-transform"
         >
           <Icon name="Pencil" className="w-4 h-4" />
           Profili düzenle
@@ -210,7 +210,7 @@ function Sayac({ sayi, etiket, onClick }: { sayi: number; etiket: string; onClic
     <button
       onClick={onClick}
       aria-label={`${sayi} ${etiket.toLocaleLowerCase('tr-TR')}, arkadaşlarını gör`}
-      className="py-3.5 flex flex-col items-center hover:bg-ink-50 active:scale-[0.98] transition-all"
+      className="py-3.5 flex flex-col items-center hover:bg-ink-50 active:opacity-80 transition-all"
     >
       <span className="font-display text-lg font-bold text-ink-700">{sayi}</span>
       <span className="text-xs text-ink-400">{etiket}</span>
@@ -326,10 +326,10 @@ function AvatarSecici({
         onClick={() => girdiRef.current?.click()}
         disabled={calisiyor}
         aria-label="Profil fotoğrafını değiştir"
-        className="block active:scale-95 transition-transform disabled:opacity-60"
+        className="block active:opacity-80 transition-transform disabled:opacity-60"
       >
         <Avatar ad={profil.ad} foto={profil.avatar} emoji={profil.emoji} renk={profil.renk} boyut="lg" />
-        <span className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-gradient-orchid text-white flex items-center justify-center shadow-soft ring-2 ring-mist-50">
+        <span className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-orchid-600 text-white flex items-center justify-center shadow-soft ring-2 ring-mist-50">
           <Icon name={calisiyor ? 'Loader2' : 'Camera'} className={`w-4 h-4 ${calisiyor ? 'animate-spin' : ''}`} />
         </span>
       </button>
@@ -369,11 +369,11 @@ function Anahtar({
   return (
     <button
       onClick={onDegistir}
-      className="w-full flex items-center gap-3 text-left active:scale-[0.98] transition-transform"
+      className="w-full flex items-center gap-3 text-left active:opacity-80 transition-transform"
     >
       <div
         className={`w-11 h-6 rounded-full transition-colors shrink-0 relative ${
-          acik ? 'bg-gradient-orchid' : 'bg-ink-200'
+          acik ? 'bg-orchid-600' : 'bg-ink-200'
         }`}
       >
         <div

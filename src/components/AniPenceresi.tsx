@@ -57,7 +57,7 @@ export function AniPenceresi({ anilar, baslangicId, baslik, etkilesimler, profil
         <button
           onClick={onKapat}
           aria-label="Geri"
-          className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+          className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center active:opacity-80 transition-transform shrink-0"
         >
           <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />
         </button>

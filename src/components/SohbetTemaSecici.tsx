@@ -10,7 +10,7 @@ export function TemaSheet({ onKapat }: { onKapat: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-end justify-center bg-ink-900/40 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[70] flex items-end justify-center bg-ink-900/40 animate-fade-in"
       onClick={onKapat}
     >
       <div
@@ -30,7 +30,7 @@ export function TemaSheet({ onKapat }: { onKapat: () => void }) {
                 onClick={() => temayiYaz(t.id)}
                 aria-label={`${t.ad} teması`}
                 aria-pressed={aktif}
-                className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform"
+                className="flex flex-col items-center gap-1.5 active:opacity-80 transition-transform"
               >
                 <span
                   className={`w-11 h-11 rounded-2xl ${t.onizleme} flex items-center justify-center ${
@@ -108,7 +108,7 @@ export function SohbetTemaSecici() {
               onClick={() => temayiYaz(t.id)}
               aria-label={`${t.ad} teması`}
               aria-pressed={aktif}
-              className="flex flex-col items-center gap-1.5 active:scale-95 transition-transform"
+              className="flex flex-col items-center gap-1.5 active:opacity-80 transition-transform"
             >
               <span
                 className={`w-10 h-10 rounded-2xl ${t.onizleme} flex items-center justify-center ${

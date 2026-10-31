@@ -37,6 +37,24 @@
     @apply bg-orchid-200 text-ink-800;
   }
 
+  /* Keyboard focus is always visible; touches and clicks don't draw it. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-orchid-600 ring-offset-2 ring-offset-mist-100;
+  }
+
+  /* People who ask for less motion get fades only, no shifting or
+     shimmering. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 1ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
   input,
   textarea {
     -webkit-user-select: text;
@@ -56,52 +74,48 @@
     padding-right: var(--safe-right);
   }
 
-  /* The app's backdrop: cool mist with soft blue and violet light at the
-     top, so screens don't sit on a flat grey. */
+  /* The app's backdrop: one flat, cool surface. Depth comes from the
+     surfaces on top of it, not from coloured light. */
   .bg-uygulama {
     @apply bg-mist-100;
-    background-image:
-      radial-gradient(56rem 28rem at 100% -6rem, rgba(123, 92, 245, 0.10), transparent 70%),
-      radial-gradient(48rem 26rem at -12% -4rem, rgba(47, 107, 255, 0.10), transparent 70%);
-    background-repeat: no-repeat;
   }
 
+  /* Bars that sit over content (bottom bar, sidebar): opaque with a
+     hairline, no blur. */
   .glass {
-    @apply bg-white/75 backdrop-blur-xl border border-ink-100/70;
+    @apply bg-white border-ink-100;
   }
 
+  /* Flat surface with a hairline border; shadows are kept for things that
+     float (menus, sheets). */
   .card {
-    @apply bg-mist-50 rounded-3xl shadow-card border border-ink-100/70;
+    @apply bg-white rounded-2xl border border-ink-100;
   }
 
+  /* One solid brand colour for the main action on a screen. */
   .btn-primary {
-    @apply bg-gradient-orchid text-white font-semibold rounded-2xl px-5 py-3.5
-           active:scale-[0.97] transition-all duration-150
-           shadow-brand hover:brightness-110;
-  }
-
-  /* Brand-coloured text for titles and highlights. */
-  .text-gradient-orchid {
-    @apply bg-gradient-orchid bg-clip-text text-transparent;
+    @apply bg-orchid-600 text-white font-semibold rounded-xl px-5 py-3
+           transition-colors duration-150
+           hover:bg-orchid-700 active:bg-orchid-800;
   }
 
   .btn-ghost {
-    @apply bg-transparent text-ink-500 font-medium rounded-2xl px-4 py-3
-           active:scale-[0.97] transition-all duration-150
-           hover:bg-ink-50;
+    @apply bg-transparent text-ink-500 font-medium rounded-xl px-4 py-3
+           transition-colors duration-150
+           hover:bg-ink-50 active:bg-ink-100;
   }
 
   .chip {
-    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1.5
-           text-sm font-medium transition-all duration-150
-           active:scale-95;
+    @apply inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5
+           text-sm font-medium transition-colors duration-150
+           active:opacity-80;
   }
 
   .input-field {
     @apply w-full bg-mist-100 border border-ink-100 rounded-xl px-3 py-2.5
            text-ink-700 font-medium placeholder:text-ink-300
-           focus:outline-none focus:bg-white focus:border-orchid-300 focus:ring-4 focus:ring-orchid-100
-           transition-all;
+           focus:outline-none focus:bg-white focus:border-orchid-400 focus:ring-4 focus:ring-orchid-100
+           transition-colors;
   }
 
   .skeleton {
@@ -120,7 +134,7 @@
      over the dimmed page (the 100vmax shadow is the backdrop), so the
      sidebar and the page under it stay in place. */
   .panel-tam {
-    @apply fixed inset-0 flex flex-col bg-mist-100/95 backdrop-blur-md animate-slide-up;
+    @apply fixed inset-0 flex flex-col bg-mist-100 animate-slide-up;
   }
   @media (min-width: 1024px) {
     .panel-tam {

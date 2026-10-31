@@ -110,7 +110,7 @@ export function HesapGuvenligi() {
         </button>
         <button
           onClick={() => setCikisOnay(true)}
-          className="w-full rounded-2xl py-3 text-sm font-semibold bg-mist-50 text-rose-600 border border-rose-100 flex items-center justify-center gap-2 active:scale-[0.97] transition-all"
+          className="w-full rounded-2xl py-3 text-sm font-semibold bg-mist-50 text-rose-600 border border-rose-100 flex items-center justify-center gap-2 active:opacity-80 transition-all"
         >
           <Icon name="LogOut" className="w-4 h-4" />
           Çıkış yap
