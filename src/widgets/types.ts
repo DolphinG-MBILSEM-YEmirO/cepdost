@@ -1,6 +1,6 @@
-// The home widgets' data: what the in-app cards show, and the snapshot the
-// native apps (Android AppWidget, iOS WidgetKit) read to draw the same three
-// widgets on the phone's home screen.
+// The home-screen widgets' data: the snapshot the native apps (Android
+// AppWidget, iOS WidgetKit) read to draw the three widgets on the phone's
+// home screen. The widgets live only there, never inside the app.
 //
 // The snapshot is a contract with native code (mobile/android, mobile/ios):
 // bump WIDGET_SNAPSHOT_VERSION on any breaking change and update the Kotlin

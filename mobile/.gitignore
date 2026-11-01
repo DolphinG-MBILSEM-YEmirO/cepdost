@@ -4,3 +4,6 @@ node_modules/
 # android/ and ios/ (made by `cap add`) are meant to be committed once set
 # up: the iOS widget target is added in Xcode and lives only there. Their
 # own .gitignore files keep build output out.
+# The shared DEBUG key used by CI so test APKs can update each other. Not a
+# store key: Play Store builds use a private key kept off the repository.
+!debug.keystore

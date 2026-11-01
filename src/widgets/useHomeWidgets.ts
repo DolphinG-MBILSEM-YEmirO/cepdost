@@ -25,8 +25,8 @@ import {
 
 // Gathers everything the three home widgets show, from the local plans and
 // the local copy of the social data, and keeps it fresh as either changes.
-// The same data feeds the in-app cards and, inside the native app, the
-// phone's home-screen widgets (published as a snapshot).
+// Used inside the native app only (see WidgetSync), where it is published
+// as a snapshot for the phone's home-screen widgets.
 
 // Availability older than this isn't trusted for "free right now".
 const STALE_AVAILABILITY_MS = 3 * 24 * 60 * 60 * 1000
@@ -36,8 +36,8 @@ const MEMORY_SCAN_LIMIT = 300
 
 export interface HomeMemory {
   picked: PickedMemory
-  // Object URL of the full photo for the in-app card (null if it can't be
-  // fetched).
+  // Object URL of the full photo (null if it can't be fetched); shrunk for
+  // the snapshot.
   photoUrl: string | null
   target: string | null
 }
