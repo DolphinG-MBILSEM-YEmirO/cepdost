@@ -1,0 +1,146 @@
+# Builds the Sharloop iOS app (Capacitor shell + the WidgetKit home-screen
+# widgets, see mobile/) on a Mac runner, so every update is checked on iOS
+# too without anyone owning a Mac.
+#
+#   1. Always: an unsigned simulator build. Fails if the Swift code or the
+#      Xcode project setup breaks.
+#   2. On main, once the App Store Connect key is in the repo's secrets:
+#      a signed build uploaded to TestFlight, to install on an iPhone.
+#      Secrets (Settings → Secrets and variables → Actions):
+#        APPLE_TEAM_ID        10-character Team ID (developer.apple.com → Membership)
+#        APPSTORE_KEY_ID      the API key's Key ID
+#        APPSTORE_ISSUER_ID   the Issuer ID shown above the keys
+#        APPSTORE_KEY         the whole .p8 file's text
+#      Steps for creating them: mobile/KURULUM.md.
+#
+# Mac minutes count ten times on private repos, so this only runs when the
+# native app (mobile/) or the widget data changes, or by hand.
+
+name: iOS
+
+on:
+  push:
+    branches: [main, 'claude/**']
+    paths:
+      - 'mobile/**'
+      - 'src/widgets/**'
+      - '.github/workflows/ios.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  HAS_SIGNING: ${{ secrets.APPSTORE_KEY != '' && secrets.APPLE_TEAM_ID != '' }}
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Use the newest Xcode on the runner
+        run: |
+          xcode=$(ls -d /Applications/Xcode_*.app | grep -vi beta | sort -V | tail -1)
+          sudo xcode-select -s "$xcode"
+          xcodebuild -version
+
+      - name: Create the iOS project
+        working-directory: mobile
+        run: |
+          npm install --no-audit --no-fund
+          npx cap add ios
+          gem install --user-install xcodeproj --no-document
+          export PATH="$(ruby -e 'print Gem.user_dir')/bin:$PATH"
+          ruby scripts/setup-ios-project.rb
+          node scripts/apply-native.mjs ios
+
+      - name: App icon from the web app's icon
+        working-directory: mobile
+        continue-on-error: true
+        run: |
+          # iOS icons are square with no transparency: the full-bleed one fits.
+          cp ../public/icons/icon-512-maskable.png assets/icon-only.png
+          npx --yes @capacitor/assets@3 generate --ios --iconBackgroundColor '#FFFFFF'
+
+      - name: Build for the simulator (unsigned check)
+        working-directory: mobile/ios/App
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project App.xcodeproj -scheme App -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee xcodebuild.log | grep -E 'error:|warning: .*Sharloop|BUILD (SUCCEEDED|FAILED)' || true
+          grep -q 'BUILD SUCCEEDED' xcodebuild.log
+
+      - name: Keep the build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-log
+          path: mobile/ios/App/xcodebuild.log
+          if-no-files-found: ignore
+
+      # ---------- TestFlight (main only, once the secrets exist) ----------
+
+      - name: Archive and upload to TestFlight
+        if: github.ref == 'refs/heads/main' && env.HAS_SIGNING == 'true'
+        working-directory: mobile/ios/App
+        env:
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          KEY: ${{ secrets.APPSTORE_KEY }}
+        run: |
+          set -o pipefail
+          key_path="$RUNNER_TEMP/AuthKey_$KEY_ID.p8"
+          printf '%s' "$KEY" > "$key_path"
+          auth=(-allowProvisioningUpdates
+                -authenticationKeyPath "$key_path"
+                -authenticationKeyID "$KEY_ID"
+                -authenticationKeyIssuerID "$ISSUER_ID")
+
+          # Each upload needs a higher build number: the run number.
+          xcodebuild archive \
+            -project App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Sharloop.xcarchive" \
+            DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_STYLE=Automatic \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            "${auth[@]}" | tail -40
+
+          cat > "$RUNNER_TEMP/export.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict>
+          </plist>
+          EOF
+
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Sharloop.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/export.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            "${auth[@]}" | tail -40
+          rm -f "$key_path"
+
+      - name: Note that TestFlight is not set up yet
+        if: github.ref == 'refs/heads/main' && env.HAS_SIGNING != 'true'
+        run: echo "::notice::iOS build OK. TestFlight upload skipped until the App Store Connect secrets are added (mobile/KURULUM.md)."

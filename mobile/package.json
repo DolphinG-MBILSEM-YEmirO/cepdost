@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "add:android": "cap add android && node scripts/apply-native.mjs android",
-    "add:ios": "cap add ios && node scripts/apply-native.mjs ios",
+    "add:ios": "cap add ios && ruby scripts/setup-ios-project.rb && node scripts/apply-native.mjs ios",
     "sync": "cap sync && node scripts/apply-native.mjs",
     "open:android": "cap open android",
     "open:ios": "cap open ios"
