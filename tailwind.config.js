@@ -180,6 +180,13 @@ export default {
         eri: `eri 560ms ${tasarim.motion.easeOut}`,
         sicra: `sicra 520ms ${tasarim.motion.easeOut}`,
         dalga: 'dalga 650ms ease-out forwards',
+        // Home widgets: a countdown digit rolls up into place, a memory photo
+        // drifts slowly (Ken Burns), a free friend's ring breathes, and a
+        // soft light sweeps across a card now and then.
+        rakam: `rakamGir 420ms ${tasarim.motion.spring}`,
+        'ken-burns': 'kenBurns 18s ease-in-out infinite alternate',
+        musait: 'musaitNabiz 2.2s ease-out infinite',
+        parilti: 'parilti 5.5s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -215,6 +222,22 @@ export default {
           '40%': { transform: 'translateY(-5px) scale(1.15)' },
           '70%': { transform: 'translateY(1px) scale(0.96)' },
           '100%': { transform: 'translateY(0) scale(1)' },
+        },
+        rakamGir: {
+          '0%': { opacity: '0', transform: 'translateY(60%) scale(0.9)', filter: 'blur(3px)' },
+          '100%': { opacity: '1', transform: 'translateY(0) scale(1)', filter: 'blur(0)' },
+        },
+        kenBurns: {
+          '0%': { transform: 'scale(1.05) translate(0, 0)' },
+          '100%': { transform: 'scale(1.22) translate(-3%, -4%)' },
+        },
+        musaitNabiz: {
+          '0%': { boxShadow: '0 0 0 0 rgba(16, 185, 129, 0.55)' },
+          '70%, 100%': { boxShadow: '0 0 0 12px rgba(16, 185, 129, 0)' },
+        },
+        parilti: {
+          '0%, 55%': { transform: 'translateX(-120%) skewX(-20deg)' },
+          '85%, 100%': { transform: 'translateX(220%) skewX(-20deg)' },
         },
         dalga: {
           '0%': { transform: 'scale(0.6)', opacity: '0.55' },

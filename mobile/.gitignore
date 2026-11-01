@@ -1,0 +1,6 @@
+node_modules/
+*.keystore
+*.jks
+# android/ and ios/ (made by `cap add`) are meant to be committed once set
+# up: the iOS widget target is added in Xcode and lives only there. Their
+# own .gitignore files keep build output out.

@@ -180,11 +180,13 @@ src/
   components/        screens and UI pieces
   sosyal/            accounts, friends, groups, messages (nostr/ is the engine)
   lib/               date/text helpers, personalization options
+  widgets/           home widgets' data (next plan, free friends, on this day) and the native bridge
 api/                 Vercel Functions (chat, classify, eposta, ortak-plan, takvim)
 shared/              code used by both the app and api/ (free slots, email attestations)
 tests/               node:test suites (social layer, api)
 public/              icons, assetlinks.json for the Android app
 scripts/             icon generation, local test relay
+mobile/              native Android + iOS shell (Capacitor) with the home-screen widgets; see mobile/KURULUM.md
 spikes/              research notes and experiments
 ```
 
@@ -217,7 +219,10 @@ Other scripts: `npm test`, `npm run build`, `npm run lint`, `npm run preview`.
   It also stays off while Gmail refuses the login (a wrong address or app
   password; the function log says "Gmail girişi reddedildi"), so nobody is
   locked behind a code that can never arrive. Fix the variables and redeploy.
-- Android: Bubblewrap TWA (`twa-manifest.json`). The signing key
+- Android and iOS apps with home-screen widgets: Capacitor shell in
+  `mobile/` (step-by-step guide in `mobile/KURULUM.md`). It loads the live
+  site, so web deploys reach the apps without a store update.
+- Android (older route): Bubblewrap TWA (`twa-manifest.json`), no widgets. The signing key
   (`android.keystore`) is intentionally not in the repository. Keep it backed
   up somewhere safe: without it the Play Store app can never be updated.
 

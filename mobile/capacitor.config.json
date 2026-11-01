@@ -1,0 +1,17 @@
+{
+  "appId": "app.sharloop",
+  "appName": "Sharloop",
+  "webDir": "www",
+  "server": {
+    "url": "https://sharloop.vercel.app",
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#F6F4FB"
+  },
+  "ios": {
+    "backgroundColor": "#F6F4FB",
+    "contentInset": "never",
+    "limitsNavigationsToAppBoundDomains": true
+  }
+}

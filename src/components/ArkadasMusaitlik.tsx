@@ -201,7 +201,7 @@ function GunSatiri({
   )
 }
 
-function DavetModal({
+export function DavetModal({
   arkadas,
   tarih,
   onClose,
