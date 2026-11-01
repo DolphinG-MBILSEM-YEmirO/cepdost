@@ -59,7 +59,9 @@ end
 
 app_group = project.main_group.children.find { |g| g.display_name == 'App' } or abort 'The App group is missing.'
 add_files(app_group, app, swift_files(File.join(NATIVE, 'App')) + ['App.entitlements', PRIVACY_MANIFEST])
-set_everywhere(app, 'CODE_SIGN_ENTITLEMENTS' => 'App/App.entitlements')
+# iPhone only for now: an iPad build would need its own App Store
+# screenshots and an iPad-shaped layout review.
+set_everywhere(app, 'CODE_SIGN_ENTITLEMENTS' => 'App/App.entitlements', 'TARGETED_DEVICE_FAMILY' => '1')
 
 # ---------- the widget extension ----------
 
@@ -89,7 +91,7 @@ set_everywhere(
   'MARKETING_VERSION' => app.build_configurations.first.build_settings['MARKETING_VERSION'] || '1.0',
   'CURRENT_PROJECT_VERSION' => app.build_configurations.first.build_settings['CURRENT_PROJECT_VERSION'] || '1',
   'SWIFT_VERSION' => '5.0',
-  'TARGETED_DEVICE_FAMILY' => '1,2',
+  'TARGETED_DEVICE_FAMILY' => '1',
   'SKIP_INSTALL' => 'YES',
   'APPLICATION_EXTENSION_API_ONLY' => 'YES',
   'LD_RUNPATH_SEARCH_PATHS' => '$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks',
