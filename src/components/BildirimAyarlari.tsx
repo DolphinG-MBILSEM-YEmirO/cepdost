@@ -11,6 +11,7 @@ import {
   type CihazDurumu,
 } from '../bildirim/cihaz'
 import { adresimiKaydet, adresimiSil, kendimeDene } from '../sosyal/bildirimler'
+import { yerelUygulamada } from '../lib/platform'
 
 // Turning push notifications on for this device (Ayarlar), and a one-time
 // nudge in the chat list for people who haven't decided yet.
@@ -32,7 +33,15 @@ async function cihaziAc(): Promise<void> {
   await adresimiKaydet(await bildirimleriAc())
 }
 
+// Web push only exists in browsers and installed web apps; the store app's
+// WebView has none, and its hints ("allow it in your browser", "add to Home
+// Screen in Safari") would be wrong there. Native push comes with the
+// app's own notification service, so the store app shows nothing for now.
 export function BildirimAyarlari() {
+  return yerelUygulamada() ? null : <BildirimKarti />
+}
+
+function BildirimKarti() {
   const [durum, setDurum] = useState<CihazDurumu | null>(null)
   const [turler, setTurler] = useState<BildirimTuru[]>(turTercihleri)
   const [calisiyor, setCalisiyor] = useState(false)
@@ -150,6 +159,10 @@ const BANT_ANAHTARI = 'cepdost_bildirim_bandi'
 
 // Above the chat list until notifications are on or the person says no.
 export function BildirimBandi() {
+  return yerelUygulamada() ? null : <BildirimBandiIcerik />
+}
+
+function BildirimBandiIcerik() {
   const [durum, setDurum] = useState<CihazDurumu | null>(null)
   const [kapandi, setKapandi] = useState(() => {
     try {

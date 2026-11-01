@@ -88,6 +88,7 @@ jobs:
           test -x "$appex/SharloopWidgets"
           grep -q 'SwiftCompile.*NextPlanWidget.swift' xcodebuild.log
           grep -q 'SwiftCompile.*SharloopWidgetsPlugin.swift' xcodebuild.log
+          grep -q 'SwiftCompile.*SharloopCalendarPlugin.swift' xcodebuild.log
           echo "Widget extension embedded: $appex"
 
       - name: Keep the build log
@@ -117,12 +118,15 @@ jobs:
                 -authenticationKeyID "$KEY_ID"
                 -authenticationKeyIssuerID "$ISSUER_ID")
 
-          # Each upload needs a higher build number: the run number.
+          # The version people see comes from mobile/package.json, like
+          # Android's; each upload needs a higher build number: the run number.
+          version_name=$(node -p "require('../../package.json').version")
           xcodebuild archive \
             -project App.xcodeproj -scheme App -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath "$RUNNER_TEMP/Sharloop.xcarchive" \
             DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_STYLE=Automatic \
+            MARKETING_VERSION="$version_name" \
             CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
             "${auth[@]}" | tail -40
 

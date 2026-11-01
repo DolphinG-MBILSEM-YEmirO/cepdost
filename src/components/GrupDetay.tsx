@@ -503,7 +503,11 @@ function PlanKarti({
 
       <p className="text-xs text-ink-400 mt-3 mb-2">
         {gelenler.length > 0
-          ? `Gelenler: ${gelenler.map((y) => (y.kullanici_id === benimId ? 'Sen' : (adHaritasi.get(y.kullanici_id) ?? '?'))).join(', ')}`
+          ? `Gelenler: ${[...gelenler]
+              // I come first, the rest keep their answer order.
+              .sort((a, b) => Number(b.kullanici_id === benimId) - Number(a.kullanici_id === benimId))
+              .map((y) => (y.kullanici_id === benimId ? 'Sen' : (adHaritasi.get(y.kullanici_id) ?? '?')))
+              .join(', ')}`
           : 'Henüz gelen yok'}
         {belki > 0 && ` · ${belki} belki`}
         {yanitsiz > 0 && !planGectiMi(plan.tarih) && ` · ${yanitsiz} yanıt bekleniyor`}

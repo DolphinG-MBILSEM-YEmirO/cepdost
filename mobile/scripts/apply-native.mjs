@@ -136,6 +136,16 @@ function ios() {
     ),
   )
 
+  // iOS 15–16 ask for calendar access before the "New Event" sheet that
+  // "Telefon takvimine ekle" opens (SharloopCalendarPlugin); from iOS 17 the
+  // sheet needs no access. A separate patch so projects set up before it
+  // get the key too.
+  patch(join(app, 'Info.plist'), 'NSCalendarsUsageDescription', (t) =>
+    t.replace(/<dict>/, `<dict>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Planlarını tek dokunuşla telefonunun takvimine ekleyebilmen için kullanılır.</string>`),
+  )
+
   // The app makes no use of non-exempt encryption (only HTTPS and the
   // system's own), so App Store uploads don't stop to ask.
   patch(join(app, 'Info.plist'), 'ITSAppUsesNonExemptEncryption', (t) =>

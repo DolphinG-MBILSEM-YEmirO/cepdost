@@ -4,6 +4,7 @@ import { SohbetTemaSecici } from './SohbetTemaSecici'
 import { HesapGuvenligi } from './HesapGuvenligi'
 import { BildirimAyarlari } from './BildirimAyarlari'
 import { SLOGAN, UYGULAMA_ADI } from '../../shared/marka'
+import { yerelUygulamada } from '../lib/platform'
 
 // Not: Hallet referansındaki "Gemini API Anahtarı" kartı buraya bilerek
 // taşınmadı. Sınıflandırma sunucu-taraflı bir secret ile çalışıyor
@@ -11,6 +12,8 @@ import { SLOGAN, UYGULAMA_ADI } from '../../shared/marka'
 // görmüyor/girmiyor, bu uygulamanın "sıfır kurulum" ilkesi.
 
 export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
+  // The store app has no share-menu entry or Home Screen step (see below).
+  const yerel = yerelUygulamada()
   return (
     <div className="flex flex-col h-full">
       <h2 className="sr-only">Ayarlar</h2>
@@ -23,20 +26,24 @@ export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
 
         <TakvimAyarlari onDegisti={onDegisti} />
 
-        <div className="card p-5">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center">
-              <Icon name="Share2" className="w-5 h-5 text-bolum-koyu" />
+        {/* Adding the web app to the Home Screen puts it in the share menu
+            (Web Share Target); the store app is already installed. */}
+        {!yerel && (
+          <div className="card p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-2xl bg-bolum-soluk text-bolum-koyu flex items-center justify-center">
+                <Icon name="Share2" className="w-5 h-5 text-bolum-koyu" />
+              </div>
+              <h2 className="font-semibold text-ink-700">Paylaş menüsüne ekle</h2>
             </div>
-            <h2 className="font-semibold text-ink-700">Paylaş menüsüne ekle</h2>
+            <p className="text-sm text-ink-400">
+              Uygulamayı ana ekrana ekle, sonra herhangi bir yerden paylaş menüsünde "{UYGULAMA_ADI}" görünecek. Reel, TikTok, ekran görüntüsü — hepsi direkt arşive.
+            </p>
+            <p className="text-xs text-ink-400 mt-3">
+              Chrome'da sağ üstteki ⋮ menüsünden "Ana ekrana ekle" seçeneğini seç.
+            </p>
           </div>
-          <p className="text-sm text-ink-400">
-            Uygulamayı ana ekrana ekle, sonra herhangi bir yerden paylaş menüsünde "{UYGULAMA_ADI}" görünecek. Reel, TikTok, ekran görüntüsü — hepsi direkt arşive.
-          </p>
-          <p className="text-xs text-ink-400 mt-3">
-            Chrome'da sağ üstteki ⋮ menüsünden "Ana ekrana ekle" seçeneğini seç.
-          </p>
-        </div>
+        )}
 
         <div className="card p-5">
           <div className="flex items-center gap-3 mb-3">
@@ -56,7 +63,11 @@ export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
             </div>
             <div className="flex gap-3">
               <span className="w-6 h-6 rounded-full bg-bolum text-white font-bold text-xs flex items-center justify-center shrink-0">3</span>
-              <p>Bir link ya da ekran görüntüsünü paylaş menüsünden gönder; saatiyle, yeriyle plana dönüşür, Arşiv'de kalır.</p>
+              <p>
+                {yerel
+                  ? "Bir linki Profil → Arşiv'deki \"Link ekle\" ile kaydet; saatiyle, yeriyle plana dönüşür, Arşiv'de kalır."
+                  : "Bir link ya da ekran görüntüsünü paylaş menüsünden gönder; saatiyle, yeriyle plana dönüşür, Arşiv'de kalır."}
+              </p>
             </div>
           </div>
         </div>

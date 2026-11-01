@@ -378,7 +378,7 @@ export function RecordDetail({ kayit, onClose, onUpdated, onDeleted, onSohbeteGi
 
         <div className="flex items-center justify-between px-1 mb-4">
           <span className="text-xs text-ink-400">
-            {kayit.kaynakTipi === 'gorsel' ? 'Görselden' : kayit.kaynakTipi === 'link' ? 'Linkten' : 'Metinden'} · {formatRelativeTime(kayit.olusturulmaTarihi)}
+            {kayit.kaynakTipi === 'gorsel' ? 'Görselden eklendi' : kayit.kaynakTipi === 'link' ? 'Linkten eklendi' : 'Eklendi'} · {formatRelativeTime(kayit.olusturulmaTarihi)}
           </span>
         </div>
 

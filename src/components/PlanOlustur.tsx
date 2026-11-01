@@ -13,7 +13,7 @@ import {
 } from '../sosyal/api'
 import { gruplarimiGetir, grupUyeleriGetir, type Grup } from '../sosyal/gruplar'
 import { kendiBloklarim, ortakPlanOner } from '../sosyal/ortakPlan'
-import { addDays, formatBusyRanges, formatDate, toDateString } from '../lib/format'
+import { addDays, formatBusyRanges, formatDate, formatDuration, toDateString } from '../lib/format'
 import { useGeriAdimi, useGeriIleKapat } from '../lib/geriTusu'
 import { planiKur, type PlanKitlesi } from '../lib/planPaylasimi'
 import { ETKINLIK_EMOJILERI } from '../lib/kisisellestirme'
@@ -952,7 +952,7 @@ function OzetAdimi({
           <p className="flex items-center gap-2">
             <Icon name="CalendarDays" className="w-4 h-4 text-ink-400 shrink-0" />
             {formatDate(tarih) ?? tarih}
-            {tumGun ? ' · Tüm gün' : `${saat ? ` · ${saat}` : ''} · ${sure} dk`}
+            {tumGun ? ' · Tüm gün' : `${saat ? ` · ${saat}` : ''}${sure ? ` · ${formatDuration(sure)}` : ''}`}
           </p>
           {konum.trim() && (
             <p className="flex items-center gap-2">
