@@ -170,7 +170,7 @@ türü takip için kullanılmıyor. Her tür için amaç: **Uygulama İşlevsell
 
 ## 7. Apple inceleme notu (App Review Information)
 
-**Demo hesap:** Kullanıcı adı `sharloop_inceleme`, şifre: (hesap açılınca buraya
+**Demo hesap:** Kullanıcı adı `developer_01`, şifre: (buraya
 değil, yalnızca App Store Connect'e yazılacak). Bu hesabın e-postası doğrulanmış,
 en az bir arkadaşı, bir grubu, birkaç planı ve anısı olmalı.
 
