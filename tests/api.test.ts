@@ -1052,3 +1052,45 @@ test('eposta: address and code helpers', () => {
   assert.equal(onayi.onayGecerliMi(null, 'a', 'b'), false)
   assert.equal(onayi.onayGecerliMi({ kind: onayi.ONAY_TURU, tags: 'x' }, 'a', 'b'), false)
 })
+
+// ======================= sikayet: content reports =======================
+
+const { POST: sikayetPOST, sikayetSayaclariniSifirla } = await import('../api/sikayet.ts')
+
+function sikayet(ek: Record<string, unknown> = {}) {
+  return {
+    neden: 'taciz',
+    aciklama: 'Sürekli rahatsız ediyor <b>',
+    hedef: { tur: 'mesaj', kisiId: 'a'.repeat(64), ad: 'Kötü', kullaniciAdi: 'kotu', metin: 'çirkin mesaj', icerikId: 'm1' },
+    bildiren: { id: 'b'.repeat(64), kullaniciAdi: 'ayse' },
+    ...ek,
+  }
+}
+
+test('sikayet: a report is mailed to the moderators with what the reporter saw', async () => {
+  epostaAyarla(true)
+  sikayetSayaclariniSifirla()
+  const cevap = await sikayetPOST(istek('/api/sikayet', sikayet()))
+  assert.equal(cevap.status, 200)
+  const posta = gidenPostalar.at(-1)!
+  assert.equal(posta.alici, process.env.GMAIL_ADRESI)
+  assert.match(posta.konu, /Taciz/)
+  assert.match(posta.metin, /çirkin mesaj/)
+  assert.match(posta.metin, /@kotu/)
+  // Reporter text is escaped in the HTML part.
+  assert.ok(posta.html.includes('&lt;b&gt;'))
+  assert.ok(!posta.html.includes('<b>'))
+})
+
+test('sikayet: bad reports, other sites and floods are turned away', async () => {
+  epostaAyarla(true)
+  sikayetSayaclariniSifirla()
+  assert.equal((await sikayetPOST(istek('/api/sikayet', sikayet({ neden: 'yok' })))).status, 400)
+  assert.equal((await sikayetPOST(istek('/api/sikayet', sikayet({ hedef: { tur: 'kisi', kisiId: 'x' } })))).status, 400)
+  assert.equal((await sikayetPOST(istek('/api/sikayet', sikayet(), { origin: 'https://evil.example' }))).status, 403)
+  for (let i = 0; i < 5; i++) assert.equal((await sikayetPOST(istek('/api/sikayet', sikayet()))).status, 200)
+  assert.equal((await sikayetPOST(istek('/api/sikayet', sikayet()))).status, 429)
+  epostaAyarla(false)
+  sikayetSayaclariniSifirla()
+  assert.equal((await sikayetPOST(istek('/api/sikayet', sikayet()))).status, 503)
+})

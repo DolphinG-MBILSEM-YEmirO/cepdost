@@ -20,7 +20,9 @@ precacheAndRoute(self.__WB_MANIFEST)
 // URLs with a query (/?shared=ok after an Android share, /share-target/?…
 // from the iOS shortcut) went to the network and failed while offline.
 // Only GET navigations match, so the POST share handler below is unaffected.
-registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html'), { denylist: [/^\/api\//] }))
+// The legal pages (privacy, terms, account deletion) are plain pages of
+// their own that the store listings link to, not app screens.
+registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html'), { denylist: [/^\/api\//, /^\/legal\//] }))
 
 const SHARE_TARGET_PATH = '/share-target/'
 

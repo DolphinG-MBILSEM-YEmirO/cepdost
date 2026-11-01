@@ -36,6 +36,8 @@ import {
   davetGonder,
   davetleriGetir,
   davetYanitla,
+  engeliKaldir,
+  engelle,
   profilAra,
   profilGuncelle,
   profilimiGetir,
@@ -1295,4 +1297,40 @@ test('deleting an account: nobody finds it, signs in to it or reads its records 
     const d = olay.tags.find((t) => t[0] === 'd')?.[1]
     assert.ok(adlar.has(`30078:${ece.motor.benimId}:${d}`))
   }
+})
+
+test('blocking: their messages, memories and requests stop showing, and the friendship ends', async () => {
+  const fatma = kisiOlustur('fatma')
+  const gul = kisiOlustur('gul')
+  await olarak(fatma, () => hesabiKur({ ad: 'Fatma', kullanici_adi: 'fatma_engel', gizlilik: 'arkadaslar' }))
+  await olarak(gul, () => hesabiKur({ ad: 'Gül', kullanici_adi: 'gul_engel', gizlilik: 'arkadaslar' }))
+  await olarak(fatma, () => arkadaslikIsteGonder(gul.motor.benimId, null))
+  await esitle(gul)
+  await olarak(gul, () => arkadaslikYanitla(fatma.motor.benimId, true))
+  await esitle(fatma, gul)
+  const grupId = await olarak(fatma, () => grupOlustur('İkimiz', [gul.motor.benimId]))
+  await esitle(gul, fatma)
+  await olarak(gul, () => mesajGonder(grupId, 'kaba bir söz'))
+  await olarak(fatma, () => mesajGonder(grupId, 'selam'))
+  await esitle(fatma)
+  assert.deepEqual((await olarak(fatma, () => mesajlariGetir(grupId))).map((m) => m.metin), ['kaba bir söz', 'selam'])
+
+  await olarak(fatma, () => engelle(gul.motor.benimId))
+  await esitle(fatma, gul)
+  assert.deepEqual(await olarak(fatma, () => arkadaslariGetir()), [])
+  assert.deepEqual((await olarak(gul, () => arkadaslariGetir())).filter((a) => a.durum === 'kabul'), [])
+  assert.deepEqual((await olarak(fatma, () => mesajlariGetir(grupId))).map((m) => m.metin), ['selam'])
+  assert.equal(await olarak(fatma, () => grupOkunmamisSayisi(grupId)), 0)
+
+  // A new request from them is not shown while they are blocked.
+  await olarak(gul, () => arkadaslikIsteGonder(fatma.motor.benimId, null))
+  await esitle(fatma)
+  assert.equal(await olarak(fatma, () => bekleyenSayisi()), 0)
+
+  // The list follows the account to another device; unblocking shows them again.
+  const ikinciCihaz = kisiOlustur('fatma-2', fatma.sk)
+  await esitle(ikinciCihaz)
+  assert.deepEqual((await olarak(ikinciCihaz, () => mesajlariGetir(grupId))).map((m) => m.metin), ['selam'])
+  await olarak(fatma, () => engeliKaldir(gul.motor.benimId))
+  assert.equal(await olarak(fatma, () => bekleyenSayisi()), 1)
 })

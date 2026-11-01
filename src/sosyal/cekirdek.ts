@@ -99,6 +99,8 @@ export const TUR = {
   sabit: 'sabit',
   gizle: 'gizle',
   yildiz: 'yildiz',
+  // People I blocked (see engel.ts).
+  engel: 'engel',
 } as const
 
 export type Gizlilik = 'arkadaslar' | 'herkes'

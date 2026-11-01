@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { Icon } from './Icon'
+import { SikayetSayfasi } from './SikayetSayfasi'
 import { Avatar } from './Avatar'
 import { AniMedyaGalerisi } from './AniMedyaGalerisi'
 import { AZAMI_PUAN, type Ani } from '../sosyal/gruplar'
@@ -15,6 +17,8 @@ export function AkisKarti({
   sahip,
   grupAdi,
   yeni = false,
+  benimId,
+  onEngellendi,
   children,
 }: {
   ani: Ani
@@ -23,8 +27,14 @@ export function AkisKarti({
   grupAdi?: string | null
   // Shared since I last looked at the feed.
   yeni?: boolean
+  // With it, someone else's memory gets a "Report" button.
+  benimId?: string
+  // The owner was blocked from the report sheet.
+  onEngellendi?: (kisiId: string) => void
   children?: React.ReactNode
 }) {
+  const [sikayetAcik, setSikayetAcik] = useState(false)
+  const sikayetEdilebilir = !!benimId && ani.sahip_id !== benimId
   // Fotoğrafını herkese açmış ama profili kapalı biri olabilir — o zaman
   // profili okuyamayız, isim yerine nötr bir etiket gösteriyoruz.
   const ad = sahip?.ad ?? `${UYGULAMA_ADI} kullanıcısı`
@@ -42,6 +52,17 @@ export function AkisKarti({
           )}
         </div>
         {yeni && <span className="text-caption font-semibold text-brand-700 shrink-0">Yeni</span>}
+        {sikayetEdilebilir && (
+          <button
+            type="button"
+            onClick={() => setSikayetAcik(true)}
+            aria-label="Bu paylaşımı şikâyet et"
+            title="Şikâyet et"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-ink-300 hover:text-rose-500 hover:bg-ink-50 shrink-0 transition-colors"
+          >
+            <Icon name="Flag" className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       <div className="aspect-square bg-mist-100">
@@ -58,6 +79,20 @@ export function AkisKarti({
         {ani.notlar && <p className="text-sm text-ink-500 mt-2">{ani.notlar}</p>}
       </div>
       {children}
+      {sikayetAcik && (
+        <SikayetSayfasi
+          hedef={{
+            tur: 'ani',
+            kisiId: ani.sahip_id,
+            ad: sahip?.ad ?? null,
+            kullaniciAdi: sahip?.kullanici_adi ?? null,
+            metin: [ani.mekan_adi, ani.notlar].filter(Boolean).join(' — '),
+            icerikId: ani.id,
+          }}
+          onKapat={() => setSikayetAcik(false)}
+          onEngellendi={() => onEngellendi?.(ani.sahip_id)}
+        />
+      )}
     </div>
   )
 }
