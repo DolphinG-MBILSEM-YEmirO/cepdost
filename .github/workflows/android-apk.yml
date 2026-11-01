@@ -51,7 +51,7 @@ jobs:
         working-directory: mobile
         continue-on-error: true
         run: |
-          mkdir -p assets
+          # icon-background.png (plain white) is kept in mobile/assets.
           cp ../public/icons/icon-512.png assets/icon-only.png
           cp ../public/icons/icon-512-maskable.png assets/icon-foreground.png
           npx --yes @capacitor/assets@3 generate --android --iconBackgroundColor '#FFFFFF' --iconBackgroundColorDark '#FFFFFF'
