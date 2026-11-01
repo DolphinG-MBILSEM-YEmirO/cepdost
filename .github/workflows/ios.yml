@@ -83,6 +83,12 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             | tee xcodebuild.log | grep -E 'error:|warning: .*Sharloop|BUILD (SUCCEEDED|FAILED)' || true
           grep -q 'BUILD SUCCEEDED' xcodebuild.log
+          # The widgets must be inside the app, with our code compiled in.
+          appex=build/Build/Products/Debug-iphonesimulator/App.app/PlugIns/SharloopWidgets.appex
+          test -x "$appex/SharloopWidgets"
+          grep -q 'SwiftCompile.*NextPlanWidget.swift' xcodebuild.log
+          grep -q 'SwiftCompile.*SharloopWidgetsPlugin.swift' xcodebuild.log
+          echo "Widget extension embedded: $appex"
 
       - name: Keep the build log
         if: always()
