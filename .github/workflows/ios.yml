@@ -88,6 +88,7 @@ jobs:
           test -x "$appex/SharloopWidgets"
           grep -q 'SwiftCompile.*NextPlanWidget.swift' xcodebuild.log
           grep -q 'SwiftCompile.*SharloopWidgetsPlugin.swift' xcodebuild.log
+          grep -q 'SwiftCompile.*SharloopCalendarPlugin.swift' xcodebuild.log
           echo "Widget extension embedded: $appex"
 
       - name: Keep the build log

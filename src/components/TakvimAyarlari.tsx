@@ -208,7 +208,7 @@ export function TakvimAyarlari({ onDegisti }: { onDegisti?: () => void }) {
       )}
 
       <p className="text-[11px] text-ink-400 mt-4 leading-relaxed">
-        Etkinlikler yalnızca telefonunda saklanır. Arkadaşlarına giden tek şey, tıpkı
+        Etkinlikler yalnızca telefonunda saklanır. Arkadaşlarına giden tek şey, tıpkı{' '}
         {UYGULAMA_ADI} planlarında olduğu gibi, dolu saat aralıkları — etkinliğin adı ya da
         yeri asla gönderilmez.
       </p>

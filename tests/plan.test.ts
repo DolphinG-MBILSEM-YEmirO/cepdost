@@ -22,7 +22,7 @@ import {
   yaklasanHatirlatmalar,
   yapilacaklariOku,
 } from '../src/lib/planAyrintilari'
-import { planIcsOlustur } from '../src/takvim'
+import { planIcsOlustur, planiYerelEtkinligeCevir } from '../src/takvim'
 
 // Local time, like the app: plans are stored as local dates and times.
 const an = (tarih: string, saat: string) => new Date(`${tarih}T${saat}:00`)
@@ -147,4 +147,29 @@ test('calendar file: the reminder becomes an alarm, the plan keeps one id', () =
   assert.equal(icsTetikleyici({ tarih: '2099-05-10', saat: null, sure: null }, 1440), 'TRIGGER:-PT900M')
 
   assert.doesNotMatch(planIcsOlustur({ baslik: 'Alarmsız', tarih: '2099-05-10', saat: '20:00' }), /VALARM/)
+})
+
+test("phone calendar in the store app: same times and alarm as the calendar file", () => {
+  const zamanli = planiYerelEtkinligeCevir({ baslik: 'Konser', tarih: '2099-05-10', saat: '23:30', sure: 90, konum: 'Harbiye', hatirlatmaDk: 60 })
+  assert.equal(zamanli.title, 'Konser')
+  assert.equal(zamanli.location, 'Harbiye')
+  assert.equal(zamanli.allDay, false)
+  assert.equal(zamanli.start, new Date('2099-05-10T23:30:00').getTime())
+  // Runs past midnight into the next day.
+  assert.equal(zamanli.end, new Date('2099-05-11T01:00:00').getTime())
+  assert.equal(zamanli.alarmMinutes, 60)
+  assert.equal('notes' in zamanli, false)
+
+  // No duration: one hour. No time: all day, midnight to midnight, and the
+  // alarm counts from 09:00 like the .ics one.
+  const saatsiz = planiYerelEtkinligeCevir({ baslik: 'Doğum günü', tarih: '2099-05-10', notlar: 'Pasta', hatirlatmaDk: 0 })
+  assert.equal(saatsiz.allDay, true)
+  assert.equal(saatsiz.start, new Date('2099-05-10T00:00:00').getTime())
+  assert.equal(saatsiz.end, new Date('2099-05-11T00:00:00').getTime())
+  assert.equal(saatsiz.alarmMinutes, -540)
+  assert.equal(saatsiz.notes, 'Pasta')
+
+  const tekSaat = planiYerelEtkinligeCevir({ baslik: 'Kahve', tarih: '2099-05-10', saat: '10:00' })
+  assert.equal(tekSaat.end - tekSaat.start, 60 * 60_000)
+  assert.equal('alarmMinutes' in tekSaat, false)
 })
