@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { PlanlarView } from './components/PlanlarView'
+import { HomeWidgets } from './components/widgets/HomeWidgets'
+import { listenForWidgetTaps } from './widgets/nativeBridge'
 import { SohbetlerView } from './components/SohbetlerView'
 import { ArkadaslarView } from './components/ArkadaslarView'
 import { SosyalSekmeler } from './components/SosyalSekmeler'
@@ -219,6 +221,36 @@ export default function App() {
     }
   }, [])
   const sohbetAcildi = useCallback(() => setAcilacakSohbet(null), [])
+
+  // A friend to invite, from a tap on the "free now" home-screen widget.
+  const [widgetDavetKisisi, setWidgetDavetKisisi] = useState<string | null>(null)
+  // A memory's chat from the home widget (or the feed when it has none).
+  const aniyaGit = useCallback(
+    (hedef: string | null) => (hedef ? bildirimeGit(hedef) : setActiveTab('akis')),
+    [bildirimeGit],
+  )
+  // Taps on the phone's home-screen widgets (native app) or ?widget= links.
+  useEffect(
+    () =>
+      listenForWidgetTaps((hedef) => {
+        const ayrac = hedef.indexOf(':')
+        const [tur, deger] = ayrac < 0 ? [hedef, ''] : [hedef.slice(0, ayrac), hedef.slice(ayrac + 1)]
+        if (tur === 'plan' && deger) {
+          setActiveTab('planlar')
+          bildirimeGit(`plan:${deger}`)
+        } else if (tur === 'friend' && deger) {
+          setActiveTab('planlar')
+          setWidgetDavetKisisi(deger)
+        } else if (tur === 'memory') {
+          aniyaGit(deger || null)
+        } else if (tur === 'new-plan') {
+          setShowCapture(true)
+        } else {
+          setActiveTab('planlar')
+        }
+      }),
+    [bildirimeGit, aniyaGit],
+  )
   useBildirimler(!!kullanici && !!profil, bildirimeGit)
   // The reminders set on plans, while the app is open.
   usePlanHatirlaticilari(kayitlar)
@@ -488,6 +520,21 @@ export default function App() {
               loading={loading}
               onAddClick={() => setShowCapture(true)}
               onAsistan={() => setShowChat(true)}
+              widgets={
+                <HomeWidgets
+                  kayitlar={kayitlar}
+                  signedIn={!!kullanici}
+                  onOpenPlan={(k) => setDetailKayit(k)}
+                  onCreatePlan={() => setShowCapture(true)}
+                  onOpenChat={aniyaGit}
+                  onFindFriends={() => {
+                    setSosyalBolum('arkadaslar')
+                    setActiveTab('sohbet')
+                  }}
+                  inviteFriendId={widgetDavetKisisi}
+                  onInviteHandled={() => setWidgetDavetKisisi(null)}
+                />
+              }
               onRecordClick={(k) => setDetailKayit(k)}
               onToggleStatus={handleToggleStatus}
               onDelete={(id) => {

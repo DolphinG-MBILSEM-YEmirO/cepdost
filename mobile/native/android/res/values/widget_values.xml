@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="widget_radius">28dp</dimen>
+    <dimen name="widget_padding">16dp</dimen>
+
+    <string name="widget_next_plan_name">Sıradaki plan</string>
+    <string name="widget_next_plan_description">Sıradaki planın, geri sayım ve kimlerin geldiği</string>
+    <string name="widget_free_friends_name">Şu an boşta</string>
+    <string name="widget_free_friends_description">Şu an boş olan arkadaşların; dokun, plan öner</string>
+    <string name="widget_on_this_day_name">Bugün geçmişte</string>
+    <string name="widget_on_this_day_description">Bu günden bir anı fotoğrafı</string>
+</resources>

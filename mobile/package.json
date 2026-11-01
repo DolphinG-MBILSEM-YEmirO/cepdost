@@ -1,0 +1,22 @@
+{
+  "name": "sharloop-mobile",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Native Android and iOS shell for Sharloop (Capacitor), with the home-screen widgets.",
+  "type": "module",
+  "scripts": {
+    "add:android": "cap add android && node scripts/apply-native.mjs android",
+    "add:ios": "cap add ios && node scripts/apply-native.mjs ios",
+    "sync": "cap sync && node scripts/apply-native.mjs",
+    "open:android": "cap open android",
+    "open:ios": "cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/ios": "^8.6.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.0"
+  }
+}
