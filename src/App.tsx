@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { PlanlarView } from './components/PlanlarView'
-import { HomeWidgets } from './components/widgets/HomeWidgets'
+import { WidgetSync } from './widgets/WidgetSync'
 import { listenForWidgetTaps } from './widgets/nativeBridge'
 import { SohbetlerView } from './components/SohbetlerView'
 import { ArkadaslarView } from './components/ArkadaslarView'
@@ -224,6 +224,7 @@ export default function App() {
 
   // A friend to invite, from a tap on the "free now" home-screen widget.
   const [widgetDavetKisisi, setWidgetDavetKisisi] = useState<string | null>(null)
+  const widgetDavetiBitti = useCallback(() => setWidgetDavetKisisi(null), [])
   // A memory's chat from the home widget (or the feed when it has none).
   const aniyaGit = useCallback(
     (hedef: string | null) => (hedef ? bildirimeGit(hedef) : setActiveTab('akis')),
@@ -502,6 +503,11 @@ export default function App() {
         </div>
       )}
 
+      {/* Feeds the phone's home-screen widgets (native app only). */}
+      {kullanici && profil && (
+        <WidgetSync kayitlar={kayitlar} inviteFriendId={widgetDavetKisisi} onInviteHandled={widgetDavetiBitti} />
+      )}
+
       <KenarCubugu
         active={activeTab}
         onChange={sekmeSec}
@@ -520,21 +526,6 @@ export default function App() {
               loading={loading}
               onAddClick={() => setShowCapture(true)}
               onAsistan={() => setShowChat(true)}
-              widgets={
-                <HomeWidgets
-                  kayitlar={kayitlar}
-                  signedIn={!!kullanici}
-                  onOpenPlan={(k) => setDetailKayit(k)}
-                  onCreatePlan={() => setShowCapture(true)}
-                  onOpenChat={aniyaGit}
-                  onFindFriends={() => {
-                    setSosyalBolum('arkadaslar')
-                    setActiveTab('sohbet')
-                  }}
-                  inviteFriendId={widgetDavetKisisi}
-                  onInviteHandled={() => setWidgetDavetKisisi(null)}
-                />
-              }
               onRecordClick={(k) => setDetailKayit(k)}
               onToggleStatus={handleToggleStatus}
               onDelete={(id) => {

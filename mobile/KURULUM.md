@@ -15,7 +15,25 @@ ya da uygulamanın kendisi değişince gerekir.
 
 ---
 
-## Android (Windows bilgisayarında)
+## Android: hazır APK (en kolayı)
+
+Android Studio gerekmez. GitHub, `mobile/` her değiştiğinde uygulamayı
+kendisi derler ve **Releases** bölümüne `Sharloop.apk` olarak koyar
+(depo → sağda *Releases* → en üstteki "Sharloop Android").
+
+1. Telefondan GitHub'a giriş yapıp en yeni sürümdeki `Sharloop.apk`
+   dosyasını indirin ve açın. "Bilinmeyen uygulamalara izin ver" sorulursa
+   tarayıcınıza izin verin.
+2. Uygulamayı açıp hesabınıza giriş yapın (kullanıcı adı + şifre). Bu yeni
+   bir uygulama olduğu için girişi bir kez yeniden yapmak gerekiyor;
+   verileriniz hesabınızda durduğu için hepsi geri gelir.
+3. Ana ekranda boş bir yere basılı tutun → **Widget'lar** → listede
+   **Sharloop** → üç widget'tan istediğinizi ana ekrana sürükleyin.
+
+Eski Sharloop uygulaması (TWA) da yüklüyse ekranda iki Sharloop simgesi
+görürsünüz; yenisini denedikten sonra eskisini kaldırabilirsiniz.
+
+## Android: kendiniz derlemek (Windows bilgisayarında)
 
 **Gerekenler:** [Node.js](https://nodejs.org) (zaten var) ve
 [Android Studio](https://developer.android.com/studio). Android Studio'yu
@@ -90,8 +108,9 @@ kimliği de olur, ama uygulama 7 günde bir yeniden yüklenmeli).
   kendi akar; "şu an boşta" listesi her çeyrek saatte arkadaşlarının dolu
   saatlerine göre yeniden hesaplanır; plan bitince sıradaki plana geçer.
   Yeni anı ve yeni arkadaş verisi için uygulamanın arada bir açılması gerekir.
-- **Widget'lar yalnızca telefon uygulamasında vardır.** Web sitesinde ve
-  PWA'da aynı üç kart **Planlar** sekmesinin en üstünde görünür.
+- **Widget'lar yalnızca telefonun ana ekranında vardır,** uygulamanın
+  içinde gösterilmez. Web sitesinde ve eski (TWA) Android uygulamasında
+  widget yoktur.
 - Yerel kodlar `native/` klasöründe durur; `npm run sync` her seferinde
   onları `android/` ve `ios/` içine yeniden kopyalar. Değişiklikleri
   `native/` içinde yapın.

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { ChatButton } from './ChatButton'
 import { SegmentedControl } from '../ui/SegmentedControl'
 import { EkranBasligi } from '../ui/EkranBasligi'
@@ -28,9 +28,6 @@ interface Props {
   onDelete: (id: string) => void
   // Opens the assistant (phones; the desktop sidebar has its own entry).
   onAsistan?: () => void
-  // The home widgets (next plan, friends free now, on this day), shown
-  // above everything else.
-  widgets?: ReactNode
 }
 
 export function PlanlarView({
@@ -41,7 +38,6 @@ export function PlanlarView({
   onToggleStatus,
   onDelete,
   onAsistan,
-  widgets,
 }: Props) {
   const [gorunum, setGorunum] = useState<Gorunum>('bugun')
   const masaustu = useMasaustu()
@@ -93,8 +89,6 @@ export function PlanlarView({
           />
         </div>
       </EkranBasligi>
-
-      {widgets}
 
       <AniHatirlatici kayitlar={kayitlar} />
 
