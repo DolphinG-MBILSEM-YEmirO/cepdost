@@ -62,8 +62,8 @@ function android() {
   // Google Play needs a higher version code.
   patch(join(root, 'android/app/build.gradle'), 'sharloopVersionCode', (t) =>
     t
-      .replace(/versionCode \d+/, `versionCode (project.findProperty('sharloopVersionCode') ?: '1').toInteger()`)
-      .replace(/versionName "[^"]*"/, `versionName project.findProperty('sharloopVersionName') ?: '1.0.0'`),
+      .replace(/versionCode \d+/, `versionCode Integer.parseInt(String.valueOf(project.findProperty('sharloopVersionCode') ?: '1'))`)
+      .replace(/versionName "[^"]*"/, `versionName String.valueOf(project.findProperty('sharloopVersionName') ?: '1.0.0')`),
   )
 
   console.log('Android: widgets copied and registered, location permission and store versioning set.')
