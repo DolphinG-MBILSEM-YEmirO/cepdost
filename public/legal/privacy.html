@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sharloop Gizlilik Politikası</title>
+  <meta name="description" content="Sharloop hangi verileri neden kullanır, nerede saklar ve nasıl silersin." />
+  <link rel="stylesheet" href="/legal/legal.css" />
+</head>
+<body>
+<main>
+  <header>
+    <a class="brand" href="/">Sharloop</a>
+    <nav class="lang"><a href="#tr">Türkçe</a><a href="#en">English</a></nav>
+  </header>
+
+  <article id="tr" lang="tr">
+    <h1>Gizlilik Politikası ve KVKK Aydınlatma Metni</h1>
+    <p class="meta">Son güncelleme: 1 Kasım 2026</p>
+
+    <p>Sharloop, arkadaşlarınla plan yapmanı, yer kaydetmeni ve anılarını paylaşmanı sağlayan ücretsiz bir uygulamadır.
+      Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) ve Avrupa Birliği Genel Veri Koruma Tüzüğü (GDPR)
+      kapsamında hangi verileri neden işlediğimizi anlatır. Kısaca: verilerini satmayız, reklam için seni takip etmeyiz,
+      mesajların ve planların uçtan uca şifrelenir.</p>
+
+    <section class="card">
+      <h2>1. Veri sorumlusu ve iletişim</h2>
+      <p>Veri sorumlusu Sharloop uygulamasının geliştiricisidir. Her soru, talep ve şikâyet için:
+        <a href="mailto:sharloop.destek@gmail.com">sharloop.destek@gmail.com</a></p>
+    </section>
+
+    <section class="card">
+      <h2>2. Hangi verileri işliyoruz?</h2>
+      <table>
+        <thead><tr><th>Veri</th><th>Neden</th><th>Nerede</th></tr></thead>
+        <tbody>
+          <tr><td>Adın, kullanıcı adın, isteğe bağlı profil fotoğrafın, biyografin</td><td>Hesabını oluşturmak, arkadaşlarının seni bulması</td><td>Şifreli olarak Nostr sunucularında; ad, kullanıcı adı ve (profilin herkese açıksa) fotoğrafın seni arayanlara görünür</td></tr>
+          <tr><td>E-posta adresin</td><td>Botları engellemek için hesabını doğrulamak</td><td>Doğrulama kodu e-postayla gönderilir; adresin sunucularımızda saklanmaz, yalnızca senin şifreli profilinde durur</td></tr>
+          <tr><td>Planların, kaydettiklerin, takvimin</td><td>Uygulamanın ana işlevi</td><td>Telefonunda; diğer cihazlarına şifreli olarak eşitlenir</td></tr>
+          <tr><td>Mesajlar, gruplar, anılar, paylaşımlar, fotoğraf ve videolar</td><td>Arkadaşlarınla paylaşmak</td><td>Uçtan uca şifreli olarak Nostr sunucularında; yalnızca paylaştığın kişiler okuyabilir</td></tr>
+          <tr><td>Müsaitlik bilgin (dolu/boş saatler)</td><td>Arkadaşlarının ne zaman boş olduğunu görmesi (ayarlardan kapatılabilir)</td><td>Şifreli, yalnızca arkadaşlarına açık</td></tr>
+          <tr><td>Yaklaşık konumun</td><td>Plan kurarken yakındaki mekânları önermek; yalnızca izin verirsen</td><td>O anki öneri için mekân arama hizmetine gönderilir, saklanmaz</td></tr>
+          <tr><td>Uygulamaya paylaştığın link, metin ve görseller</td><td>Bunları yapay zekâ ile plana dönüştürmek ve asistanın sorularına cevap vermek</td><td>İşlenmek üzere Google Gemini'ye gönderilir, bizim tarafımızda saklanmaz</td></tr>
+          <tr><td>Bildirim adresi (cihaz jetonu)</td><td>Sana bildirim göndermek</td><td>Şifreli profilinde; bildirimler Google, Apple veya tarayıcı bildirim servisi üzerinden iletilir</td></tr>
+          <tr><td>Teknik kayıtlar (IP adresi, cihaz/tarayıcı türü, zaman)</td><td>Güvenlik ve hata giderme</td><td>Barındırma hizmetimizin (Vercel) kısa süreli sunucu kayıtlarında</td></tr>
+        </tbody>
+      </table>
+      <p class="muted">Reklam kimliği toplamayız, seni başka uygulama ve sitelerde izlemeyiz, analiz/izleme aracı kullanmayız.</p>
+    </section>
+
+    <section class="card">
+      <h2>3. Hukuki sebep</h2>
+      <p>Verilerini KVKK madde 5/2-c (sözleşmenin kurulması ve ifası: sana hizmeti sunmak), 5/2-f (meşru menfaat: güvenlik,
+        bot ve kötüye kullanımın önlenmesi) ve konum gibi isteğe bağlı veriler için açık rızan (5/1) ile işleriz. Rızanı
+        telefon ayarlarından istediğin an geri alabilirsin.</p>
+    </section>
+
+    <section class="card">
+      <h2>4. Kimlerle paylaşılır, yurt dışına aktarım</h2>
+      <p>Hizmeti çalıştırmak için şu sağlayıcılar kullanılır. Bunların sunucuları yurt dışındadır; aktarım KVKK madde 9 ve
+        hizmeti sunmak için zorunlu olduğu ölçüde yapılır:</p>
+      <ul>
+        <li><strong>Nostr sunucuları</strong> (relay.damus.io, nos.lol, relay.primal.net, offchain.pub): şifreli kayıtlarını taşır ve saklar. İçeriği okuyamazlar; yalnızca şifreli veriyi, hesabının açık anahtarını ve zamanı görürler.</li>
+        <li><strong>Vercel</strong>: uygulamanın ve sunucu fonksiyonlarının barındırılması.</li>
+        <li><strong>Google (Gemini, Gmail)</strong>: yapay zekâ ile sınıflandırma ve asistan; doğrulama e-postalarının gönderilmesi.</li>
+        <li><strong>Foursquare</strong>: yakındaki mekân önerileri.</li>
+        <li><strong>Google, Apple ve tarayıcı bildirim servisleri</strong>: şifreli bildirimlerin cihazına iletilmesi.</li>
+      </ul>
+      <p>Verilerini hiçbir şirkete satmayız. Uygulamada ileride “Sponsorlu” etiketli mekân önerileri gösterilirse bunlar
+        telefonunda, kişisel verin işletmelere verilmeden seçilir; işletmeler yalnızca toplu sayılar görür.</p>
+    </section>
+
+    <section class="card">
+      <h2>5. Saklama süresi ve silme</h2>
+      <p>Verilerin hesabın açık olduğu sürece saklanır. Uygulamada <strong>Profil → Ayarlar → Hesap güvenliği → Hesabımı kalıcı
+        olarak sil</strong> ile hesabını istediğin an silebilirsin. Silince kullanıcı adın, profilin, şifre yedeğin ve dizin
+        kaydın hemen geçersiz olur, sunuculardan hesabının yayınladığı her kaydı silmeleri istenir ve telefonundaki bütün
+        Sharloop verisi silinir. Bazı bağımsız sunucular silme isteğine uymayabilir; o durumda bile kayıtlar şifreli kalır
+        ve kimse okuyamaz. Arkadaşlarının cihazlarına daha önce ulaşmış mesajlar onların cihazında kalabilir.
+        Ayrıntılar: <a href="/legal/delete-account.html">Hesap silme</a>.</p>
+    </section>
+
+    <section class="card">
+      <h2>6. Yaş sınırı</h2>
+      <p>Sharloop 13 yaş ve üzeri içindir. 13 yaşından küçükseniz hesap açmayın. 18 yaşından küçük kullanıcıların uygulamayı
+        velisinin bilgisiyle kullanmasını isteriz. 13 yaşından küçük birine ait veri işlediğimizi fark edersek hesabı sileriz.</p>
+    </section>
+
+    <section class="card">
+      <h2>7. Hakların</h2>
+      <p>KVKK madde 11 ve GDPR kapsamında verilerinin işlenip işlenmediğini öğrenme, bilgi isteme, düzeltilmesini veya
+        silinmesini isteme, aktarıldığı tarafları öğrenme, itiraz etme ve zarara uğradıysan tazminat isteme hakların vardır.
+        Taleplerini <a href="mailto:sharloop.destek@gmail.com">sharloop.destek@gmail.com</a> adresine yazabilirsin; en geç 30
+        gün içinde cevap veririz. Kişisel Verileri Koruma Kurulu'na şikâyet hakkın da saklıdır.</p>
+    </section>
+
+    <section class="card">
+      <h2>8. Güvenlik</h2>
+      <p>Mesajların, planların ve paylaşımların cihazında şifrelenir ve yalnızca anahtarı olan kişiler (sen, arkadaşların,
+        grup üyelerin) açabilir. Şifren cihazından çıkmaz. Kurtarma kodunu kimseyle paylaşma.</p>
+    </section>
+
+    <section class="card">
+      <h2>9. Değişiklikler</h2>
+      <p>Bu metni güncellediğimizde tarihini değiştiririz; önemli değişiklikleri uygulamada duyururuz.</p>
+    </section>
+  </article>
+
+  <article id="en" lang="en">
+    <h1>Privacy Policy</h1>
+    <p class="meta">Last updated: 1 November 2026</p>
+    <p>Sharloop is a free app for making plans with friends, saving places and sharing memories. We do not sell your data,
+      we do not track you for advertising, and your messages and plans are end-to-end encrypted.</p>
+
+    <section class="card">
+      <h2>Contact</h2>
+      <p>The data controller is the developer of Sharloop: <a href="mailto:sharloop.destek@gmail.com">sharloop.destek@gmail.com</a></p>
+      <h2>What we process and why</h2>
+      <ul>
+        <li><strong>Account:</strong> your name, username and optional photo and bio, so friends can find you. Name, username and (if your profile is public) photo are visible to people who search for you.</li>
+        <li><strong>Email address:</strong> to verify accounts and stop bots. The code is sent by email; the address is not stored on our servers, only in your encrypted profile.</li>
+        <li><strong>Plans, saved items, calendar:</strong> kept on your device and synced, encrypted, to your other devices.</li>
+        <li><strong>Messages, groups, memories, posts, photos and videos:</strong> end-to-end encrypted and stored on Nostr relays; only the people you share with can read them.</li>
+        <li><strong>Availability</strong> (busy/free times): shared encrypted with friends only; can be turned off.</li>
+        <li><strong>Approximate location:</strong> only if you allow it, to suggest nearby places while you make a plan. Not stored.</li>
+        <li><strong>Links, text and images you share into the app:</strong> sent to Google Gemini to turn them into plans and to answer the assistant. Not stored by us.</li>
+        <li><strong>Push token:</strong> to send you notifications, delivered through Google, Apple or your browser's push service.</li>
+        <li><strong>Technical logs</strong> (IP address, device type, time): short-lived server logs at our host, Vercel, for security and debugging.</li>
+      </ul>
+      <p>We collect no advertising identifiers and use no analytics or tracking tools.</p>
+      <h2>Service providers</h2>
+      <p>Nostr relays (relay.damus.io, nos.lol, relay.primal.net, offchain.pub), Vercel, Google (Gemini, Gmail), Foursquare,
+        and the Google, Apple and browser push services. Their servers may be outside your country. If Sharloop later shows
+        places labelled “Sponsored”, they are picked on your device; businesses only see total counts, never who you are.</p>
+      <h2>Retention and deletion</h2>
+      <p>Your data is kept while your account exists. Delete it any time in <strong>Profile → Settings → Account security →
+        Delete my account permanently</strong>. Your username, profile, password backup and directory entries are voided at
+        once, the relays are asked to delete every record the account published, and all Sharloop data on the device is
+        erased. Independent relays may ignore deletion requests; their copies stay encrypted and unreadable. Messages that
+        already reached friends may remain on their devices. See <a href="/legal/delete-account.html">Account deletion</a>.</p>
+      <h2>Age</h2>
+      <p>Sharloop is for people aged 13 and over. If we learn that an account belongs to someone under 13, we delete it.</p>
+      <h2>Your rights</h2>
+      <p>Under the Turkish KVKK and the EU GDPR you can ask to access, correct, delete or export your data, object to
+        processing and complain to your data protection authority. Write to
+        <a href="mailto:sharloop.destek@gmail.com">sharloop.destek@gmail.com</a>; we answer within 30 days.</p>
+    </section>
+  </article>
+
+  <footer>Sharloop · <a href="/legal/terms.html">Kullanım Şartları / Terms</a> · <a href="/legal/delete-account.html">Hesap silme / Account deletion</a></footer>
+</main>
+</body>
+</html>

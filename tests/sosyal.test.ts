@@ -25,7 +25,7 @@ import {
   motorOlustur,
   yayinKanaliAl,
 } from '../src/sosyal/cekirdek'
-import { hesabiKur, sifreyiKaydet, sifreyleGiris } from '../src/sosyal/hesap'
+import { hesabiKaliciSil, hesabiKur, kullaniciAdiAlinmisMi, sifreyiKaydet, sifreyleGiris } from '../src/sosyal/hesap'
 import {
   arkadaslariGetir,
   arkadaslikIsteGonder,
@@ -1264,5 +1264,35 @@ test('email verification: strangers only see and hear from verified accounts', a
     assert.equal(denizIcin.find((a) => a.profil.id === ali.motor.benimId)?.durum, 'kabul')
   } finally {
     epostaImzacisiniAyarla(null)
+  }
+})
+
+test('deleting an account: nobody finds it, signs in to it or reads its records again', async () => {
+  // An account of its own, so the other tests keep their people.
+  epostaImzacisiniAyarla(null)
+  const ece = kisiOlustur('ece')
+  await olarak(ece, () => hesabiKur({ ad: 'Ece', kullanici_adi: 'ece', gizlilik: 'herkes' }))
+  await olarak(ece, () => sifreyiKaydet('ece-sifresi-1'))
+  assert.equal((await olarak(ayse, () => profilAra('@ece')))?.id, ece.motor.benimId)
+
+  const sorgu = (filtre: Record<string, unknown>) => ece.motor.hamSorgula(filtre as never)
+  const oncekiler = await sorgu({ kinds: [30078], authors: [ece.motor.benimId] })
+  assert.ok(oncekiler.length > 0)
+
+  await olarak(ece, () => hesabiKaliciSil())
+
+  // The username is free, search finds nothing, the password opens nothing.
+  assert.equal(await olarak(ayse, () => kullaniciAdiAlinmisMi('ece')), false)
+  assert.equal(await olarak(ayse, () => profilAra('@ece')), null)
+  assert.equal(await olarak(ayse, () => profilAra(koduGoster(arkadasKodu(ece.motor.benimId)).toLowerCase())), null)
+  await assert.rejects(sifreyleGiris('ece', 'ece-sifresi-1', [relay.url]), /bulunamadı/)
+
+  // The relays were asked to drop every record the account published.
+  const istekler = await sorgu({ kinds: [5], authors: [ece.motor.benimId] })
+  assert.equal(istekler.length, 1)
+  const adlar = new Set(istekler[0].tags.filter((t) => t[0] === 'a').map((t) => t[1]))
+  for (const olay of oncekiler) {
+    const d = olay.tags.find((t) => t[0] === 'd')?.[1]
+    assert.ok(adlar.has(`30078:${ece.motor.benimId}:${d}`))
   }
 })

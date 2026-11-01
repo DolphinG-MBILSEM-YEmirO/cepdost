@@ -106,6 +106,10 @@ function etiket(olay: NostrOlayi, ad: string): string | undefined {
 
 const simdiSn = () => Math.floor(Date.now() / 1000)
 
+// NIP-09 deletion request kind, and how many records one request names.
+const SILME_TURU = 5
+const SILME_PARCASI = 400
+
 export class SosyalMotor {
   readonly benimId: string
   readonly db: SosyalVeritabani
@@ -280,6 +284,34 @@ export class SosyalMotor {
     this.kayitDinleyicileri.forEach((d) => d(kayit))
     this.bildir()
     return kayit
+  }
+
+  // Asks every relay to drop every event this account published (NIP-09),
+  // for account deletion. Relays may ignore the request, so the records
+  // that make the account findable are also overwritten with tombstones
+  // (see hesabiKaliciSil in hesap.ts); this covers everything else.
+  async silmeIstegiGonder(): Promise<void> {
+    await this.hazirlik
+    const benimkiler = await this.db.kayitlar.where('yazar').equals(this.benimId).toArray()
+    const etiketler: string[][] = []
+    for (const k of benimkiler) {
+      const d = k.id.slice(this.benimId.length + 1)
+      etiketler.push(['a', `${OLAY_TURU}:${this.benimId}:${d}`])
+      if (k.olayId) etiketler.push(['e', k.olayId])
+    }
+    for (let i = 0; i < etiketler.length; i += SILME_PARCASI) {
+      const olay = finalizeEvent(
+        {
+          kind: SILME_TURU,
+          created_at: simdiSn(),
+          tags: [...etiketler.slice(i, i + SILME_PARCASI), ['k', String(OLAY_TURU)]],
+          content: 'account deleted',
+        },
+        this.sk,
+      )
+      const { kabul } = await this.havuz.yayinla(olay as NostrOlayi)
+      if (kabul === 0) throw new Error(BAGLANTI_YOK)
+    }
   }
 
   // ---------- other apps' records ----------
