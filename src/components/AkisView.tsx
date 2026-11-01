@@ -224,6 +224,8 @@ export function AkisView({ onPlanAc, onAsistan, onPaylas }: Props) {
               sahip={profiller.get(a.sahip_id) ?? (a.sahip ? ozettenProfil(a.sahip_id, a.sahip) : null)}
               grupAdi={a.grup_id ? gruplar.get(a.grup_id)?.ad : null}
               yeni={arkadasAkisi && yeniMi(a, benimId, sonBakis)}
+              benimId={benimId}
+              onEngellendi={(kisiId) => setAnilar((l) => l?.filter((x) => x.sahip_id !== kisiId) ?? l)}
             >
               <AniYanitlari
                 ani={a}

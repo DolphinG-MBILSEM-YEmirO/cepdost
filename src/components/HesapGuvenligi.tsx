@@ -14,13 +14,28 @@ import { useGeriIleKapat } from '../lib/geriTusu'
 // code (the account's key, the last resort if the password is forgotten),
 // changing the password, and signing out of this device.
 export function HesapGuvenligi() {
-  const { kurtarmaKodunuGetir, cikis } = useAuth()
+  const { kurtarmaKodunuGetir, cikis, hesabiSil } = useAuth()
   const [kodGorunur, setKodGorunur] = useState(false)
   const [kopyalandi, setKopyalandi] = useState(false)
   const [sifreAcik, setSifreAcik] = useState(false)
   const [cikisOnay, setCikisOnay] = useState(false)
+  const [silmeOnay, setSilmeOnay] = useState(false)
+  const [siliniyor, setSiliniyor] = useState(false)
+  const [silmeHatasi, setSilmeHatasi] = useState<string | null>(null)
   useGeriIleKapat(() => setSifreAcik(false), sifreAcik)
   const kod = kurtarmaKodunuGetir()
+
+  async function hesabiKaldir() {
+    setSilmeOnay(false)
+    setSiliniyor(true)
+    setSilmeHatasi(null)
+    try {
+      await hesabiSil()
+    } catch {
+      setSiliniyor(false)
+      setSilmeHatasi('Hesap silinemedi. İnternet bağlantını kontrol edip tekrar dene.')
+    }
+  }
 
   async function kopyala() {
     if (!kod) return
@@ -115,6 +130,14 @@ export function HesapGuvenligi() {
           <Icon name="LogOut" className="w-4 h-4" />
           Çıkış yap
         </button>
+        <button
+          onClick={() => setSilmeOnay(true)}
+          disabled={siliniyor}
+          className="w-full py-2 text-xs font-medium text-ink-400 hover:text-rose-600 disabled:opacity-60 transition-colors"
+        >
+          {siliniyor ? 'Hesap siliniyor…' : 'Hesabımı kalıcı olarak sil'}
+        </button>
+        {silmeHatasi && <p className="text-xs text-rose-600 text-center">{silmeHatasi}</p>}
       </div>
 
       {sifreAcik && (
@@ -139,6 +162,16 @@ export function HesapGuvenligi() {
             void cikis()
           }}
           onCancel={() => setCikisOnay(false)}
+        />
+      )}
+
+      {silmeOnay && (
+        <ConfirmDialog
+          title="Hesabın kalıcı olarak silinsin mi?"
+          message="Kullanıcı adın, profilin, arkadaşlıkların, mesajların, planların ve anıların silinir; bu telefondaki her şey de gider. Bu işlem geri alınamaz."
+          confirmLabel="Hesabımı sil"
+          onConfirm={() => void hesabiKaldir()}
+          onCancel={() => setSilmeOnay(false)}
         />
       )}
     </div>

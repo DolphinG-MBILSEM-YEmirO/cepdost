@@ -24,6 +24,7 @@ import {
 import { bilinenProfiller, musaitlikKaydi, ozettenProfil, type Profil } from './api'
 import { onaylilariSec } from './epostaImzacisi'
 import { bildirArkaplanda } from './bildirimler'
+import { engellenenler } from './engel'
 import {
   fotoBilgisiAl,
   fotoHazirla,
@@ -446,8 +447,13 @@ function mesajKur(k: SosyalKayit, grupId: string, baglam: MesajBaglami = BOS_BAG
 
 export async function mesajlariGetir(grupId: string, limit = 100): Promise<GrupMesaji[]> {
   const kanal = await grupKanaliBul(grupId)
-  const [kayitlar, baglam] = await Promise.all([motor().kayitlar(kanal.konu, TUR.mesaj), mesajBaglami(kanal.konu)])
+  const [kayitlar, baglam, engelli] = await Promise.all([
+    motor().kayitlar(kanal.konu, TUR.mesaj),
+    mesajBaglami(kanal.konu),
+    engellenenler(),
+  ])
   return kayitlar
+    .filter((k) => !engelli.has(k.yazar))
     .flatMap((k) => mesajKur(k, grupId, baglam) ?? [])
     .sort((a, b) => a.olusturulma.localeCompare(b.olusturulma))
     .slice(-limit)
@@ -509,10 +515,15 @@ export async function grupOkunmamisSayisi(grupId: string): Promise<number> {
   const kanal = await grupKanaliBul(grupId)
   const okundu = await m.kayit(kanal, m.benimId, 'okundu')
   const sinir = nesneMi(okundu?.veri) ? (sayiAl(okundu.veri.zaman) ?? 0) : 0
-  const [mesajlar, gizliler] = await Promise.all([m.kayitlar(kanal.konu, TUR.mesaj), gizlenenMesajlar()])
+  const [mesajlar, gizliler, engelli] = await Promise.all([
+    m.kayitlar(kanal.konu, TUR.mesaj),
+    gizlenenMesajlar(),
+    engellenenler(),
+  ])
   return mesajlar.filter(
     (k) =>
       k.yazar !== m.benimId &&
+      !engelli.has(k.yazar) &&
       kayitZamani(k) > sinir &&
       nesneMi(k.veri) &&
       !silindiMi(k.veri) &&
@@ -714,8 +725,11 @@ function tarihSirasi(a: Ani, b: Ani) {
 
 export async function anilariGetir(secim: { grupId?: string | null; arkadasId?: string | null }): Promise<Ani[]> {
   const kanal = await aniKanali(secim.grupId, secim.arkadasId)
-  const kayitlar = await motor().kayitlar(kanal.konu, TUR.ani)
-  return kayitlar.flatMap((k) => aniKur(k) ?? []).sort(tarihSirasi)
+  const [kayitlar, engelli] = await Promise.all([motor().kayitlar(kanal.konu, TUR.ani), engellenenler()])
+  return kayitlar
+    .filter((k) => !engelli.has(k.yazar))
+    .flatMap((k) => aniKur(k) ?? [])
+    .sort(tarihSirasi)
 }
 
 // Puts my current summary (name, photo, email attestation) on my Keşfet
@@ -752,7 +766,11 @@ export async function akisAnilariGetir(kapsam: AkisKapsami, limit = 60): Promise
       (a) => ({ pk: a.sahip_id, onay: a.sahip?.onay }),
     )
     for (const a of anilar) if (a.sahip) kesfetSahipleri.set(a.sahip_id, a.sahip)
-    return anilar.sort((a, b) => b.olusturulma.localeCompare(a.olusturulma)).slice(0, limit)
+    const engelli = await engellenenler()
+    return anilar
+      .filter((a) => !engelli.has(a.sahip_id))
+      .sort((a, b) => b.olusturulma.localeCompare(a.olusturulma))
+      .slice(0, limit)
   }
 
   const durum = await kanalDurumu()
@@ -763,11 +781,12 @@ export async function akisAnilariGetir(kapsam: AkisKapsami, limit = 60): Promise
     ...(durum.yayin ? [durum.yayin] : []),
     ...durum.arkadasYayin.values(),
   ]
+  const engelli = await engellenenler()
   const anilar: Ani[] = []
   for (const kanal of kanallar) {
     for (const k of await m.kayitlar(kanal.konu, TUR.ani)) {
       const a = aniKur(k)
-      if (a?.foto) anilar.push(a)
+      if (a?.foto && !engelli.has(a.sahip_id)) anilar.push(a)
     }
   }
   return anilar.sort((a, b) => b.olusturulma.localeCompare(a.olusturulma)).slice(0, limit)

@@ -25,7 +25,7 @@ import {
   motorOlustur,
   yayinKanaliAl,
 } from '../src/sosyal/cekirdek'
-import { hesabiKur, sifreyiKaydet, sifreyleGiris } from '../src/sosyal/hesap'
+import { hesabiKaliciSil, hesabiKur, kullaniciAdiAlinmisMi, sifreyiKaydet, sifreyleGiris } from '../src/sosyal/hesap'
 import {
   arkadaslariGetir,
   arkadaslikIsteGonder,
@@ -36,6 +36,8 @@ import {
   davetGonder,
   davetleriGetir,
   davetYanitla,
+  engeliKaldir,
+  engelle,
   profilAra,
   profilGuncelle,
   profilimiGetir,
@@ -1265,4 +1267,70 @@ test('email verification: strangers only see and hear from verified accounts', a
   } finally {
     epostaImzacisiniAyarla(null)
   }
+})
+
+test('deleting an account: nobody finds it, signs in to it or reads its records again', async () => {
+  // An account of its own, so the other tests keep their people.
+  epostaImzacisiniAyarla(null)
+  const ece = kisiOlustur('ece')
+  await olarak(ece, () => hesabiKur({ ad: 'Ece', kullanici_adi: 'ece', gizlilik: 'herkes' }))
+  await olarak(ece, () => sifreyiKaydet('ece-sifresi-1'))
+  assert.equal((await olarak(ayse, () => profilAra('@ece')))?.id, ece.motor.benimId)
+
+  const sorgu = (filtre: Record<string, unknown>) => ece.motor.hamSorgula(filtre as never)
+  const oncekiler = await sorgu({ kinds: [30078], authors: [ece.motor.benimId] })
+  assert.ok(oncekiler.length > 0)
+
+  await olarak(ece, () => hesabiKaliciSil())
+
+  // The username is free, search finds nothing, the password opens nothing.
+  assert.equal(await olarak(ayse, () => kullaniciAdiAlinmisMi('ece')), false)
+  assert.equal(await olarak(ayse, () => profilAra('@ece')), null)
+  assert.equal(await olarak(ayse, () => profilAra(koduGoster(arkadasKodu(ece.motor.benimId)).toLowerCase())), null)
+  await assert.rejects(sifreyleGiris('ece', 'ece-sifresi-1', [relay.url]), /bulunamadı/)
+
+  // The relays were asked to drop every record the account published.
+  const istekler = await sorgu({ kinds: [5], authors: [ece.motor.benimId] })
+  assert.equal(istekler.length, 1)
+  const adlar = new Set(istekler[0].tags.filter((t) => t[0] === 'a').map((t) => t[1]))
+  for (const olay of oncekiler) {
+    const d = olay.tags.find((t) => t[0] === 'd')?.[1]
+    assert.ok(adlar.has(`30078:${ece.motor.benimId}:${d}`))
+  }
+})
+
+test('blocking: their messages, memories and requests stop showing, and the friendship ends', async () => {
+  const fatma = kisiOlustur('fatma')
+  const gul = kisiOlustur('gul')
+  await olarak(fatma, () => hesabiKur({ ad: 'Fatma', kullanici_adi: 'fatma_engel', gizlilik: 'arkadaslar' }))
+  await olarak(gul, () => hesabiKur({ ad: 'Gül', kullanici_adi: 'gul_engel', gizlilik: 'arkadaslar' }))
+  await olarak(fatma, () => arkadaslikIsteGonder(gul.motor.benimId, null))
+  await esitle(gul)
+  await olarak(gul, () => arkadaslikYanitla(fatma.motor.benimId, true))
+  await esitle(fatma, gul)
+  const grupId = await olarak(fatma, () => grupOlustur('İkimiz', [gul.motor.benimId]))
+  await esitle(gul, fatma)
+  await olarak(gul, () => mesajGonder(grupId, 'kaba bir söz'))
+  await olarak(fatma, () => mesajGonder(grupId, 'selam'))
+  await esitle(fatma)
+  assert.deepEqual((await olarak(fatma, () => mesajlariGetir(grupId))).map((m) => m.metin), ['kaba bir söz', 'selam'])
+
+  await olarak(fatma, () => engelle(gul.motor.benimId))
+  await esitle(fatma, gul)
+  assert.deepEqual(await olarak(fatma, () => arkadaslariGetir()), [])
+  assert.deepEqual((await olarak(gul, () => arkadaslariGetir())).filter((a) => a.durum === 'kabul'), [])
+  assert.deepEqual((await olarak(fatma, () => mesajlariGetir(grupId))).map((m) => m.metin), ['selam'])
+  assert.equal(await olarak(fatma, () => grupOkunmamisSayisi(grupId)), 0)
+
+  // A new request from them is not shown while they are blocked.
+  await olarak(gul, () => arkadaslikIsteGonder(fatma.motor.benimId, null))
+  await esitle(fatma)
+  assert.equal(await olarak(fatma, () => bekleyenSayisi()), 0)
+
+  // The list follows the account to another device; unblocking shows them again.
+  const ikinciCihaz = kisiOlustur('fatma-2', fatma.sk)
+  await esitle(ikinciCihaz)
+  assert.deepEqual((await olarak(ikinciCihaz, () => mesajlariGetir(grupId))).map((m) => m.metin), ['selam'])
+  await olarak(fatma, () => engeliKaldir(gul.motor.benimId))
+  assert.equal(await olarak(fatma, () => bekleyenSayisi()), 1)
 })

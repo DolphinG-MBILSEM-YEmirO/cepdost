@@ -5,6 +5,8 @@
 #   - creates the SharloopWidgets widget extension target (iOS 17) with our
 #     widget files and embeds it in the app
 #   - gives both targets the App Group group.app.sharloop (entitlements)
+#   - bundles a privacy manifest (PrivacyInfo.xcprivacy) in both targets,
+#     which App Store uploads require
 #   - shares an "App" scheme, so command-line builds can find it
 #
 # Safe to run again: anything already in place is left alone. Run it after
@@ -35,13 +37,17 @@ def swift_files(folder)
   Dir.children(folder).select { |f| f.end_with?('.swift') }.sort
 end
 
-# Adds files that live in `group`'s folder to the group, and the Swift ones
-# to `target`'s sources, skipping any already there.
+PRIVACY_MANIFEST = 'PrivacyInfo.xcprivacy'
+
+# Adds files that live in `group`'s folder to the group, the Swift ones to
+# `target`'s sources and the privacy manifest to its resources, skipping any
+# already there.
 def add_files(group, target, names)
   names.each do |name|
     next if group.files.any? { |f| f.path == name }
     ref = group.new_reference(name)
     target.add_file_references([ref]) if name.end_with?('.swift')
+    target.add_resources([ref]) if name == PRIVACY_MANIFEST
   end
 end
 
@@ -52,8 +58,10 @@ end
 # ---------- the app ----------
 
 app_group = project.main_group.children.find { |g| g.display_name == 'App' } or abort 'The App group is missing.'
-add_files(app_group, app, swift_files(File.join(NATIVE, 'App')) + ['App.entitlements'])
-set_everywhere(app, 'CODE_SIGN_ENTITLEMENTS' => 'App/App.entitlements')
+add_files(app_group, app, swift_files(File.join(NATIVE, 'App')) + ['App.entitlements', PRIVACY_MANIFEST])
+# iPhone only for now: an iPad build would need its own App Store
+# screenshots and an iPad-shaped layout review.
+set_everywhere(app, 'CODE_SIGN_ENTITLEMENTS' => 'App/App.entitlements', 'TARGETED_DEVICE_FAMILY' => '1')
 
 # ---------- the widget extension ----------
 
@@ -83,7 +91,7 @@ set_everywhere(
   'MARKETING_VERSION' => app.build_configurations.first.build_settings['MARKETING_VERSION'] || '1.0',
   'CURRENT_PROJECT_VERSION' => app.build_configurations.first.build_settings['CURRENT_PROJECT_VERSION'] || '1',
   'SWIFT_VERSION' => '5.0',
-  'TARGETED_DEVICE_FAMILY' => '1,2',
+  'TARGETED_DEVICE_FAMILY' => '1',
   'SKIP_INSTALL' => 'YES',
   'APPLICATION_EXTENSION_API_ONLY' => 'YES',
   'LD_RUNPATH_SEARCH_PATHS' => '$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks',
@@ -94,7 +102,7 @@ FileUtils.mkdir_p(widget_folder)
 widget_group = project.main_group.children.find { |g| g.display_name == EXTENSION } ||
                project.main_group.new_group(EXTENSION, EXTENSION)
 add_files(widget_group, extension,
-          swift_files(File.join(NATIVE, EXTENSION)) + ['Info.plist', "#{EXTENSION}.entitlements"])
+          swift_files(File.join(NATIVE, EXTENSION)) + ['Info.plist', "#{EXTENSION}.entitlements", PRIVACY_MANIFEST])
 
 project.save
 

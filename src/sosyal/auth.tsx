@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { motor, motoruBaslat, motoruKapat } from './cekirdek'
-import { sifreyiKaydet, sifreyleGiris } from './hesap'
+import { hesabiKaliciSil, sifreyiKaydet, sifreyleGiris } from './hesap'
+import { db } from '../db'
 import { cihaziBildirimlerdenCikar } from '../bildirim/useBildirimler'
 import {
   acikAnahtar,
@@ -36,6 +37,9 @@ interface AuthDurumu {
   sifreBelirle: (sifre: string) => Promise<void>
   kurtarmaKodunuGetir: () => string | null
   cikis: () => Promise<void>
+  // Deletes the account everywhere and everything of it on this device,
+  // then starts the app afresh.
+  hesabiSil: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthDurumu | null>(null)
@@ -99,6 +103,31 @@ export function AuthSaglayici({ children }: { children: ReactNode }) {
         kimlikSil()
         setYeniHesap(false)
         setKullanici(null)
+      },
+      async hesabiSil() {
+        // The account goes from the relays first: if that fails nothing
+        // on this device is touched and the user can try again.
+        await cihaziBildirimlerdenCikar()
+        await hesabiKaliciSil()
+        try {
+          await motor().yerelVeriyiSil()
+        } catch {
+          /* already closed */
+        }
+        motoruKapat()
+        kimlikSil()
+        // Plans, the archive and the settings kept on this device go too.
+        try {
+          await db.delete()
+        } catch {
+          /* nothing stored */
+        }
+        try {
+          localStorage.clear()
+        } catch {
+          /* storage blocked */
+        }
+        window.location.replace('/')
       },
     }),
     [kullanici, yukleniyor, yeniHesap, eskiHesapVardi, oturumAc],

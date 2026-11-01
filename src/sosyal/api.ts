@@ -31,6 +31,7 @@ import {
 import type { EpostaOnayi } from './epostaImzacisi'
 import { onaylilariSec } from './epostaImzacisi'
 import { bildirArkaplanda } from './bildirimler'
+import { ENGEL_ONEKI, engellenenler } from './engel'
 import { kullaniciAdiAlinmisMi, kullaniciAdiHatasi, kullaniciAdiniTasi } from './hesap'
 import { davetAnahtarindanKimlik } from './kimlik'
 import { dizinKanali, gelenKutusuKonusu } from './nostr/kanal'
@@ -338,6 +339,22 @@ export async function arkadasliktanCik(arkadaslikId: string): Promise<void> {
   void m.esitle().catch(() => {})
 }
 
+// Blocks someone: their messages, memories and requests stop showing, and
+// a friendship or request between us ends (which also takes them off my
+// broadcast channel). They are not told.
+export async function engelle(kisiId: string): Promise<void> {
+  const m = motor()
+  if (kisiId === m.benimId) throw new Error('Kendini engelleyemezsin.')
+  await m.yayinla(await m.ben(), TUR.engel, `${ENGEL_ONEKI}${kisiId}`, { zaman: simdiMs() })
+  const iliski = (await kanalDurumu()).iliskiler.get(kisiId)
+  if (iliski && (iliski.durum === 'kabul' || iliski.durum === 'bekliyor')) await arkadasliktanCik(kisiId)
+}
+
+export async function engeliKaldir(kisiId: string): Promise<void> {
+  const m = motor()
+  await m.yayinla(await m.ben(), TUR.engel, `${ENGEL_ONEKI}${kisiId}`, null)
+}
+
 async function yayinAnahtariniYenile(durum: KanalDurumu): Promise<void> {
   const m = motor()
   const eskiKanal = durum.yayin
@@ -361,11 +378,14 @@ async function yayinAnahtariniYenile(durum: KanalDurumu): Promise<void> {
   }
 }
 
+// Blocked people are left out (their requests, mainly).
 export async function arkadaslariGetir(): Promise<Arkadas[]> {
   const durum = await kanalDurumu()
+  const engelli = await engellenenler()
   const liste: Array<Arkadas & { zaman: number }> = []
   for (const iliski of durum.iliskiler.values()) {
     if (iliski.durum !== 'kabul' && iliski.durum !== 'bekliyor') continue
+    if (engelli.has(iliski.pk)) continue
     liste.push({
       arkadaslikId: iliski.pk,
       profil: await arkadasProfili(durum, iliski),
@@ -588,7 +608,10 @@ export async function davetleriGetir(): Promise<{ gelen: PlanDaveti[]; giden: Pl
 // Badge on the profile tab: friend requests and invites waiting for me.
 export async function bekleyenSayisi(): Promise<number> {
   const durum = await kanalDurumu()
-  const istekler = [...durum.iliskiler.values()].filter((i) => i.durum === 'bekliyor' && i.yon === 'gelen').length
+  const engelli = await engellenenler()
+  const istekler = [...durum.iliskiler.values()].filter(
+    (i) => i.durum === 'bekliyor' && i.yon === 'gelen' && !engelli.has(i.pk),
+  ).length
   const { gelen } = await davetleriGetir()
   const bugun = localDateString()
   return istekler + gelen.filter((d) => d.durum === 'bekliyor' && d.tarih >= bugun).length

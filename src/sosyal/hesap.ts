@@ -2,6 +2,7 @@ import { getPublicKey, verifyEvent } from 'nostr-tools/pure'
 import { onayGecerliMi, type EpostaOnayi } from '../../shared/epostaOnayi'
 import {
   TUR,
+  arkadasKodu,
   benimProfilVerim,
   benimYedegim,
   hesapKayitlariniTazele,
@@ -133,6 +134,43 @@ export async function kullaniciAdiniTasi(eski: string | null, yeni: string): Pro
   }
   const yedek = await benimYedegim(m)
   if (yedek) await m.yayinla(await m.ben(), TUR.yedek, 'yedek', { ...yedek, kullanici_adi: yeni })
+}
+
+// ---------- deleting the account ----------
+
+// Deletes the account for good, as the stores require: the username,
+// friend code, password backup and profiles are overwritten with
+// tombstones, so nobody can find, add or sign in to the account again, and
+// the relays are asked to drop everything else it published. Throws before
+// anything changes when no relay can be reached. The caller then clears
+// this device (see auth.tsx).
+export async function hesabiKaliciSil(): Promise<void> {
+  const m = motor()
+  const ben = await m.ben()
+  const profil = await benimProfilVerim()
+  const yedek = await benimYedegim(m)
+
+  const silinecekler: Array<{ kanal: Kanal; tur: string; anahtar: string }> = []
+  const dizinler = [await dizinKanali('kod', arkadasKodu(m.benimId))]
+  if (profil?.kullanici_adi) dizinler.push(await dizinKanali('kullanici', profil.kullanici_adi))
+  for (const kanal of dizinler) {
+    silinecekler.push({ kanal, tur: TUR.dizin, anahtar: 'dizin' })
+    silinecekler.push({ kanal, tur: TUR.bildirim, anahtar: 'bildirim' })
+  }
+  if (yedek) silinecekler.push({ kanal: await yedekKanali(yedek.kullanici_adi), tur: TUR.yedek, anahtar: 'yedek' })
+  const yayinKaydi = await m.kayit(ben, m.benimId, 'yayin')
+  const yayinAnahtari = nesneMi(yayinKaydi?.veri) ? yayinKaydi.veri.anahtar : null
+  if (typeof yayinAnahtari === 'string') {
+    silinecekler.push({ kanal: await yayinKanaliAl(yayinAnahtari, m.benimId), tur: TUR.profil, anahtar: 'profil' })
+  }
+  silinecekler.push({ kanal: ben, tur: TUR.yedek, anahtar: 'yedek' })
+  silinecekler.push({ kanal: ben, tur: TUR.profil, anahtar: 'profil' })
+
+  for (const { kanal, tur, anahtar } of silinecekler) {
+    m.kanalKaydet(kanal)
+    await m.yayinla(kanal, tur, anahtar, null)
+  }
+  await m.silmeIstegiGonder()
 }
 
 // ---------- signing in with username + password ----------

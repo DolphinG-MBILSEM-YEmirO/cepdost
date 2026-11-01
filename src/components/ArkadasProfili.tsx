@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { KisiGuvenligi } from './KisiGuvenligi'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { SegmentedControl } from '../ui/SegmentedControl'
 import { Icon, type IconName } from './Icon'
@@ -275,6 +276,10 @@ function Birlikte({
       </Bolum>
 
       {arkadaslikId && <ArkadasliktanCik ad={arkadas.ad} arkadaslikId={arkadaslikId} onCikarildi={onCikarildi} />}
+      <KisiGuvenligi
+        kisi={{ id: arkadas.id, ad: arkadas.ad, kullaniciAdi: arkadas.kullanici_adi }}
+        onEngellendi={() => void onCikarildi?.()}
+      />
     </div>
   )
 }

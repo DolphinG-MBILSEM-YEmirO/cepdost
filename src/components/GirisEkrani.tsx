@@ -233,6 +233,17 @@ export function GirisEkrani({
       >
         Zaten hesabım var
       </button>
+      <p className="text-caption text-ink-400 text-center mt-4 leading-relaxed">
+        Hesap oluşturarak{' '}
+        <a href="/legal/terms.html" target="_blank" rel="noopener" className="underline">
+          Kullanım Şartları
+        </a>
+        'nı ve{' '}
+        <a href="/legal/privacy.html" target="_blank" rel="noopener" className="underline">
+          Gizlilik Politikası
+        </a>
+        'nı kabul etmiş olursun. {UYGULAMA_ADI} 13 yaş ve üzeri içindir.
+      </p>
       {hataKutusu}
 
       <p className="text-xs text-ink-400 text-center mt-6 leading-relaxed">{altNot}</p>

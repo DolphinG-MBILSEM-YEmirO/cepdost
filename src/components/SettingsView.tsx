@@ -64,6 +64,17 @@ export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
         <div className="text-center pt-2">
           <p className="text-caption font-medium text-ink-500">{UYGULAMA_ADI}</p>
           <p className="text-caption font-normal text-ink-400 mt-0.5">{SLOGAN}</p>
+          <p className="text-caption text-ink-400 mt-2 flex justify-center gap-3">
+            <a href="/legal/privacy.html" target="_blank" rel="noopener" className="underline">
+              Gizlilik
+            </a>
+            <a href="/legal/terms.html" target="_blank" rel="noopener" className="underline">
+              Kullanım Şartları
+            </a>
+            <a href="mailto:sharloop.destek@gmail.com" className="underline">
+              Destek
+            </a>
+          </p>
         </div>
       </div>
     </div>

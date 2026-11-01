@@ -45,7 +45,28 @@ function android() {
   patch(join(app, 'AndroidManifest.xml'), 'widgets.NextPlanWidget', (t) =>
     t.replace('</application>', `        <!-- Sharloop home-screen widgets -->${receivers}\n    </application>`),
   )
-  console.log('Android: widgets copied and registered.')
+  // Nearby place suggestions ask for the location when a plan is made
+  // (navigator.geolocation in the web app); the WebView needs these to
+  // show the system prompt.
+  patch(join(app, 'AndroidManifest.xml'), 'ACCESS_COARSE_LOCATION', (t) =>
+    t.replace(
+      /(<manifest[^>]*>)/,
+      `$1
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />`,
+    ),
+  )
+
+  // Store builds pass their version on the command line
+  // (-PsharloopVersionCode=… -PsharloopVersionName=…); every upload to
+  // Google Play needs a higher version code.
+  patch(join(root, 'android/app/build.gradle'), 'sharloopVersionCode', (t) =>
+    t
+      .replace(/versionCode \d+/, `versionCode Integer.parseInt(String.valueOf(project.findProperty('sharloopVersionCode') ?: '1'))`)
+      .replace(/versionName "[^"]*"/, `versionName String.valueOf(project.findProperty('sharloopVersionName') ?: '1.0.0')`),
+  )
+
+  console.log('Android: widgets copied and registered, location permission and store versioning set.')
 }
 
 function ios() {
@@ -96,6 +117,25 @@ function ios() {
 	</array>`,
     ),
   )
+  // What the system asks when the web app wants the camera (photos and
+  // videos for plans and posts), the microphone (video with sound), the
+  // photo library or the location (nearby place suggestions). Without
+  // these iOS stops the app instead of asking, and App Review rejects it.
+  patch(join(app, 'Info.plist'), 'NSCameraUsageDescription', (t) =>
+    t.replace(
+      /<dict>/,
+      `<dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Planlarına ve paylaşımlarına fotoğraf ya da video eklemek için kamerayı kullanır.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Paylaşımlarına sesli video çekebilmen için mikrofonu kullanır.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Planlarına, anılarına ve paylaşımlarına galeriden fotoğraf ya da video seçmen için kullanılır.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Plan kurarken yakınındaki mekânları önermek için yaklaşık konumunu kullanır.</string>`,
+    ),
+  )
+
   // The app makes no use of non-exempt encryption (only HTTPS and the
   // system's own), so App Store uploads don't stop to ask.
   patch(join(app, 'Info.plist'), 'ITSAppUsesNonExemptEncryption', (t) =>

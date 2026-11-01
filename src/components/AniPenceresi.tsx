@@ -93,7 +93,7 @@ export function AniPenceresi({ anilar, baslangicId, baslik, etkilesimler, profil
       <div className="flex-1 overflow-y-auto px-4 pb-[calc(2rem+var(--safe-bottom))]">
         <div className="max-w-md mx-auto">
           {/* Keyed, so a half-written comment doesn't follow to the next photo. */}
-          <AkisKarti key={ani.id} ani={ani} sahip={sahip}>
+          <AkisKarti key={ani.id} ani={ani} sahip={sahip} benimId={benimId} onEngellendi={onKapat}>
             <AniYanitlari
               ani={ani}
               etkilesim={etkilesimler.get(ani.id) ?? BOS_ETKILESIM}

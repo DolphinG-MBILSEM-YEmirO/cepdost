@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Icon } from './Icon'
 import { Avatar } from './Avatar'
+import { KisiGuvenligi } from './KisiGuvenligi'
 import { useGeriIleKapat } from '../lib/geriTusu'
 import { arkadaslikIsteGonder, arkadaslikYanitla, type Arkadas } from '../sosyal/api'
 import type { GrupUyesi } from '../sosyal/gruplar'
@@ -117,6 +118,12 @@ export function GrupUyesiKarti({ uye, grupAdi, iliski, onKapat }: Props) {
             <p className="text-xs text-ink-400 mt-2">Arkadaş olunca profilini, müsaitliğini ve anılarınızı görürsün.</p>
           )}
           {hata && <p className="text-xs text-rose-600 mt-2">{hata}</p>}
+        </div>
+        <div className="mt-3 border-t border-ink-100 pt-1">
+          <KisiGuvenligi
+            kisi={{ id: uye.kullanici_id, ad, kullaniciAdi: profil?.kullanici_adi ?? null }}
+            onEngellendi={onKapat}
+          />
         </div>
       </div>
     </div>

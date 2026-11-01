@@ -78,6 +78,7 @@ import {
   Video,
   Globe,
   Play,
+  Flag,
 } from 'lucide-react'
 
 const iconMap = {
@@ -160,6 +161,7 @@ const iconMap = {
   Video,
   Globe,
   Play,
+  Flag,
 }
 
 export type IconName = keyof typeof iconMap

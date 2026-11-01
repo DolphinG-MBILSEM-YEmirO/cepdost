@@ -14,6 +14,7 @@ import {
 import { formatMessageTime } from '../lib/format'
 import { useGeriIleKapat } from '../lib/geriTusu'
 import { sohbetleriGetir, type Sohbet } from '../sosyal/mesajlar'
+import { SikayetSayfasi } from './SikayetSayfasi'
 import { duzenlenebilirMi, mesajBilgisi, type MesajBilgisi, type SohbetHedefi } from '../sosyal/mesajIslemleri'
 
 // WhatsApp-style message actions, shared by the direct chat and the group
@@ -367,19 +368,24 @@ export function MesajYazmaAlani({ islemler, onPlanPaylas }: { islemler: MesajIsl
 
 export function MesajKatmanlari({ islemler }: { islemler: MesajIslemleri }) {
   const { menu, silinecek, iletilen, bilgisi, tepkileri } = islemler
+  const [sikayetEdilen, setSikayetEdilen] = useState<SohbetMesaji | null>(null)
+  const sikayetEt = (mesaj: SohbetMesaji) => {
+    islemler.menuKapat()
+    setSikayetEdilen(mesaj)
+  }
   return createPortal(
     <>
       {menu &&
         (menu.konum ? (
           <YuzenMenu key={menu.mesaj.id} konum={menu.konum} onKapat={islemler.menuKapat}>
-            <MenuIcerigi mesaj={menu.mesaj} islemler={islemler} />
+            <MenuIcerigi mesaj={menu.mesaj} islemler={islemler} onSikayet={sikayetEt} />
           </YuzenMenu>
         ) : (
           <AltSayfa key={menu.mesaj.id} onKapat={islemler.menuKapat} etiket="Mesaj seçenekleri">
             <p className="text-sm text-ink-600 line-clamp-3 whitespace-pre-wrap break-words bg-mist-100 rounded-2xl px-3.5 py-2.5 mb-3">
               {mesajOzeti(menu.mesaj)}
             </p>
-            <MenuIcerigi mesaj={menu.mesaj} islemler={islemler} buyuk />
+            <MenuIcerigi mesaj={menu.mesaj} islemler={islemler} onSikayet={sikayetEt} buyuk />
           </AltSayfa>
         ))}
       {silinecek && <SilmeSayfasi mesaj={silinecek} islemler={islemler} />}
@@ -387,6 +393,18 @@ export function MesajKatmanlari({ islemler }: { islemler: MesajIslemleri }) {
       {bilgisi && <BilgiSayfasi mesaj={bilgisi} islemler={islemler} />}
       {tepkileri && <TepkiSayfasi mesaj={tepkileri} islemler={islemler} />}
       {islemler.yildizlilarAcik && <YildizliSayfasi islemler={islemler} />}
+      {sikayetEdilen && (
+        <SikayetSayfasi
+          hedef={{
+            tur: 'mesaj',
+            kisiId: sikayetEdilen.gonderen_id,
+            ad: islemler.adAl(sikayetEdilen.gonderen_id),
+            metin: sikayetEdilen.metin || null,
+            icerikId: sikayetEdilen.id,
+          }}
+          onKapat={() => setSikayetEdilen(null)}
+        />
+      )}
       {islemler.bildiri && (
         <div
           role="status"
@@ -407,7 +425,7 @@ interface MenuOgesi {
   yap: () => void
 }
 
-function menuOgeleri(mesaj: SohbetMesaji, islemler: MesajIslemleri): MenuOgesi[] {
+function menuOgeleri(mesaj: SohbetMesaji, islemler: MesajIslemleri, onSikayet: (m: SohbetMesaji) => void): MenuOgesi[] {
   const benim = mesaj.gonderen_id === islemler.benimId
   const kartli = kartliMi(mesaj)
   const sil: MenuOgesi = { ad: 'Sil', ikon: 'Trash2', tehlikeli: true, yap: () => islemler.silmeyiSor(mesaj) }
@@ -427,6 +445,7 @@ function menuOgeleri(mesaj: SohbetMesaji, islemler: MesajIslemleri): MenuOgesi[]
     yap: () => islemler.yildizDegistir(mesaj),
   })
   if (benim) ogeler.push({ ad: 'Bilgi', ikon: 'Info', yap: () => islemler.bilgiyiAc(mesaj) })
+  else ogeler.push({ ad: 'Şikâyet et', ikon: 'Flag', tehlikeli: true, yap: () => onSikayet(mesaj) })
   if (benim && !kartli && duzenlenebilirMi(mesaj)) {
     ogeler.push({ ad: 'Düzenle', ikon: 'Pencil', yap: () => islemler.duzenle(mesaj) })
   }
@@ -434,7 +453,17 @@ function menuOgeleri(mesaj: SohbetMesaji, islemler: MesajIslemleri): MenuOgesi[]
   return ogeler
 }
 
-function MenuIcerigi({ mesaj, islemler, buyuk = false }: { mesaj: SohbetMesaji; islemler: MesajIslemleri; buyuk?: boolean }) {
+function MenuIcerigi({
+  mesaj,
+  islemler,
+  onSikayet,
+  buyuk = false,
+}: {
+  mesaj: SohbetMesaji
+  islemler: MesajIslemleri
+  onSikayet: (m: SohbetMesaji) => void
+  buyuk?: boolean
+}) {
   const [tumEmojiler, setTumEmojiler] = useState(false)
   const benimTepkim = mesaj.tepkiler.find((t) => t.kullanici_id === islemler.benimId)?.emoji ?? null
   const ilkRef = useRef<HTMLButtonElement>(null)
@@ -480,7 +509,7 @@ function MenuIcerigi({ mesaj, islemler, buyuk = false }: { mesaj: SohbetMesaji; 
           </div>
         ))}
       <div className={!mesaj.silindi ? 'border-t border-ink-100 pt-1' : ''}>
-        {menuOgeleri(mesaj, islemler).map((o, i) => (
+        {menuOgeleri(mesaj, islemler, onSikayet).map((o, i) => (
           <button
             key={o.ad}
             ref={i === 0 ? ilkRef : undefined}
