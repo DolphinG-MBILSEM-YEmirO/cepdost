@@ -58,40 +58,65 @@ Yeni bir imza anahtarı oluşturun ve bir yere yedekleyin (kaybolursa uygulama
 bir daha güncellenemez). Paket adı `app.sharloop`; eski TWA uygulamasından
 (`app.vercel.cepdost.twa`) ayrı bir uygulama olarak yüklenir.
 
-## iOS (Mac gerekir)
+## iOS: GitHub'da otomatik derleme ve TestFlight (Mac gerekmez)
 
-**Gerekenler:** Bir Mac, App Store'dan **Xcode** (16 veya üstü) ve
-widget'ların telefonda çalışması için bir **Apple Developer hesabı**
-(yıllık 99 $; sadece kendi telefonunuzda denemek için ücretsiz Apple
-kimliği de olur, ama uygulama 7 günde bir yeniden yüklenmeli).
+GitHub, `mobile/` ya da widget verisi her değiştiğinde iOS uygulamasını ve
+widget'larını bir Mac sunucusunda kendisi derler (Actions → **iOS**). Derleme
+bozulursa orada kırmızı görünür. Uygulamayı iPhone'a kurmak için Apple'ın
+**TestFlight** uygulaması kullanılır; bunun için bir kez şu hazırlık gerekir:
 
-1. Terminalde:
+1. **Apple Developer hesabı** açın (developer.apple.com, yıllık 99 $).
+   Onaylanınca *Membership* sayfasındaki **Team ID**'yi not edin.
+2. **App Store Connect**'te (appstoreconnect.apple.com) *Uygulamalar → + →
+   Yeni Uygulama*: platform iOS, ad **Sharloop**, paket kimliği
+   **app.sharloop** (listede yoksa önce developer.apple.com → *Identifiers*
+   → + ile `app.sharloop` oluşturun), SKU olarak `sharloop` yazın.
+3. **API anahtarı:** App Store Connect → *Kullanıcılar ve Erişim →
+   Entegrasyonlar → App Store Connect API → +*. Erişim: **Admin**. Oluşan
+   `.p8` dosyasını indirin (bir kez inebilir). Sayfadaki **Issuer ID** ve
+   anahtarın **Key ID**'sini not edin.
+4. GitHub'da depo → *Settings → Secrets and variables → Actions → New
+   repository secret* ile dört sır ekleyin:
+   | Ad | Değer |
+   | --- | --- |
+   | `APPLE_TEAM_ID` | Team ID |
+   | `APPSTORE_KEY_ID` | Key ID |
+   | `APPSTORE_ISSUER_ID` | Issuer ID |
+   | `APPSTORE_KEY` | `.p8` dosyasının tüm metni |
+5. Actions → **iOS** → *Run workflow* (main). İmzalı sürüm TestFlight'a
+   yüklenir; Apple'ın işlemesi 10-30 dakika sürer.
+6. App Store Connect → Sharloop → **TestFlight** → *Dahili Test* grubuna
+   kendinizi ekleyin. iPhone'a App Store'dan **TestFlight**'ı kurup
+   Sharloop'u oradan yükleyin. Giriş yapın, sonra ana ekranda basılı tutun →
+   sol üstte **+** → Sharloop.
+
+Bundan sonra main'e giden her uygulama/widget değişikliği TestFlight'a
+kendiliğinden yeni sürüm olarak gelir. (Sitedeki değişiklikler zaten
+uygulamaya anında yansır; yeni sürüm gerekmez.)
+
+Not: Özel depolarda GitHub'ın Mac dakikaları 10 kat sayılır (ücretsiz
+planda ayda yaklaşık 200 Mac dakikası). Bu yüzden iOS derlemesi yalnızca
+`mobile/` ya da widget verisi değişince çalışır.
+
+## iOS: Mac'te kendiniz derlemek
+
+**Gerekenler:** Bir Mac, App Store'dan **Xcode** (16 veya üstü) ve Apple
+hesabı (ücretsiz Apple kimliğiyle de kendi telefonunuza kurabilirsiniz,
+ama uygulama 7 günde bir yeniden yüklenmeli).
+
+1. Terminalde (`xcodeproj` yoksa önce `sudo gem install xcodeproj`):
    ```
    cd mobile
    npm install
    npm run add:ios
    npm run open:ios
    ```
-2. **Widget hedefini ekleyin (bir kez):** Xcode'da *File → New → Target… →
-   Widget Extension*. Ad: `SharloopWidgets`. "Include Live Activity" ve
-   "Include Configuration App Intent" kutularını **boş** bırakın. "Activate
-   scheme" sorulursa **Activate** deyin.
-3. Terminalde `npm run sync` çalıştırın: bizim widget dosyalarımız yeni
-   hedefin klasörüne kopyalanır. Xcode'un kendi oluşturduğu
-   `SharloopWidgets.swift` dosyasını silin (bizim `SharloopWidgetsBundle.swift`
-   onun yerini alır). `SharloopWidgets` klasöründe şu dosyalar kalmalı:
-   `SharloopWidgetsBundle.swift`, `Snapshot.swift`, `Theme.swift`,
-   `NextPlanWidget.swift`, `FreeFriendsWidget.swift`, `OnThisDayWidget.swift`.
-4. **App** klasörüne sağ tıklayın → *Add Files to "App"…* →
-   `SharloopWidgetsPlugin.swift` ve `MainViewController.swift` dosyalarını
-   seçin (hedef: App).
-5. **App Group:** Sol üstte projeye tıklayın. Önce **App** hedefi, sonra
-   **SharloopWidgets** hedefi için: *Signing & Capabilities → + Capability →
-   App Groups* → `group.app.sharloop` ekleyin. İki hedefte de aynı grup
-   işaretli olmalı. (Aynı ekranda "Team" olarak Apple hesabınızı seçin.)
-6. **SharloopWidgets** hedefinde *General → Minimum Deployments* değerini
-   **iOS 17.0** yapın (canlı geri sayım ve dokunulabilir widget için).
-7. Telefonu bağlayın, üstten **App** şemasını seçin ve ▶ ile çalıştırın.
+   `add:ios` widget hedefini, App Group'u ve gerekli dosyaları Xcode
+   projesine kendisi ekler; Xcode'da elle hedef eklemek gerekmez.
+2. Xcode'da sol üstte projeye tıklayın. **App** ve **SharloopWidgets**
+   hedeflerinde *Signing & Capabilities → Team* olarak Apple hesabınızı
+   seçin.
+3. Telefonu bağlayın, üstten **App** şemasını seçin ve ▶ ile çalıştırın.
    Bir kez giriş yapın, sonra ana ekranda basılı tutun → **+** → Sharloop.
 
 ---

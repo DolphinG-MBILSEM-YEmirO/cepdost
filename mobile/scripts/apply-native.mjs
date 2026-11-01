@@ -52,9 +52,9 @@ function ios() {
   const app = join(root, 'ios/App/App')
   if (!existsSync(app)) return console.log('ios/ not found, skipped (run `npm run add:ios` on a Mac first).')
   cpSync(join(root, 'native/ios/App'), app, { recursive: true })
-  // The widget extension's files go into the folder Xcode makes when the
-  // SharloopWidgets target is added (once, by hand). Until then they wait,
-  // so the folder doesn't block Xcode from creating the target.
+  // The widget extension's files go into the folder that
+  // scripts/setup-ios-project.rb makes when it adds the SharloopWidgets
+  // target. Until then they wait.
   const extension = join(root, 'ios/App/SharloopWidgets')
   const extensionReady = existsSync(extension)
   if (extensionReady) cpSync(join(root, 'native/ios/SharloopWidgets'), extension, { recursive: true })
@@ -96,10 +96,18 @@ function ios() {
 	</array>`,
     ),
   )
+  // The app makes no use of non-exempt encryption (only HTTPS and the
+  // system's own), so App Store uploads don't stop to ask.
+  patch(join(app, 'Info.plist'), 'ITSAppUsesNonExemptEncryption', (t) =>
+    t.replace(/<dict>/, `<dict>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>`),
+  )
+
   console.log(
     extensionReady
       ? 'iOS: plugin, widget files and URL scheme in place.'
-      : 'iOS: plugin and URL scheme in place. Add the SharloopWidgets target in Xcode, then run `npm run sync` (KURULUM.md).',
+      : 'iOS: plugin and URL scheme in place. Run `ruby scripts/setup-ios-project.rb`, then this script again, to add the widgets.',
   )
 }
 

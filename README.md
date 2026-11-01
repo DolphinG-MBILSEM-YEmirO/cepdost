@@ -221,7 +221,9 @@ Other scripts: `npm test`, `npm run build`, `npm run lint`, `npm run preview`.
   locked behind a code that can never arrive. Fix the variables and redeploy.
 - Android and iOS apps with home-screen widgets: Capacitor shell in
   `mobile/` (step-by-step guide in `mobile/KURULUM.md`). It loads the live
-  site, so web deploys reach the apps without a store update.
+  site, so web deploys reach the apps without a store update. GitHub
+  Actions builds both on every change to `mobile/`: the Android APK goes to
+  Releases, the iOS app to TestFlight (once the Apple secrets are set).
 - Android (older route): Bubblewrap TWA (`twa-manifest.json`), no widgets. The signing key
   (`android.keystore`) is intentionally not in the repository. Keep it backed
   up somewhere safe: without it the Play Store app can never be updated.

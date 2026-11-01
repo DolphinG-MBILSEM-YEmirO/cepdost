@@ -11,7 +11,15 @@ native/android/         MainActivity, widget providers (Java), layouts, drawable
 native/ios/App/         SharloopWidgetsPlugin + MainViewController (app target)
 native/ios/SharloopWidgets/  the WidgetKit extension (SwiftUI)
 scripts/apply-native.mjs     copies native/ into android/ and ios/ and wires it up
+scripts/setup-ios-project.rb adds the widget extension target, App Group and
+                             shared scheme to the Xcode project (xcodeproj gem)
 ```
+
+Builds run on GitHub Actions, so no local SDK is needed:
+`.github/workflows/android-apk.yml` publishes `Sharloop.apk` as a release from
+main; `.github/workflows/ios.yml` builds the iOS app on a Mac runner on every
+change and, once the App Store Connect secrets exist, uploads main to
+TestFlight.
 
 How data flows: the web app gathers the widget data (`src/widgets/`) and,
 when it runs inside this shell, hands a JSON snapshot to the
