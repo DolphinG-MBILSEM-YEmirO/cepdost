@@ -50,6 +50,12 @@ class SosyalVeritabani extends Dexie {
       kayitlar: 'id, konu, [konu+tur], yazar, anahtar',
       imlecler: 'konu',
     })
+    // Friends' answers on broadcast channels used to be dropped on arrival
+    // (see yayinYanitiMi). Forgetting where each topic's sync stopped makes
+    // the next sync fetch everything once, so those answers come back.
+    this.version(2)
+      .stores({})
+      .upgrade((tx) => tx.table('imlecler').clear())
   }
 }
 
@@ -82,6 +88,16 @@ const AZAMI_ICERIK = 60_000
 const PERIYODIK_ESITLEME_MS = 3 * 60 * 1000
 
 // Record types that can change which channels are followed.
+// A broadcast channel is its owner's "all my friends" feed: only the owner
+// writes its records, except the friends' answers to a post there (their
+// reaction, "I want to go too" and comments; see sosyal/aniEtkilesimi.ts).
+// Each answer is its author's own record, so nobody can change the owner's.
+const YAYIN_YANIT_TURLERI = new Set(['ani-tepki', 'ani-yorum'])
+
+function yayinYanitiMi(tur: string, anahtar: string): boolean {
+  return YAYIN_YANIT_TURLERI.has(tur) && anahtar.startsWith(`${tur}:`)
+}
+
 const YENIDEN_ESITLETEN = new Set(['iliski', 'istek', 'grup-davet', 'kisi', 'grupum', 'yayin'])
 
 interface KayitZarfi {
@@ -347,7 +363,9 @@ export class SosyalMotor {
       case 'cift':
         return yazar === this.benimId || yazar === kanal.karsi
       case 'yayin':
-        return yazar === kanal.sahip
+        // Friends may also answer the owner's posts here; which records they
+        // may write is checked once the envelope is open (yayinYanitiMi).
+        return true
       default:
         return true
     }
@@ -384,6 +402,7 @@ export class SosyalMotor {
       }
     }
     if (!zarfMi(zarf)) return null
+    if (kanal.tur === 'yayin' && olay.pubkey !== kanal.sahip && !yayinYanitiMi(zarf.t, zarf.k)) return null
     // The d tag must be the one this logical key maps to; otherwise one
     // record could masquerade as another.
     if ((await dEtiketi(kanal, zarf.k)) !== d) return null

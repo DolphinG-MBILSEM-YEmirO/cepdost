@@ -63,6 +63,7 @@ import {
   mesajlariGetir,
   planaYanitVer,
   planYanitlariGetir,
+  akisAnilariGetir,
   anilariGetir,
   type Ani,
 } from '../src/sosyal/gruplar'
@@ -568,6 +569,49 @@ test('memories: friends react, say they want to go too, and comment; strangers o
   // Keşfet copies (any channel other than a pair or a group) take no answers.
   const kesfetteki: Ani = { ...alideki, konu: 'kesfet-konusu' }
   await assert.rejects(olarak(ayse, () => aniyaYorumYap(kesfetteki, 'Selam')), /yalnızca/)
+})
+
+test("a post to all my friends: friends' reactions and comments reach me, nothing else they write does", async () => {
+  // Ali posts on his broadcast channel ("Arkadaşlarım"); Ayşe is a friend.
+  // The feed lists posts with a photo; the photo itself travels apart.
+  await olarak(ali, async () => {
+    const kanal = (await kanalDurumu()).yayin!
+    await ali.motor.yayinla(kanal, TUR.ani, 'ani:herkese1', {
+      mekan_adi: 'Kuzguncuk', tarih: '2099-05-02', notlar: null, gorunurluk: 'arkadaslar', foto: { parca: 1, tip: 'image/jpeg' }, zaman: Date.now(),
+    })
+  })
+  await esitle(ayse)
+  const aysedeki = (await olarak(ayse, () => akisAnilariGetir('arkadaslar'))).find((a) => a.id === 'herkese1')!
+  assert.ok(aysedeki, 'Ayşe sees the post in her feed')
+  await olarak(ayse, () => aniyaTepkiVer(aysedeki, '😍'))
+  await olarak(ayse, () => gitmekIstiyorum(aysedeki, true))
+  await olarak(ayse, () => aniyaYorumYap(aysedeki, 'Bayıldım'))
+
+  // A friend can't put anything else on Ali's channel, such as a post of
+  // their own or a record under one of his keys.
+  await olarak(ayse, async () => {
+    const aliYayini = (await kanalDurumu()).arkadasYayin.get(ali.motor.benimId)!
+    await ayse.motor.yayinla(aliYayini, TUR.ani, 'ani:sahte', {
+      mekan_adi: 'Sahte', tarih: '2099-05-03', notlar: null, gorunurluk: 'arkadaslar', foto: { parca: 1, tip: 'image/jpeg' }, zaman: Date.now(),
+    })
+    await ayse.motor.yayinla(aliYayini, TUR.aniTepki, 'ani:herkese1', { emoji: '😍' })
+  })
+
+  await esitle(ali)
+  const alideki = (await olarak(ali, () => akisAnilariGetir('arkadaslar'))).filter((a) => a.sahip_id === ali.motor.benimId)
+  assert.deepEqual(alideki.map((a) => a.id).filter((id) => id === 'herkese1' || id === 'sahte'), ['herkese1'])
+  const e = (await olarak(ali, () => aniEtkilesimleri(alideki))).get('herkese1')!
+  assert.deepEqual(e.tepkiler, [{ kullanici_id: ayse.motor.benimId, emoji: '😍' }])
+  assert.deepEqual(e.gitmekIsteyenler, [ayse.motor.benimId])
+  assert.deepEqual(e.yorumlar.map((y) => [y.yazar, y.metin]), [[ayse.motor.benimId, 'Bayıldım']])
+
+  // Her other device sees her own answers too.
+  const ayseTel = kisiOlustur('ayse-tel', ayse.sk)
+  await esitle(ayseTel)
+  const teldeki = (await olarak(ayseTel, () => akisAnilariGetir('arkadaslar'))).find((a) => a.id === 'herkese1')!
+  assert.deepEqual((await olarak(ayseTel, () => aniEtkilesimleri([teldeki]))).get('herkese1')?.tepkiler, [
+    { kullanici_id: ayse.motor.benimId, emoji: '😍' },
+  ])
 })
 
 test('unfriending ends the friendship and rotates the broadcast key', async () => {
