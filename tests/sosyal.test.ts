@@ -73,6 +73,7 @@ import { planlariEsitle } from '../src/sosyal/planEsitleme'
 import { planKatilimi, yanitsizlar } from '../src/sosyal/planKatilimi'
 import { getirEkle, getirListesi, getirSil, getiriUstlen } from '../src/sosyal/getirListesi'
 import { arkadasPlandaMi, plandakiArkadaslar } from '../src/sosyal/ortakGecmis'
+import { engelliListesi } from '../src/sosyal/engel'
 import {
   aniEtkilesimleri,
   aniYorumunuSil,
@@ -1359,8 +1360,13 @@ test('blocking: their messages, memories and requests stop showing, and the frie
   await esitle(fatma)
   assert.deepEqual((await olarak(fatma, () => mesajlariGetir(grupId))).map((m) => m.metin), ['kaba bir söz', 'selam'])
 
-  await olarak(fatma, () => engelle(gul.motor.benimId))
+  await olarak(fatma, () => engelle(gul.motor.benimId, { ad: 'Gül', kullaniciAdi: 'gul_engel' }))
   await esitle(fatma, gul)
+  // The block list in Settings still names them after the friendship ends.
+  assert.deepEqual(
+    (await olarak(fatma, () => engelliListesi())).map(({ zaman: _z, ...k }) => k),
+    [{ id: gul.motor.benimId, ad: 'Gül', kullaniciAdi: 'gul_engel' }],
+  )
   assert.deepEqual(await olarak(fatma, () => arkadaslariGetir()), [])
   assert.deepEqual((await olarak(gul, () => arkadaslariGetir())).filter((a) => a.durum === 'kabul'), [])
   assert.deepEqual((await olarak(fatma, () => mesajlariGetir(grupId))).map((m) => m.metin), ['selam'])
@@ -1377,4 +1383,5 @@ test('blocking: their messages, memories and requests stop showing, and the frie
   assert.deepEqual((await olarak(ikinciCihaz, () => mesajlariGetir(grupId))).map((m) => m.metin), ['selam'])
   await olarak(fatma, () => engeliKaldir(gul.motor.benimId))
   assert.equal(await olarak(fatma, () => bekleyenSayisi()), 1)
+  assert.deepEqual(await olarak(fatma, () => engelliListesi()), [])
 })
