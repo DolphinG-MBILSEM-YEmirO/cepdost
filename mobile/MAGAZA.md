@@ -120,9 +120,19 @@ Sharloop is for people aged 13 and over.
 | Android telefon ekran görüntüleri | En az 1080 piksel genişlik, 2-8 adet | |
 | Google öne çıkan görsel | 1024×500 | Simge + "Paylaş. Planla. Birlikte yaşa." |
 
-Ekran görüntüleri gerçek bir hesapla (aşağıdaki inceleme hesabı) çekilmeli:
-1. Bugün ekranı (sıradaki plan), 2. Plan sayfası (kimler geliyor), 3. Herkesin
-boş olduğu saat, 4. Grup sohbeti, 5. Akış / anılar, 6. Ana ekran widget'ları.
+**Hazır:** `mobile/store-assets/` (1.0.0 için çekildi):
+
+| Klasör | İçerik |
+| --- | --- |
+| `iphone/tr/1-6.jpg`, `iphone/en/1-6.jpg` | 1320×2868, App Store'a sırayla yüklenecek |
+| `android/tr/1-6.jpg`, `android/en/1-6.jpg` | 1080×2160, Play Console'a yüklenecek |
+| `android/feature-graphic-tr.jpg`, `-en.jpg` | 1024×500 öne çıkan görsel |
+
+Sıra: 1. Bütün planların tek yerde, 2. Kimin geldiğini anında gör, 3. Grubunla
+planla, 4. Arkadaşların ne zaman müsait, 5. Gittiğin yerleri paylaş, 6. Ayın özeti.
+Görüntülerdeki kişiler ve paylaşımlar demo hesaplardır (Elif, Can, Deniz, Ece,
+Mert); fotoğraflar çizimdir. Gerçek fotoğraf eklemek ya da arayüz değişince
+yeniden çekmek için: `mobile/store-assets/README.md`.
 
 ## 4. Apple: App Privacy (Uygulama Gizliliği) cevapları
 
@@ -179,8 +189,9 @@ Sharloop is a social planning app. Sign in with the demo account above
 ("Zaten hesabım var" -> username + password).
 
 Native features: three home screen widgets (Next plan, Free friends,
-On this day) built with WidgetKit, and sharloop:// deep links from the
-widgets into the app.
+On this day) built with WidgetKit, sharloop:// deep links from the
+widgets into the app, and "Telefon takvimine ekle" on any plan, which
+opens the system New Event sheet (EventKitUI) filled in with the plan.
 
 User-generated content safeguards (Guideline 1.2):
 - Report: long-press a message -> "Şikâyet et"; the flag icon on a
@@ -250,3 +261,34 @@ kaybolursa Play Console'dan sıfırlatılabilir, yine de yedeklenmeli.
 4. Şifreleme sorusu çıkarsa: uygulama yalnızca standart şifreleme kullanıyor
    (Info.plist'te `ITSAppUsesNonExemptEncryption = NO` zaten var).
 5. *İncelemeye gönder*. İnceleme genelde 1-3 gün sürer.
+
+## 11. Sürüm notları (1.0.0)
+
+Sürüm numarası tek yerde: `mobile/package.json` → `version`. Android
+(`versionName`) ve iOS (`MARKETING_VERSION`) derlemeleri oradan okur; derleme
+numarası her GitHub çalıştırmasında otomatik artar. Sonraki sürümde yalnızca
+bu sayıyı yükselt (ör. 1.0.1 hata düzeltmesi, 1.1.0 yeni özellik).
+
+**Türkçe (Yenilikler):**
+
+```
+Sharloop'un ilk sürümü!
+• Arkadaşlarınla plan kur, davet gönder, kimin geldiğini anında gör
+• Grup sohbetlerinde grup planı yap, herkes tek dokunuşla yanıtlasın
+• Herkese uyan saati Sharloop bulsun
+• Gittiğin yerleri fotoğraf ve puanla paylaş
+• Ana ekran widget'ları: sıradaki plan, müsait arkadaşlar, geçen yıl bugün
+• Planları tek dokunuşla telefonunun takvimine ekle
+```
+
+**English (What's New):**
+
+```
+The first version of Sharloop!
+• Make plans with friends, send invites and see who's coming
+• Plan with your group right in the chat; everyone answers with one tap
+• Let Sharloop find a time that suits everyone
+• Share the places you love with photos and ratings
+• Home screen widgets: next plan, free friends, on this day
+• Add any plan to your phone's calendar with one tap
+```

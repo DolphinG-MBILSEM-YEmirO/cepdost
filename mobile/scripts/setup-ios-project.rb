@@ -1,7 +1,8 @@
 # Wires Sharloop's native iOS code into the Xcode project Capacitor
 # generates (ios/App/App.xcodeproj), so nobody has to click through Xcode:
 #
-#   - adds our app files (MainViewController, SharloopWidgetsPlugin) to App
+#   - adds our app files (MainViewController, SharloopWidgetsPlugin,
+#     SharloopCalendarPlugin) to App
 #   - creates the SharloopWidgets widget extension target (iOS 17) with our
 #     widget files and embeds it in the app
 #   - gives both targets the App Group group.app.sharloop (entitlements)

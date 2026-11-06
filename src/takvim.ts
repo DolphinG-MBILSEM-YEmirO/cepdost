@@ -1,6 +1,7 @@
 import { db, type Kayit, type TakvimEtkinligi } from './db'
 import { UYGULAMA_ADI } from '../shared/marka'
 import { icsTetikleyici } from './lib/planAyrintilari'
+import { yerelTakvimEklentisi, type NativeCalendarEvent } from './lib/platform'
 
 // F15 — telefon takvimi entegrasyonu.
 //
@@ -451,7 +452,39 @@ export function planIcsOlustur(plan: {
   return satirlar.join('\r\n')
 }
 
+// The plan for the phone's own "new event" screen (native app only).
+export function planiYerelEtkinligeCevir(plan: Parameters<typeof planIcsOlustur>[0]): NativeCalendarEvent {
+  const saat = plan.saat ? plan.saat.slice(0, 5) : null
+  const baslangic = new Date(`${plan.tarih}T${saat ?? '00:00'}:00`)
+  const bitis = new Date(baslangic)
+  if (saat) bitis.setMinutes(bitis.getMinutes() + (plan.sure && plan.sure > 0 ? plan.sure : 60))
+  else bitis.setDate(bitis.getDate() + 1)
+  return {
+    title: plan.baslik,
+    ...(plan.konum ? { location: plan.konum } : {}),
+    ...(plan.notlar ? { notes: plan.notlar } : {}),
+    start: baslangic.getTime(),
+    end: bitis.getTime(),
+    allDay: !saat,
+    // Same rule as the .ics alarm: an all-day plan reminds from 09:00.
+    ...(plan.hatirlatmaDk != null ? { alarmMinutes: saat ? plan.hatirlatmaDk : plan.hatirlatmaDk - 9 * 60 } : {}),
+  }
+}
+
+// Puts a plan in the phone's calendar. In the store app the phone's own
+// "new event" screen opens (a WebView can't hand a downloaded .ics to the
+// calendar); in a browser the .ics file is downloaded and opened by the
+// calendar app.
 export function planiTakvimeIndir(plan: Parameters<typeof planIcsOlustur>[0]): void {
+  const yerel = yerelTakvimEklentisi()
+  if (yerel) {
+    void yerel.addEvent(planiYerelEtkinligeCevir(plan)).catch(() => icsIndir(plan))
+    return
+  }
+  icsIndir(plan)
+}
+
+function icsIndir(plan: Parameters<typeof planIcsOlustur>[0]): void {
   const ics = planIcsOlustur(plan)
   const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' })
   const url = URL.createObjectURL(blob)
