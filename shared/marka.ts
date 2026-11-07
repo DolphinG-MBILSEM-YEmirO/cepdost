@@ -10,3 +10,7 @@
 export const UYGULAMA_ADI = 'Sharloop'
 
 export const SLOGAN = 'Paylaş. Planla. Birlikte yaşa.'
+
+// The public address, for absolute links where a relative one won't do
+// (link previews in index.html).
+export const SITE_ADRESI = 'https://sharloop.vercel.app'

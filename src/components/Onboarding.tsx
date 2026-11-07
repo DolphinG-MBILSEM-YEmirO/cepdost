@@ -7,25 +7,42 @@ interface OnboardingProps {
 }
 
 // The app in three steps: friends first, then the assistant, then saving
-// what you come across (the share menu), which is how CepDost started.
-const steps = [
+// what you come across (the share menu), which is how the app started.
+// Each step has a one-line promise and three concrete things it does, so
+// the value is clear even for someone who only skims the intro.
+const steps: { bolum: string; icon: IconName; title: string; desc: string; points: string[] }[] = [
   {
     bolum: 'sohbet',
-    icon: 'Users' as IconName,
+    icon: 'Users',
     title: 'Arkadaşlarınla planla',
     desc: 'Arkadaşlarını kullanıcı adıyla ekle, planı gönder; kimin geldiğini anında gör.',
+    points: [
+      'Geliyorum / Belki / Gelemem cevapları tek ekranda',
+      'Grup kur, grup planı sohbete düşsün',
+      'Uygulaması olmayanlar da linkten cevap verebilir',
+    ],
   },
   {
     bolum: 'planlar',
-    icon: 'CalendarClock' as IconName,
+    icon: 'CalendarClock',
     title: 'Saati asistan bulsun',
     desc: '"Cumartesi Ayşe\'yle kahvaltı" yaz; herkesin boş olduğu saati bulup planı hazırlar.',
+    points: [
+      'Arkadaşlarının yalnızca dolu saatlerini görür, ne yaptıklarını değil',
+      'Herkese uyan aralıkları sıralar, sen seçersin',
+      'Takvimini bağlarsan dolu saatlerin kendiliğinden işlenir',
+    ],
   },
   {
     bolum: 'profil',
-    icon: 'Share2' as IconName,
+    icon: 'Share2',
     title: 'Gördüğünü kaydet',
-    desc: 'Reel, TikTok, ekran görüntüsü ya da link; telefonun paylaş menüsünden gönder, saatiyle yeriyle plana dönüşsün.',
+    desc: 'Reel, TikTok, ekran görüntüsü ya da link; paylaş menüsünden gönder, saatiyle yeriyle plana dönüşsün.',
+    points: [
+      'Konser, mekan, etkinlik: tarih ve yer kendiliğinden doldurulur',
+      'Kaydettiklerin Fikirler\'de birikir, arkadaşınla tek dokunuşla planla',
+      'Gittiğin yerleri fotoğraf ve puanla arkadaşlarınla paylaş',
+    ],
   },
 ]
 
@@ -56,7 +73,7 @@ export function Onboarding({ onDone }: OnboardingProps) {
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center px-8">
-          <div key={step} className="relative mb-10 animate-pop-in">
+          <div key={step} className="relative mb-8 animate-pop-in">
             <div aria-hidden className="absolute inset-0 rounded-[2.5rem] bg-white/30 blur-2xl scale-110" />
             <div className="relative w-28 h-28 rounded-[2.5rem] bg-white flex items-center justify-center shadow-float animate-yuzen">
               <Icon name={current.icon} className="w-14 h-14 text-bolum-koyu" strokeWidth={2} />
@@ -69,6 +86,17 @@ export function Onboarding({ onDone }: OnboardingProps) {
           <p key={`desc-${step}`} className="text-body text-white/90 text-center max-w-xs animate-slide-up [animation-delay:80ms] [animation-fill-mode:both]">
             {current.desc}
           </p>
+          <ul
+            key={`points-${step}`}
+            className="mt-6 w-full max-w-xs space-y-2.5 animate-slide-up [animation-delay:160ms] [animation-fill-mode:both]"
+          >
+            {current.points.map((p) => (
+              <li key={p} className="flex items-start gap-2.5 rounded-2xl bg-white/15 px-3.5 py-2.5 text-callout font-medium leading-snug">
+                <Icon name="Check" className="w-4 h-4 mt-0.5 shrink-0" strokeWidth={2.5} />
+                <span>{p}</span>
+              </li>
+            ))}
+          </ul>
         </div>
 
         <div className="px-8 pb-[calc(2rem+var(--safe-bottom))]">

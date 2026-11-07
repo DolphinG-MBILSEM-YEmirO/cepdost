@@ -158,7 +158,7 @@ export function HesapGuvenligi() {
       {cikisOnay && (
         <ConfirmDialog
           title="Çıkış yapılsın mı?"
-          message="Planların ve arşivin bu telefonda kalır. Tekrar girmek için kullanıcı adın ve şifren ya da kurtarma kodun gerekecek."
+          message="Planların ve arşivin bu cihazda kalır. Tekrar girmek için kullanıcı adın ve şifren ya da kurtarma kodun gerekecek."
           confirmLabel="Çıkış yap"
           onConfirm={() => {
             setCikisOnay(false)
@@ -171,7 +171,7 @@ export function HesapGuvenligi() {
       {silmeOnay && (
         <ConfirmDialog
           title="Hesabın kalıcı olarak silinsin mi?"
-          message="Kullanıcı adın, profilin, arkadaşlıkların, mesajların, planların ve anıların silinir; bu telefondaki her şey de gider. Bu işlem geri alınamaz."
+          message="Kullanıcı adın, profilin, arkadaşlıkların, mesajların, planların ve anıların silinir; bu cihazdaki her şey de gider. Bu işlem geri alınamaz."
           confirmLabel="Hesabımı sil"
           onConfirm={() => void hesabiKaldir()}
           onCancel={() => setSilmeOnay(false)}

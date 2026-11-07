@@ -11,9 +11,32 @@
     <meta name="apple-mobile-web-app-title" content="%UYGULAMA_ADI%" />
     <meta name="description" content="%SLOGAN% Arkadaşlarınla ortak planlama alanı." />
     <title>%UYGULAMA_ADI% — %SLOGAN%</title>
+
+    <!-- Link previews (WhatsApp, iMessage, X, Telegram...). Absolute URLs:
+         crawlers don't resolve relative ones. -->
+    <link rel="canonical" href="%SITE_ADRESI%/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="%UYGULAMA_ADI%" />
+    <meta property="og:locale" content="tr_TR" />
+    <meta property="og:url" content="%SITE_ADRESI%/" />
+    <meta property="og:title" content="%UYGULAMA_ADI% — %SLOGAN%" />
+    <meta property="og:description" content="Arkadaşlarınla plan kur, kimin geldiğini gör, herkese uyan saati bul. Ücretsiz, reklamsız, uçtan uca şifreli." />
+    <meta property="og:image" content="%SITE_ADRESI%/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="%UYGULAMA_ADI% uygulamasından grup sohbeti ve planlar ekranı" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="%UYGULAMA_ADI% — %SLOGAN%" />
+    <meta name="twitter:description" content="Arkadaşlarınla plan kur, kimin geldiğini gör, herkese uyan saati bul." />
+    <meta name="twitter:image" content="%SITE_ADRESI%/og-image.jpg" />
+
+    <!-- The app's background before the CSS loads, so there is no white
+         flash between screens on first paint. -->
+    <style>html, body { background: #F6F4FB; }</style>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>%UYGULAMA_ADI% çalışmak için JavaScript gerektirir. / %UYGULAMA_ADI% needs JavaScript to run.</noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

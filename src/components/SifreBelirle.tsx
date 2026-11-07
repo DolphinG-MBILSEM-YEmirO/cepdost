@@ -64,7 +64,7 @@ export function SifreBelirle({
         )}
         <div>
           <h1 className="text-display text-ink-800 tracking-tight">{degistir ? 'Şifreni değiştir' : 'Şifre belirle'}</h1>
-          <p className="text-sm text-ink-400 mt-0.5">Başka bir telefondan bununla gireceksin</p>
+          <p className="text-sm text-ink-400 mt-0.5">Başka bir cihazdan bununla gireceksin</p>
         </div>
       </div>
 
@@ -73,9 +73,16 @@ export function SifreBelirle({
           <div className="flex items-start gap-2.5">
             <Icon name="ShieldCheck" className="w-5 h-5 text-teal-600 shrink-0 mt-0.5" />
             <p className="text-xs text-teal-800 leading-relaxed">
-              Başka bir cihazda kullanıcı adın ve bu şifreyle girersin. Şifren telefonundan çıkmaz;
-              sadece hesabının şifreli yedeğini açar. Unutursan Ayarlar'daki kurtarma koduyla
-              girebilirsin.
+              Başka bir cihazda kullanıcı adın ve bu şifreyle girersin. Şifren cihazından çıkmaz;
+              sadece hesabının şifreli yedeğini açar.
+            </p>
+          </div>
+          <div className="flex items-start gap-2.5 mt-3 pt-3 border-t border-teal-100">
+            <Icon name="KeyRound" className="w-5 h-5 text-teal-600 shrink-0 mt-0.5" />
+            <p className="text-xs text-teal-800 leading-relaxed">
+              <strong>Şifreni unutursan:</strong> hesabını açtığında senin için bir <strong>kurtarma kodu</strong>{' '}
+              üretildi. <strong>Profil → Ayarlar → Hesap güvenliği</strong> bölümünden kopyalayıp güvenli bir yere
+              (ör. şifre yöneticine) kaydet; şifren olmadan hesabına onunla girersin.
             </p>
           </div>
         </div>

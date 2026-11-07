@@ -4,7 +4,7 @@ import path from 'node:path'
 import { defineConfig, loadEnv, type Plugin, type ViteDevServer } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
-import { SLOGAN, UYGULAMA_ADI } from './shared/marka.ts'
+import { SITE_ADRESI, SLOGAN, UYGULAMA_ADI } from './shared/marka.ts'
 
 // Server-only settings the api/ handlers read from process.env. On Vercel
 // they come from the project's environment variables; in dev from .env.
@@ -82,11 +82,15 @@ async function apiIstegiYanitla(
   }
 }
 
-// Fills %UYGULAMA_ADI% and %SLOGAN% in index.html from shared/marka.ts.
+// Fills %UYGULAMA_ADI%, %SLOGAN% and %SITE_ADRESI% in index.html from shared/marka.ts.
 function markaHtml(): Plugin {
   return {
     name: 'marka-html',
-    transformIndexHtml: (html) => html.replaceAll('%UYGULAMA_ADI%', UYGULAMA_ADI).replaceAll('%SLOGAN%', SLOGAN),
+    transformIndexHtml: (html) =>
+      html
+        .replaceAll('%UYGULAMA_ADI%', UYGULAMA_ADI)
+        .replaceAll('%SLOGAN%', SLOGAN)
+        .replaceAll('%SITE_ADRESI%', SITE_ADRESI),
   }
 }
 
@@ -147,6 +151,10 @@ export default defineConfig({
         name: UYGULAMA_ADI,
         short_name: UYGULAMA_ADI,
         description: SLOGAN,
+        // The interface is Turkish; without this the plugin writes "en".
+        lang: 'tr',
+        dir: 'ltr',
+        categories: ['social', 'lifestyle', 'productivity'],
         start_url: '/',
         scope: '/',
         display: 'standalone',

@@ -2,11 +2,14 @@ import { useState } from 'react'
 import { Icon } from './Icon'
 import { useAuth } from '../sosyal/auth'
 import { useGeriAdimi } from '../lib/geriTusu'
+import { UygulamaTuru } from './UygulamaTuru'
 import { SLOGAN, UYGULAMA_ADI } from '../../shared/marka'
 
-// The gate before the app. A new account is created on the spot (no email,
-// no waiting for a code); returning users sign in with username + password,
-// or with their recovery code if they forgot the password.
+// The gate before the app. "Create an account" makes the account's key on
+// the spot (the email check comes in the next step); returning users sign in
+// with username + password, or with their recovery code if they forgot the
+// password. "Take a look" opens a tour of real screens, so people can see
+// the app before giving anything.
 type Asama = 'karsilama' | 'sifre' | 'kod'
 
 interface Props {
@@ -22,7 +25,7 @@ export function GirisEkrani({
   altBaslik = `${UYGULAMA_ADI} için bir hesap aç ya da giriş yap`,
   tanitimBaslik = SLOGAN,
   tanitimMetin = 'Paylaştığın linkleri ve görselleri plana çevirir, arkadaşlarınla herkese uyan zamanı bulmanı sağlar.',
-  altNot = 'Hesabın plan detaylarını telefonundan çıkarmaz. Arkadaşlarınla paylaştıkların uçtan uca şifrelenir.',
+  altNot = 'Planlarının ayrıntılarını yalnızca senin cihazların okuyabilir. Arkadaşlarınla paylaştıkların uçtan uca şifrelenir.',
 }: Props = {}) {
   const { hesapOlustur, girisSifre, girisKod, eskiHesapVardi } = useAuth()
   const [asama, setAsama] = useState<Asama>('karsilama')
@@ -31,6 +34,7 @@ export function GirisEkrani({
   const [kod, setKod] = useState('')
   const [yukleniyor, setYukleniyor] = useState(false)
   const [hata, setHata] = useState<string | null>(null)
+  const [turAcik, setTurAcik] = useState(false)
 
   async function calistir(is: () => Promise<void>) {
     setHata(null)
@@ -127,11 +131,20 @@ export function GirisEkrani({
 
   if (asama === 'kod') {
     return (
-      <Cerceve baslik="Kurtarma koduyla gir" altBaslik="Ayarlar'da sakladığın kod" onGeri={geri}>
-        <div className="card p-4 mb-4 bg-mist-50">
+      <Cerceve baslik="Kurtarma koduyla gir" altBaslik="Şifreni unuttuysan hesabına bu kodla girersin" onGeri={geri}>
+        <div className="card p-4 mb-4 bg-mist-50 space-y-2">
           <p className="text-xs text-ink-500 leading-relaxed">
-            Kurtarma kodu <strong>nsec1</strong> ile başlayan uzun bir koddur. Hesabını açtığın
-            telefonda <strong>Profil → Ayarlar → Hesap güvenliği</strong> bölümünde bulunur.
+            <strong>Kurtarma kodu nedir?</strong> Hesabını açtığında {UYGULAMA_ADI} senin için otomatik olarak
+            üretir; hesabının anahtarıdır. <strong>nsec1</strong> ile başlayan uzun bir koddur ve şifren olmadan da
+            hesabını açar.
+          </p>
+          <p className="text-xs text-ink-500 leading-relaxed">
+            <strong>Nerede?</strong> Hâlâ giriş yapılı olan bir cihazında <strong>Profil → Ayarlar → Hesap
+            güvenliği</strong> bölümünde. Daha önce kopyalayıp bir yere (ör. şifre yöneticine) kaydettiysen oradan
+            yapıştır.
+          </p>
+          <p className="text-xs text-ink-400 leading-relaxed">
+            Hem şifreni hem kodu kaybettiysen hesaba erişilemez; uçtan uca şifreleme nedeniyle biz de açamayız.
           </p>
         </div>
         <form
@@ -184,7 +197,7 @@ export function GirisEkrani({
           {
             ikon: 'ShieldCheck' as const,
             baslik: 'Planların sende kalır',
-            metin: 'Arkadaşların yalnızca dolu saatlerini görür; ne yaptığın ve notların telefonundan çıkmaz.',
+            metin: 'Arkadaşların yalnızca dolu saatlerini görür; ne yaptığını ve notlarını yalnızca sen okursun.',
           },
         ].map((m, i) => (
           <li key={m.baslik} className="flex items-start gap-3 px-4 py-3">
@@ -233,6 +246,14 @@ export function GirisEkrani({
       >
         Zaten hesabım var
       </button>
+      <button
+        onClick={() => setTurAcik(true)}
+        disabled={yukleniyor}
+        className="w-full mt-3 py-2 text-sm font-semibold text-brand-600 flex items-center justify-center gap-1.5 disabled:opacity-50"
+      >
+        <Icon name="Eye" className="w-4 h-4" />
+        Önce bir göz at
+      </button>
       <p className="text-caption text-ink-400 text-center mt-4 leading-relaxed">
         Hesap oluşturarak{' '}
         <a href="/legal/terms.html" target="_blank" rel="noopener" className="underline">
@@ -242,11 +263,25 @@ export function GirisEkrani({
         <a href="/legal/privacy.html" target="_blank" rel="noopener" className="underline">
           Gizlilik Politikası
         </a>
-        'nı kabul etmiş olursun. {UYGULAMA_ADI} 13 yaş ve üzeri içindir.
+        'nı kabul etmiş olursun. {UYGULAMA_ADI} 13 yaş ve üzeri içindir. Hesabını istediğin zaman{' '}
+        <a href="/legal/delete-account.html" target="_blank" rel="noopener" className="underline">
+          silebilirsin
+        </a>
+        .
       </p>
       {hataKutusu}
 
       <p className="text-xs text-ink-400 text-center mt-6 leading-relaxed">{altNot}</p>
+
+      {turAcik && (
+        <UygulamaTuru
+          onKapat={() => setTurAcik(false)}
+          onBasla={() => {
+            setTurAcik(false)
+            void calistir(async () => hesapOlustur())
+          }}
+        />
+      )}
     </Cerceve>
   )
 }

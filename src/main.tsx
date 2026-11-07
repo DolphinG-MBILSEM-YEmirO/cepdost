@@ -4,6 +4,7 @@ import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 import App from './App.tsx'
 import { AuthSaglayici } from './sosyal/auth'
+import { BaglantiDurumu } from './components/BaglantiDurumu'
 
 registerSW({ immediate: true })
 
@@ -11,6 +12,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthSaglayici>
       <App />
+      <BaglantiDurumu />
     </AuthSaglayici>
   </StrictMode>,
 )

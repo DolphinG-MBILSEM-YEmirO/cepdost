@@ -723,7 +723,7 @@ function BaglantiHatasi({ onTekrar, onCikis }: { onTekrar: () => void; onCikis: 
       </div>
       <h1 className="text-title text-ink-800 mb-2">Hesabın getirilemedi</h1>
       <p className="text-sm text-ink-400 leading-relaxed mb-6">
-        Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene; planların ve arşivin bu telefonda duruyor.
+        Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene; planların ve arşivin bu cihazda duruyor.
       </p>
       <button onClick={onTekrar} className="btn-primary w-full max-w-xs">
         Tekrar dene
