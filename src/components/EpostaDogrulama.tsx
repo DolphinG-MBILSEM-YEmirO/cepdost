@@ -88,7 +88,8 @@ export function EpostaDogrulama({
           autoCorrect="off"
           value={eposta}
           onChange={(e) => setEposta(e.target.value)}
-          placeholder="ornek@gmail.com"
+          placeholder="E-posta adresini yaz"
+          aria-label="E-posta adresi"
           className="input-field mb-3"
         />
         <button

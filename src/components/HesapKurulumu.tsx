@@ -81,7 +81,7 @@ export function HesapKurulumu({ profil, onTamamlandi }: Props) {
           <input
             value={ad}
             onChange={(e) => setAd(e.target.value)}
-            placeholder="Yunus Emir"
+            placeholder="Adın ve soyadın"
             className="input-field mb-4"
             autoFocus
           />
@@ -94,7 +94,7 @@ export function HesapKurulumu({ profil, onTamamlandi }: Props) {
             <input
               value={kullaniciAdi}
               onChange={(e) => setKullaniciAdi(e.target.value)}
-              placeholder="yunus"
+              placeholder="kullanici.adi"
               autoCapitalize="none"
               autoCorrect="off"
               className="flex-1 bg-transparent py-2.5 px-1 text-ink-700 font-medium placeholder:text-ink-300 focus:outline-none"
