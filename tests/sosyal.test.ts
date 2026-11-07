@@ -74,6 +74,7 @@ import { planKatilimi, yanitsizlar } from '../src/sosyal/planKatilimi'
 import { getirEkle, getirListesi, getirSil, getiriUstlen } from '../src/sosyal/getirListesi'
 import { arkadasPlandaMi, plandakiArkadaslar } from '../src/sosyal/ortakGecmis'
 import { engelliListesi } from '../src/sosyal/engel'
+import { isletmemiGetir, isletmemiKaydet, isletmemiSil, yakindakiIsletmeler } from '../src/sosyal/isletme'
 import {
   aniEtkilesimleri,
   aniYorumunuSil,
@@ -1384,4 +1385,47 @@ test('blocking: their messages, memories and requests stop showing, and the frie
   await olarak(fatma, () => engeliKaldir(gul.motor.benimId))
   assert.equal(await olarak(fatma, () => bekleyenSayisi()), 1)
   assert.deepEqual(await olarak(fatma, () => engelliListesi()), [])
+})
+
+test('business profile: anyone nearby sees it, only its owner changes it, blocked ones are hidden', async () => {
+  const kafe = kisiOlustur('kafe')
+  const musteri = kisiOlustur('musteri')
+  await olarak(kafe, () => hesabiKur({ ad: 'Moda Kafe', kullanici_adi: 'moda_kafe', gizlilik: 'herkes' }))
+  await olarak(musteri, () => hesabiKur({ ad: 'Müşteri', kullanici_adi: 'musteri_1', gizlilik: 'arkadaslar' }))
+  const girdi = {
+    ad: 'Moda Kafe',
+    kategori: 'Kafe',
+    aciklama: 'Sessiz üst kat',
+    adres: 'Moda Cd. 1, Kadıköy',
+    enlem: 40.987,
+    boylam: 29.025,
+    telefon: '0216 000 00 00',
+    web: 'modakafe.com',
+    instagram: '@modakafe',
+    saatler: 'Her gün 08:00–23:00',
+    indirim: { metin: '%10 indirim', kosul: null },
+  }
+  await assert.rejects(olarak(kafe, () => isletmemiKaydet({ ...girdi, kategori: 'Nargile Kafe' }, { koru: [], yeni: [] })))
+  const kayit = await olarak(kafe, () => isletmemiKaydet(girdi, { koru: [], yeni: [] }))
+  assert.equal(kayit.web, 'https://modakafe.com/')
+  assert.equal(kayit.instagram, 'modakafe')
+  assert.deepEqual(await olarak(kafe, async () => (await isletmemiGetir())?.indirim), { metin: '%10 indirim', kosul: null })
+
+  const yakin = await olarak(musteri, () => yakindakiIsletmeler({ enlem: 40.99, boylam: 29.03 }))
+  assert.deepEqual(
+    yakin.map((p) => [p.id, p.ad, p.saatler]),
+    [[kafe.motor.benimId, 'Moda Kafe', 'Her gün 08:00–23:00']],
+  )
+  // Far away, it doesn't come up.
+  assert.equal((await olarak(musteri, () => yakindakiIsletmeler({ enlem: 41.1, boylam: 29.03 }))).length, 0)
+
+  // Someone else can't write the business's record: the channel keeps one
+  // record per author, so a copy under another key is a different business.
+  await olarak(musteri, () => engelle(kafe.motor.benimId))
+  assert.equal((await olarak(musteri, () => yakindakiIsletmeler({ enlem: 40.99, boylam: 29.03 }))).length, 0)
+  await olarak(musteri, () => engeliKaldir(kafe.motor.benimId))
+
+  await olarak(kafe, () => isletmemiSil())
+  assert.equal(await olarak(kafe, () => isletmemiGetir()), null)
+  assert.equal((await olarak(musteri, () => yakindakiIsletmeler({ enlem: 40.99, boylam: 29.03 }))).length, 0)
 })

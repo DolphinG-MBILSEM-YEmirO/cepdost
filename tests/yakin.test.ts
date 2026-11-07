@@ -18,6 +18,8 @@ import {
 import { KAMPANYALAR } from '../api/_lib/kampanyalar.ts'
 import { GET as yakinGET, foursquareYeriniCevir } from '../api/yakin.ts'
 import { GET as kuponGET, POST as kuponPOST, kodUret, kuponSayaclariniSifirla } from '../api/kupon.ts'
+import { yakinlariBirlestir } from '../src/lib/yakin.ts'
+import { instagramAl, isletmeKur, telefonAl, webAdresiAl, type IsletmeProfili } from '../src/sosyal/isletme.ts'
 
 const BEN = { enlem: 40.99, boylam: 29.03 }
 const BUGUN = '2026-11-07'
@@ -30,6 +32,7 @@ function yer(id: string, ad: string, metreKuzey: number, kategori = 'Café'): Ya
 function kampanya(degisiklik: Partial<Kampanya> = {}): Kampanya {
   return {
     id: 'test-kafe',
+    isletme: null,
     mekanAdi: 'Test Kafe',
     kategori: 'Kafe',
     adres: null,
@@ -39,7 +42,6 @@ function kampanya(degisiklik: Partial<Kampanya> = {}): Kampanya {
     baslangic: '2026-11-01',
     bitis: '2026-11-30',
     aciklama: null,
-    indirim: { metin: '%10 indirim', kosul: null },
     ...degisiklik,
   }
 }
@@ -167,43 +169,95 @@ test('api/yakin: bad position is refused; no Foursquare key still gives campaign
 })
 
 const KISI = 'a'.repeat(64)
+const ISLETME = 'c'.repeat(64)
 
 function kuponIstegi(govde: unknown) {
   return new Request('http://localhost/api/kupon', { method: 'POST', body: JSON.stringify(govde), headers: { 'Content-Type': 'application/json' } })
 }
 
-test('api/kupon: same person, same day, same code; the business page accepts it', async () => {
-  KAMPANYALAR.push(canliKampanya())
-  const r1 = (await (await kuponPOST(kuponIstegi({ kampanya: 'test-kafe', kullanici: KISI }))).json()) as { kod: string }
-  const r2 = (await (await kuponPOST(kuponIstegi({ kampanya: 'test-kafe', kullanici: KISI }))).json()) as { kod: string }
-  assert.match(r1.kod, /^[A-Z2-9]{4}-[A-Z2-9]{4}$/)
-  assert.equal(r1.kod, r2.kod)
-  const baska = (await (await kuponPOST(kuponIstegi({ kampanya: 'test-kafe', kullanici: 'b'.repeat(64) }))).json()) as { kod: string }
-  assert.notEqual(baska.kod, r1.kod)
+async function kodAl(kullanici: string, isletme = ISLETME) {
+  return ((await (await kuponPOST(kuponIstegi({ isletme, kullanici }))).json()) as { kod: string }).kod
+}
 
-  const dogrula = async (kod: string, k = 'test-kafe') =>
-    (await (await kuponGET(new Request(`http://localhost/api/kupon?k=${k}&kod=${encodeURIComponent(kod)}`))).json()) as { gecerli?: boolean }
-  assert.equal((await dogrula(r1.kod)).gecerli, true)
-  assert.equal((await dogrula(r1.kod.toLowerCase().replace('-', ' '))).gecerli, true)
-  // A typo, or yesterday's code, is not accepted.
-  const yanlis = r1.kod.slice(0, 8) + (r1.kod[8] === 'A' ? 'B' : 'A')
-  assert.equal((await dogrula(yanlis)).gecerli, false)
-  const dun = kodUret('test-gizli', 'test-kafe', KISI, '2020-01-01')
-  assert.equal((await dogrula(dun)).gecerli, false)
+async function dogrula(kod: string, isletme = ISLETME) {
+  const res = await kuponGET(new Request(`http://localhost/api/kupon?i=${isletme}&kod=${encodeURIComponent(kod)}`))
+  return ((await res.json()) as { gecerli?: boolean }).gecerli
+}
+
+test('api/kupon: same person, same day, same code; the business QR page accepts it', async () => {
+  const kod = await kodAl(KISI)
+  assert.match(kod, /^[A-Z2-9]{4}-[A-Z2-9]{4}$/)
+  assert.equal(await kodAl(KISI), kod)
+  assert.notEqual(await kodAl('b'.repeat(64)), kod)
+  assert.equal(await dogrula(kod), true)
+  assert.equal(await dogrula(kod.toLowerCase().replace('-', ' ')), true)
+  // A typo, another business's code, or yesterday's code is not accepted.
+  assert.equal(await dogrula(kod.slice(0, 8) + (kod[8] === 'A' ? 'B' : 'A')), false)
+  assert.equal(await dogrula(kod, 'd'.repeat(64)), false)
+  assert.equal(await dogrula(kodUret('test-gizli', ISLETME, KISI, '2020-01-01')), false)
 })
 
-test('api/kupon: only live campaigns with a discount, signed-in people, and no endless guessing', async () => {
-  KAMPANYALAR.push(canliKampanya(), canliKampanya({ id: 'indirimsiz', indirim: null }), canliKampanya({ id: 'bitti', baslangic: '2020-01-01', bitis: '2020-01-02' }))
-  assert.equal((await kuponPOST(kuponIstegi({ kampanya: 'indirimsiz', kullanici: KISI }))).status, 404)
-  assert.equal((await kuponPOST(kuponIstegi({ kampanya: 'bitti', kullanici: KISI }))).status, 404)
-  assert.equal((await kuponPOST(kuponIstegi({ kampanya: 'test-kafe', kullanici: 'kim' }))).status, 400)
+test('api/kupon: signed-in people only, a real business key, and no endless guessing', async () => {
+  assert.equal((await kuponPOST(kuponIstegi({ isletme: ISLETME, kullanici: 'kim' }))).status, 400)
+  assert.equal((await kuponPOST(kuponIstegi({ isletme: 'kafe', kullanici: KISI }))).status, 400)
+  assert.equal((await kuponPOST(kuponIstegi({ isletme: KISI, kullanici: KISI }))).status, 400)
+  assert.equal((await kuponGET(new Request('http://localhost/api/kupon?kod=AAAA-AAAA'))).status, 400)
   assert.equal(koduTemizle('ABCD-EFG1'), null)
 
   let son = 0
-  for (let i = 0; i < 31; i++) son = (await kuponGET(new Request('http://localhost/api/kupon?k=test-kafe&kod=AAAA-AAAA'))).status
+  for (let i = 0; i < 31; i++) son = (await kuponGET(new Request(`http://localhost/api/kupon?i=${ISLETME}&kod=AAAA-AAAA`))).status
   assert.equal(son, 429)
 
   delete process.env.KUPON_GIZLI
   delete process.env.EPOSTA_GIZLI
-  assert.equal((await kuponPOST(kuponIstegi({ kampanya: 'test-kafe', kullanici: KISI }))).status, 503)
+  assert.equal((await kuponPOST(kuponIstegi({ isletme: ISLETME, kullanici: KISI }))).status, 503)
+})
+
+// ---------- business profiles ----------
+
+function profil(degisiklik: Partial<IsletmeProfili> = {}): IsletmeProfili {
+  return {
+    id: ISLETME,
+    ad: 'Test Kafe',
+    kategori: 'Kafe',
+    aciklama: null,
+    adres: 'Moda',
+    enlem: BEN.enlem + 600 / 111_000,
+    boylam: BEN.boylam,
+    telefon: null,
+    web: null,
+    instagram: null,
+    saatler: null,
+    fotolar: [],
+    indirim: { metin: '%10', kosul: null },
+    guncelleme: 0,
+    onay: null,
+    ...degisiklik,
+  }
+}
+
+test('business profile records: links and handles cleaned, broken or banned ones dropped', () => {
+  assert.equal(webAdresiAl('javascript:alert(1)'), null)
+  assert.equal(webAdresiAl('ornek.com'), 'https://ornek.com/')
+  assert.equal(instagramAl('https://instagram.com/moda.kafe/'), 'moda.kafe')
+  assert.equal(telefonAl('ara beni'), null)
+  const veri = { ad: 'Moda Kafe', kategori: 'Kafe', adres: 'Moda', enlem: 40.98, boylam: 29.02, fotolar: [{ id: 'isletme-0011aabb', parca: 2, tip: 'image/jpeg' }, { id: 'isletme-Xy_9-Ab3cD0', parca: 1, tip: 'image/jpeg' }, { id: '../ani', parca: 1, tip: 'image/jpeg' }] }
+  const p = isletmeKur({ yazar: ISLETME, veri })
+  assert.equal(p?.fotolar.length, 2)
+  assert.equal(isletmeKur({ yazar: ISLETME, veri: { ...veri, kategori: 'Bar' } }), null)
+  assert.equal(isletmeKur({ yazar: ISLETME, veri: { ...veri, enlem: 'kuzey' } }), null)
+})
+
+test('a business profile takes the map entry\'s place, and a sponsored one shows once with its profile', () => {
+  const mekanlar = [yer('fsq:1', 'Test Kafe', 600), yer('fsq:2', 'Bir', 100), yer('fsq:3', 'İki', 200)]
+  const organik = yakinlariBirlestir(mekanlar, [], [profil()], new Map(), BEN, BUGUN)
+  assert.equal(organik.filter((o) => o.mekan.ad === 'Test Kafe').length, 1)
+  assert.equal(organik.find((o) => o.mekan.ad === 'Test Kafe')?.isletme?.id, ISLETME)
+
+  const sponsorlu = yakinlariBirlestir(mekanlar, [kampanya({ isletme: ISLETME, mekanAdi: 'Eski Ad' })], [profil()], new Map(), BEN, BUGUN)
+  assert.equal(sponsorlu.filter((o) => o.isletme?.id === ISLETME).length, 1)
+  assert.equal(sponsorlu[1].kampanya?.id, 'test-kafe')
+  // The profile's own name wins over what the campaign was sold with.
+  assert.equal(sponsorlu[1].mekan.ad, 'Test Kafe')
+  assert.equal(sponsorlu[1].isletme?.indirim?.metin, '%10')
 })

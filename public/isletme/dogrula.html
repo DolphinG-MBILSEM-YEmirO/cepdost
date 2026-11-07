@@ -36,7 +36,7 @@
 <main>
   <header><a class="brand" href="/">Sharloop</a></header>
   <h1 id="baslik">İndirim kodu doğrula</h1>
-  <p class="muted" id="aciklama">Müşterinin Sharloop'ta gösterdiği 8 haneli kodu yazın. Kodlar yalnızca alındıkları gün geçerlidir.</p>
+  <p class="muted" id="aciklama">Müşterinin Sharloop'ta gösterdiği QR'ı telefonunuzun kamerasıyla okutun ya da 8 haneli kodu yazın. Kodlar yalnızca alındıkları gün geçerlidir.</p>
 
   <form id="form" autocomplete="off">
     <input id="kod" inputmode="text" maxlength="9" placeholder="ABCD-EFGH" aria-label="İndirim kodu" required />
@@ -44,12 +44,14 @@
   </form>
   <div id="sonuc" role="status" aria-live="polite"></div>
 
-  <footer>Bu sayfa yalnızca kodun bugün ve bu kampanya için geçerli olup olmadığını söyler; müşteri hakkında bilgi göstermez.
+  <footer>Bu sayfa yalnızca kodun bugün ve sizin işletmeniz için geçerli olup olmadığını söyler; müşteri hakkında bilgi göstermez.
     Sorular için <a href="mailto:sharloop.destek@gmail.com">sharloop.destek@gmail.com</a></footer>
 </main>
 <script>
-  // The campaign comes from the link the business was given (?k=<id>).
-  const kampanya = new URLSearchParams(location.search).get('k') || ''
+  // The business comes from the link in its panel or the customer's QR
+  // (?i=<business key>); the QR also carries the code (&kod=...).
+  const params = new URLSearchParams(location.search)
+  const isletme = params.get('i') || ''
   const form = document.getElementById('form')
   const girdi = document.getElementById('kod')
   const dugme = document.getElementById('dugme')
@@ -65,9 +67,9 @@
     }
   }
 
-  if (!kampanya) {
+  if (!isletme) {
     form.hidden = true
-    goster('bilgi', 'Bu sayfayı Sharloop\'un size gönderdiği bağlantıdan açın.')
+    goster('bilgi', 'Bu sayfayı Sharloop\'taki işletme panelinizden ya da müşterinin QR kodundan açın.')
   }
 
   // Types as "ABCD-EFGH" whatever is entered.
@@ -76,26 +78,37 @@
     girdi.value = temiz.length > 4 ? temiz.slice(0, 4) + '-' + temiz.slice(4) : temiz
   })
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault()
+  async function kontrolEt() {
     dugme.disabled = true
     goster('bilgi', 'Kontrol ediliyor…')
     try {
-      const yanit = await fetch('/api/kupon?k=' + encodeURIComponent(kampanya) + '&kod=' + encodeURIComponent(girdi.value))
+      const yanit = await fetch('/api/kupon?i=' + encodeURIComponent(isletme) + '&kod=' + encodeURIComponent(girdi.value))
       const veri = await yanit.json().catch(() => null)
       if (!yanit.ok || !veri) {
         goster('gecersiz', (veri && veri.error) || 'Şu an kontrol edilemedi. Biraz sonra tekrar deneyin.')
       } else if (veri.gecerli) {
-        goster('gecerli', '✓ Kod geçerli', veri.mekanAdi + ' · ' + veri.indirim.metin + (veri.indirim.kosul ? ' (' + veri.indirim.kosul + ')' : ''))
+        goster('gecerli', '✓ İndirim onaylandı', 'Bu kod bugün ve sizin işletmeniz için geçerli. Panelinizde belirlediğiniz indirimi uygulayın.')
       } else {
-        goster('gecersiz', '✗ Kod geçerli değil', 'Yanlış yazılmış, başka bir güne ya da başka bir kampanyaya ait olabilir.')
+        goster('gecersiz', '✗ Kod geçerli değil', 'Yanlış yazılmış, başka bir güne ya da başka bir işletmeye ait olabilir.')
       }
     } catch {
       goster('gecersiz', 'İnternet bağlantısı yok. Tekrar deneyin.')
     } finally {
       dugme.disabled = false
     }
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault()
+    void kontrolEt()
   })
+
+  // Opened from the customer's QR: check right away.
+  const qrKodu = (params.get('kod') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)
+  if (isletme && qrKodu.length === 8) {
+    girdi.value = qrKodu.slice(0, 4) + '-' + qrKodu.slice(4)
+    void kontrolEt()
+  }
 </script>
 </body>
 </html>

@@ -99,6 +99,12 @@ export async function kesfetKanali(): Promise<Kanal> {
   return acikKanal('kesfet', 'kesfet/v1')
 }
 
+// Businesses' public profiles (see sosyal/isletme.ts). Public like Keşfet:
+// each business writes only its own record, signed with its key.
+export async function isletmeKanali(): Promise<Kanal> {
+  return acikKanal('kesfet', 'isletme/v1')
+}
+
 // Friend requests from people I don't know yet land here. Records are
 // encrypted with the pair channel's key, so only I can read them.
 export async function gelenKutusuKonusu(pubkey: string): Promise<string> {

@@ -20,8 +20,13 @@ export interface YakinMekan {
 }
 
 // A business's paid campaign. Managed in api/_lib/kampanyalar.ts for now.
+// Photos, contact, hours and the discount come from the business's own
+// profile in the app (`isletme`); the fields here are what we checked when
+// it paid, and stand in until the profile loads.
 export interface Kampanya {
   id: string
+  // The business account's public key, when it has a profile.
+  isletme: string | null
   mekanAdi: string
   kategori: string
   adres: string | null
@@ -34,8 +39,6 @@ export interface Kampanya {
   bitis: string
   // One line under the name, e.g. "Öğrencilere özel menü".
   aciklama: string | null
-  // A discount for people who come through the app, if the business gives one.
-  indirim: { metin: string; kosul: string | null } | null
 }
 
 export interface MekanPuani {
@@ -55,7 +58,7 @@ export const AZAMI_ONERI = 10
 export const SPONSORLU_SIRA = 1
 // Sponsored and organic entries closer than this with the same name are the
 // same place; the organic copy is dropped.
-const AYNI_MEKAN_METRE = 150
+export const AYNI_MEKAN_METRE = 150
 
 const YASAKLI_KELIMELER = [
   'bar', 'pub', 'meyhane', 'birahane', 'nightclub', 'gece kulübü', 'hookah', 'nargile', 'tobacco', 'tütün', 'tütüncü',
@@ -187,10 +190,20 @@ export function mesafeMetni(metre: number): string {
 
 // ---------- discount codes ----------
 //
-// A code is 8 letters shown as "ABCD-EFGH": the first half depends on the
-// person and the day (so the same person gets the same code all day), the
-// second half is a server MAC over campaign, day and first half. The
-// business checks it on /isletme/dogrula.html; no database is needed.
+// A business sets its own discount in its profile. A code is 8 letters
+// shown as "ABCD-EFGH": the first half depends on the person and the day
+// (so the same person gets the same code all day), the second half is a
+// server MAC over the business, the day and the first half. The business
+// scans the code's QR (or types it) on /isletme/dogrula.html; no database
+// is needed.
+
+// The page the QR on a code opens.
+export function dogrulamaAdresi(koken: string, isletme: string, kod?: string): string {
+  const url = new URL('/isletme/dogrula.html', koken)
+  url.searchParams.set('i', isletme)
+  if (kod) url.searchParams.set('kod', kod)
+  return url.toString()
+}
 
 export const KOD_ALFABESI = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
