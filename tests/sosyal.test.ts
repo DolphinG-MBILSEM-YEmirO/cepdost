@@ -64,9 +64,12 @@ import {
   planaYanitVer,
   planYanitlariGetir,
   akisAnilariGetir,
+  aniGuncelle,
   anilariGetir,
+  arsivdekiPaylasimlarim,
   type Ani,
 } from '../src/sosyal/gruplar'
+import { kayitliIdler, kayitliPaylasimlar, listeyeKoy } from '../src/sosyal/kaydedilenler'
 import { bloklariCikar, musaitligiSenkronla } from '../src/sosyal/musaitlikSenkron'
 import { CepDostDB, db, kayitOlustur, type Kayit } from '../src/db'
 import { planlariEsitle } from '../src/sosyal/planEsitleme'
@@ -80,7 +83,10 @@ import {
   aniYorumunuSil,
   aniyaTepkiVer,
   aniyaYorumYap,
+  aniyiBegen,
+  etiketimiKaldir,
   gitmekIstiyorum,
+  gorunenEtiketler,
 } from '../src/sosyal/aniEtkilesimi'
 import { TUR } from '../src/sosyal/cekirdek'
 import { linkKanali } from '../src/sosyal/nostr/kanal'
@@ -614,6 +620,73 @@ test("a post to all my friends: friends' reactions and comments reach me, nothin
   assert.deepEqual((await olarak(ayseTel, () => aniEtkilesimleri([teldeki]))).get('herkese1')?.tepkiler, [
     { kullanici_id: ayse.motor.benimId, emoji: '😍' },
   ])
+})
+
+test('posts: tags, comments off, a double-tap like, saving and archiving', async () => {
+  // Ali posts to all his friends with Ayşe tagged and comments off.
+  const ayseId = ayse.motor.benimId
+  await olarak(ali, async () => {
+    const kanal = (await kanalDurumu()).yayin!
+    await ali.motor.yayinla(kanal, TUR.ani, 'ani:etiket1', {
+      mekan_adi: 'Galata', tarih: '2099-05-04', notlar: null, gorunurluk: 'arkadaslar', foto: { parca: 1, tip: 'image/jpeg' },
+      etiketler: [ayseId, ali.motor.benimId, 'bozuk', ayseId], yorumlar_kapali: true, zaman: Date.now(),
+    })
+  })
+  await esitle(ayse)
+  const bul = async (kisi: Kisi) => (await olarak(kisi, () => akisAnilariGetir('arkadaslar'))).find((a) => a.id === 'etiket1')
+  let aysedeki = (await bul(ayse))!
+  // Only real ids, each once, and never the sharer himself.
+  assert.deepEqual([aysedeki.etiketler, aysedeki.yorumlar_kapali, aysedeki.arsivde], [[ayseId], true, false])
+  await assert.rejects(olarak(ayse, () => aniyaYorumYap(aysedeki, 'Selam')), /kapalı/)
+  // Nobody but the sharer changes the post.
+  await assert.rejects(olarak(ayse, () => aniGuncelle(aysedeki, { yorumlarKapali: false })), /kendi/)
+
+  // A double tap leaves a heart once; a second one doesn't take it back.
+  assert.equal(await olarak(ayse, () => aniyiBegen(aysedeki)), true)
+  assert.equal(await olarak(ayse, () => aniyiBegen(aysedeki)), false)
+  // She takes her tag off; the like stays.
+  await olarak(ayse, () => etiketimiKaldir(aysedeki))
+  await esitle(ali)
+  let alideki = (await bul(ali))!
+  let e = (await olarak(ali, () => aniEtkilesimleri([alideki]))).get('etiket1')!
+  assert.deepEqual(e.tepkiler, [{ kullanici_id: ayseId, emoji: '❤️' }])
+  assert.deepEqual([e.etiketiKaldiranlar, gorunenEtiketler(alideki, e)], [[ayseId], []])
+
+  // Ali opens comments again; Ayşe can comment now.
+  alideki = await olarak(ali, () => aniGuncelle(alideki, { yorumlarKapali: false }))
+  assert.equal(alideki.yorumlar_kapali, false)
+  assert.deepEqual(alideki.etiketler, [ayseId], 'the tags stay as they were')
+  await esitle(ayse)
+  aysedeki = (await bul(ayse))!
+  assert.equal(aysedeki.yorumlar_kapali, false)
+  await olarak(ayse, () => aniyaYorumYap(aysedeki, 'Harika'))
+
+  // She saves it; her other device sees the saved list too.
+  await olarak(ayse, () => listeyeKoy('kaydedilen', aysedeki, true))
+  await olarak(ayse, () => listeyeKoy('gitmek-listesi', aysedeki, true))
+  assert.ok((await olarak(ayse, () => kayitliIdler('kaydedilen'))).has('etiket1'))
+  const ayseTel = kisiOlustur('ayse-tel2', ayse.sk)
+  await esitle(ayseTel)
+  const teldeki = await olarak(ayseTel, () => kayitliPaylasimlar('gitmek-listesi'))
+  assert.deepEqual(teldeki.map((k) => [k.ani.id, k.ani.mekan_adi, k.kaldirildi]), [['etiket1', 'Galata', false]])
+
+  // Ali archives it: it leaves the feed, only his archive shows it, and
+  // Ayşe's saved copy says it's gone.
+  await olarak(ali, () => aniGuncelle(alideki, { arsivde: true }))
+  assert.equal(await bul(ali), undefined)
+  assert.deepEqual((await olarak(ali, () => arsivdekiPaylasimlarim())).map((a) => a.id), ['etiket1'])
+  await esitle(ayse)
+  assert.equal(await bul(ayse), undefined)
+  assert.deepEqual((await olarak(ayse, () => kayitliPaylasimlar('kaydedilen'))).map((k) => k.kaldirildi), [true])
+
+  // Out of the archive, it's back for everyone; she takes it off her list.
+  const arsivdeki = (await olarak(ali, () => arsivdekiPaylasimlarim()))[0]
+  await olarak(ali, () => aniGuncelle(arsivdeki, { arsivde: false }))
+  await esitle(ayse)
+  assert.ok(await bul(ayse))
+  assert.deepEqual((await olarak(ayse, () => kayitliPaylasimlar('kaydedilen'))).map((k) => k.kaldirildi), [false])
+  await olarak(ayse, () => listeyeKoy('kaydedilen', aysedeki, false))
+  assert.deepEqual(await olarak(ayse, () => kayitliPaylasimlar('kaydedilen')), [])
 })
 
 test('unfriending ends the friendship and rotates the broadcast key', async () => {

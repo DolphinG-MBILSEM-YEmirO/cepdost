@@ -10,8 +10,10 @@ import { UYGULAMA_ADI } from '../../shared/marka'
 // go too". They sit next to the memory on its pair, group or broadcast
 // channel, so only the people who see the memory see them:
 //
-//   ani-tepki 'ani-tepki:<aniId>'           one per person: their emoji
-//                                           and whether they want to go
+//   ani-tepki 'ani-tepki:<aniId>'           one per person: their emoji,
+//                                           whether they want to go, and
+//                                           (when tagged) whether they took
+//                                           their tag off
 //   ani-yorum 'ani-yorum:<aniId>:<yorumId>' a comment; its author deletes it
 //
 // Public copies on Keşfet take none of these: strangers can't comment.
@@ -36,9 +38,14 @@ export interface AniEtkilesimi {
   gitmekIsteyenler: string[]
   // Oldest first, like a conversation.
   yorumlar: AniYorumu[]
+  // Tagged people who took their tag off the post.
+  etiketiKaldiranlar: string[]
 }
 
-export const BOS_ETKILESIM: AniEtkilesimi = { tepkiler: [], gitmekIsteyenler: [], yorumlar: [] }
+export const BOS_ETKILESIM: AniEtkilesimi = { tepkiler: [], gitmekIsteyenler: [], yorumlar: [], etiketiKaldiranlar: [] }
+
+// The emoji a double tap leaves, like a "like".
+export const BEGENI = '❤️'
 
 const tepkiAnahtari = (aniId: string) => `ani-tepki:${aniId}`
 
@@ -54,6 +61,13 @@ export async function etkilesimKanali(ani: Ani): Promise<Kanal | null> {
   return kanal && (kanal.tur === 'cift' || kanal.tur === 'grup' || kanal.tur === 'yayin') ? kanal : null
 }
 
+// Whether friends can answer this copy of a post, from the channels this
+// device already knows (a Keşfet copy can't be answered).
+export function yanitlanabilirMi(ani: Ani): boolean {
+  const tur = motor().kanal(ani.konu)?.tur
+  return tur === 'cift' || tur === 'grup' || tur === 'yayin'
+}
+
 async function kanalAl(ani: Ani): Promise<Kanal> {
   const kanal = await etkilesimKanali(ani)
   if (!kanal) throw new Error('Bu anıya yalnızca onu paylaştığı kişiler yanıt verebilir.')
@@ -67,7 +81,7 @@ export async function aniEtkilesimleri(anilar: Ani[]): Promise<Map<string, AniEt
   const harita = new Map<string, AniEtkilesimi>()
   const al = (aniId: string) => {
     let e = harita.get(aniId)
-    if (!e) harita.set(aniId, (e = { tepkiler: [], gitmekIsteyenler: [], yorumlar: [] }))
+    if (!e) harita.set(aniId, (e = { tepkiler: [], gitmekIsteyenler: [], yorumlar: [], etiketiKaldiranlar: [] }))
     return e
   }
 
@@ -78,6 +92,7 @@ export async function aniEtkilesimleri(anilar: Ani[]): Promise<Map<string, AniEt
       if (!idler.has(aniId) || !nesneMi(k.veri)) continue
       if (tepkiMi(k.veri.emoji)) al(aniId).tepkiler.push({ kullanici_id: k.yazar, emoji: k.veri.emoji })
       if (k.veri.gitmek === true) al(aniId).gitmekIsteyenler.push(k.yazar)
+      if (k.veri.etiketsiz === true) al(aniId).etiketiKaldiranlar.push(k.yazar)
     }
     for (const k of yorumlar) {
       const [, aniId, id] = k.anahtar.split(':')
@@ -99,15 +114,33 @@ export function yanitlayanlar(etkilesimler: Map<string, AniEtkilesimi>): string[
   ])
 }
 
-async function benimTepkim(kanal: Kanal, aniId: string): Promise<{ emoji: string | null; gitmek: boolean }> {
-  const m = motor()
-  const k = await m.kayit(kanal, m.benimId, tepkiAnahtari(aniId))
-  if (!k || !nesneMi(k.veri)) return { emoji: null, gitmek: false }
-  return { emoji: tepkiMi(k.veri.emoji) ? k.veri.emoji : null, gitmek: k.veri.gitmek === true }
+// My one answer record on a memory.
+interface BenimTepkim {
+  emoji: string | null
+  gitmek: boolean
+  etiketsiz: boolean
 }
 
-async function tepkiYaz(kanal: Kanal, aniId: string, emoji: string | null, gitmek: boolean) {
-  await motor().yayinla(kanal, TUR.aniTepki, tepkiAnahtari(aniId), emoji || gitmek ? { aniId, emoji, gitmek, zaman: simdiMs() } : null)
+async function benimTepkim(kanal: Kanal, aniId: string): Promise<BenimTepkim> {
+  const m = motor()
+  const k = await m.kayit(kanal, m.benimId, tepkiAnahtari(aniId))
+  if (!k || !nesneMi(k.veri)) return { emoji: null, gitmek: false, etiketsiz: false }
+  return {
+    emoji: tepkiMi(k.veri.emoji) ? k.veri.emoji : null,
+    gitmek: k.veri.gitmek === true,
+    etiketsiz: k.veri.etiketsiz === true,
+  }
+}
+
+// With nothing left in it, the record is taken away.
+async function tepkiYaz(kanal: Kanal, aniId: string, t: BenimTepkim) {
+  const bos = !t.emoji && !t.gitmek && !t.etiketsiz
+  await motor().yayinla(
+    kanal,
+    TUR.aniTepki,
+    tepkiAnahtari(aniId),
+    bos ? null : { aniId, emoji: t.emoji, gitmek: t.gitmek, ...(t.etiketsiz ? { etiketsiz: true } : {}), zaman: simdiMs() },
+  )
 }
 
 // The one who shared it hears about it; nobody else.
@@ -138,8 +171,33 @@ export async function aniyaTepkiVer(ani: Ani, emoji: string | null): Promise<voi
   const onceki = await benimTepkim(kanal, ani.id)
   const yeni = emoji && emoji !== onceki.emoji ? emoji : null
   if (yeni === onceki.emoji) return
-  await tepkiYaz(kanal, ani.id, yeni, onceki.gitmek)
+  await tepkiYaz(kanal, ani.id, { ...onceki, emoji: yeni })
   if (yeni) sahibineBildir(ani, `Anına ${yeni} bıraktı`)
+}
+
+// A double tap: leaves a heart, and never takes one back (unlike tapping
+// the same emoji again). Returns whether anything changed.
+export async function aniyiBegen(ani: Ani): Promise<boolean> {
+  const kanal = await kanalAl(ani)
+  const onceki = await benimTepkim(kanal, ani.id)
+  if (onceki.emoji === BEGENI) return false
+  await tepkiYaz(kanal, ani.id, { ...onceki, emoji: BEGENI })
+  sahibineBildir(ani, `Anına ${BEGENI} bıraktı`)
+  return true
+}
+
+// Someone tagged in a post takes their tag off (or puts it back). The tag
+// stays in the sharer's record; everyone's app leaves it out.
+export async function etiketimiKaldir(ani: Ani, kaldir = true): Promise<void> {
+  const kanal = await kanalAl(ani)
+  const onceki = await benimTepkim(kanal, ani.id)
+  if (onceki.etiketsiz === kaldir) return
+  await tepkiYaz(kanal, ani.id, { ...onceki, etiketsiz: kaldir })
+}
+
+// The tags still showing on a post.
+export function gorunenEtiketler(ani: Ani, etkilesim: AniEtkilesimi): string[] {
+  return ani.etiketler.filter((id) => !etkilesim.etiketiKaldiranlar.includes(id))
 }
 
 // "Ben de gitmek istiyorum": the one who shared it sees who wants to go.
@@ -147,13 +205,14 @@ export async function gitmekIstiyorum(ani: Ani, istiyor: boolean): Promise<void>
   const kanal = await kanalAl(ani)
   const onceki = await benimTepkim(kanal, ani.id)
   if (onceki.gitmek === istiyor) return
-  await tepkiYaz(kanal, ani.id, onceki.emoji, istiyor)
+  await tepkiYaz(kanal, ani.id, { ...onceki, gitmek: istiyor })
   if (istiyor) sahibineBildir(ani, 'Oraya o da gitmek istiyor')
 }
 
 export async function aniyaYorumYap(ani: Ani, metin: string): Promise<AniYorumu> {
   const temiz = metin.trim().slice(0, YORUM_AZAMI)
   if (!temiz) throw new Error('Bir şey yaz.')
+  if (ani.yorumlar_kapali) throw new Error('Bu paylaşımda yorumlar kapalı.')
   const kanal = await kanalAl(ani)
   const m = motor()
   const id = rastgeleId(8)

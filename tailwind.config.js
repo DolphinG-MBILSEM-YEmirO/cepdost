@@ -180,6 +180,8 @@ export default {
         eri: `eri 560ms ${tasarim.motion.easeOut}`,
         sicra: `sicra 520ms ${tasarim.motion.easeOut}`,
         dalga: 'dalga 650ms ease-out forwards',
+        // The heart a double tap on a post leaves.
+        kalp: `kalp 900ms ${tasarim.motion.easeOut} forwards`,
       },
       keyframes: {
         fadeIn: {
@@ -219,6 +221,13 @@ export default {
         dalga: {
           '0%': { transform: 'scale(0.6)', opacity: '0.55' },
           '100%': { transform: 'scale(2.4)', opacity: '0' },
+        },
+        kalp: {
+          '0%': { transform: 'scale(0.2) rotate(-12deg)', opacity: '0' },
+          '25%': { transform: 'scale(1.25) rotate(4deg)', opacity: '1' },
+          '45%': { transform: 'scale(0.95) rotate(0deg)', opacity: '1' },
+          '75%': { transform: 'scale(1) translateY(0)', opacity: '1' },
+          '100%': { transform: 'scale(1.1) translateY(-24px)', opacity: '0' },
         },
         slideUp: {
           '0%': { opacity: '0', transform: 'translateY(24px)' },

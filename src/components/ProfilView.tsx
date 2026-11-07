@@ -4,13 +4,15 @@ import { EkranBasligi } from '../ui/EkranBasligi'
 import { HesabimView } from './HesabimView'
 import { ArchiveView } from './ArchiveView'
 import { SettingsView } from './SettingsView'
+import { KaydedilenlerView } from './KaydedilenlerView'
 import type { Kayit } from '../db'
 import { useGeriAdimi } from '../lib/geriTusu'
 
 // Alt barda ayrı sekme tutmak yerine hesapla ilgili her şey burada:
-// profil + kayıt arşivi + uygulama ayarları. Arkadaşlar, kod ve istekler
-// Sohbet sekmesinde (ArkadaslarView); profil sadece kişinin kendisi.
-type Sekme = 'hesap' | 'arsiv' | 'ayarlar'
+// profil + kaydettiği paylaşımlar + kayıt arşivi + uygulama ayarları.
+// Arkadaşlar, kod ve istekler Sohbet sekmesinde (ArkadaslarView); profil
+// sadece kişinin kendisi.
+type Sekme = 'hesap' | 'kaydedilen' | 'arsiv' | 'ayarlar'
 
 interface Props {
   kayitlar: Kayit[]
@@ -25,6 +27,7 @@ interface Props {
 
 const sekmeler: { id: Sekme; etiket: string }[] = [
   { id: 'hesap', etiket: 'Hesabım' },
+  { id: 'kaydedilen', etiket: 'Kaydedilen' },
   { id: 'arsiv', etiket: 'Arşiv' },
   { id: 'ayarlar', etiket: 'Ayarlar' },
 ]
@@ -52,6 +55,7 @@ export function ProfilView({
       {/* key: each section slides in when picked. */}
       <div key={sekme} className="flex-1 min-h-0 animate-gecis">
         {sekme === 'hesap' && <HesabimView kayitlar={kayitlar} onArkadaslar={onArkadaslar} />}
+        {sekme === 'kaydedilen' && <KaydedilenlerView onRecordClick={onRecordClick} />}
         {sekme === 'arsiv' && (
           <ArchiveView
             kayitlar={kayitlar}
