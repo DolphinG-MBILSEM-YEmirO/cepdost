@@ -7,8 +7,12 @@
 // - Organic places are ranked by Sharloop users' ratings and distance.
 // - At most ONE sponsored place per list, in the 2nd slot, always labelled
 //   "Sponsorlu"; it must be near the person and its campaign must be live.
-// - No alcohol, hookah, tobacco or betting places, sponsored or not (the
-//   app is rated 13+).
+// - No betting places, sponsored or not.
+// - Places built around alcohol, hookah or tobacco show only to people who
+//   said they are 18 or older (user decision, 2026-11-07; the app is rated
+//   13+, and Turkish law bars selling these to minors). Their discounts and
+//   rewards may not be on alcohol or tobacco products (laws 4250 and 4207
+//   ban promoting them).
 
 export interface YakinMekan {
   id: string
@@ -60,19 +64,42 @@ export const SPONSORLU_SIRA = 1
 // same place; the organic copy is dropped.
 export const AYNI_MEKAN_METRE = 150
 
-const YASAKLI_KELIMELER = [
-  'bar', 'pub', 'meyhane', 'birahane', 'nightclub', 'gece kulübü', 'hookah', 'nargile', 'tobacco', 'tütün', 'tütüncü',
-  'liquor', 'tekel', 'brewery', 'winery', 'wine', 'şarap', 'bira', 'beer', 'cocktail', 'kokteyl',
-  'betting', 'bahis', 'iddaa', 'casino', 'kumarhane',
+// Betting is never shown.
+const BAHIS_KELIMELERI = ['betting', 'bahis', 'iddaa', 'casino', 'kumarhane', 'kumar']
+// Alcohol, hookah and tobacco places: 18+ only. Whole words, and Turkish
+// stems that take suffixes ("Biralarda", "Meyhanesi", "Nargileci").
+const YETISKIN_KELIMELERI = [
+  'bar', 'pub', 'nightclub', 'gece kulübü', 'hookah', 'tobacco', 'liquor', 'tekel', 'brewery', 'winery', 'wine',
+  'beer', 'cocktail', 'whisky', 'vodka', 'puro',
 ]
-// Letters-only word boundaries (\b doesn't know Turkish letters).
-const YASAKLI = new RegExp(`(^|[^\\p{L}\\d])(${YASAKLI_KELIMELER.join('|')})(?=$|[^\\p{L}\\d])`, 'iu')
+// "bira" but not "biraz" or "birader".
+const YETISKIN_KOKLERI = ['meyhane', 'birahane', 'bira(?!z|der)', 'nargile', 'tütün', 'şarap', 'kokteyl', 'rakı', 'viski', 'votka', 'alkol', 'sigara', 'likör']
+
+function kelimeDeseni(kelimeler: string[], kokler: string[] = []): RegExp {
+  // Letters around a word decide where it ends; \b doesn't know "ü".
+  const tam = `(?:${kelimeler.join('|')})(?=$|[^\\p{L}\\d])`
+  const kok = kokler.length ? `|(?:${kokler.join('|')})` : ''
+  return new RegExp(`(^|[^\\p{L}\\d])(${tam}${kok})`, 'iu')
+}
+const BAHIS = kelimeDeseni(BAHIS_KELIMELERI)
+const YETISKIN = kelimeDeseni(YETISKIN_KELIMELERI, YETISKIN_KOKLERI)
 // "Bar" places that serve no alcohol.
 const ZARARSIZ_BAR = /(juice|salad|snack|dessert|coffee|espresso|tatlı|meyve suyu|salata|kahve)\s+bar/giu
 
-export function yasakliMi(kategoriVeAd: string): boolean {
+function kucukHarf(metin: string): string {
   // Turkish lower case first: "İDDAA" must match "iddaa".
-  return YASAKLI.test(kategoriVeAd.toLocaleLowerCase('tr-TR').replace(ZARARSIZ_BAR, ' '))
+  return metin.toLocaleLowerCase('tr-TR').replace(ZARARSIZ_BAR, ' ')
+}
+
+// Never shown, never allowed a profile or an ad.
+export function yasakliMi(kategoriVeAd: string): boolean {
+  return BAHIS.test(kucukHarf(kategoriVeAd))
+}
+
+// Shown only to people who said they are 18 or older. Also used on a
+// discount or reward text: those may not be on alcohol or tobacco.
+export function yetiskinMi(metin: string): boolean {
+  return YETISKIN.test(kucukHarf(metin))
 }
 
 // Great-circle distance in metres.
@@ -153,7 +180,13 @@ export function onerileriSirala(
   puanlar: Map<string, MekanPuani>,
   konum: { enlem: number; boylam: number },
   bugun: string,
+  // True when the person said they are 18 or older.
+  yetiskin = false,
 ): MekanOnerisi[] {
+  const gosterilir = (m: Pick<YakinMekan, 'kategori' | 'ad'>) => {
+    const metin = `${m.kategori ?? ''} ${m.ad}`
+    return !yasakliMi(metin) && (yetiskin || !yetiskinMi(metin))
+  }
   const puanla = (m: YakinMekan): MekanOnerisi => ({
     mekan: m,
     mesafeMetre: mesafe(konum, m),
@@ -163,12 +196,13 @@ export function onerileriSirala(
 
   const sponsorlu =
     yakindakiKampanyalar(kampanyalar, konum, bugun)
+      .filter((k) => gosterilir({ kategori: k.kategori, ad: k.mekanAdi }))
       .map((k) => ({ ...puanla(kampanyaMekani(k)), kampanya: k }))
       .sort((a, b) => siralamaPuani(b.mesafeMetre, b.puan) - siralamaPuani(a.mesafeMetre, a.puan))[0] ?? null
 
   const gorulen = new Set<string>()
   const organik = mekanlar
-    .filter((m) => !yasakliMi(`${m.kategori ?? ''} ${m.ad}`))
+    .filter(gosterilir)
     .filter((m) => {
       const anahtar = mekanAnahtari(m.ad)
       if (!anahtar || gorulen.has(m.id)) return false
@@ -197,11 +231,21 @@ export function mesafeMetni(metre: number): string {
 // scans the code's QR (or types it) on /isletme/dogrula.html; no database
 // is needed.
 
-// The page the QR on a code opens.
-export function dogrulamaAdresi(koken: string, isletme: string, kod?: string): string {
+// The page the QR on a code opens. A customer's QR also carries who they
+// are (k), short hashes of today's plan for the place (p) and a reward to
+// spend (o), so the till's scan can count LoopPoint (shared/looppoint.ts).
+export function dogrulamaAdresi(
+  koken: string,
+  isletme: string,
+  kod?: string,
+  ek: { kullanici?: string; isaretler?: string[]; odul?: string } = {},
+): string {
   const url = new URL('/isletme/dogrula.html', koken)
   url.searchParams.set('i', isletme)
   if (kod) url.searchParams.set('kod', kod)
+  if (ek.kullanici) url.searchParams.set('k', ek.kullanici)
+  if (ek.isaretler?.length) url.searchParams.set('p', ek.isaretler.join(','))
+  if (ek.odul) url.searchParams.set('o', ek.odul)
   return url.toString()
 }
 

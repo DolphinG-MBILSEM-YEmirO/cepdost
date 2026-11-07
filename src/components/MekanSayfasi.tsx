@@ -4,16 +4,21 @@ import qrcode from 'qrcode-generator'
 import { Icon, type IconName } from './Icon'
 import { motor, motorVarMi } from '../sosyal/cekirdek'
 import { isletmeFotoUrl, type IsletmeFotosu, type IsletmeProfili } from '../sosyal/isletme'
+import { planIsaretleri, useLooppoint } from '../sosyal/looppoint'
+import { PlanOlustur, type Kapsam } from './PlanOlustur'
 import { anidanPlan } from '../lib/planPaylasimi'
 import { useGeriAdimi, useGeriIleKapat } from '../lib/geriTusu'
 import { googleAdresi, indirimKoduAl, yolTarifiAdresi, type IndirimKodu, type YakinOneri } from '../lib/yakin'
 import type { Kayit } from '../db'
-import { mesafeMetni } from '../../shared/yakinMekanlar'
+import { mesafeMetni, yetiskinMi } from '../../shared/yakinMekanlar'
+import { PUANLAR, LOOPPOINT_ADI, ziyaretKazanci, type IsletmeOdulu } from '../../shared/looppoint'
 
 // A place's page, opened from the feed's "Yakınında": the business's own
 // photos, description, hours and contact when it has a profile; its Google
 // Maps page for reviews and more photos; directions, a plan, and the
-// business's discount with a code and QR to show at the till.
+// business's discount with a code and QR to show at the till. Sponsored
+// places also suggest a plan, alone or with friends, that earns LoopPoint
+// when the till scans the QR, and businesses' rewards can be spent here.
 
 export function kategoriSimgesi(kategori: string | null): IconName {
   const k = (kategori ?? '').toLocaleLowerCase('tr-TR')
@@ -107,9 +112,14 @@ export function MekanSayfasi({
   const [kod, setKod] = useState<IndirimKodu | null>(null)
   const [kodHatasi, setKodHatasi] = useState<string | null>(null)
   const [kodAliniyor, setKodAliniyor] = useState(false)
+  const [seciliOdul, setSeciliOdul] = useState<IsletmeOdulu | null>(null)
+  const [planKapsami, setPlanKapsami] = useState<Kapsam | null>(null)
+  const [planKuruldu, setPlanKuruldu] = useState(false)
   // The discount screen is a step inside the sheet: back returns to the place.
   useGeriAdimi(() => setKod(null), kod !== null)
   const benim = motorVarMi() && isletme?.id === motor().benimId
+  const qrVar = !!isletme && !benim && (!!isletme.indirim || isletme.oduller.length > 0)
+  const ziyaret = ziyaretKazanci({ oneCikan: !!kampanya, plan: false }).puan
 
   async function planYap() {
     const { kayit } = await anidanPlan(mekan.ad, null)
@@ -117,17 +127,37 @@ export function MekanSayfasi({
     onPlanAc(kayit)
   }
 
-  async function koduAl() {
+  async function koduAl(odul: IsletmeOdulu | null = null) {
     if (!isletme || !motorVarMi()) return
     setKodAliniyor(true)
     setKodHatasi(null)
     try {
-      setKod(await indirimKoduAl(isletme.id, motor().benimId))
+      // Today's plans for this place ride along, for the plan and group bonus.
+      const isaretler = await planIsaretleri(mekan.ad).catch(() => [])
+      setKod(await indirimKoduAl(isletme.id, motor().benimId, { isaretler, odul: odul?.id }))
+      setSeciliOdul(odul)
     } catch (err) {
       setKodHatasi(err instanceof Error ? err.message : 'Kod alınamadı.')
     } finally {
       setKodAliniyor(false)
     }
+  }
+
+  if (planKapsami) {
+    // In place of the sheet, which comes back when the plan is done.
+    return createPortal(
+      <div className="relative z-[90]">
+        <PlanOlustur
+          baslangic={{ konum: mekan.ad, kapsam: planKapsami }}
+          onClose={() => setPlanKapsami(null)}
+          onSaved={() => {
+            setPlanKapsami(null)
+            setPlanKuruldu(true)
+          }}
+        />
+      </div>,
+      document.body,
+    )
   }
 
   // On <body>: the feed's animated list would otherwise trap a fixed sheet
@@ -152,8 +182,8 @@ export function MekanSayfasi({
           </button>
         </div>
 
-        {kod && isletme?.indirim ? (
-          <IndirimEkrani kod={kod} isletme={isletme} onGeri={() => setKod(null)} />
+        {kod && isletme ? (
+          <IndirimEkrani kod={kod} isletme={isletme} odul={seciliOdul} puan={ziyaret} onGeri={() => setKod(null)} />
         ) : (
           <>
             {isletme && isletme.fotolar.length > 0 && (
@@ -170,6 +200,9 @@ export function MekanSayfasi({
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="font-semibold text-ink-700 text-lg leading-tight">{mekan.ad}</h3>
                   {kampanya && <SponsorluEtiketi />}
+                  {yetiskinMi(`${mekan.kategori ?? ''} ${mekan.ad}`) && (
+                    <span className="inline-flex items-center rounded-full bg-ink-700 text-white text-[10px] font-bold px-2 py-0.5">18+</span>
+                  )}
                 </div>
                 <p className="text-sm text-ink-400 mt-0.5">
                   {[mekan.kategori, mesafeMetni(oneri.mesafeMetre)].filter(Boolean).join(' · ')}
@@ -184,6 +217,15 @@ export function MekanSayfasi({
               <p className="text-sm text-ink-600 mb-3 leading-relaxed">{isletme?.aciklama ?? kampanya?.aciklama}</p>
             )}
 
+            {kampanya && !benim && (
+              <PlanOnerisi
+                puan={ziyaret + PUANLAR.plan}
+                kuruldu={planKuruldu}
+                onKendime={() => void planYap()}
+                onArkadaslarla={() => setPlanKapsami('arkadas')}
+              />
+            )}
+
             {isletme?.indirim && !benim && (
               <div className="rounded-2xl bg-teal-50 border border-teal-100 p-4 mb-4">
                 <p className="flex items-center gap-2 text-sm font-semibold text-teal-800">
@@ -191,6 +233,9 @@ export function MekanSayfasi({
                   {isletme.indirim.metin}
                 </p>
                 {isletme.indirim.kosul && <p className="text-xs text-teal-700 mt-1">{isletme.indirim.kosul}</p>}
+                <p className="text-xs text-teal-700 mt-1">
+                  Kasada QR'ını okutunca +{ziyaret} {LOOPPOINT_ADI} kazanırsın.
+                </p>
                 <button
                   onClick={() => void koduAl()}
                   disabled={kodAliniyor}
@@ -198,9 +243,13 @@ export function MekanSayfasi({
                 >
                   {kodAliniyor ? 'Kod hazırlanıyor…' : 'İndirim kodunu al'}
                 </button>
-                {kodHatasi && <p className="text-xs text-rose-600 mt-2">{kodHatasi}</p>}
               </div>
             )}
+
+            {qrVar && isletme.oduller.length > 0 && (
+              <Oduller oduller={isletme.oduller} mesgul={kodAliniyor} onKullan={(o) => void koduAl(o)} />
+            )}
+            {kodHatasi && <p className="text-xs text-rose-600 -mt-2 mb-4">{kodHatasi}</p>}
 
             <div className="flex flex-col gap-2.5 mb-4">
               {mekan.adres && <IletisimSatiri ikon="MapPin">{mekan.adres}</IletisimSatiri>}
@@ -276,9 +325,22 @@ export function qrSvg(metin: string): string {
 }
 
 // What to show at the till: the business scans the QR with its phone's
-// camera (or types the code) and its page says whether it's good today.
-// The clock ticks so a screenshot from another day is easy to spot.
-function IndirimEkrani({ kod, isletme, onGeri }: { kod: IndirimKodu; isletme: IsletmeProfili; onGeri: () => void }) {
+// camera (or types the code) and its page says whether it's good today,
+// counts the LoopPoint and spends the reward when one was picked. The
+// clock ticks so a screenshot from another day is easy to spot.
+function IndirimEkrani({
+  kod,
+  isletme,
+  odul,
+  puan,
+  onGeri,
+}: {
+  kod: IndirimKodu
+  isletme: IsletmeProfili
+  odul: IsletmeOdulu | null
+  puan: number
+  onGeri: () => void
+}) {
   const [simdi, setSimdi] = useState(() => new Date())
   useEffect(() => {
     const z = setInterval(() => setSimdi(new Date()), 1000)
@@ -291,12 +353,19 @@ function IndirimEkrani({ kod, isletme, onGeri }: { kod: IndirimKodu; isletme: Is
   return (
     <div className="text-center">
       <p className="text-sm text-ink-400">{isletme.ad}</p>
-      <p className="font-semibold text-ink-700 mt-1">{isletme.indirim?.metin}</p>
-      <div className="my-4 rounded-3xl bg-white border-2 border-dashed border-teal-300 p-5">
+      <p className="font-semibold text-ink-700 mt-1">
+        {odul ? `🎁 ${odul.metin}` : (isletme.indirim?.metin ?? `${LOOPPOINT_ADI} kazan`)}
+      </p>
+      {odul && (
+        <p className="text-xs text-amber-700 mt-0.5">
+          {odul.puan} {LOOPPOINT_ADI} harcanacak
+        </p>
+      )}
+      <div className={`my-4 rounded-3xl bg-white border-2 border-dashed p-5 ${odul ? 'border-amber-300' : 'border-teal-300'}`}>
         <div
           className="w-48 h-48 mx-auto [&>svg]:w-full [&>svg]:h-full"
           role="img"
-          aria-label="İndirim QR kodu"
+          aria-label={odul ? 'Ödül QR kodu' : 'İndirim QR kodu'}
           // Generated locally from our own URL; no outside input.
           dangerouslySetInnerHTML={{ __html: svg }}
         />
@@ -306,12 +375,99 @@ function IndirimEkrani({ kod, isletme, onGeri }: { kod: IndirimKodu; isletme: Is
         </p>
       </div>
       <p className="text-xs text-ink-400 leading-relaxed mb-4">
-        Kasada göster: işletme QR'ı telefonunun kamerasıyla okutunca indirimin onaylanır. Kod yalnızca bugün geçerli.
-        {isletme.indirim?.kosul && ` ${isletme.indirim.kosul}.`}
+        {odul
+          ? 'Kasada göster: işletme QR\'ı telefonunun kamerasıyla okutunca ödülün onaylanır.'
+          : `Kasada göster: işletme QR'ı telefonunun kamerasıyla okutunca indirimin onaylanır ve +${puan} ${LOOPPOINT_ADI} kazanırsın.`}{' '}
+        Kod yalnızca bugün geçerli.
+        {!odul && isletme.indirim?.kosul && ` ${isletme.indirim.kosul}.`}
       </p>
       <button onClick={onGeri} className="btn-ghost border border-ink-100 w-full text-sm">
         Geri
       </button>
+    </div>
+  )
+}
+
+// A sponsored place suggests a plan: going earns LoopPoint, more with
+// friends from the same plan.
+function PlanOnerisi({
+  puan,
+  kuruldu,
+  onKendime,
+  onArkadaslarla,
+}: {
+  puan: number
+  kuruldu: boolean
+  onKendime: () => void
+  onArkadaslarla: () => void
+}) {
+  return (
+    <div className="rounded-2xl bg-bolum-soluk border border-bolum/20 p-4 mb-4">
+      <p className="text-sm font-semibold text-bolum-koyu flex items-center gap-2">
+        <Icon name="CalendarPlus" className="w-4 h-4" />
+        Plan önerisi
+      </p>
+      <p className="text-sm text-ink-600 mt-1 leading-relaxed">
+        Bu hafta buraya bir plan yap, gittiğinde kasada QR'ını okut: <b>+{puan} {LOOPPOINT_ADI}</b>. Arkadaşlarınla aynı plana gelirseniz her biriniz{' '}
+        <b>+{PUANLAR.grup}</b> daha kazanır.
+      </p>
+      {kuruldu ? (
+        <p className="text-sm text-teal-700 mt-3 flex items-center gap-1.5">
+          <Icon name="Check" className="w-4 h-4" />
+          Plan kuruldu, davetler gitti. Gittiğin gün QR'ını okutmayı unutma.
+        </p>
+      ) : (
+        <div className="flex gap-2 mt-3">
+          <button onClick={onKendime} className="btn-ghost border border-ink-100 bg-white flex-1 text-sm">
+            Kendime plan
+          </button>
+          <button onClick={onArkadaslarla} className="btn-primary flex-1 text-sm flex items-center justify-center gap-1.5">
+            <Icon name="Users" className="w-4 h-4" />
+            Arkadaşlarla
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// The business's rewards and what I have to spend on them.
+function Oduller({ oduller, mesgul, onKullan }: { oduller: IsletmeOdulu[]; mesgul: boolean; onKullan: (o: IsletmeOdulu) => void }) {
+  const { ozet, yukleniyor } = useLooppoint()
+  return (
+    <div className="rounded-2xl bg-amber-50 border border-amber-100 p-4 mb-4">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-semibold text-amber-800 flex items-center gap-2">
+          <Icon name="Star" className="w-4 h-4" />
+          {LOOPPOINT_ADI} ödülleri
+        </p>
+        <span className="text-xs font-semibold text-amber-800 tabular-nums">
+          {yukleniyor && ozet.kazanilan === 0 ? '…' : `Bakiyen ${ozet.bakiye}`}
+        </span>
+      </div>
+      <ul className="mt-2 flex flex-col gap-2">
+        {oduller.map((o) => {
+          const eksik = o.puan - ozet.bakiye
+          return (
+            <li key={o.id} className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm text-ink-700">{o.metin}</p>
+                <p className="text-xs text-amber-700 tabular-nums">
+                  {o.puan} {LOOPPOINT_ADI}
+                  {eksik > 0 && ` · ${eksik} daha lazım`}
+                </p>
+              </div>
+              <button
+                onClick={() => onKullan(o)}
+                disabled={mesgul || eksik > 0}
+                className="shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold bg-amber-500 text-white disabled:bg-amber-200 disabled:text-amber-700"
+              >
+                Kullan
+              </button>
+            </li>
+          )
+        })}
+      </ul>
     </div>
   )
 }

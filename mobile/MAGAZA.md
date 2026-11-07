@@ -170,8 +170,10 @@ türü takip için kullanılmıyor. Her tür için amaç: **Uygulama İşlevsell
 
 - **Apple yaş derecelendirmesi anketi:** Kullanıcı tarafından oluşturulan içerik:
   **Evet**. Kullanıcılar arası mesajlaşma: **Evet**. Şiddet, cinsellik, kumar,
-  alkol, uyuşturucu: **Yok**. İçerik denetimi (şikâyet/engelleme): **Evet**.
-  Beklenen sonuç: **13+**.
+  uyuşturucu: **Yok**. Alkol, tütün referansları: **Seyrek/Hafif** (bar ve
+  nargile mekânları yalnızca 18 yaşından büyük olduğunu onaylayanlara
+  gösteriliyor; bahis mekânları hiç gösterilmiyor). İçerik denetimi
+  (şikâyet/engelleme): **Evet**. Beklenen sonuç: **13+**.
 - **Google içerik derecelendirmesi (IARC):** Kategori "Sosyal veya iletişim";
   kullanıcılar etkileşime giriyor ve içerik paylaşıyor: **Evet**. Beklenen sonuç:
   **Genç / PEGI 12**.

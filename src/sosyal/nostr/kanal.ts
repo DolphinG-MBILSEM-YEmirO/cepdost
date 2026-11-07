@@ -1,5 +1,6 @@
 import { getConversationKey } from 'nostr-tools/nip44'
-import { aesAnahtari, hexe, hmac, sha256, sha256Hex } from './kodlama'
+import { hmac, sha256, sha256Hex } from './kodlama'
+import { adlaTuret, dEtiketiTuret, gizlidenTuret } from '../../../shared/kanalTuretme'
 
 // A channel is a shared secret turned into everything needed to read and
 // write one stream of records on the relays:
@@ -40,22 +41,11 @@ async function gizlidenKanal(
   gizli: Uint8Array,
   ek: Pick<Kanal, 'karsi' | 'sahip' | 'grupId'> = {},
 ): Promise<Kanal> {
-  const [konu, fotoKonu, sifreHam, dAnahtari] = await Promise.all([
-    hmac(gizli, 'cepdost/konu'),
-    hmac(gizli, 'cepdost/foto'),
-    hmac(gizli, 'cepdost/sifre'),
-    hmac(gizli, 'cepdost/d'),
-  ])
-  return { tur, konu: hexe(konu), fotoKonu: hexe(fotoKonu), sifre: await aesAnahtari(sifreHam), dAnahtari, ...ek }
+  return { tur, ...(await gizlidenTuret(gizli)), ...ek }
 }
 
 async function acikKanal(tur: KanalTuru, ad: string): Promise<Kanal> {
-  const [konu, fotoKonu, dAnahtari] = await Promise.all([
-    sha256Hex(`cepdost/${ad}/konu`),
-    sha256Hex(`cepdost/${ad}/foto`),
-    sha256(`cepdost/${ad}/d`),
-  ])
-  return { tur, konu, fotoKonu, sifre: null, dAnahtari }
+  return { tur, ...(await adlaTuret(ad)) }
 }
 
 export async function kendiKanali(gizliAnahtar: Uint8Array): Promise<Kanal> {
@@ -112,5 +102,5 @@ export async function gelenKutusuKonusu(pubkey: string): Promise<string> {
 }
 
 export async function dEtiketi(kanal: Pick<Kanal, 'dAnahtari'>, anahtar: string): Promise<string> {
-  return hexe(await hmac(kanal.dAnahtari, anahtar)).slice(0, 40)
+  return dEtiketiTuret(kanal.dAnahtari, anahtar)
 }

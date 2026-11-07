@@ -5,8 +5,9 @@ import { fotoBilgisiAl, fotoHazirla, fotoSil, fotoUrl, fotoYayinla, type FotoBil
 import { isletmeKanali, type Kanal } from './nostr/kanal'
 import { rastgeleId } from './nostr/kodlama'
 import { engellenenler } from './engel'
-import { mesafe, yasakliMi } from '../../shared/yakinMekanlar'
+import { mesafe, yasakliMi, yetiskinMi } from '../../shared/yakinMekanlar'
 import type { EpostaOnayi } from '../../shared/epostaOnayi'
+import { AZAMI_ODUL, ODUL_EN_AZ, ODUL_EN_COK, odulleriAl, type IsletmeOdulu } from '../../shared/looppoint'
 
 // A business's public profile: what people see when its place comes up in
 // the feed's "Yakınında" (photos, contact, hours, a short description) and
@@ -49,6 +50,9 @@ export interface IsletmeProfili {
   saatler: string | null
   fotolar: IsletmeFotosu[]
   indirim: IsletmeIndirimi | null
+  // What LoopPoint buys here (shared/looppoint.ts), e.g. a free drink or
+  // reservation priority.
+  oduller: IsletmeOdulu[]
   guncelleme: number
   onay: EpostaOnayi | null
 }
@@ -90,10 +94,18 @@ export function telefonAl(deger: unknown): string | null {
   return metin && /^[+\d][\d\s()-]{6,}$/.test(metin) ? metin : null
 }
 
+// A discount or reward may not be on alcohol or tobacco (laws 4250 and
+// 4207 ban promoting them), whatever the place is.
+export function urunYasakliMi(metin: string): boolean {
+  return yetiskinMi(metin)
+}
+
 function indirimAl(deger: unknown): IsletmeIndirimi | null {
   if (!nesneMi(deger)) return null
   const metin = bosaNull(deger.metin, 80)
-  return metin ? { metin, kosul: bosaNull(deger.kosul, 120) } : null
+  const kosul = bosaNull(deger.kosul, 120)
+  if (!metin || urunYasakliMi(`${metin} ${kosul ?? ''}`)) return null
+  return { metin, kosul }
 }
 
 // A stored record → a profile, or null if it isn't a usable one.
@@ -107,7 +119,7 @@ export function isletmeKur(k: Pick<SosyalKayit, 'yazar' | 'veri'>): IsletmeProfi
   const boylam = sayiAl(v.boylam)
   if (!ad || !kategori || !adres || enlem === null || boylam === null) return null
   if (Math.abs(enlem) > 90 || Math.abs(boylam) > 180) return null
-  // The same rule as the feed: no alcohol, hookah, tobacco or betting.
+  // The same rule as the feed: no betting places.
   if (yasakliMi(`${kategori} ${ad}`)) return null
   const fotolar = Array.isArray(v.fotolar)
     ? v.fotolar.slice(0, AZAMI_ISLETME_FOTO).flatMap((f): IsletmeFotosu[] => {
@@ -130,6 +142,7 @@ export function isletmeKur(k: Pick<SosyalKayit, 'yazar' | 'veri'>): IsletmeProfi
     saatler: bosaNull(v.saatler, 120),
     fotolar,
     indirim: indirimAl(v.indirim),
+    oduller: odulleriAl(v.oduller, urunYasakliMi),
     guncelleme: sayiAl(v.guncelleme) ?? 0,
     onay: nesneMi(v.onay) ? (v.onay as unknown as EpostaOnayi) : null,
   }
@@ -156,8 +169,19 @@ export async function isletmemiKaydet(
   const ad = girdi.ad.trim()
   const kategori = girdi.kategori.trim()
   if (!ad || !kategori || !girdi.adres.trim()) throw new Error('Mekanın adı, türü ve adresi gerekli.')
-  if (yasakliMi(`${kategori} ${ad}`)) throw new Error('Alkol, nargile, tütün ve bahis mekanları Sharloop\'ta yer alamaz.')
+  if (yasakliMi(`${kategori} ${ad}`)) throw new Error('Bahis mekanları Sharloop\'ta yer alamaz.')
+  const indirimMetni = `${girdi.indirim?.metin ?? ''} ${girdi.indirim?.kosul ?? ''}`
+  if (girdi.indirim?.metin.trim() && urunYasakliMi(indirimMetni)) {
+    throw new Error('İndirim alkollü içki ya da tütün ürünlerinde olamaz. Örneğin "Hesapta %10 indirim" yazabilirsin.')
+  }
   if (!Number.isFinite(girdi.enlem) || !Number.isFinite(girdi.boylam)) throw new Error('Mekanın konumunu ekle.')
+  const oduller = girdi.oduller.filter((o) => o.metin.trim()).slice(0, AZAMI_ODUL)
+  for (const o of oduller) {
+    if (urunYasakliMi(o.metin)) throw new Error('Ödüller alkollü içki ya da tütün ürünü olamaz.')
+    if (!Number.isInteger(o.puan) || o.puan < ODUL_EN_AZ || o.puan > ODUL_EN_COK) {
+      throw new Error(`Ödül puanı ${ODUL_EN_AZ} ile ${ODUL_EN_COK} arasında olmalı.`)
+    }
+  }
 
   const m = motor()
   const k = await kanalAl()
@@ -184,6 +208,7 @@ export async function isletmemiKaydet(
     saatler: girdi.saatler?.trim().slice(0, 120) || null,
     fotolar: sonFotolar.map((f) => ({ id: f.id, ...f.bilgi })),
     indirim: girdi.indirim?.metin.trim() ? { metin: girdi.indirim.metin.trim().slice(0, 80), kosul: girdi.indirim.kosul?.trim().slice(0, 120) || null } : null,
+    oduller: oduller.map((o) => ({ id: o.id, metin: o.metin.trim().slice(0, 80), puan: o.puan })),
     guncelleme: simdiMs(),
     onay,
   })

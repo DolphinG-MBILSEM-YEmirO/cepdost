@@ -2,6 +2,8 @@
 // and keep live subscriptions open across reconnects. Data is spread over
 // several free public relays so the app keeps working when one is down.
 
+import { VARSAYILAN_ROLELER } from '../../../shared/roleler'
+
 export interface NostrOlayi {
   id: string
   pubkey: string
@@ -22,13 +24,9 @@ export interface Filtre {
   [etiket: `#${string}`]: string[] | undefined
 }
 
-// Free public relays that accept application data (kind 30078).
-export const VARSAYILAN_ROLELER = [
-  'wss://relay.damus.io',
-  'wss://nos.lol',
-  'wss://relay.primal.net',
-  'wss://offchain.pub',
-]
+// Free public relays that accept application data (kind 30078). Listed in
+// shared/ because the server writes LoopPoint records to the same ones.
+export { VARSAYILAN_ROLELER }
 
 const BAGLANMA_SURESI_MS = 4000
 const YAYIN_SURESI_MS = 6000

@@ -26,7 +26,11 @@
     .gecersiz { background: #fdecef; color: #a3213b; border: 1px solid #f5c2cc; }
     .bilgi { background: var(--card); color: var(--muted); border: 1px solid var(--line); font-weight: 500; font-size: 1rem; }
     .sonuc small { display: block; font-weight: 500; font-size: 0.9rem; margin-top: 6px; }
+    .sonuc .puan { display: block; margin-top: 12px; padding-top: 12px; border-top: 1px solid currentColor; font-size: 1rem; }
+    .kasa { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; padding: 4px 10px; border-radius: 999px;
+      background: #e6f7f1; color: #0f6b4f; font-size: 0.8rem; font-weight: 600; }
     @media (prefers-color-scheme: dark) {
+      .kasa { background: #10372c; color: #8be3c3; }
       .gecerli { background: #10372c; color: #8be3c3; border-color: #1d5a47; }
       .gecersiz { background: #3d1820; color: #ff9fb1; border-color: #6a2533; }
     }
@@ -36,7 +40,8 @@
 <main>
   <header><a class="brand" href="/">Sharloop</a></header>
   <h1 id="baslik">İndirim kodu doğrula</h1>
-  <p class="muted" id="aciklama">Müşterinin Sharloop'ta gösterdiği QR'ı telefonunuzun kamerasıyla okutun ya da 8 haneli kodu yazın. Kodlar yalnızca alındıkları gün geçerlidir.</p>
+  <span class="kasa" id="kasaRozeti" hidden>✓ Bu telefon kasa olarak ayarlı</span>
+  <p class="muted" id="aciklama">Müşterinin Sharloop'ta gösterdiği QR'ı kasa telefonunuzun kamerasıyla okutun ya da 8 haneli kodu yazın. Kodlar yalnızca alındıkları gün geçerlidir. LoopPoint yalnızca QR okutulunca kazanılır.</p>
 
   <form id="form" autocomplete="off">
     <input id="kod" inputmode="text" maxlength="9" placeholder="ABCD-EFGH" aria-label="İndirim kodu" required />
@@ -44,20 +49,37 @@
   </form>
   <div id="sonuc" role="status" aria-live="polite"></div>
 
-  <footer>Bu sayfa yalnızca kodun bugün ve sizin işletmeniz için geçerli olup olmadığını söyler; müşteri hakkında bilgi göstermez.
+  <footer>Bu sayfa yalnızca kodun bugün ve sizin işletmeniz için geçerli olup olmadığını, müşterinin LoopPoint seviyesini ve ödülünü söyler; müşteri hakkında başka bilgi göstermez.
     Sorular için <a href="mailto:sharloop.destek@gmail.com">sharloop.destek@gmail.com</a></footer>
 </main>
 <script>
   // The business comes from the link in its panel or the customer's QR
-  // (?i=<business key>); the QR also carries the code (&kod=...).
+  // (?i=<business key>); the QR also carries the code (&kod=), the
+  // customer (&k=), their plan hashes (&p=) and a reward to spend (&o=).
+  // The panel's till link adds #kasa=<till key>, kept here so this
+  // phone's scans earn customers LoopPoint.
   const params = new URLSearchParams(location.search)
   const isletme = params.get('i') || ''
   const form = document.getElementById('form')
   const girdi = document.getElementById('kod')
   const dugme = document.getElementById('dugme')
   const sonuc = document.getElementById('sonuc')
+  const KASA = 'sharloop_kasa_' + isletme
 
-  function goster(sinif, metin, alt) {
+  function kasaOku() {
+    try { return localStorage.getItem(KASA) || '' } catch { return '' }
+  }
+
+  // The till link: keep the key, then drop it from the address bar.
+  const hash = new URLSearchParams(location.hash.slice(1))
+  const yeniKasa = hash.get('kasa') || ''
+  if (isletme && /^[0-9a-f]{32}$/.test(yeniKasa)) {
+    try { localStorage.setItem(KASA, yeniKasa) } catch {}
+    history.replaceState(null, '', location.pathname + location.search)
+  }
+  document.getElementById('kasaRozeti').hidden = !kasaOku()
+
+  function goster(sinif, metin, alt, puan) {
     sonuc.className = 'sonuc ' + sinif
     sonuc.textContent = metin
     if (alt) {
@@ -65,11 +87,19 @@
       s.textContent = alt
       sonuc.appendChild(s)
     }
+    if (puan) {
+      const p = document.createElement('span')
+      p.className = 'puan'
+      p.textContent = puan
+      sonuc.appendChild(p)
+    }
   }
 
   if (!isletme) {
     form.hidden = true
     goster('bilgi', 'Bu sayfayı Sharloop\'taki işletme panelinizden ya da müşterinin QR kodundan açın.')
+  } else if (yeniKasa && !params.get('kod')) {
+    goster('gecerli', '✓ Bu telefon artık kasanız', 'Müşterilerin Sharloop QR\'ını bu telefonun kamerasıyla okutun. İndirim onaylanır, müşteri LoopPoint kazanır.')
   }
 
   // Types as "ABCD-EFGH" whatever is entered.
@@ -78,18 +108,52 @@
     girdi.value = temiz.length > 4 ? temiz.slice(0, 4) + '-' + temiz.slice(4) : temiz
   })
 
-  async function kontrolEt() {
+  function puanMetni(veri) {
+    const sp = veri.looppoint
+    if (!sp) {
+      if (veri.kasaGerekli) return 'LoopPoint için bu telefonu işletme panelinizdeki "Kasa bağlantısı" ile bir kez açın.'
+      return veri.error || ''
+    }
+    const kazanc = sp.kazanilan > 0 ? 'Müşteri +' + sp.kazanilan + ' LoopPoint kazandı. ' : 'Bugünkü ziyaret zaten sayıldı. '
+    return kazanc + 'Seviyesi: ' + sp.seviye + '.'
+  }
+
+  // Asks for points only when the QR names the customer; a typed code is
+  // checked for the discount alone.
+  async function sor(kodMetni, qrdan) {
+    const musteri = qrdan ? (params.get('k') || '') : ''
+    if (!musteri) {
+      const yanit = await fetch('/api/kupon?i=' + encodeURIComponent(isletme) + '&kod=' + encodeURIComponent(kodMetni))
+      return { yanit, veri: await yanit.json().catch(() => null) }
+    }
+    const yanit = await fetch('/api/looppoint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        islem: 'dogrula', i: isletme, kod: kodMetni, k: musteri,
+        p: params.get('p') || '', o: params.get('o') || '', kasa: kasaOku(),
+      }),
+    })
+    return { yanit, veri: await yanit.json().catch(() => null) }
+  }
+
+  async function kontrolEt(qrdan) {
     dugme.disabled = true
     goster('bilgi', 'Kontrol ediliyor…')
     try {
-      const yanit = await fetch('/api/kupon?i=' + encodeURIComponent(isletme) + '&kod=' + encodeURIComponent(girdi.value))
-      const veri = await yanit.json().catch(() => null)
+      const { yanit, veri } = await sor(girdi.value, qrdan)
       if (!yanit.ok || !veri) {
         goster('gecersiz', (veri && veri.error) || 'Şu an kontrol edilemedi. Biraz sonra tekrar deneyin.')
-      } else if (veri.gecerli) {
-        goster('gecerli', '✓ İndirim onaylandı', 'Bu kod bugün ve sizin işletmeniz için geçerli. Panelinizde belirlediğiniz indirimi uygulayın.')
-      } else {
+      } else if (!veri.gecerli) {
         goster('gecersiz', '✗ Kod geçerli değil', 'Yanlış yazılmış, başka bir güne ya da başka bir işletmeye ait olabilir.')
+      } else if (veri.odul) {
+        const o = veri.odul
+        if (o.durum === 'tamam') goster('gecerli', '🎁 Ödül onaylandı: ' + o.metin, 'Müşteriye ödülünü verin. ' + o.puan + ' LoopPoint düşüldü.', puanMetni(veri))
+        else if (o.durum === 'yetersiz') goster('gecersiz', 'Ödül için puan yetmiyor', '"' + o.metin + '" için ' + o.puan + ' LoopPoint gerekiyor.', puanMetni(veri))
+        else if (o.durum === 'kullanildi') goster('gecersiz', 'Bu ödül bugün kullanıldı', '"' + o.metin + '" bu müşteriye bugün zaten verildi.', puanMetni(veri))
+        else goster('gecersiz', 'Bu ödül artık yok', 'Ödülü panelinizden kaldırmış olabilirsiniz.', puanMetni(veri))
+      } else {
+        goster('gecerli', '✓ İndirim onaylandı', 'Bu kod bugün ve sizin işletmeniz için geçerli. Panelinizde belirlediğiniz indirimi uygulayın.', qrdan ? puanMetni(veri) : '')
       }
     } catch {
       goster('gecersiz', 'İnternet bağlantısı yok. Tekrar deneyin.')
@@ -100,14 +164,14 @@
 
   form.addEventListener('submit', (e) => {
     e.preventDefault()
-    void kontrolEt()
+    void kontrolEt(false)
   })
 
   // Opened from the customer's QR: check right away.
   const qrKodu = (params.get('kod') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)
   if (isletme && qrKodu.length === 8) {
     girdi.value = qrKodu.slice(0, 4) + '-' + qrKodu.slice(4)
-    void kontrolEt()
+    void kontrolEt(true)
   }
 </script>
 </body>

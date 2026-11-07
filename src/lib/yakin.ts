@@ -43,6 +43,42 @@ export function yakinIzniniKaydet(acik: boolean): void {
   }
 }
 
+// The strip's last list, so switching feeds or coming back doesn't ask
+// the phone and the relays again every time.
+const ONBELLEK_MS = 10 * 60_000
+let onbellek: { zaman: number; oneriler: YakinOneri[] } | null = null
+
+export function tazeOnbellek(): YakinOneri[] | null {
+  return onbellek && Date.now() - onbellek.zaman < ONBELLEK_MS ? onbellek.oneriler : null
+}
+
+export function yakinOnbellegeYaz(oneriler: YakinOneri[]): void {
+  onbellek = { zaman: Date.now(), oneriler }
+}
+
+const YETISKIN_ANAHTARI = 'cepdost_yetiskin'
+
+// Whether the person said, on this device, that they are 18 or older. Only
+// then are alcohol, hookah and tobacco places shown (shared/yakinMekanlar).
+export function yetiskinOnayiVarMi(): boolean {
+  try {
+    return localStorage.getItem(YETISKIN_ANAHTARI) === '1'
+  } catch {
+    return false
+  }
+}
+
+export function yetiskinOnayiniKaydet(acik: boolean): void {
+  try {
+    if (acik) localStorage.setItem(YETISKIN_ANAHTARI, '1')
+    else localStorage.removeItem(YETISKIN_ANAHTARI)
+  } catch {
+    // Private mode: off again next time.
+  }
+  // The list changes with this choice.
+  onbellek = null
+}
+
 export type KonumHatasi = 'izin-yok' | 'bulunamadi'
 
 // The phone's position, or why there is none.
@@ -81,6 +117,7 @@ export function yakinlariBirlestir(
   puanlar: Map<string, MekanPuani>,
   konum: Konum,
   bugun = bugunTR(),
+  yetiskin = yetiskinOnayiVarMi(),
 ): YakinOneri[] {
   const ayniYer = (a: YakinMekan, b: { ad: string; enlem: number; boylam: number }) =>
     mekanAnahtari(a.ad) === mekanAnahtari(b.ad) && mesafe(a, b) <= AYNI_MEKAN_METRE
@@ -88,7 +125,7 @@ export function yakinlariBirlestir(
   // A sponsored business shows once, in the paid slot.
   const organikIsletmeler = isletmeler.filter((p) => !sponsorlular.has(p.id))
   const harita = mekanlar.filter((m) => !isletmeler.some((p) => ayniYer(m, p)))
-  const liste = onerileriSirala([...organikIsletmeler.map(isletmedenMekan), ...harita], kampanyalar, puanlar, konum, bugun)
+  const liste = onerileriSirala([...organikIsletmeler.map(isletmedenMekan), ...harita], kampanyalar, puanlar, konum, bugun, yetiskin)
   const profil = new Map(isletmeler.map((p) => [p.id, p]))
   return liste.map((o) => {
     const id = o.kampanya?.isletme ?? (o.mekan.id.startsWith('isletme:') ? o.mekan.id.slice('isletme:'.length) : null)
@@ -119,7 +156,11 @@ export interface IndirimKodu {
   dogrulama: string
 }
 
-export async function indirimKoduAl(isletme: string, kullanici: string): Promise<IndirimKodu> {
+export async function indirimKoduAl(
+  isletme: string,
+  kullanici: string,
+  ek: { isaretler?: string[]; odul?: string } = {},
+): Promise<IndirimKodu> {
   let res: Response
   try {
     res = await fetch('/api/kupon', {
@@ -133,7 +174,11 @@ export async function indirimKoduAl(isletme: string, kullanici: string): Promise
   }
   const veri = (await res.json().catch(() => null)) as { kod?: string; tarih?: string; error?: string } | null
   if (!res.ok || !veri?.kod || !veri.tarih) throw new Error(veri?.error ?? 'Kod alınamadı. Biraz sonra tekrar dene.')
-  return { kod: veri.kod, tarih: veri.tarih, dogrulama: dogrulamaAdresi(SITE_ADRESI, isletme, veri.kod) }
+  return {
+    kod: veri.kod,
+    tarih: veri.tarih,
+    dogrulama: dogrulamaAdresi(SITE_ADRESI, isletme, veri.kod, { kullanici, ...ek }),
+  }
 }
 
 // The place on Google Maps, where its reviews, photos and opening hours

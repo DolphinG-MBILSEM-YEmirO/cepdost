@@ -31,7 +31,7 @@ const KATEGORI_GRUPLARI = ['63be6904847c3692a84b9bb5', '4d4b7104d754a06370d81259
 // Places worth going out to with friends; offices, banks and the like are
 // left out even if the category filter above isn't honoured.
 const GIDILECEK_YER =
-  /restaurant|restoran|caf[eé]|coffee|kahve|bakery|f[ıi]r[ıi]n|pastane|patisserie|pastry|dessert|tatl[ıi]|ice cream|dondurma|tea|çay|food|pizza|burger|kebab|kebap|döner|doner|breakfast|kahvalt|sandwich|diner|bistro|noodle|sushi|steak|seafood|balık|köfte|pide|lahmacun|börek|simit|waffle|park|museum|müze|gallery|galeri|cinema|sinema|movie|theater|tiyatro|bowling|arcade|escape|book|kitap|library|kütüphane|beach|plaj|garden|bahçe|zoo|aquarium|akvaryum|climbing|tırmanış|art|sanat|music venue|concert|market|pazar|plaza|landmark|viewpoint|seyir|scenic|historic|tarihi/i
+  /restaurant|restoran|caf[eé]|coffee|kahve|bakery|f[ıi]r[ıi]n|pastane|patisserie|pastry|dessert|tatl[ıi]|ice cream|dondurma|tea|çay|food|pizza|burger|kebab|kebap|döner|doner|breakfast|kahvalt|sandwich|diner|bistro|noodle|sushi|steak|seafood|balık|köfte|pide|lahmacun|börek|simit|waffle|park|museum|müze|gallery|galeri|cinema|sinema|movie|theater|tiyatro|bowling|arcade|escape|book|kitap|library|kütüphane|beach|plaj|garden|bahçe|zoo|aquarium|akvaryum|climbing|tırmanış|art|sanat|music venue|concert|market|pazar|plaza|landmark|viewpoint|seyir|scenic|historic|tarihi|bar|pub|meyhane|nightlife|hookah|nargile|brewery|winery|wine|beer|cocktail/i
 
 function sayiAl(deger: string | null): number | null {
   if (deger === null || deger.trim() === '') return null
