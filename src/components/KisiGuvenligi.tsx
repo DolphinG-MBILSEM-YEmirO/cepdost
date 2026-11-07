@@ -20,7 +20,7 @@ export function KisiGuvenligi({ kisi, onEngellendi }: KisiGuvenligiProps) {
     setEngelOnay(false)
     setHata(null)
     try {
-      await engelle(kisi.id)
+      await engelle(kisi.id, { ad: kisi.ad, kullaniciAdi: kisi.kullaniciAdi ?? null })
       onEngellendi?.()
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Engellenemedi, tekrar dener misin?')

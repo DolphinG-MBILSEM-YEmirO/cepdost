@@ -3,6 +3,7 @@ import { Icon } from './Icon'
 import { ConfirmDialog } from './ConfirmDialog'
 import { DogrulanmisEposta, EpostaDogrulama } from './EpostaDogrulama'
 import { SifreBelirle } from './SifreBelirle'
+import { EngelliKisiler } from './EngelliKisiler'
 import { profilimiGetir } from '../sosyal/api'
 import { useAuth } from '../sosyal/auth'
 import { useSosyalSurum } from '../sosyal/cekirdek'
@@ -12,7 +13,7 @@ import { useGeriIleKapat } from '../lib/geriTusu'
 
 // Settings card for the account itself: the verified email, the recovery
 // code (the account's key, the last resort if the password is forgotten),
-// changing the password, and signing out of this device.
+// the people I blocked, changing the password, and signing out.
 export function HesapGuvenligi() {
   const { kurtarmaKodunuGetir, cikis, hesabiSil } = useAuth()
   const [kodGorunur, setKodGorunur] = useState(false)
@@ -114,6 +115,8 @@ export function HesapGuvenligi() {
       ) : (
         <p className="text-xs text-ink-400 mb-5">Bu cihazda oturum yok.</p>
       )}
+
+      <EngelliKisiler />
 
       <div className="flex flex-col gap-2">
         <button

@@ -342,10 +342,16 @@ export async function arkadasliktanCik(arkadaslikId: string): Promise<void> {
 // Blocks someone: their messages, memories and requests stop showing, and
 // a friendship or request between us ends (which also takes them off my
 // broadcast channel). They are not told.
-export async function engelle(kisiId: string): Promise<void> {
+// The name is kept with the block so the block list in Settings can show
+// who it is after the friendship is gone.
+export async function engelle(kisiId: string, kim?: { ad?: string | null; kullaniciAdi?: string | null }): Promise<void> {
   const m = motor()
   if (kisiId === m.benimId) throw new Error('Kendini engelleyemezsin.')
-  await m.yayinla(await m.ben(), TUR.engel, `${ENGEL_ONEKI}${kisiId}`, { zaman: simdiMs() })
+  await m.yayinla(await m.ben(), TUR.engel, `${ENGEL_ONEKI}${kisiId}`, {
+    zaman: simdiMs(),
+    ad: kim?.ad ?? null,
+    kullaniciAdi: kim?.kullaniciAdi ?? null,
+  })
   const iliski = (await kanalDurumu()).iliskiler.get(kisiId)
   if (iliski && (iliski.durum === 'kabul' || iliski.durum === 'bekliyor')) await arkadasliktanCik(kisiId)
 }

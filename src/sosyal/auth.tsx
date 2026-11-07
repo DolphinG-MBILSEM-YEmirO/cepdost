@@ -42,6 +42,10 @@ interface AuthDurumu {
   hesabiSil: () => Promise<void>
 }
 
+// How long account deletion waits for this device's database to be
+// deleted before reloading anyway.
+const SILME_BEKLEME_MS = 3000
+
 const AuthContext = createContext<AuthDurumu | null>(null)
 
 export function AuthSaglayici({ children }: { children: ReactNode }) {
@@ -116,12 +120,14 @@ export function AuthSaglayici({ children }: { children: ReactNode }) {
         }
         motoruKapat()
         kimlikSil()
+        // Signed out at once, so the screen never shows the deleted account
+        // (or its half-empty setup step) while the rest is cleared.
+        setKullanici(null)
         // Plans, the archive and the settings kept on this device go too.
-        try {
-          await db.delete()
-        } catch {
-          /* nothing stored */
-        }
+        // Another open connection (the service worker uses this database
+        // too) can hold the delete back until it lets go; the page doesn't
+        // wait for that, the browser finishes the delete on its own.
+        await Promise.race([db.delete().catch(() => {}), new Promise((coz) => setTimeout(coz, SILME_BEKLEME_MS))])
         try {
           localStorage.clear()
         } catch {

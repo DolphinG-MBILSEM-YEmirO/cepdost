@@ -15,6 +15,7 @@ import { useGeriIleKapat } from '../lib/geriTusu'
 import { useSosyalSurum } from '../sosyal/cekirdek'
 import { arkadasliktanCik, davetleriGetir, type Profil } from '../sosyal/api'
 import { ortakGruplar, type Grup } from '../sosyal/gruplar'
+import { arkadasPlandaMi } from '../sosyal/ortakGecmis'
 
 // A friend's profile: who they are, the two things people usually want
 // (write to them, make a plan), what we've done together, and three tabs:
@@ -143,30 +144,23 @@ interface OrtakPlan {
 const sirala = (a: OrtakPlan, b: OrtakPlan) =>
   `${a.tarih}${a.saat ?? '99'}`.localeCompare(`${b.tarih}${b.saat ?? '99'}`)
 
-// Plans in my calendar we're both in (an invite either way, or their plan
-// link), soonest first.
-function takvimdekiOrtakPlanlar(kisiId: string): Promise<OrtakPlan[]> {
+// Upcoming plans in my calendar we're both on, soonest first. Uses the same
+// rule as the shared-history numbers in the header (invites either way,
+// their plan links, and group plans they said they're coming to), so the
+// list never disagrees with the count above it.
+async function takvimdekiOrtakPlanlar(kisiId: string): Promise<OrtakPlan[]> {
   const bugun = localDateString()
-  return db.kayitlar
-    .filter(
-      (k) =>
-        (k.arkadasId === kisiId || k.linkSahibi === kisiId) &&
-        k.durum === 'bekliyor' &&
-        !!k.tarih &&
-        k.tarih >= bugun,
-    )
-    .toArray()
-    .then((liste) =>
-      liste.map((k) => ({
-        id: k.id,
-        baslik: goruntulemeBasligi(k),
-        emoji: k.emoji ?? null,
-        tarih: k.tarih!,
-        saat: k.saat,
-        tumGun: k.tumGun === true,
-        yanitBekliyor: false,
-      })),
-    )
+  const yaklasan = await db.kayitlar.filter((k) => k.durum === 'bekliyor' && !!k.tarih && k.tarih >= bugun).toArray()
+  const plandaMi = await arkadasPlandaMi(kisiId, yaklasan)
+  return yaklasan.filter(plandaMi).map((k) => ({
+    id: k.id,
+    baslik: goruntulemeBasligi(k),
+    emoji: k.emoji ?? null,
+    tarih: k.tarih!,
+    saat: k.saat,
+    tumGun: k.tumGun === true,
+    yanitBekliyor: false,
+  }))
 }
 
 // Their invites still waiting for my answer (not in my calendar yet).
@@ -192,10 +186,11 @@ function Birlikte({
   arkadaslikId,
   onCikarildi,
 }: Pick<Props, 'arkadas' | 'onGrupAc' | 'arkadaslikId' | 'onCikarildi'>) {
-  const takvimde = useLiveQuery(() => takvimdekiOrtakPlanlar(arkadas.id), [arkadas.id])
+  const surum = useSosyalSurum()
+  // Social answers live outside the calendar table, so a new sync re-reads.
+  const takvimde = useLiveQuery(() => takvimdekiOrtakPlanlar(arkadas.id), [arkadas.id, surum])
   const [bekleyen, setBekleyen] = useState<OrtakPlan[]>([])
   const [gruplar, setGruplar] = useState<Grup[] | null>(null)
-  const surum = useSosyalSurum()
 
   useEffect(() => {
     let iptal = false
