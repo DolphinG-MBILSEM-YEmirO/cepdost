@@ -94,6 +94,9 @@ export const TUR = {
   linkYanit: 'link-yanit',
   // Where my devices take push notifications (see bildirimler.ts).
   bildirim: 'bildirim',
+  // A business's public profile: photos, contact, hours, its discount (see
+  // isletme.ts).
+  isletme: 'isletme',
   // Chat message actions (see mesajOrtak.ts and mesajIslemleri.ts).
   tepki: 'tepki',
   sabit: 'sabit',

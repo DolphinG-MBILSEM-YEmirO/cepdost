@@ -2,6 +2,7 @@ import { Icon } from './Icon'
 import { TakvimAyarlari } from './TakvimAyarlari'
 import { SohbetTemaSecici } from './SohbetTemaSecici'
 import { HesapGuvenligi } from './HesapGuvenligi'
+import { IsletmeKarti } from './IsletmePaneli'
 import { BildirimAyarlari } from './BildirimAyarlari'
 import { SLOGAN, UYGULAMA_ADI } from '../../shared/marka'
 import { yerelUygulamada } from '../lib/platform'
@@ -25,6 +26,8 @@ export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
         <SohbetTemaSecici />
 
         <TakvimAyarlari onDegisti={onDegisti} />
+
+        <IsletmeKarti />
 
         {/* Adding the web app to the Home Screen puts it in the share menu
             (Web Share Target); the store app is already installed. */}

@@ -22,7 +22,7 @@ precacheAndRoute(self.__WB_MANIFEST)
 // Only GET navigations match, so the POST share handler below is unaffected.
 // The legal pages (privacy, terms, account deletion) are plain pages of
 // their own that the store listings link to, not app screens.
-registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html'), { denylist: [/^\/api\//, /^\/legal\//] }))
+registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html'), { denylist: [/^\/api\//, /^\/legal\//, /^\/isletme\//] }))
 
 const SHARE_TARGET_PATH = '/share-target/'
 

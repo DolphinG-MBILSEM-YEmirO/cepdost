@@ -6,6 +6,7 @@ import { BosDurum } from '../ui/BosDurum'
 import { SegmentedControl } from '../ui/SegmentedControl'
 import { AkisKarti } from './AkisKarti'
 import { AniYanitlari } from './AniYanitlari'
+import { YakinMekanlar } from './YakinMekanlar'
 import { motor, motorVarMi, useSosyalSurum } from '../sosyal/cekirdek'
 import { akisAnilariGetir, gruplarimiGetir, profilleriGetir, type AkisKapsami, type Ani, type Grup } from '../sosyal/gruplar'
 import { ozettenProfil, type Profil } from '../sosyal/api'
@@ -19,7 +20,9 @@ import { akisSecenekleri, secimdekiler, yeniMi, type AkisSecimi } from '../lib/a
 // Friends answer a memory with a reaction or a comment; anyone can say
 // they want to go there too, which puts the place in their calendar. The
 // friends feed narrows to one person or group, and marks what came in
-// since the last look on this device.
+// since the last look on this device. Places near the person ("Yakınında",
+// with at most one sponsored place) sit after the first post, so the feed
+// still opens on what people shared.
 
 // How long "added to your plans" stays on screen.
 const EKLENDI_MS = 6000
@@ -203,41 +206,47 @@ export function AkisView({ onPlanAc, onAsistan, onPaylas }: Props) {
             <div className="skeleton h-72 rounded-3xl" />
           </>
         ) : anilar && anilar.length === 0 ? (
-          <div className="card lg:col-span-2">
-            <BosDurum
-              ikon="ImageIcon"
-              baslik="Henüz paylaşım yok"
-              aciklama={
-                kapsam === 'arkadaslar'
-                  ? 'Arkadaşların seninle bir mekan fotoğrafı paylaştığında burada görünecek.'
-                  : 'Herkese açık paylaşılan mekan fotoğrafları burada görünecek.'
-              }
-              eylem={onPaylas && { etiket: 'İlk paylaşımı sen yap', ikon: 'Camera', onClick: onPaylas }}
-              sikisik
-            />
-          </div>
-        ) : (
-          gorunenler?.map((a) => (
-            <AkisKarti
-              key={a.id}
-              ani={a}
-              sahip={profiller.get(a.sahip_id) ?? (a.sahip ? ozettenProfil(a.sahip_id, a.sahip) : null)}
-              grupAdi={a.grup_id ? gruplar.get(a.grup_id)?.ad : null}
-              yeni={arkadasAkisi && yeniMi(a, benimId, sonBakis)}
-              benimId={benimId}
-              onEngellendi={(kisiId) => setAnilar((l) => l?.filter((x) => x.sahip_id !== kisiId) ?? l)}
-            >
-              <AniYanitlari
-                ani={a}
-                etkilesim={etkilesimler.get(a.id) ?? BOS_ETKILESIM}
-                profiller={profiller}
-                benimId={benimId}
-                yanitlanabilir={kapsam === 'arkadaslar'}
-                onGitmek={gitmek}
-                onPlanla={planla}
+          <>
+            <div className="card lg:col-span-2">
+              <BosDurum
+                ikon="ImageIcon"
+                baslik="Henüz paylaşım yok"
+                aciklama={
+                  kapsam === 'arkadaslar'
+                    ? 'Arkadaşların seninle bir mekan fotoğrafı paylaştığında burada görünecek.'
+                    : 'Herkese açık paylaşılan mekan fotoğrafları burada görünecek.'
+                }
+                eylem={onPaylas && { etiket: 'İlk paylaşımı sen yap', ikon: 'Camera', onClick: onPaylas }}
+                sikisik
               />
-            </AkisKarti>
-          ))
+            </div>
+            <YakinMekanlar anilar={anilar} onPlanAc={onPlanAc} />
+          </>
+        ) : (
+          gorunenler?.flatMap((a, i) => {
+            const kart = (
+              <AkisKarti
+                key={a.id}
+                ani={a}
+                sahip={profiller.get(a.sahip_id) ?? (a.sahip ? ozettenProfil(a.sahip_id, a.sahip) : null)}
+                grupAdi={a.grup_id ? gruplar.get(a.grup_id)?.ad : null}
+                yeni={arkadasAkisi && yeniMi(a, benimId, sonBakis)}
+                benimId={benimId}
+                onEngellendi={(kisiId) => setAnilar((l) => l?.filter((x) => x.sahip_id !== kisiId) ?? l)}
+              >
+                <AniYanitlari
+                  ani={a}
+                  etkilesim={etkilesimler.get(a.id) ?? BOS_ETKILESIM}
+                  profiller={profiller}
+                  benimId={benimId}
+                  yanitlanabilir={kapsam === 'arkadaslar'}
+                  onGitmek={gitmek}
+                  onPlanla={planla}
+                />
+              </AkisKarti>
+            )
+            return i === 0 ? [kart, <YakinMekanlar key="yakininda" anilar={anilar ?? []} onPlanAc={onPlanAc} />] : [kart]
+          })
         )}
       </div>
 
