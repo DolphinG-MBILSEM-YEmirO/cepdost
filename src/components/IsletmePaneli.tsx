@@ -13,6 +13,8 @@ import {
   type IsletmeProfili,
 } from '../sosyal/isletme'
 import { konumAl } from '../lib/yakin'
+import { kasaAnahtariAl } from '../sosyal/sharpoint'
+import { AZAMI_ODUL, ODUL_EN_AZ, ODUL_EN_COK, SHARPOINT_ADI } from '../../shared/sharpoint'
 import { useGeriIleKapat } from '../lib/geriTusu'
 import { SITE_ADRESI } from '../../shared/marka'
 import { dogrulamaAdresi } from '../../shared/yakinMekanlar'
@@ -23,6 +25,18 @@ import { dogrulamaAdresi } from '../../shared/yakinMekanlar'
 // page the till uses to check customers' discount codes.
 
 const DESTEK = 'sharloop.destek@gmail.com'
+
+// A reward being edited: the points stay text until saved.
+interface OdulTaslagi {
+  id: string
+  metin: string
+  puan: string
+}
+
+function odulIdUret(): string {
+  const harfler = 'abcdefghijklmnopqrstuvwxyz0123456789'
+  return Array.from(crypto.getRandomValues(new Uint8Array(8)), (b) => harfler[b % harfler.length]).join('')
+}
 const TURLER = ['Kafe', 'Restoran', 'Tatlıcı', 'Fırın', 'Kahvaltı', 'Dondurmacı', 'Kitap kafe', 'Müze', 'Sinema', 'Oyun ve eğlence', 'Spor', 'Diğer']
 
 export function IsletmeKarti() {
@@ -139,6 +153,11 @@ function IsletmePaneli({
   const [indirimAcik, setIndirimAcik] = useState(!!profil?.indirim)
   const [indirimMetni, setIndirimMetni] = useState(profil?.indirim?.metin ?? '')
   const [indirimKosulu, setIndirimKosulu] = useState(profil?.indirim?.kosul ?? '')
+  const [oduller, setOduller] = useState<OdulTaslagi[]>(
+    profil?.oduller.map((o) => ({ id: o.id, metin: o.metin, puan: String(o.puan) })) ?? [],
+  )
+  const [kasa, setKasa] = useState<string | null>(null)
+  const [kasaHatasi, setKasaHatasi] = useState<string | null>(null)
   const [kaydediliyor, setKaydediliyor] = useState(false)
   const [hata, setHata] = useState<string | null>(null)
   const [kaydedildi, setKaydedildi] = useState(false)
@@ -146,6 +165,24 @@ function IsletmePaneli({
   const [konumAliniyor, setKonumAliniyor] = useState(false)
   const dosyaGirdisi = useRef<HTMLInputElement>(null)
   const fotoSayisi = korunan.length + yeniler.length
+
+  // The till link carries the till key, so scans there earn customers
+  // points. Asked once the profile exists.
+  const profilVar = !!profil
+  useEffect(() => {
+    if (!profilVar || !motorVarMi()) return
+    let iptal = false
+    kasaAnahtariAl()
+      .then((k) => !iptal && setKasa(k))
+      .catch((err) => !iptal && setKasaHatasi(err instanceof Error ? err.message : 'Kasa bağlantısı alınamadı.'))
+    return () => {
+      iptal = true
+    }
+  }, [profilVar])
+
+  function odulDegistir(id: string, degisiklik: Partial<OdulTaslagi>) {
+    setOduller((l) => l.map((o) => (o.id === id ? { ...o, ...degisiklik } : o)))
+  }
 
   async function buradayim() {
     setKonumAliniyor(true)
@@ -188,6 +225,7 @@ function IsletmePaneli({
           instagram,
           saatler,
           indirim: indirimAcik && indirimMetni.trim() ? { metin: indirimMetni, kosul: indirimKosulu || null } : null,
+          oduller: oduller.map((o) => ({ id: o.id, metin: o.metin, puan: Number(o.puan) })),
         },
         { koru: korunan, yeni: yeniler },
       )
@@ -214,7 +252,9 @@ function IsletmePaneli({
   }
 
   const benimId = motorVarMi() ? motor().benimId : ''
-  const dogrulama = dogrulamaAdresi(SITE_ADRESI, benimId)
+  // The key rides in the #fragment: browsers never send it to the server,
+  // and the page moves it into its own storage on first open.
+  const dogrulama = kasa ? `${dogrulamaAdresi(SITE_ADRESI, benimId)}#kasa=${kasa}` : null
 
   return (
     <div className="max-w-lg mx-auto px-4 pt-[calc(1rem+var(--safe-top))] pb-[calc(2rem+var(--safe-bottom))]">
@@ -319,6 +359,60 @@ function IsletmePaneli({
           )}
         </div>
 
+        <div className="rounded-2xl bg-amber-50 border border-amber-100 p-4">
+          <span className="text-sm font-semibold text-amber-800 flex items-center gap-2">
+            <Icon name="Star" className="w-4 h-4" />
+            {SHARPOINT_ADI} ödülleri
+          </span>
+          <span className="block text-xs text-amber-700 mt-0.5">
+            Müşteriler Sharloop'la geldikçe {SHARPOINT_ADI} biriktirir. Biriktirdiklerini burada senin ödüllerine harcayabilirler: bir ikram, ekstra
+            indirim ya da rezervasyon önceliği gibi.
+          </span>
+          <div className="flex flex-col gap-2 mt-3">
+            {oduller.map((o) => (
+              <div key={o.id} className="grid grid-cols-[minmax(0,1fr)_5.5rem_2.25rem] gap-2 items-center">
+                <input
+                  className={GIRDI}
+                  value={o.metin}
+                  onChange={(e) => odulDegistir(o.id, { metin: e.target.value })}
+                  maxLength={80}
+                  placeholder="Bir filtre kahve ikram"
+                  aria-label="Ödül"
+                />
+                <input
+                  className={GIRDI}
+                  value={o.puan}
+                  onChange={(e) => odulDegistir(o.id, { puan: e.target.value.replace(/\D/g, '') })}
+                  inputMode="numeric"
+                  placeholder="150"
+                  aria-label={`Gereken ${SHARPOINT_ADI}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setOduller((l) => l.filter((x) => x.id !== o.id))}
+                  aria-label="Ödülü kaldır"
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-ink-400 hover:bg-white"
+                >
+                  <Icon name="X" className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+            {oduller.length < AZAMI_ODUL && (
+              <button
+                type="button"
+                onClick={() => setOduller((l) => [...l, { id: odulIdUret(), metin: '', puan: l.length === 0 ? '150' : '300' }])}
+                className="btn-ghost border border-amber-200 bg-white/60 text-sm flex items-center justify-center gap-1.5"
+              >
+                <Icon name="Plus" className="w-4 h-4" />
+                Ödül ekle
+              </button>
+            )}
+            <span className="text-xs text-amber-700">
+              Puan {ODUL_EN_AZ}–{ODUL_EN_COK} arası. Öneri: "Hafta sonu rezervasyon önceliği" için 300, "Bir içecek ikram" için 150. Bir ziyaret 10–100 {SHARPOINT_ADI} kazandırır.
+            </span>
+          </div>
+        </div>
+
         {hata && <p className="text-sm text-rose-600">{hata}</p>}
         {kaydedildi && !hata && (
           <p className="text-sm text-teal-700 flex items-center gap-1.5">
@@ -336,22 +430,30 @@ function IsletmePaneli({
           <section className="card p-5 mt-6">
             <h3 className="font-semibold text-ink-700 flex items-center gap-2 mb-1">
               <Icon name="QrCode" className="w-4 h-4 text-bolum-koyu" />
-              Kasada indirim onaylama
+              Kasa bağlantısı
             </h3>
             <p className="text-sm text-ink-400 mb-3">
-              Müşterinin gösterdiği QR'ı kasadaki telefonun kamerasıyla okut; açılan sayfa kodun bugün geçerli olup olmadığını söyler.
-              Kodu elle yazmak için bu sayfayı kasadaki telefonda açık tut:
+              Bu QR'ı kasadaki telefonun kamerasıyla <b>bir kez</b> okut. O telefon artık senin kasan: müşterinin QR'ını okuttuğunda indirim
+              onaylanır, müşteri {SHARPOINT_ADI} kazanır ya da ödülünü kullanır. Bu QR'ı müşterilerle paylaşma.
             </p>
-            <div
-              className="w-36 h-36 mx-auto mb-3 [&>svg]:w-full [&>svg]:h-full"
-              role="img"
-              aria-label="Kod doğrulama sayfasının QR kodu"
-              dangerouslySetInnerHTML={{ __html: qrSvg(dogrulama) }}
-            />
-            <a href={dogrulama} target="_blank" rel="noopener" className="btn-ghost border border-ink-100 w-full flex items-center justify-center gap-2 text-sm">
-              <Icon name="ExternalLink" className="w-4 h-4" />
-              Doğrulama sayfasını aç
-            </a>
+            {dogrulama ? (
+              <>
+                <div
+                  className="w-36 h-36 mx-auto mb-3 [&>svg]:w-full [&>svg]:h-full"
+                  role="img"
+                  aria-label="Kasa bağlantısının QR kodu"
+                  dangerouslySetInnerHTML={{ __html: qrSvg(dogrulama) }}
+                />
+                <a href={dogrulama} target="_blank" rel="noopener" className="btn-ghost border border-ink-100 w-full flex items-center justify-center gap-2 text-sm">
+                  <Icon name="ExternalLink" className="w-4 h-4" />
+                  Bu telefonu kasa yap
+                </a>
+              </>
+            ) : kasaHatasi ? (
+              <p className="text-sm text-rose-600">{kasaHatasi}</p>
+            ) : (
+              <div className="skeleton w-36 h-36 mx-auto rounded-2xl" />
+            )}
           </section>
 
           <section className="card p-5 mt-4">

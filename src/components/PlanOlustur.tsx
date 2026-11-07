@@ -27,11 +27,13 @@ import { EmojiSecici, TumGunAnahtari } from './Seciciler'
 // kiminle → ne / nerede / ne zaman → müsaitlik + davet.
 
 type Adim = 'kiminle' | 'detay' | 'ozet'
-type Kapsam = 'tek' | 'arkadas' | 'grup'
+export type Kapsam = 'tek' | 'arkadas' | 'grup'
 
 interface Props {
   onClose: () => void
   onSaved: () => void
+  // Opened from a suggestion (a place's page): the place, and who with.
+  baslangic?: { konum: string; kapsam?: Kapsam }
 }
 
 interface Etkinlik {
@@ -75,7 +77,7 @@ function dakikaya(saat: string): number {
   return Number.isNaN(s) || Number.isNaN(d) ? 0 : s * 60 + d
 }
 
-export function PlanOlustur({ onClose, onSaved }: Props) {
+export function PlanOlustur({ onClose, onSaved, baslangic }: Props) {
   useGeriIleKapat(onClose)
   const { kullanici } = useAuth()
 
@@ -83,7 +85,7 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
   // One back step per wizard step, like its own Geri button.
   useGeriAdimi(() => setAdim('kiminle'), adim !== 'kiminle')
   useGeriAdimi(() => setAdim('detay'), adim === 'ozet')
-  const [kapsam, setKapsam] = useState<Kapsam>('tek')
+  const [kapsam, setKapsam] = useState<Kapsam>(baslangic?.kapsam ?? 'tek')
 
   const [arkadaslar, setArkadaslar] = useState<Arkadas[]>([])
   const [gruplar, setGruplar] = useState<Grup[]>([])
@@ -95,7 +97,7 @@ export function PlanOlustur({ onClose, onSaved }: Props) {
   const [serbestBaslik, setSerbestBaslik] = useState('')
   // Follows the picked activity until the person chooses one themselves.
   const [emoji, setEmoji] = useState<string | null>(null)
-  const [konum, setKonum] = useState('')
+  const [konum, setKonum] = useState(baslangic?.konum ?? '')
   const [yakinOneriler, setYakinOneriler] = useState<YakinOneri[] | null>(null)
   const [konumAraniyor, setKonumAraniyor] = useState(false)
 

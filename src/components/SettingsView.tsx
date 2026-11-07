@@ -3,6 +3,7 @@ import { TakvimAyarlari } from './TakvimAyarlari'
 import { SohbetTemaSecici } from './SohbetTemaSecici'
 import { HesapGuvenligi } from './HesapGuvenligi'
 import { IsletmeKarti } from './IsletmePaneli'
+import { YasOnayiKarti } from './YasOnayiKarti'
 import { BildirimAyarlari } from './BildirimAyarlari'
 import { SLOGAN, UYGULAMA_ADI } from '../../shared/marka'
 import { yerelUygulamada } from '../lib/platform'
@@ -26,6 +27,8 @@ export function SettingsView({ onDegisti }: { onDegisti?: () => void } = {}) {
         <SohbetTemaSecici />
 
         <TakvimAyarlari onDegisti={onDegisti} />
+
+        <YasOnayiKarti />
 
         <IsletmeKarti />
 

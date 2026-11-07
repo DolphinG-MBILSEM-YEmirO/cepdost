@@ -40,7 +40,9 @@
           <tr><td>Mesajlar, gruplar, anılar, paylaşımlar, fotoğraf ve videolar</td><td>Arkadaşlarınla paylaşmak</td><td>Uçtan uca şifreli olarak Nostr sunucularında; yalnızca paylaştığın kişiler okuyabilir</td></tr>
           <tr><td>Müsaitlik bilgin (dolu/boş saatler)</td><td>Arkadaşlarının ne zaman boş olduğunu görmesi (ayarlardan kapatılabilir)</td><td>Şifreli, yalnızca arkadaşlarına açık</td></tr>
           <tr><td>Yaklaşık konumun</td><td>Plan kurarken ve Akış'taki "Yakınında" bölümünde yakındaki mekânları önermek; yalnızca izin verirsen</td><td>Yaklaşık 1 km'ye yuvarlanarak mekân arama hizmetine gönderilir, saklanmaz; tam konumun telefonunda kalır</td></tr>
-          <tr><td>Hesap kimliğin (indirim kodu alırken)</td><td>Sponsorlu bir mekânın indirim kodunu üretmek</td><td>Yalnızca kodu hesaplamak için kullanılır, saklanmaz; işletmeyle paylaşılmaz</td></tr>
+          <tr><td>Hesap kimliğin (indirim kodu alırken)</td><td>Bir mekânın indirim kodunu üretmek; kasada QR okutulunca SharPoint'ini saymak</td><td>QR'da kodla birlikte yer alır; işletme yalnızca kodun geçerli olduğunu ve SharPoint seviyeni görür, kim olduğunu görmez</td></tr>
+          <tr><td>SharPoint hareketlerin (hangi mekânda, hangi gün kazandığın ya da harcadığın puan)</td><td>Puanını ve ödüllerini göstermek</td><td>Yalnızca senin ve Sharloop sunucusunun okuyabildiği şekilde şifreli olarak Nostr sunucularında; işletmelerle paylaşılmaz</td></tr>
+          <tr><td>18 yaş onayın</td><td>Alkol, nargile ve tütün mekânlarını yalnızca 18 yaşından büyüklere göstermek</td><td>Yalnızca telefonunda tutulur, hiçbir yere gönderilmez</td></tr>
           <tr><td>Uygulamaya paylaştığın link, metin ve görseller</td><td>Bunları yapay zekâ ile plana dönüştürmek ve asistanın sorularına cevap vermek</td><td>İşlenmek üzere Google Gemini'ye gönderilir, bizim tarafımızda saklanmaz</td></tr>
           <tr><td>Bildirim adresi (cihaz jetonu)</td><td>Sana bildirim göndermek</td><td>Şifreli profilinde; bildirimler Google, Apple veya tarayıcı bildirim servisi üzerinden iletilir</td></tr>
           <tr><td>Teknik kayıtlar (IP adresi, cihaz/tarayıcı türü, zaman)</td><td>Güvenlik ve hata giderme</td><td>Barındırma hizmetimizin (Vercel) kısa süreli sunucu kayıtlarında</td></tr>
@@ -124,7 +126,9 @@
         <li><strong>Messages, groups, memories, posts, photos and videos:</strong> end-to-end encrypted and stored on Nostr relays; only the people you share with can read them.</li>
         <li><strong>Availability</strong> (busy/free times): shared encrypted with friends only; can be turned off.</li>
         <li><strong>Approximate location:</strong> only if you allow it, to suggest nearby places while you make a plan and in the feed's "Nearby" section. Rounded to about 1 km before it leaves your phone. Not stored.</li>
-        <li><strong>Account ID (when you get a discount code):</strong> used only to compute the code for a sponsored place. Not stored and not shared with the business.</li>
+        <li><strong>Account ID (when you get a discount code):</strong> used to compute a place's code and, when the till scans your QR, to count your SharPoint. The business only sees that the code is valid and your SharPoint level, not who you are.</li>
+        <li><strong>SharPoint history</strong> (which place and day you earned or spent points): stored encrypted on Nostr relays so that only you and Sharloop's server can read it. Not shared with businesses.</li>
+        <li><strong>18+ confirmation:</strong> kept only on your phone, to show alcohol, hookah and tobacco places to adults only. Never sent anywhere.</li>
         <li><strong>Links, text and images you share into the app:</strong> sent to Google Gemini to turn them into plans and to answer the assistant. Not stored by us.</li>
         <li><strong>Push token:</strong> to send you notifications, delivered through Google, Apple or your browser's push service.</li>
         <li><strong>Technical logs</strong> (IP address, device type, time): short-lived server logs at our host, Vercel, for security and debugging.</li>

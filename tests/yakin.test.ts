@@ -12,6 +12,7 @@ import {
   onerileriSirala,
   puanlariTopla,
   yasakliMi,
+  yetiskinMi,
   type Kampanya,
   type YakinMekan,
 } from '../shared/yakinMekanlar.ts'
@@ -64,9 +65,25 @@ test('ratings: averaged per place, bad stars ignored', () => {
   assert.deepEqual(p.get('moda kahve'), { ortalama: 4.5, sayi: 2 })
 })
 
-test('alcohol, hookah, tobacco and betting places are left out; juice bars are not', () => {
-  for (const ad of ['Cocktail Bar', 'Pub X', 'Nargile Cafe', 'Gece Kulübü', 'İddaa Bayi', 'Tekel Büfe', 'Tütüncü']) assert.ok(yasakliMi(ad), ad)
-  for (const ad of ['Juice Bar', 'Barbekü Evi', 'Kahve Dünyası', 'Coffee Bar Moda', 'Park']) assert.ok(!yasakliMi(ad), ad)
+test('betting places are banned; alcohol, hookah and tobacco places are 18+; juice bars are neither', () => {
+  for (const ad of ['İddaa Bayi', 'Kral Casino', 'Bahis Ofisi']) assert.ok(yasakliMi(ad), ad)
+  for (const ad of ['Cocktail Bar', 'Pub X', 'Nargile Cafe', 'Gece Kulübü', 'Tekel Büfe', 'Tütüncü']) {
+    assert.ok(!yasakliMi(ad), ad)
+    assert.ok(yetiskinMi(ad), ad)
+  }
+  for (const ad of ['Juice Bar', 'Barbekü Evi', 'Kahve Dünyası', 'Coffee Bar Moda', 'Park']) {
+    assert.ok(!yasakliMi(ad), ad)
+    assert.ok(!yetiskinMi(ad), ad)
+  }
+})
+
+test('18+ places and campaigns show only to people who said they are 18 or older', () => {
+  const mekanlar = [yer('a', 'Moda Kahve', 200), { ...yer('b', 'Moda Meyhanesi', 300), kategori: 'Meyhane' }, yer('c', 'Kral İddaa', 100)]
+  const bar = canliKampanya({ id: 'bar', mekanAdi: 'Sahil Pub', kategori: 'Pub' })
+  const cocuk = onerileriSirala(mekanlar, [bar], new Map(), BEN, bugunTR())
+  assert.deepEqual(cocuk.map((o) => o.mekan.ad), ['Moda Kahve'])
+  const yetiskin = onerileriSirala(mekanlar, [bar], new Map(), BEN, bugunTR(), true)
+  assert.deepEqual(yetiskin.map((o) => o.mekan.ad), ['Moda Kahve', 'Sahil Pub', 'Moda Meyhanesi'])
 })
 
 test('distance and its label', () => {
@@ -112,7 +129,9 @@ test('Foursquare answers: places worth going to only, in both response shapes', 
     { id: 'fsq:x', ad: 'Moda Kahve', kategori: 'Coffee Shop', adres: null, enlem: 1, boylam: 2 },
   )
   assert.equal(foursquareYeriniCevir({ fsq_id: 'y', name: 'Garanti ATM', geocodes: { main: { latitude: 1, longitude: 2 } }, categories: [{ name: 'ATM' }] }), null)
-  assert.equal(foursquareYeriniCevir({ fsq_id: 'z', name: 'Hops', latitude: 1, longitude: 2, categories: [{ name: 'Pub' }, { name: 'Restaurant' }] }), null)
+  // Pubs come back (the app shows them to 18+ only); betting never does.
+  assert.equal(foursquareYeriniCevir({ fsq_id: 'z', name: 'Hops', latitude: 1, longitude: 2, categories: [{ name: 'Pub' }] })?.ad, 'Hops')
+  assert.equal(foursquareYeriniCevir({ fsq_id: 'w', name: 'Kral Casino', latitude: 1, longitude: 2, categories: [{ name: 'Restaurant' }] }), null)
 })
 
 // ---------- API ----------
@@ -244,8 +263,24 @@ test('business profile records: links and handles cleaned, broken or banned ones
   const veri = { ad: 'Moda Kafe', kategori: 'Kafe', adres: 'Moda', enlem: 40.98, boylam: 29.02, fotolar: [{ id: 'isletme-0011aabb', parca: 2, tip: 'image/jpeg' }, { id: 'isletme-Xy_9-Ab3cD0', parca: 1, tip: 'image/jpeg' }, { id: '../ani', parca: 1, tip: 'image/jpeg' }] }
   const p = isletmeKur({ yazar: ISLETME, veri })
   assert.equal(p?.fotolar.length, 2)
-  assert.equal(isletmeKur({ yazar: ISLETME, veri: { ...veri, kategori: 'Bar' } }), null)
+  assert.equal(isletmeKur({ yazar: ISLETME, veri: { ...veri, kategori: 'Bahis' } }), null)
+  // A bar may have a profile (shown to 18+ only), but not a beer discount.
+  const bar = isletmeKur({ yazar: ISLETME, veri: { ...veri, kategori: 'Bar', indirim: { metin: 'Biralarda %20' } } })
+  assert.equal(bar?.kategori, 'Bar')
+  assert.equal(bar?.indirim, null)
   assert.equal(isletmeKur({ yazar: ISLETME, veri: { ...veri, enlem: 'kuzey' } }), null)
+  // Rewards: a few, with sane points, never on alcohol or tobacco.
+  const oduller = [
+    { id: 'kahve1', metin: 'Kahve ikram', puan: 150 },
+    { id: 'kahve1', metin: 'Aynı id', puan: 150 },
+    { id: 'bira1', metin: 'Bira ikram', puan: 150 },
+    { id: 'az1', metin: 'Çok ucuz', puan: 5 },
+    { id: 'rez1', metin: 'Rezervasyon önceliği', puan: 300 },
+  ]
+  assert.deepEqual(
+    isletmeKur({ yazar: ISLETME, veri: { ...veri, oduller } })?.oduller.map((o) => o.id),
+    ['kahve1', 'rez1'],
+  )
 })
 
 test('a business profile takes the map entry\'s place, and a sponsored one shows once with its profile', () => {

@@ -78,6 +78,13 @@ import { getirEkle, getirListesi, getirSil, getiriUstlen } from '../src/sosyal/g
 import { arkadasPlandaMi, plandakiArkadaslar } from '../src/sosyal/ortakGecmis'
 import { engelliListesi } from '../src/sosyal/engel'
 import { isletmemiGetir, isletmemiKaydet, isletmemiSil, yakindakiIsletmeler } from '../src/sosyal/isletme'
+import { sharpointHareketleri, sharpointImzacisiniAyarla } from '../src/sosyal/sharpoint'
+import { POST as sharpointPOST, sharpointRoleleriniAyarla } from '../api/sharpoint'
+import { roleErisimi } from '../api/_lib/roleler'
+import { imzaci as sharpointSunucuAnahtari } from '../api/_lib/sharpointDefteri'
+import { kodUret } from '../api/_lib/kuponKodu'
+import { KASA_ISTEK_TURU, ozetle, planIsareti } from '../shared/sharpoint'
+import { bugunTR } from '../shared/yakinMekanlar'
 import {
   aniEtkilesimleri,
   aniYorumunuSil,
@@ -1477,12 +1484,17 @@ test('business profile: anyone nearby sees it, only its owner changes it, blocke
     instagram: '@modakafe',
     saatler: 'Her gün 08:00–23:00',
     indirim: { metin: '%10 indirim', kosul: null },
+    oduller: [{ id: 'kahve1', metin: 'Bir filtre kahve ikram', puan: 150 }],
   }
-  await assert.rejects(olarak(kafe, () => isletmemiKaydet({ ...girdi, kategori: 'Nargile Kafe' }, { koru: [], yeni: [] })))
+  await assert.rejects(olarak(kafe, () => isletmemiKaydet({ ...girdi, kategori: 'İddaa Bayi' }, { koru: [], yeni: [] })))
+  // No discount or reward on alcohol or tobacco.
+  await assert.rejects(olarak(kafe, () => isletmemiKaydet({ ...girdi, indirim: { metin: 'Biralarda %20', kosul: null } }, { koru: [], yeni: [] })))
+  await assert.rejects(olarak(kafe, () => isletmemiKaydet({ ...girdi, oduller: [{ id: 'nar1', metin: 'Bir nargile ikram', puan: 200 }] }, { koru: [], yeni: [] })))
   const kayit = await olarak(kafe, () => isletmemiKaydet(girdi, { koru: [], yeni: [] }))
   assert.equal(kayit.web, 'https://modakafe.com/')
   assert.equal(kayit.instagram, 'modakafe')
   assert.deepEqual(await olarak(kafe, async () => (await isletmemiGetir())?.indirim), { metin: '%10 indirim', kosul: null })
+  assert.deepEqual(kayit.oduller, [{ id: 'kahve1', metin: 'Bir filtre kahve ikram', puan: 150 }])
 
   const yakin = await olarak(musteri, () => yakindakiIsletmeler({ enlem: 40.99, boylam: 29.03 }))
   assert.deepEqual(
@@ -1501,4 +1513,93 @@ test('business profile: anyone nearby sees it, only its owner changes it, blocke
   await olarak(kafe, () => isletmemiSil())
   assert.equal(await olarak(kafe, () => isletmemiGetir()), null)
   assert.equal((await olarak(musteri, () => yakindakiIsletmeler({ enlem: 40.99, boylam: 29.03 }))).length, 0)
+})
+
+test('SharPoint: a till scan earns points the app reads; friends on one plan get a bonus; rewards spend them', async () => {
+  process.env.KUPON_GIZLI = 'sharpoint-test-gizli'
+  const sunucu = sharpointSunucuAnahtari('sharpoint-test-gizli')
+  sharpointImzacisiniAyarla(sunucu)
+  sharpointRoleleriniAyarla(() => roleErisimi([relay.url]))
+  const kafe = kisiOlustur('sp-kafe')
+  const elif = kisiOlustur('sp-elif')
+  const deniz = kisiOlustur('sp-deniz')
+  const isletme = kafe.motor.benimId
+  await olarak(kafe, () =>
+    isletmemiKaydet(
+      {
+        ad: 'Bahar Waffle',
+        kategori: 'Tatlıcı',
+        aciklama: null,
+        adres: 'Moda',
+        enlem: 40.99,
+        boylam: 29.03,
+        telefon: null,
+        web: null,
+        instagram: null,
+        saatler: null,
+        indirim: { metin: '%15 indirim', kosul: null },
+        oduller: [{ id: 'waffle1', metin: 'Bir waffle ikram', puan: 50 }],
+      },
+      { koru: [], yeni: [] },
+    ),
+  )
+
+  const istek = (govde: unknown) =>
+    sharpointPOST(new Request('http://localhost/api/sharpoint', { method: 'POST', body: JSON.stringify(govde) }))
+  // The business proves it is its account and gets the till key.
+  const kasaIstegi = finalizeEvent(
+    { kind: KASA_ISTEK_TURU, created_at: Math.floor(Date.now() / 1000), tags: [], content: 'sharloop-kasa' },
+    kafe.sk,
+  )
+  const { kasa } = (await (await istek({ islem: 'kasa', istek: kasaIstegi })).json()) as { kasa: string }
+  assert.match(kasa, /^[0-9a-f]{32}$/)
+  // A forged request (someone else's signature on the business key) fails.
+  assert.equal((await istek({ islem: 'kasa', istek: { ...kasaIstegi, content: 'baska' } })).status, 400)
+
+  const gun = bugunTR()
+  const kod = (k: Kisi) => kodUret('sharpoint-test-gizli', isletme, k.motor.benimId, gun)
+  const ortakPlan = await planIsareti('plan-123')
+  const tara = async (k: Kisi, ek: Record<string, unknown> = {}) =>
+    (await (await istek({ islem: 'dogrula', i: isletme, kod: kod(k), k: k.motor.benimId, kasa, ...ek })).json()) as {
+      gecerli: boolean
+      sharpoint: { kazanilan: number; bakiye: number; seviye: string } | null
+      kasaGerekli?: boolean
+      odul: { durum: string } | null
+    }
+
+  // Without the till key the discount is fine but nothing is earned: a
+  // customer can't earn by opening their own QR.
+  const kendisi = (await (await istek({ islem: 'dogrula', i: isletme, kod: kod(elif), k: elif.motor.benimId })).json()) as {
+    gecerli: boolean
+    sharpoint: unknown
+    kasaGerekli: boolean
+  }
+  assert.deepEqual([kendisi.gecerli, kendisi.sharpoint, kendisi.kasaGerekli], [true, null, true])
+  // Someone else's code with my key earns nothing either.
+  assert.equal((await tara(deniz, { kod: kod(elif) })).sharpoint, null)
+
+  // Elif came with a plan: visit + plan.
+  const ilk = await tara(elif, { p: ortakPlan })
+  assert.deepEqual(ilk.sharpoint, { kazanilan: 30, bakiye: 30, seviye: 'Yeni' })
+  // A second scan the same day doesn't count again.
+  assert.equal((await tara(elif, { p: ortakPlan })).sharpoint?.kazanilan, 0)
+  // Deniz was on the same plan: both get the group bonus.
+  const ikinci = await tara(deniz, { p: `${ortakPlan},${await planIsareti('baska')}` })
+  assert.deepEqual(ikinci.sharpoint, { kazanilan: 60, bakiye: 60, seviye: 'Yeni' })
+
+  // Elif's app reads what the server wrote, and only that.
+  const hareketler = await olarak(elif, () => sharpointHareketleri(true))
+  assert.deepEqual(ozetle(hareketler).bakiye, 60)
+  assert.deepEqual(new Set(hareketler.flatMap((h) => h.nedenler)), new Set(['ziyaret', 'plan', 'grup']))
+  assert.equal(hareketler[0].isletmeAdi, 'Bahar Waffle')
+
+  // Spending: once a day per reward, and only with enough points.
+  assert.equal((await tara(elif, { o: 'yok1' })).odul?.durum, 'yok')
+  const harcama = await tara(elif, { o: 'waffle1' })
+  assert.deepEqual([harcama.odul?.durum, harcama.sharpoint?.bakiye], ['tamam', 10])
+  assert.equal((await tara(elif, { o: 'waffle1' })).odul?.durum, 'kullanildi')
+  assert.equal(ozetle(await olarak(elif, () => sharpointHareketleri(true))).bakiye, 10)
+
+  sharpointRoleleriniAyarla(null)
+  sharpointImzacisiniAyarla(null)
 })

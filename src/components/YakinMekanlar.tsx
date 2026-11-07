@@ -5,8 +5,17 @@ import { motorVarMi } from '../sosyal/cekirdek'
 import { akisAnilariGetir, type Ani } from '../sosyal/gruplar'
 import { yakindakiIsletmeler } from '../sosyal/isletme'
 import type { Kayit } from '../db'
-import { konumAl, yakinIzniniKaydet, yakinIzniVarMi, yakinOnerileriGetir, type YakinOneri } from '../lib/yakin'
+import {
+  konumAl,
+  tazeOnbellek,
+  yakinIzniniKaydet,
+  yakinIzniVarMi,
+  yakinOnbellegeYaz,
+  yakinOnerileriGetir,
+  type YakinOneri,
+} from '../lib/yakin'
 import { mesafeMetni, puanlariTopla } from '../../shared/yakinMekanlar'
+import { SHARPOINT_ADI, ziyaretKazanci } from '../../shared/sharpoint'
 
 // "Yakınında" in the feed: places near the person, best rated first, with
 // at most one labelled sponsored place (shared/yakinMekanlar.ts). Location
@@ -24,15 +33,6 @@ type Durum =
   | { tur: 'yukleniyor' }
   | { tur: 'hata'; mesaj: string }
   | { tur: 'hazir'; oneriler: YakinOneri[] }
-
-// The last list, so switching feeds or coming back doesn't ask the phone
-// and the relays again every time.
-const ONBELLEK_MS = 10 * 60_000
-let onbellek: { zaman: number; oneriler: YakinOneri[] } | null = null
-
-function tazeOnbellek(): YakinOneri[] | null {
-  return onbellek && Date.now() - onbellek.zaman < ONBELLEK_MS ? onbellek.oneriler : null
-}
 
 export function YakinMekanlar({ anilar, onPlanAc }: Props) {
   const [durum, setDurum] = useState<Durum>(() => {
@@ -67,7 +67,7 @@ export function YakinMekanlar({ anilar, onPlanAc }: Props) {
       // Businesses' own profiles (photos, contact, discount) near here.
       const isletmeler = motorVarMi() ? await yakindakiIsletmeler(konum).catch(() => []) : []
       const oneriler = await yakinOnerileriGetir(konum, puanlar, isletmeler)
-      onbellek = { zaman: Date.now(), oneriler }
+      yakinOnbellegeYaz(oneriler)
       setDurum({ tur: 'hazir', oneriler })
     } catch (err) {
       setDurum({ tur: 'hata', mesaj: err instanceof Error ? err.message : 'Yakındaki yerler yüklenemedi.' })
@@ -169,6 +169,13 @@ function MekanKarti({ oneri, onAc }: { oneri: YakinOneri; onAc: () => void }) {
         <p className="flex items-center gap-1 text-xs font-semibold text-teal-700 truncate">
           <Icon name="Ticket" className="w-3.5 h-3.5 shrink-0" />
           {oneri.isletme.indirim.metin}
+        </p>
+      )}
+      {/* Sponsored places with a till suggest a plan that earns points. */}
+      {kampanya && oneri.isletme && (oneri.isletme.indirim || oneri.isletme.oduller.length > 0) && (
+        <p className="flex items-center gap-1 text-xs font-semibold text-amber-700 truncate">
+          <Icon name="Star" className="w-3.5 h-3.5 shrink-0" />
+          Plan yap, git: +{ziyaretKazanci({ oneCikan: true, plan: true }).puan} {SHARPOINT_ADI}
         </p>
       )}
     </button>
