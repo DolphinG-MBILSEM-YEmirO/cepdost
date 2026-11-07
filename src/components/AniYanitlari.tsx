@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { Icon } from './Icon'
 import type { Profil } from '../sosyal/api'
 import type { Ani } from '../sosyal/gruplar'
+import { useKayitliListeler } from './useKayitliListeler'
 import {
   ANI_TEPKILERI,
+  BEGENI,
   YORUM_AZAMI,
   aniYorumunuSil,
   aniyaTepkiVer,
@@ -13,10 +15,12 @@ import {
 import { deDa, formatRelativeTime } from '../lib/format'
 import { adListesi } from '../sosyal/adlar'
 
-// Under a memory in the feed: reactions, "I want to go too" and comments.
-// On Keşfet (`yanitlanabilir` off) only "I want to go too" is there, and it
-// stays on this phone. On a plan's page, where everyone was there, there's
-// no "I want to go too" (no `onGitmek`).
+// Under a memory in the feed: a like, reactions, "I want to go too",
+// comments and a save button. On Keşfet (`yanitlanabilir` off) only "I want
+// to go too" and saving are there, and they stay with me. On a plan's page,
+// where everyone was there, there's no "I want to go too" (no `onGitmek`).
+// "I want to go too" also puts the post in my "Gitmek istediklerim" list.
+// When the sharer turned comments off, none are shown.
 
 // Comments shown before "show all".
 const KISA_YORUM = 2
@@ -46,10 +50,13 @@ export function AniYanitlari({
   const [yorum, setYorum] = useState('')
   const [isleniyor, setIsleniyor] = useState<string | null>(null)
   const [hata, setHata] = useState<string | null>(null)
+  const { kayitli, gitmekListesinde, koy } = useKayitliListeler(ani)
 
   const benim = ani.sahip_id === benimId
+  const yorumlarAcikMi = yanitlanabilir && !ani.yorumlar_kapali
   const tepkim = etkilesim.tepkiler.find((t) => t.kullanici_id === benimId)?.emoji ?? null
-  const gitmekIstiyorum = etkilesim.gitmekIsteyenler.includes(benimId)
+  const begendim = tepkim === BEGENI
+  const gitmekIstiyorum = etkilesim.gitmekIsteyenler.includes(benimId) || gitmekListesinde
   const digerIsteyenler = etkilesim.gitmekIsteyenler.filter((id) => id !== benimId)
   const ozet = ANI_TEPKILERI.map((emoji) => ({
     emoji,
@@ -95,19 +102,35 @@ export function AniYanitlari({
         </ul>
       )}
 
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
+        {yanitlanabilir && (
+          <button
+            onClick={() => void calistir('begen', () => aniyaTepkiVer(ani, BEGENI))}
+            disabled={isleniyor === 'begen'}
+            aria-pressed={begendim}
+            aria-label={begendim ? 'Beğenini geri al' : 'Beğen'}
+            className={`chip text-xs active:opacity-80 disabled:opacity-60 ${
+              begendim ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-white text-ink-600 border border-ink-200'
+            }`}
+          >
+            <span key={begendim ? 'dolu' : 'bos'} className={`inline-flex ${begendim ? 'animate-pop-in' : ''}`}>
+              <Icon name="Heart" className={`w-3.5 h-3.5 ${begendim ? 'fill-rose-500 text-rose-500' : ''}`} />
+            </span>
+            Beğen
+          </button>
+        )}
         {yanitlanabilir && (
           <button
             onClick={() => setSecici(!secici)}
             aria-expanded={secici}
-            aria-label={tepkim ? `Tepkin: ${tepkim}` : 'Tepki ver'}
-            className={`chip text-xs active:opacity-80 ${tepkim ? 'bg-brand-50 text-brand-700 border border-brand-100' : 'bg-white text-ink-600 border border-ink-200'}`}
+            aria-label={tepkim && !begendim ? `Tepkin: ${tepkim}` : 'Tepki ver'}
+            className={`chip text-xs active:opacity-80 ${tepkim && !begendim ? 'bg-brand-50 text-brand-700 border border-brand-100' : 'bg-white text-ink-600 border border-ink-200'}`}
           >
-            {tepkim ? <span aria-hidden="true">{tepkim}</span> : <Icon name="SmilePlus" className="w-3.5 h-3.5" />}
+            {tepkim && !begendim ? <span aria-hidden="true">{tepkim}</span> : <Icon name="SmilePlus" className="w-3.5 h-3.5" />}
             Tepki
           </button>
         )}
-        {yanitlanabilir && (
+        {yorumlarAcikMi && (
           <button
             onClick={() => setYorumlarAcik(!yorumlarAcik)}
             aria-expanded={yorumlarAcik}
@@ -119,7 +142,12 @@ export function AniYanitlari({
         )}
         {!benim && onGitmek && (
           <button
-            onClick={() => void calistir('gitmek', () => onGitmek(ani, !gitmekIstiyorum))}
+            onClick={() =>
+              void calistir('gitmek', async () => {
+                await koy('gitmek-listesi', !gitmekIstiyorum)
+                await onGitmek(ani, !gitmekIstiyorum)
+              })
+            }
             disabled={isleniyor === 'gitmek'}
             aria-pressed={gitmekIstiyorum}
             className={`chip text-xs active:opacity-80 disabled:opacity-50 ${
@@ -130,7 +158,30 @@ export function AniYanitlari({
             Ben de gitmek istiyorum
           </button>
         )}
+        {!benim && (
+          <button
+            onClick={() => void calistir('kaydet', () => koy('kaydedilen', !kayitli))}
+            disabled={isleniyor === 'kaydet'}
+            aria-pressed={kayitli}
+            aria-label={kayitli ? 'Kaydedilenlerden çıkar' : 'Kaydet'}
+            title={kayitli ? 'Kaydedildi' : 'Kaydet'}
+            className={`ml-auto w-8 h-8 rounded-full flex items-center justify-center shrink-0 active:opacity-80 transition-colors ${
+              kayitli ? 'text-bolum-koyu bg-bolum-soluk' : 'text-ink-400 hover:bg-ink-50'
+            }`}
+          >
+            <span key={kayitli ? 'dolu' : 'bos'} className={`inline-flex ${kayitli ? 'animate-pop-in' : ''}`}>
+              <Icon name={kayitli ? 'BookmarkCheck' : 'Bookmark'} className="w-[18px] h-[18px]" />
+            </span>
+          </button>
+        )}
       </div>
+
+      {yanitlanabilir && ani.yorumlar_kapali && (
+        <p className="flex items-center gap-1.5 text-xs text-ink-400 mt-2">
+          <Icon name="MessageCircleOff" className="w-3.5 h-3.5" />
+          {benim ? 'Bu paylaşımda yorumları kapattın.' : 'Bu paylaşımda yorumlar kapalı.'}
+        </p>
+      )}
 
       {secici && (
         <div className="flex gap-1 mt-2 animate-fade-in" role="group" aria-label="Tepki seç">
@@ -172,7 +223,7 @@ export function AniYanitlari({
         </div>
       )}
 
-      {yanitlanabilir && etkilesim.yorumlar.length > 0 && (
+      {yorumlarAcikMi && etkilesim.yorumlar.length > 0 && (
         <ul className="mt-3 space-y-1.5" aria-label="Yorumlar">
           {!yorumlarAcik && etkilesim.yorumlar.length > KISA_YORUM && (
             <li>
@@ -203,7 +254,7 @@ export function AniYanitlari({
         </ul>
       )}
 
-      {yanitlanabilir && (yorumlarAcik || etkilesim.yorumlar.length > 0) && (
+      {yorumlarAcikMi && (yorumlarAcik || etkilesim.yorumlar.length > 0) && (
         <form
           onSubmit={(e) => {
             e.preventDefault()

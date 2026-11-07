@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from './Icon'
+import { Avatar } from './Avatar'
+import { EtiketSecici } from './EtiketSecici'
+import { useEtiketAdaylari } from './useEtiketAdaylari'
 import { db } from '../db'
 import { toDateString } from '../lib/format'
 import { useGeriIleKapat } from '../lib/geriTusu'
@@ -7,8 +10,9 @@ import { videoHazirla, VIDEO_AZAMI_SANIYE, type HazirVideo } from '../lib/videoH
 import { AZAMI_MEDYA, AZAMI_PUAN, aniEkle, gruplarimiGetir, type Grup, type YeniMedya } from '../sosyal/gruplar'
 import { UYGULAMA_ADI } from '../../shared/marka'
 
-// A post about a place: up to six photos and clips, a star rating, a note
-// and who sees it. It is stored as a memory (sosyal/gruplar.ts), so the
+// A post about a place: up to six photos and clips, a star rating, a note,
+// who sees it, the friends who were there (tagged) and whether it takes
+// comments. It is stored as a memory (sosyal/gruplar.ts), so the
 // feed, the answers and "I want to go too" all work on it as they do on
 // memories. Clips are shrunk on the device first (lib/videoHazirla.ts).
 
@@ -45,6 +49,13 @@ export function PaylasimOlustur({ onKapat, onPaylasildi }: { onKapat: () => void
   const [kitle, setKitle] = useState<Kitle>({ tur: 'arkadaslarim' })
   const [gruplar, setGruplar] = useState<Grup[]>([])
   const [oneriler, setOneriler] = useState<string[]>([])
+  const [etiketler, setEtiketler] = useState<string[]>([])
+  const [etiketSecici, setEtiketSecici] = useState(false)
+  const [yorumlarKapali, setYorumlarKapali] = useState(false)
+  const etiketAdaylari = useEtiketAdaylari(kitle.tur === 'grup' ? { grupId: kitle.grupId } : 'arkadaslarim')
+  // Switching to a group drops the tags of people who aren't in it.
+  const gecerliEtiketler = etiketAdaylari ? etiketler.filter((id) => etiketAdaylari.some((p) => p.id === id)) : etiketler
+  const etiketliProfiller = (etiketAdaylari ?? []).filter((p) => gecerliEtiketler.includes(p.id))
   // Clip being shrunk: how far along it is (0-1).
   const [videoIlerleme, setVideoIlerleme] = useState<number | null>(null)
   const [gonderiliyor, setGonderiliyor] = useState(false)
@@ -135,6 +146,8 @@ export function PaylasimOlustur({ onKapat, onPaylasildi }: { onKapat: () => void
         gorunurluk: kitle.tur === 'herkes' ? 'herkes' : 'arkadaslar',
         grupId: kitle.tur === 'grup' ? kitle.grupId : null,
         arkadaslarim: kitle.tur !== 'grup',
+        etiketler: etiketAdaylari ? gecerliEtiketler : [],
+        yorumlarKapali,
       })
       onPaylasildi()
     } catch (err) {
@@ -313,8 +326,59 @@ export function PaylasimOlustur({ onKapat, onPaylasildi }: { onKapat: () => void
             {kitle.tur === 'herkes' && (
               <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 mt-3 animate-fade-in">
                 Bu paylaşım Keşfet'te tüm {UYGULAMA_ADI} kullanıcılarına görünecek. Mekan adı da paylaşılıyor.
+                {gecerliEtiketler.length > 0 && ' Etiketlediğin kişiler yalnızca arkadaşlarına görünür.'}
               </p>
             )}
+          </section>
+
+          <section>
+            <Etiket>Kimler vardı?</Etiket>
+            <div className="flex flex-wrap gap-2">
+              {etiketliProfiller.map((p) => (
+                <span key={p.id} className="chip bg-bolum-soluk text-bolum-koyu pl-1 animate-pop-in">
+                  <Avatar ad={p.ad} foto={p.avatar} emoji={p.emoji} renk={p.renk} boyut="xs" />
+                  <span className="max-w-[9rem] truncate">{p.ad}</span>
+                  <button
+                    type="button"
+                    onClick={() => setEtiketler((l) => l.filter((id) => id !== p.id))}
+                    aria-label={`${p.ad} etiketini kaldır`}
+                    className="w-5 h-5 -mr-1 rounded-full flex items-center justify-center hover:bg-white/60"
+                  >
+                    <Icon name="X" className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+              <button
+                type="button"
+                onClick={() => setEtiketSecici(true)}
+                className="chip bg-white text-ink-600 border border-dashed border-ink-300 hover:border-transparent hover:shadow-glow"
+              >
+                <Icon name="Tag" className="w-4 h-4" />
+                {gecerliEtiketler.length > 0 ? 'Düzenle' : 'Kişi etiketle'}
+              </button>
+            </div>
+          </section>
+
+          <section>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={!yorumlarKapali}
+              onClick={() => setYorumlarKapali((k) => !k)}
+              className="w-full flex items-center gap-3 text-left active:opacity-80"
+            >
+              <span className={`w-11 h-6 rounded-full transition-colors shrink-0 relative ${yorumlarKapali ? 'bg-ink-200' : 'bg-bolum'}`} aria-hidden="true">
+                <span
+                  className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-soft transition-all ${yorumlarKapali ? 'left-0.5' : 'left-[1.375rem]'}`}
+                />
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className="block text-sm font-medium text-ink-600">Yorumlara izin ver</span>
+                <span className="block text-xs text-ink-400">
+                  {yorumlarKapali ? 'Kimse yorum yapamaz; sonradan ⋯ menüsünden açabilirsin.' : 'Arkadaşların yorum yazabilir.'}
+                </span>
+              </span>
+            </button>
           </section>
 
           {hata && (
@@ -325,6 +389,15 @@ export function PaylasimOlustur({ onKapat, onPaylasildi }: { onKapat: () => void
           )}
         </div>
       </div>
+
+      {etiketSecici && (
+        <EtiketSecici
+          adaylar={etiketAdaylari}
+          secili={gecerliEtiketler}
+          onKaydet={setEtiketler}
+          onKapat={() => setEtiketSecici(false)}
+        />
+      )}
     </div>
   )
 }

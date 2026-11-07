@@ -90,6 +90,13 @@ import {
   Store,
   QrCode,
   ImagePlus,
+  Heart,
+  Bookmark,
+  BookmarkCheck,
+  Ellipsis,
+  ArchiveRestore,
+  MessageCircleOff,
+  Tag,
 } from 'lucide-react'
 
 const iconMap = {
@@ -184,6 +191,13 @@ const iconMap = {
   Store,
   QrCode,
   ImagePlus,
+  Heart,
+  Bookmark,
+  BookmarkCheck,
+  Ellipsis,
+  ArchiveRestore,
+  MessageCircleOff,
+  Tag,
 }
 
 export type IconName = keyof typeof iconMap

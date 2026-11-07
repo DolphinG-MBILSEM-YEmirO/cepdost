@@ -25,7 +25,11 @@ export function useArsivAnilari(grupId?: string | null, arkadasId?: string | nul
     try {
       const anilar = await anilariGetir({ grupId, arkadasId })
       const etkilesimler = await aniEtkilesimleri(anilar)
-      const profiller = await profilleriGetir([...anilar.map((a) => a.sahip_id), ...yanitlayanlar(etkilesimler)])
+      const profiller = await profilleriGetir([
+        ...anilar.map((a) => a.sahip_id),
+        ...anilar.flatMap((a) => a.etiketler),
+        ...yanitlayanlar(etkilesimler),
+      ])
       setArsiv({ anilar, etkilesimler, profiller })
       setUlasilamaz(false)
     } catch {

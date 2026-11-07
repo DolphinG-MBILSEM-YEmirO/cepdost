@@ -127,6 +127,13 @@ export interface Ani {
   sahip: ProfilOzeti | null
   // Topic of the channel the record lives on; locates the photo.
   konu: string
+  // People the sharer tagged in the post (account ids). Keşfet copies
+  // carry none, so tagged friends aren't shown to strangers.
+  etiketler: string[]
+  // The sharer turned comments off: none are shown and none can be added.
+  yorumlar_kapali: boolean
+  // The sharer archived it: hidden everywhere but their own archive.
+  arsivde: boolean
 }
 
 export type MedyaTuru = 'foto' | 'video'
@@ -142,6 +149,8 @@ export interface AniMedyasi {
 // At most this many photos and clips in one post.
 export const AZAMI_MEDYA = 6
 export const AZAMI_PUAN = 5
+// At most this many people tagged in one post.
+export const AZAMI_ETIKET = 10
 
 // ---------- groups ----------
 
@@ -559,6 +568,10 @@ export interface YeniAni {
   // Share with all my friends (my broadcast channel) rather than one group
   // or friend.
   arkadaslarim?: boolean
+  // Friends tagged in the post; each hears about it.
+  etiketler?: string[]
+  // Post with comments turned off.
+  yorumlarKapali?: boolean
 }
 
 export type YeniMedya =
@@ -634,6 +647,33 @@ function puanAl(deger: unknown): number | null {
   return typeof deger === 'number' && Number.isInteger(deger) && deger >= 1 && deger <= AZAMI_PUAN ? deger : null
 }
 
+// Account ids only (hex public keys), each once, the sharer never tagged.
+export function etiketListesiAl(deger: unknown, sahipId?: string): string[] {
+  if (!Array.isArray(deger)) return []
+  const idler = deger.filter((d): d is string => typeof d === 'string' && /^[0-9a-f]{64}$/.test(d) && d !== sahipId)
+  return [...new Set(idler)].slice(0, AZAMI_ETIKET)
+}
+
+// Tagged people hear about the post; the ones already told aren't told again.
+function etiketlenenlereBildir(ani: Ani, yeniler: string[]) {
+  const alicilar = yeniler.filter((id) => id !== motor().benimId)
+  if (alicilar.length === 0) return
+  void (async () => {
+    const ad = (await benimProfilVerim())?.ad ?? 'Bir arkadaşın'
+    bildirArkaplanda(
+      alicilar,
+      {
+        tur: ani.grup_id ? 'grup' : 'mesaj',
+        baslik: ad,
+        govde: `Seni bir paylaşımda etiketledi · ${ani.mekan_adi}`.slice(0, 180),
+        git: 'akis',
+        etiket: `ani:${ani.id}`,
+      },
+      ani.grup_id ? { grupId: ani.grup_id } : undefined,
+    )
+  })().catch(() => {})
+}
+
 export async function aniEkle(yeni: YeniAni): Promise<Ani> {
   const m = motor()
   const kanal = await aniKanali(yeni.grupId, yeni.arkadasId, yeni.arkadaslarim)
@@ -656,7 +696,12 @@ export async function aniEkle(yeni: YeniAni): Promise<Ani> {
     ...(puanAl(yeni.puan) ? { puan: yeni.puan } : {}),
     zaman: simdiMs(),
   }
-  const kayit = await m.yayinla(kanal, TUR.ani, `ani:${id}`, veri)
+  const etiketler = etiketListesiAl(yeni.etiketler, m.benimId)
+  const kayit = await m.yayinla(kanal, TUR.ani, `ani:${id}`, {
+    ...veri,
+    ...(etiketler.length > 0 ? { etiketler } : {}),
+    ...(yeni.yorumlarKapali ? { yorumlar_kapali: true } : {}),
+  })
 
   // Public memories get a second, unencrypted copy on Keşfet.
   if (gorunurluk === 'herkes') {
@@ -670,13 +715,16 @@ export async function aniEkle(yeni: YeniAni): Promise<Ani> {
         arkadas_id: null,
         foto: kesfetFoto,
         ...(kesfetMedya.length > 0 ? { medya: kesfetMedya } : {}),
+        ...(yeni.yorumlarKapali ? { yorumlar_kapali: true } : {}),
         sahip,
       })
     } catch (err) {
       console.warn('anı Keşfet\'e eklenemedi', err)
     }
   }
-  return aniKur(kayit)!
+  const ani = aniKur(kayit)!
+  etiketlenenlereBildir(ani, ani.etiketler)
+  return ani
 }
 
 function medyaListesiAl(deger: unknown, aniId: string): AniMedyasi[] {
@@ -716,6 +764,9 @@ function aniKur(k: SosyalKayit): Ani | null {
     puan: puanAl(k.veri.puan),
     sahip: profilOzetiAl(k.veri.sahip),
     konu: k.konu,
+    etiketler: kanal?.tur === 'cift' || kanal?.tur === 'grup' || kanal?.tur === 'yayin' ? etiketListesiAl(k.veri.etiketler, k.yazar) : [],
+    yorumlar_kapali: k.veri.yorumlar_kapali === true,
+    arsivde: k.veri.arsivde === true,
   }
 }
 
@@ -729,6 +780,7 @@ export async function anilariGetir(secim: { grupId?: string | null; arkadasId?: 
   return kayitlar
     .filter((k) => !engelli.has(k.yazar))
     .flatMap((k) => aniKur(k) ?? [])
+    .filter((a) => !a.arsivde)
     .sort(tarihSirasi)
 }
 
@@ -762,7 +814,7 @@ export async function akisAnilariGetir(kapsam: AkisKapsami, limit = 60): Promise
       kayitlar
         .filter((k) => k.tur === TUR.ani)
         .flatMap((k) => aniKur(k) ?? [])
-        .filter((a) => a.foto),
+        .filter((a) => a.foto && !a.arsivde),
       (a) => ({ pk: a.sahip_id, onay: a.sahip?.onay }),
     )
     for (const a of anilar) if (a.sahip) kesfetSahipleri.set(a.sahip_id, a.sahip)
@@ -773,23 +825,53 @@ export async function akisAnilariGetir(kapsam: AkisKapsami, limit = 60): Promise
       .slice(0, limit)
   }
 
+  const engelli = await engellenenler()
+  const anilar = (await arkadasKanallarindakiAniler()).filter((a) => a.foto && !a.arsivde && !engelli.has(a.sahip_id))
+  return anilar.sort((a, b) => b.olusturulma.localeCompare(a.olusturulma)).slice(0, limit)
+}
+
+// Every memory on my pair and group channels, plus everyone's "all my
+// friends" posts, read from the local copy.
+async function arkadasKanallarindakiAniler(): Promise<Ani[]> {
+  const m = motor()
   const durum = await kanalDurumu()
-  // Pair and group channels, plus everyone's "all my friends" posts.
   const kanallar = [
     ...durum.cift.values(),
     ...[...durum.gruplar.values()].map((g) => g.kanal),
     ...(durum.yayin ? [durum.yayin] : []),
     ...durum.arkadasYayin.values(),
   ]
-  const engelli = await engellenenler()
   const anilar: Ani[] = []
   for (const kanal of kanallar) {
     for (const k of await m.kayitlar(kanal.konu, TUR.ani)) {
       const a = aniKur(k)
-      if (a?.foto && !engelli.has(a.sahip_id)) anilar.push(a)
+      if (a) anilar.push(a)
     }
   }
-  return anilar.sort((a, b) => b.olusturulma.localeCompare(a.olusturulma)).slice(0, limit)
+  return anilar
+}
+
+// My archived posts, the newest first: only I see them.
+export async function arsivdekiPaylasimlarim(): Promise<Ani[]> {
+  const benimId = motor().benimId
+  const anilar = await arkadasKanallarindakiAniler()
+  return anilar
+    .filter((a) => a.arsivde && a.sahip_id === benimId)
+    .sort((a, b) => b.olusturulma.localeCompare(a.olusturulma))
+}
+
+// The current version of a post as this device holds it: null when its
+// channel says it's gone (deleted or archived), undefined when this device
+// can't tell (a Keşfet post, or a channel it no longer follows).
+export async function yereldekiAni(konu: string, sahipId: string, aniId: string): Promise<Ani | null | undefined> {
+  const m = motor()
+  await kanalDurumu()
+  const kanal = kanalBilgisi(konu)
+  if (!kanal || (kanal.tur !== 'cift' && kanal.tur !== 'grup' && kanal.tur !== 'yayin')) return undefined
+  const k = await m.kayit(kanal, sahipId, `ani:${aniId}`)
+  if (!k || k.veri === null) return null
+  const ani = aniKur(k)
+  return ani && !ani.arsivde && !(await engellenenler()).has(sahipId) ? ani : null
 }
 
 // Names and photos for memory owners: people I know, plus the owner card
@@ -828,6 +910,58 @@ export async function aniMedyaUrl(ani: Ani, medya: AniMedyasi): Promise<string |
 // Deletes a post's extra items; the cover's chunks are deleted separately.
 async function medyaSil(kanal: Kanal, aniId: string, medya: AniMedyasi[]) {
   for (const o of medya) if (o.id !== aniId) await fotoSil(kanal, o.id, o.bilgi).catch(() => {})
+}
+
+// What the sharer can change on a post after sharing it.
+export interface AniDegisikligi {
+  etiketler?: string[]
+  yorumlarKapali?: boolean
+  arsivde?: boolean
+}
+
+// My copy of a post on Keşfet: from this device, or else from the relays.
+async function kesfetKopyam(aniId: string): Promise<{ kanal: Kanal; kayit: SosyalKayit } | null> {
+  const m = motor()
+  const kanal = await kesfetKanaliAl()
+  const anahtar = `ani:${aniId}`
+  let kayit = await m.kayit(kanal, m.benimId, anahtar)
+  if (!kayit) kayit = (await m.kanalSorgula(kanal, { authors: [m.benimId] })).find((k) => k.anahtar === anahtar && k.yazar === m.benimId)
+  return kayit && nesneMi(kayit.veri) ? { kanal, kayit } : null
+}
+
+// Changes one of my posts in place: who's tagged, comments on or off,
+// archived or not. The Keşfet copy follows (tags stay off it).
+export async function aniGuncelle(ani: Ani, degisiklik: AniDegisikligi): Promise<Ani> {
+  const m = motor()
+  if (ani.sahip_id !== m.benimId) throw new Error('Yalnızca kendi paylaşımlarını değiştirebilirsin.')
+  const kanal = await aniKanaliBul(ani)
+  if (!kanal) throw new Error('Paylaşım bulunamadı.')
+  const anahtar = `ani:${ani.id}`
+  const mevcut = await m.kayit(kanal, m.benimId, anahtar)
+  if (!mevcut || !nesneMi(mevcut.veri)) throw new Error('Paylaşım bulunamadı.')
+
+  const ortak: Record<string, unknown> = {}
+  if (degisiklik.yorumlarKapali !== undefined) ortak.yorumlar_kapali = degisiklik.yorumlarKapali
+  if (degisiklik.arsivde !== undefined) ortak.arsivde = degisiklik.arsivde
+  const etiketler = degisiklik.etiketler !== undefined ? etiketListesiAl(degisiklik.etiketler, m.benimId) : null
+  const kayit = await m.yayinla(kanal, TUR.ani, anahtar, {
+    ...mevcut.veri,
+    ...ortak,
+    ...(etiketler ? { etiketler } : {}),
+  })
+
+  if (ani.gorunurluk === 'herkes' && Object.keys(ortak).length > 0 && kanalBilgisi(ani.konu)?.tur !== 'kesfet') {
+    try {
+      const kopya = await kesfetKopyam(ani.id)
+      if (kopya) await m.yayinla(kopya.kanal, TUR.ani, anahtar, { ...(kopya.kayit.veri as object), ...ortak })
+    } catch (err) {
+      console.warn('Keşfet kopyası güncellenemedi', err)
+    }
+  }
+
+  const guncel = aniKur(kayit) ?? { ...ani, ...degisiklik }
+  if (etiketler) etiketlenenlereBildir(guncel, etiketler.filter((id) => !ani.etiketler.includes(id)))
+  return guncel
 }
 
 export async function aniSil(ani: Ani): Promise<void> {

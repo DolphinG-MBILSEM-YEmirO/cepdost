@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
-import { AkisKarti } from './AkisKarti'
+import { AkisKarti, type PaylasimOlayi } from './AkisKarti'
 import { AniYanitlari } from './AniYanitlari'
 import type { Ani } from '../sosyal/gruplar'
 import { ozettenProfil, type Profil } from '../sosyal/api'
-import { BOS_ETKILESIM, type AniEtkilesimi } from '../sosyal/aniEtkilesimi'
+import { BOS_ETKILESIM, yanitlanabilirMi, type AniEtkilesimi } from '../sosyal/aniEtkilesimi'
 import { useGeriIleKapat } from '../lib/geriTusu'
 
 // A set of memories opened one at a time, large, with their reactions and
@@ -19,9 +19,11 @@ interface Props {
   profiller: Map<string, Profil>
   benimId: string
   onKapat: () => void
+  // A post was changed from its menu (the set itself follows the sync).
+  onDegisti?: (olay: PaylasimOlayi) => void
 }
 
-export function AniPenceresi({ anilar, baslangicId, baslik, etkilesimler, profiller, benimId, onKapat }: Props) {
+export function AniPenceresi({ anilar, baslangicId, baslik, etkilesimler, profiller, benimId, onKapat, onDegisti }: Props) {
   useGeriIleKapat(onKapat)
   const [acikId, setAcikId] = useState(baslangicId)
   // The open one can be deleted elsewhere; then the set starts over.
@@ -49,6 +51,7 @@ export function AniPenceresi({ anilar, baslangicId, baslik, etkilesimler, profil
   }, [ani, onKapat])
 
   if (!ani) return null
+  const yanitlanabilir = yanitlanabilirMi(ani)
   const sahip = profiller.get(ani.sahip_id) ?? (ani.sahip ? ozettenProfil(ani.sahip_id, ani.sahip) : null)
 
   return (
@@ -93,13 +96,24 @@ export function AniPenceresi({ anilar, baslangicId, baslik, etkilesimler, profil
       <div className="flex-1 overflow-y-auto px-4 pb-[calc(2rem+var(--safe-bottom))]">
         <div className="max-w-md mx-auto">
           {/* Keyed, so a half-written comment doesn't follow to the next photo. */}
-          <AkisKarti key={ani.id} ani={ani} sahip={sahip} benimId={benimId} onEngellendi={onKapat}>
+          <AkisKarti
+            key={ani.id}
+            ani={ani}
+            sahip={sahip}
+            benimId={benimId}
+            onEngellendi={onKapat}
+            profiller={profiller}
+            etkilesim={etkilesimler.get(ani.id)}
+            yanitlanabilir={yanitlanabilir}
+            sahipIslemleri={yanitlanabilir}
+            onDegisti={onDegisti}
+          >
             <AniYanitlari
               ani={ani}
               etkilesim={etkilesimler.get(ani.id) ?? BOS_ETKILESIM}
               profiller={profiller}
               benimId={benimId}
-              yanitlanabilir
+              yanitlanabilir={yanitlanabilir}
             />
           </AkisKarti>
         </div>

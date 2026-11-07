@@ -4,11 +4,11 @@ import { ChatButton } from './ChatButton'
 import { EkranBasligi } from '../ui/EkranBasligi'
 import { BosDurum } from '../ui/BosDurum'
 import { SegmentedControl } from '../ui/SegmentedControl'
-import { AkisKarti } from './AkisKarti'
+import { AkisKarti, type PaylasimOlayi } from './AkisKarti'
 import { AniYanitlari } from './AniYanitlari'
 import { YakinMekanlar } from './YakinMekanlar'
 import { motor, motorVarMi, useSosyalSurum } from '../sosyal/cekirdek'
-import { akisAnilariGetir, gruplarimiGetir, profilleriGetir, type AkisKapsami, type Ani, type Grup } from '../sosyal/gruplar'
+import { akisAnilariGetir, aniGuncelle, gruplarimiGetir, profilleriGetir, type AkisKapsami, type Ani, type Grup } from '../sosyal/gruplar'
 import { ozettenProfil, type Profil } from '../sosyal/api'
 import { BOS_ETKILESIM, aniEtkilesimleri, gitmekIstiyorum, yanitlayanlar, type AniEtkilesimi } from '../sosyal/aniEtkilesimi'
 import { anidanPlan } from '../lib/planPaylasimi'
@@ -20,7 +20,9 @@ import { akisSecenekleri, secimdekiler, yeniMi, type AkisSecimi } from '../lib/a
 // Friends answer a memory with a reaction or a comment; anyone can say
 // they want to go there too, which puts the place in their calendar. The
 // friends feed narrows to one person or group, and marks what came in
-// since the last look on this device. Places near the person ("Yakınında",
+// since the last look on this device. A double tap likes a post; its "⋯"
+// menu saves it, and lets the sharer tag people, turn comments off,
+// archive or delete it. Places near the person ("Yakınında",
 // with at most one sponsored place) sit after the first post, so the feed
 // still opens on what people shared.
 
@@ -60,6 +62,8 @@ export function AkisView({ onPlanAc, onAsistan, onPaylas }: Props) {
   const [profiller, setProfiller] = useState<Map<string, Profil>>(new Map())
   const [etkilesimler, setEtkilesimler] = useState<Map<string, AniEtkilesimi>>(new Map())
   const [eklenen, setEklenen] = useState<Kayit | null>(null)
+  // A short note after a post was deleted or archived from its menu.
+  const [durum, setDurum] = useState<{ metin: string; geriAl?: () => void } | null>(null)
   const [hata, setHata] = useState<string | null>(null)
   const [gruplar, setGruplar] = useState<Map<string, Grup>>(new Map())
   const [secim, setSecim] = useState<AkisSecimi | null>(null)
@@ -85,7 +89,9 @@ export function AkisView({ onPlanAc, onAsistan, onPaylas }: Props) {
       setAnilar(liste)
       setEtkilesimler(yanitlar)
       setGruplar(new Map(grupListesi.map((g) => [g.id, g])))
-      setProfiller(await profilleriGetir([...liste.map((a) => a.sahip_id), ...yanitlayanlar(yanitlar)]))
+      setProfiller(
+        await profilleriGetir([...liste.map((a) => a.sahip_id), ...liste.flatMap((a) => a.etiketler), ...yanitlayanlar(yanitlar)]),
+      )
     } catch (err) {
       setHata(err instanceof Error ? err.message : 'Akış yüklenemedi')
     }
@@ -101,6 +107,34 @@ export function AkisView({ onPlanAc, onAsistan, onPaylas }: Props) {
     const zamanlayici = setTimeout(() => setEklenen(null), EKLENDI_MS)
     return () => clearTimeout(zamanlayici)
   }, [eklenen])
+
+  useEffect(() => {
+    if (!durum) return
+    const zamanlayici = setTimeout(() => setDurum(null), EKLENDI_MS)
+    return () => clearTimeout(zamanlayici)
+  }, [durum])
+
+  // A post changed from its menu: the feed follows at once, before the
+  // next sync.
+  function paylasimDegisti(olay: PaylasimOlayi) {
+    if (olay.tur === 'guncellendi') {
+      setAnilar((l) => l?.map((a) => (a.id === olay.ani.id ? { ...olay.ani, sahip: a.sahip } : a)) ?? l)
+      return
+    }
+    setAnilar((l) => l?.filter((a) => a.id !== olay.ani.id) ?? l)
+    if (olay.tur === 'silindi') setDurum({ metin: 'Paylaşım silindi' })
+    if (olay.tur === 'arsivlendi') {
+      setDurum({
+        metin: 'Arşivlendi, yalnızca sen görürsün',
+        geriAl: () => {
+          setDurum(null)
+          void aniGuncelle(olay.ani, { arsivde: false })
+            .then(() => tazele())
+            .catch((err) => setHata(err instanceof Error ? err.message : 'Arşivden çıkarılamadı'))
+        },
+      })
+    }
+  }
 
   // "Ben de gitmek istiyorum": the one who shared it hears about it (friends
   // feed only), and the place goes into my plans as an idea.
@@ -233,6 +267,11 @@ export function AkisView({ onPlanAc, onAsistan, onPaylas }: Props) {
                 yeni={arkadasAkisi && yeniMi(a, benimId, sonBakis)}
                 benimId={benimId}
                 onEngellendi={(kisiId) => setAnilar((l) => l?.filter((x) => x.sahip_id !== kisiId) ?? l)}
+                profiller={profiller}
+                etkilesim={etkilesimler.get(a.id)}
+                yanitlanabilir={arkadasAkisi}
+                sahipIslemleri={arkadasAkisi}
+                onDegisti={paylasimDegisti}
               >
                 <AniYanitlari
                   ani={a}
@@ -254,7 +293,7 @@ export function AkisView({ onPlanAc, onAsistan, onPaylas }: Props) {
         <div role="status" className="fixed z-[45] inset-x-4 mx-auto max-w-sm bottom-[calc(10.5rem+var(--safe-bottom))] lg:bottom-6 animate-fade-in">
           <div className="flex items-center gap-3 rounded-2xl bg-ink-800/95 text-white shadow-float pl-4 pr-2 py-2.5">
             <Icon name="CalendarPlus" className="w-4 h-4 text-teal-300 shrink-0" />
-            <span className="flex-1 text-sm leading-snug">Planlarına eklendi, günü sen seç</span>
+            <span className="flex-1 text-sm leading-snug">Gitmek istediklerine eklendi, günü sen seç</span>
             <button
               onClick={() => {
                 onPlanAc(eklenen)
@@ -262,8 +301,25 @@ export function AkisView({ onPlanAc, onAsistan, onPaylas }: Props) {
               }}
               className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold text-brand-200 hover:bg-white/10 active:opacity-80"
             >
-              Aç
+              Planla
             </button>
+          </div>
+        </div>
+      )}
+
+      {durum && !eklenen && (
+        <div role="status" className="fixed z-[45] inset-x-4 mx-auto max-w-sm bottom-[calc(10.5rem+var(--safe-bottom))] lg:bottom-6 animate-fade-in">
+          <div className="flex items-center gap-3 rounded-2xl bg-ink-800/95 text-white shadow-float pl-4 pr-2 py-2.5">
+            <Icon name={durum.geriAl ? 'Archive' : 'Check'} className="w-4 h-4 text-teal-300 shrink-0" />
+            <span className="flex-1 text-sm leading-snug py-1.5">{durum.metin}</span>
+            {durum.geriAl && (
+              <button
+                onClick={durum.geriAl}
+                className="shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold text-brand-200 hover:bg-white/10 active:opacity-80"
+              >
+                Geri al
+              </button>
+            )}
           </div>
         </div>
       )}

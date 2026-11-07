@@ -102,6 +102,10 @@ export const TUR = {
   sabit: 'sabit',
   gizle: 'gizle',
   yildiz: 'yildiz',
+  // Posts I saved, and posts whose place I want to go to, on my own
+  // channel (see kaydedilenler.ts).
+  kaydedilen: 'kaydedilen',
+  gitmekListesi: 'gitmek-listesi',
   // People I blocked (see engel.ts).
   engel: 'engel',
 } as const
