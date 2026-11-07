@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
+import { KurulumGeriDugmesi } from './KurulumGeriDugmesi'
 import { KOD_UZUNLUGU, epostaNormallestir, kodGoster, kodNormallestir } from '../../shared/epostaOnayi'
 import { epostayiKaydet, kodIste, koduDogrula, type KodBileti } from '../sosyal/eposta'
 import type { EpostaOnayi } from '../sosyal/epostaImzacisi'
@@ -204,9 +205,13 @@ export function EpostaDogrulamaEkrani({
 }) {
   return (
     <div className="flex flex-col h-full">
-      <div className="px-4 pt-[calc(1rem+var(--safe-top))] pb-3">
-        <h1 className="text-display text-ink-800 tracking-tight">E-postanı doğrula</h1>
-        <p className="text-sm text-ink-400 mt-0.5">Tek seferlik bir adım</p>
+      <div className="px-4 pt-[calc(1rem+var(--safe-top))] pb-3 flex items-start gap-3">
+        {/* Same as "Başka bir hesapla gir" below; the account stays on the relays. */}
+        <KurulumGeriDugmesi onCikis={onCikis} />
+        <div>
+          <h1 className="text-display text-ink-800 tracking-tight">E-postanı doğrula</h1>
+          <p className="text-sm text-ink-400 mt-0.5">Tek seferlik bir adım</p>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-24">

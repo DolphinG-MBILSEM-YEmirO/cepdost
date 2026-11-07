@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useGeriAdimi } from '../lib/geriTusu'
 import { Icon, type IconName } from './Icon'
 import { Avatar } from './Avatar'
 import { formatDate, formatDuration, formatPlanTime } from '../lib/format'
@@ -48,6 +49,8 @@ export function PlanLinkiEkrani({ link, girisli, onKapat, onSahibiEkle }: Props)
   const [gonderiliyor, setGonderiliyor] = useState<LinkYaniti | null>(null)
   const [takvimde, setTakvimde] = useState(false)
   const [arkadasMi, setArkadasMi] = useState(true)
+  // Signed in, the phone's back button leads into the app ("Uygulamaya dön").
+  useGeriAdimi(onKapat, girisli)
 
   const oku = useCallback(async () => {
     try {

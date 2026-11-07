@@ -5,6 +5,8 @@ import type { Gizlilik, Profil } from '../sosyal/api'
 import { epostaDogrulamasiGerekli, type EpostaOnayi } from '../sosyal/epostaImzacisi'
 import { hesabiKur, kullaniciAdiHatasi } from '../sosyal/hesap'
 import { UYGULAMA_ADI } from '../../shared/marka'
+import { useAuth } from '../sosyal/auth'
+import { KurulumGeriDugmesi } from './KurulumGeriDugmesi'
 
 // First step of a new account: name, username, a verified email (keeps
 // bots out) and who can see the profile. Shown while the account has no
@@ -13,9 +15,15 @@ import { UYGULAMA_ADI } from '../../shared/marka'
 interface Props {
   profil: Profil | null
   onTamamlandi: () => Promise<void>
+  /** Back to the welcome screen (signs out). */
+  onCikis: () => void
 }
 
-export function HesapKurulumu({ profil, onTamamlandi }: Props) {
+export function HesapKurulumu({ profil, onTamamlandi, onCikis }: Props) {
+  // An account made a moment ago holds nothing yet: going back just drops
+  // it. One left half-way earlier is only reachable with its recovery code
+  // afterwards, so that asks first.
+  const { yeniHesap } = useAuth()
   const [ad, setAd] = useState(profil?.ad ?? '')
   const [kullaniciAdi, setKullaniciAdi] = useState('')
   const [gizlilik, setGizlilik] = useState<Gizlilik>('arkadaslar')
@@ -68,9 +76,22 @@ export function HesapKurulumu({ profil, onTamamlandi }: Props) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-4 pt-[calc(1rem+var(--safe-top))] pb-3">
-        <h1 className="text-display text-ink-800 tracking-tight">Hesabını kur</h1>
-        <p className="text-sm text-ink-400 mt-0.5">Son bir adım kaldı</p>
+      <div className="px-4 pt-[calc(1rem+var(--safe-top))] pb-3 flex items-start gap-3">
+        <KurulumGeriDugmesi
+          onCikis={onCikis}
+          onay={
+            yeniHesap
+              ? undefined
+              : {
+                  baslik: 'Kurulumu bırak?',
+                  mesaj: 'Bu cihazda oturum kapanır. Bu hesaba sonra yalnızca kurtarma koduyla girebilirsin.',
+                }
+          }
+        />
+        <div>
+          <h1 className="text-display text-ink-800 tracking-tight">Hesabını kur</h1>
+          <p className="text-sm text-ink-400 mt-0.5">Son bir adım kaldı</p>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-24">

@@ -16,6 +16,11 @@ import { useEffect, useRef } from 'react'
 //
 // Overlays (`useGeriIleKapat`) also close with Escape; navigation steps
 // (`useGeriAdimi`) only answer to the back button.
+//
+// The native Android app (mobile/) doesn't rely on the WebView's history:
+// its back button asks `window.sharloopGeri()` (see `geriTusunaBas`), which
+// takes the top layer away and says whether there was one. Only when there
+// is none, on the root screen, does the app leave.
 
 interface Katman {
   geri: () => void
@@ -96,6 +101,28 @@ if (typeof window !== 'undefined') {
       return
     }
   })
+}
+
+/**
+ * One press of the back button, for the native shell. Takes the top layer
+ * away the same way the browser's back does and returns true, or returns
+ * false when nothing is open (the root screen), so the app may close.
+ */
+export function geriTusunaBas(): boolean {
+  if (yigin.length === 0) return false
+  if (derinlik > 0 && !gidiliyor) {
+    // Through the history, so the entries stay one per layer.
+    window.history.back()
+  } else {
+    // The history hasn't caught up yet: close the layer directly.
+    yigin[yigin.length - 1].geri()
+    planla()
+  }
+  return true
+}
+
+if (typeof window !== 'undefined') {
+  ;(window as unknown as { sharloopGeri?: () => boolean }).sharloopGeri = geriTusunaBas
 }
 
 function useKatman(geri: () => void, etkin: boolean, escape: boolean) {
