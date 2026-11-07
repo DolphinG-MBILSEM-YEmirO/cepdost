@@ -5,7 +5,7 @@ import { Icon, type IconName } from './Icon'
 import { motor, motorVarMi } from '../sosyal/cekirdek'
 import { isletmeFotoUrl, type IsletmeFotosu, type IsletmeProfili } from '../sosyal/isletme'
 import { anidanPlan } from '../lib/planPaylasimi'
-import { useGeriIleKapat } from '../lib/geriTusu'
+import { useGeriAdimi, useGeriIleKapat } from '../lib/geriTusu'
 import { googleAdresi, indirimKoduAl, yolTarifiAdresi, type IndirimKodu, type YakinOneri } from '../lib/yakin'
 import type { Kayit } from '../db'
 import { mesafeMetni } from '../../shared/yakinMekanlar'
@@ -107,6 +107,8 @@ export function MekanSayfasi({
   const [kod, setKod] = useState<IndirimKodu | null>(null)
   const [kodHatasi, setKodHatasi] = useState<string | null>(null)
   const [kodAliniyor, setKodAliniyor] = useState(false)
+  // The discount screen is a step inside the sheet: back returns to the place.
+  useGeriAdimi(() => setKod(null), kod !== null)
   const benim = motorVarMi() && isletme?.id === motor().benimId
 
   async function planYap() {
@@ -139,7 +141,16 @@ export function MekanSayfasi({
         className="w-full max-w-md max-h-[92vh] overflow-y-auto bg-mist-50 rounded-t-3xl p-5 pb-[calc(1.25rem+var(--safe-bottom))] animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="w-10 h-1 rounded-full bg-ink-200 mx-auto mb-4" />
+        <div className="relative mb-4">
+          <div className="w-10 h-1 rounded-full bg-ink-200 mx-auto" />
+          <button
+            onClick={onKapat}
+            aria-label="Kapat"
+            className="absolute -top-1.5 right-0 w-8 h-8 rounded-full bg-ink-100/80 hover:bg-ink-100 flex items-center justify-center basinca"
+          >
+            <Icon name="X" className="w-4 h-4 text-ink-500" />
+          </button>
+        </div>
 
         {kod && isletme?.indirim ? (
           <IndirimEkrani kod={kod} isletme={isletme} onGeri={() => setKod(null)} />

@@ -5,6 +5,7 @@ import android.os.Bundle;
 import com.getcapacitor.BridgeActivity;
 
 import app.sharloop.calendar.SharloopCalendarPlugin;
+import app.sharloop.navigation.BackButtonHandler;
 import app.sharloop.widgets.SharloopWidgetsPlugin;
 
 // The app's only screen: Sharloop's web app in Capacitor's WebView, plus our
@@ -17,5 +18,8 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(SharloopWidgetsPlugin.class);
         registerPlugin(SharloopCalendarPlugin.class);
         super.onCreate(savedInstanceState);
+        // The phone's back button goes back one step inside the web app and
+        // only leaves the app from its root screen.
+        getOnBackPressedDispatcher().addCallback(this, new BackButtonHandler(this, getBridge()));
     }
 }

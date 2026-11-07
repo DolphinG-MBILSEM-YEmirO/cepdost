@@ -3,6 +3,7 @@ import { Icon } from './Icon'
 import { Avatar } from './Avatar'
 import { ProfilDuzenle } from './ProfilDuzenle'
 import { PlanTercihleri } from './PlanTercihleri'
+import { useGeriAdimi } from '../lib/geriTusu'
 import { useAuth } from '../sosyal/auth'
 import { useSosyalSurum } from '../sosyal/cekirdek'
 import { avatarSil, avatarYukle } from '../sosyal/avatar'
@@ -107,6 +108,14 @@ function ProfilKarti({
   const [hata, setHata] = useState<string | null>(null)
   const [kaydediliyor, setKaydediliyor] = useState(false)
 
+  function duzenlemeyiBirak() {
+    setDuzenle(false)
+    setKullaniciAdi(profil.kullanici_adi ?? '')
+    setHata(null)
+  }
+  // The phone's back button cancels the username edit, like "Vazgeç".
+  useGeriAdimi(duzenlemeyiBirak, duzenle)
+
   async function kullaniciAdiKaydet() {
     setKaydediliyor(true)
     setHata(null)
@@ -154,14 +163,7 @@ function ProfilKarti({
                 {kaydediliyor ? '...' : 'Kaydet'}
               </button>
             </div>
-            <button
-              onClick={() => {
-                setDuzenle(false)
-                setKullaniciAdi(profil.kullanici_adi ?? '')
-                setHata(null)
-              }}
-              className="text-xs text-ink-400 mt-2"
-            >
+            <button onClick={duzenlemeyiBirak} className="text-xs text-ink-400 mt-2">
               Vazgeç
             </button>
           </div>

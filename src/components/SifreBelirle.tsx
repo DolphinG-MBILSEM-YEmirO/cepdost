@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Icon } from './Icon'
+import { KurulumGeriDugmesi } from './KurulumGeriDugmesi'
 import { useAuth } from '../sosyal/auth'
 import { SIFRE_MIN } from '../sosyal/hesap'
 
@@ -11,10 +12,13 @@ export function SifreBelirle({
   onTamamlandi,
   degistir = false,
   onVazgec,
+  onKurulumdanCik,
 }: {
   onTamamlandi: () => Promise<void>
   degistir?: boolean
   onVazgec?: () => void
+  /** During account setup: back to the welcome screen (signs out, after asking). */
+  onKurulumdanCik?: () => void
 }) {
   const { sifreBelirle } = useAuth()
   const [sifre, setSifre] = useState('')
@@ -61,6 +65,16 @@ export function SifreBelirle({
           >
             <Icon name="ArrowLeft" className="w-5 h-5 text-ink-500" />
           </button>
+        )}
+        {!onVazgec && onKurulumdanCik && (
+          <KurulumGeriDugmesi
+            onCikis={onKurulumdanCik}
+            onay={{
+              baslik: 'Hesap kurulumunu bırak?',
+              mesaj:
+                'Şifre belirlemeden çıkarsan bu hesaba yalnızca kurtarma koduyla girebilirsin. Baştan yeni bir hesap açmak istiyorsan çıkabilirsin.',
+            }}
+          />
         )}
         <div>
           <h1 className="text-display text-ink-800 tracking-tight">{degistir ? 'Şifreni değiştir' : 'Şifre belirle'}</h1>

@@ -415,7 +415,7 @@ export default function App() {
   if (!profil || !profil.kullanici_adi) {
     return (
       <TekEkran>
-        <HesapKurulumu profil={profil} onTamamlandi={profiliYukle} />
+        <HesapKurulumu profil={profil} onTamamlandi={profiliYukle} onCikis={() => void cikis()} />
       </TekEkran>
     )
   }
@@ -423,7 +423,7 @@ export default function App() {
   if (!profil.sifre_belirlendi) {
     return (
       <TekEkran>
-        <SifreBelirle onTamamlandi={profiliYukle} />
+        <SifreBelirle onTamamlandi={profiliYukle} onKurulumdanCik={() => void cikis()} />
       </TekEkran>
     )
   }
