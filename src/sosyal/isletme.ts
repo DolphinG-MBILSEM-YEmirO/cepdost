@@ -7,7 +7,7 @@ import { rastgeleId } from './nostr/kodlama'
 import { engellenenler } from './engel'
 import { mesafe, yasakliMi, yetiskinMi } from '../../shared/yakinMekanlar'
 import type { EpostaOnayi } from '../../shared/epostaOnayi'
-import { AZAMI_ODUL, ODUL_EN_AZ, ODUL_EN_COK, odulleriAl, type IsletmeOdulu } from '../../shared/sharpoint'
+import { AZAMI_ODUL, ODUL_EN_AZ, ODUL_EN_COK, odulleriAl, type IsletmeOdulu } from '../../shared/looppoint'
 
 // A business's public profile: what people see when its place comes up in
 // the feed's "Yakınında" (photos, contact, hours, a short description) and
@@ -50,7 +50,7 @@ export interface IsletmeProfili {
   saatler: string | null
   fotolar: IsletmeFotosu[]
   indirim: IsletmeIndirimi | null
-  // What SharPoint buys here (shared/sharpoint.ts), e.g. a free drink or
+  // What LoopPoint buys here (shared/looppoint.ts), e.g. a free drink or
   // reservation priority.
   oduller: IsletmeOdulu[]
   guncelleme: number

@@ -4,20 +4,20 @@ import qrcode from 'qrcode-generator'
 import { Icon, type IconName } from './Icon'
 import { motor, motorVarMi } from '../sosyal/cekirdek'
 import { isletmeFotoUrl, type IsletmeFotosu, type IsletmeProfili } from '../sosyal/isletme'
-import { planIsaretleri, useSharpoint } from '../sosyal/sharpoint'
+import { planIsaretleri, useLooppoint } from '../sosyal/looppoint'
 import { PlanOlustur, type Kapsam } from './PlanOlustur'
 import { anidanPlan } from '../lib/planPaylasimi'
 import { useGeriAdimi, useGeriIleKapat } from '../lib/geriTusu'
 import { googleAdresi, indirimKoduAl, yolTarifiAdresi, type IndirimKodu, type YakinOneri } from '../lib/yakin'
 import type { Kayit } from '../db'
 import { mesafeMetni, yetiskinMi } from '../../shared/yakinMekanlar'
-import { PUANLAR, SHARPOINT_ADI, ziyaretKazanci, type IsletmeOdulu } from '../../shared/sharpoint'
+import { PUANLAR, LOOPPOINT_ADI, ziyaretKazanci, type IsletmeOdulu } from '../../shared/looppoint'
 
 // A place's page, opened from the feed's "Yakınında": the business's own
 // photos, description, hours and contact when it has a profile; its Google
 // Maps page for reviews and more photos; directions, a plan, and the
 // business's discount with a code and QR to show at the till. Sponsored
-// places also suggest a plan, alone or with friends, that earns SharPoint
+// places also suggest a plan, alone or with friends, that earns LoopPoint
 // when the till scans the QR, and businesses' rewards can be spent here.
 
 export function kategoriSimgesi(kategori: string | null): IconName {
@@ -234,7 +234,7 @@ export function MekanSayfasi({
                 </p>
                 {isletme.indirim.kosul && <p className="text-xs text-teal-700 mt-1">{isletme.indirim.kosul}</p>}
                 <p className="text-xs text-teal-700 mt-1">
-                  Kasada QR'ını okutunca +{ziyaret} {SHARPOINT_ADI} kazanırsın.
+                  Kasada QR'ını okutunca +{ziyaret} {LOOPPOINT_ADI} kazanırsın.
                 </p>
                 <button
                   onClick={() => void koduAl()}
@@ -326,7 +326,7 @@ export function qrSvg(metin: string): string {
 
 // What to show at the till: the business scans the QR with its phone's
 // camera (or types the code) and its page says whether it's good today,
-// counts the SharPoint and spends the reward when one was picked. The
+// counts the LoopPoint and spends the reward when one was picked. The
 // clock ticks so a screenshot from another day is easy to spot.
 function IndirimEkrani({
   kod,
@@ -354,11 +354,11 @@ function IndirimEkrani({
     <div className="text-center">
       <p className="text-sm text-ink-400">{isletme.ad}</p>
       <p className="font-semibold text-ink-700 mt-1">
-        {odul ? `🎁 ${odul.metin}` : (isletme.indirim?.metin ?? `${SHARPOINT_ADI} kazan`)}
+        {odul ? `🎁 ${odul.metin}` : (isletme.indirim?.metin ?? `${LOOPPOINT_ADI} kazan`)}
       </p>
       {odul && (
         <p className="text-xs text-amber-700 mt-0.5">
-          {odul.puan} {SHARPOINT_ADI} harcanacak
+          {odul.puan} {LOOPPOINT_ADI} harcanacak
         </p>
       )}
       <div className={`my-4 rounded-3xl bg-white border-2 border-dashed p-5 ${odul ? 'border-amber-300' : 'border-teal-300'}`}>
@@ -377,7 +377,7 @@ function IndirimEkrani({
       <p className="text-xs text-ink-400 leading-relaxed mb-4">
         {odul
           ? 'Kasada göster: işletme QR\'ı telefonunun kamerasıyla okutunca ödülün onaylanır.'
-          : `Kasada göster: işletme QR'ı telefonunun kamerasıyla okutunca indirimin onaylanır ve +${puan} ${SHARPOINT_ADI} kazanırsın.`}{' '}
+          : `Kasada göster: işletme QR'ı telefonunun kamerasıyla okutunca indirimin onaylanır ve +${puan} ${LOOPPOINT_ADI} kazanırsın.`}{' '}
         Kod yalnızca bugün geçerli.
         {!odul && isletme.indirim?.kosul && ` ${isletme.indirim.kosul}.`}
       </p>
@@ -388,7 +388,7 @@ function IndirimEkrani({
   )
 }
 
-// A sponsored place suggests a plan: going earns SharPoint, more with
+// A sponsored place suggests a plan: going earns LoopPoint, more with
 // friends from the same plan.
 function PlanOnerisi({
   puan,
@@ -408,7 +408,7 @@ function PlanOnerisi({
         Plan önerisi
       </p>
       <p className="text-sm text-ink-600 mt-1 leading-relaxed">
-        Bu hafta buraya bir plan yap, gittiğinde kasada QR'ını okut: <b>+{puan} {SHARPOINT_ADI}</b>. Arkadaşlarınla aynı plana gelirseniz her biriniz{' '}
+        Bu hafta buraya bir plan yap, gittiğinde kasada QR'ını okut: <b>+{puan} {LOOPPOINT_ADI}</b>. Arkadaşlarınla aynı plana gelirseniz her biriniz{' '}
         <b>+{PUANLAR.grup}</b> daha kazanır.
       </p>
       {kuruldu ? (
@@ -433,13 +433,13 @@ function PlanOnerisi({
 
 // The business's rewards and what I have to spend on them.
 function Oduller({ oduller, mesgul, onKullan }: { oduller: IsletmeOdulu[]; mesgul: boolean; onKullan: (o: IsletmeOdulu) => void }) {
-  const { ozet, yukleniyor } = useSharpoint()
+  const { ozet, yukleniyor } = useLooppoint()
   return (
     <div className="rounded-2xl bg-amber-50 border border-amber-100 p-4 mb-4">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-semibold text-amber-800 flex items-center gap-2">
           <Icon name="Star" className="w-4 h-4" />
-          {SHARPOINT_ADI} ödülleri
+          {LOOPPOINT_ADI} ödülleri
         </p>
         <span className="text-xs font-semibold text-amber-800 tabular-nums">
           {yukleniyor && ozet.kazanilan === 0 ? '…' : `Bakiyen ${ozet.bakiye}`}
@@ -453,7 +453,7 @@ function Oduller({ oduller, mesgul, onKullan }: { oduller: IsletmeOdulu[]; mesgu
               <div className="min-w-0 flex-1">
                 <p className="text-sm text-ink-700">{o.metin}</p>
                 <p className="text-xs text-amber-700 tabular-nums">
-                  {o.puan} {SHARPOINT_ADI}
+                  {o.puan} {LOOPPOINT_ADI}
                   {eksik > 0 && ` · ${eksik} daha lazım`}
                 </p>
               </div>

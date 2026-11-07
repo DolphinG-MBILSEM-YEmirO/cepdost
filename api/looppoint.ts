@@ -1,4 +1,4 @@
-// SharPoint (shared/sharpoint.ts): points for going to the places Sharloop
+// LoopPoint (shared/looppoint.ts): points for going to the places Sharloop
 // suggests, proved by the business's till scanning the customer's QR.
 //
 //   GET                                → { imzaci }  the key every points
@@ -7,28 +7,28 @@
 //                                        its account (a signed request) and
 //                                        gets the key its till page keeps
 //   POST { islem: 'dogrula', i, kod, k, p?, o?, kasa }
-//                                      → { gecerli, sharpoint, odul }
+//                                      → { gecerli, looppoint, odul }
 //      i: business, kod: the day's code, k: the customer, p: plan hashes,
 //      o: a reward to spend, kasa: the till key. Checks the discount code
 //      like api/kupon.ts and, when the till key is right, counts the visit.
 //
-// Settings: KUPON_GIZLI (falls back to EPOSTA_GIZLI), SHARPOINT_ROLELERI.
+// Settings: KUPON_GIZLI (falls back to EPOSTA_GIZLI), LOOPPOINT_ROLELERI.
 
 import { timingSafeEqual } from 'node:crypto'
 import { verifyEvent, type Event } from 'nostr-tools/pure'
-import { KASA_ISTEK_TURU, KASA_ZAMAN_PAYI_SN, isaretleriTemizle } from '../shared/sharpoint.js'
+import { KASA_ISTEK_TURU, KASA_ZAMAN_PAYI_SN, isaretleriTemizle } from '../shared/looppoint.js'
 import { bugunTR, kampanyaCanliMi, koduTemizle } from '../shared/yakinMekanlar.js'
 import { KAMPANYALAR } from './_lib/kampanyalar.js'
 import { jsonGovdeOku, kaynakReddi, metinAl, yanit } from './_lib/http.js'
 import { ACIK_ANAHTAR, kodGecerliMi, kodUret, kuponGizlisi, sinirAsildiMi } from './_lib/kuponKodu.js'
 import { roleErisimi, type RoleErisimi } from './_lib/roleler.js'
-import { imzaAnahtari, imzaci, kasaAnahtari, ziyaretiIsle } from './_lib/sharpointDefteri.js'
+import { imzaAnahtari, imzaci, kasaAnahtari, ziyaretiIsle } from './_lib/looppointDefteri.js'
 
 export const config = { maxDuration: 25 }
 
 // Tests swap the relays for an in-memory stand-in.
 let roleUret: () => RoleErisimi & { kapat?: () => void } = () => roleErisimi()
-export function sharpointRoleleriniAyarla(yeni: (() => RoleErisimi) | null): void {
+export function looppointRoleleriniAyarla(yeni: (() => RoleErisimi) | null): void {
   roleUret = yeni ?? (() => roleErisimi())
 }
 
@@ -71,11 +71,11 @@ async function dogrula(gizli: string, veri: Record<string, unknown> | null): Pro
   const musteri = metinAl(veri?.k)
   // The code must be this customer's own code for today.
   if (!ACIK_ANAHTAR.test(musteri) || musteri === isletme || kodUret(gizli, isletme, musteri, gun) !== kod) {
-    return yanit({ gecerli: true, tarih: gun, sharpoint: null })
+    return yanit({ gecerli: true, tarih: gun, looppoint: null })
   }
   const kasa = metinAl(veri?.kasa)
   if (!kasa || !esitMi(kasa, kasaAnahtari(gizli, isletme))) {
-    return yanit({ gecerli: true, tarih: gun, sharpoint: null, kasaGerekli: true })
+    return yanit({ gecerli: true, tarih: gun, looppoint: null, kasaGerekli: true })
   }
 
   const odulId = metinAl(veri?.o)
@@ -94,12 +94,12 @@ async function dogrula(gizli: string, veri: Record<string, unknown> | null): Pro
     return yanit({
       gecerli: true,
       tarih: gun,
-      sharpoint: { kazanilan: sonuc.kazanilan, bakiye: sonuc.ozet.bakiye, seviye: sonuc.ozet.seviye },
+      looppoint: { kazanilan: sonuc.kazanilan, bakiye: sonuc.ozet.bakiye, seviye: sonuc.ozet.seviye },
       odul: sonuc.odul,
     })
   } catch (err) {
-    console.error('sharpoint', err)
-    return yanit({ gecerli: true, tarih: gun, sharpoint: null, error: 'SharPoint şu an kaydedilemedi. İndirim geçerli.' })
+    console.error('looppoint', err)
+    return yanit({ gecerli: true, tarih: gun, looppoint: null, error: 'LoopPoint şu an kaydedilemedi. İndirim geçerli.' })
   } finally {
     role.kapat?.()
   }
@@ -109,7 +109,7 @@ export async function POST(request: Request): Promise<Response> {
   const red = kaynakReddi(request)
   if (red) return red
   const gizli = kuponGizlisi()
-  if (!gizli) return yanit({ error: 'SharPoint şu an kullanılamıyor.' }, 503)
+  if (!gizli) return yanit({ error: 'LoopPoint şu an kullanılamıyor.' }, 503)
   if (sinirAsildiMi(request)) return yanit({ error: 'Çok fazla deneme. Biraz sonra tekrar dene.' }, 429)
   const govde = await jsonGovdeOku(request, 4096)
   if (!govde.ok) return govde.yanit

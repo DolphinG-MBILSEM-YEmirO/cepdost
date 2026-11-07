@@ -1,16 +1,16 @@
 import { useState } from 'react'
 import { Icon } from './Icon'
-import { useSharpoint } from '../sosyal/sharpoint'
-import { NEDEN_METINLERI, PUANLAR, SEVIYELER, SHARPOINT_ADI } from '../../shared/sharpoint'
+import { useLooppoint } from '../sosyal/looppoint'
+import { NEDEN_METINLERI, PUANLAR, SEVIYELER, LOOPPOINT_ADI } from '../../shared/looppoint'
 
-// The person's SharPoint on their profile: balance, level, what earned
+// The person's LoopPoint on their profile: balance, level, what earned
 // them and how to earn more. Points are written only by the server when a
-// business's till scans the person's QR (shared/sharpoint.ts).
+// business's till scans the person's QR (shared/looppoint.ts).
 
 const GOSTERILEN = 5
 
-export function SharpointKarti() {
-  const { ozet, hareketler, yukleniyor } = useSharpoint()
+export function LooppointKarti() {
+  const { ozet, hareketler, yukleniyor } = useLooppoint()
   const [tumu, setTumu] = useState(false)
   const sonraki = ozet.sonrakiSeviye
   const onceki = [...SEVIYELER].reverse().find((s) => s.esik <= ozet.kazanilan)?.esik ?? 0
@@ -18,14 +18,14 @@ export function SharpointKarti() {
   const liste = tumu ? hareketler : hareketler.slice(0, GOSTERILEN)
 
   return (
-    <section className="card p-5" aria-label={SHARPOINT_ADI}>
+    <section className="card p-5" aria-label={LOOPPOINT_ADI}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center">
             <Icon name="Star" className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="font-semibold text-ink-700 leading-tight">{SHARPOINT_ADI}</h2>
+            <h2 className="font-semibold text-ink-700 leading-tight">{LOOPPOINT_ADI}</h2>
             <p className="text-xs text-ink-400">{ozet.seviye} seviye</p>
           </div>
         </div>
@@ -40,7 +40,7 @@ export function SharpointKarti() {
         </div>
         <p className="text-xs text-ink-400 mt-1.5">
           {sonraki
-            ? `${sonraki.ad} seviye için ${sonraki.esik - ozet.kazanilan} ${SHARPOINT_ADI} daha. Üst seviyeleri işletmeler kasada görür, öncelik tanıyabilir.`
+            ? `${sonraki.ad} seviye için ${sonraki.esik - ozet.kazanilan} ${LOOPPOINT_ADI} daha. Üst seviyeleri işletmeler kasada görür, öncelik tanıyabilir.`
             : 'En üst seviyedesin. İşletmeler bunu kasada görür.'}
         </p>
       </div>

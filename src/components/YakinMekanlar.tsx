@@ -15,7 +15,7 @@ import {
   type YakinOneri,
 } from '../lib/yakin'
 import { mesafeMetni, puanlariTopla } from '../../shared/yakinMekanlar'
-import { SHARPOINT_ADI, ziyaretKazanci } from '../../shared/sharpoint'
+import { LOOPPOINT_ADI, ziyaretKazanci } from '../../shared/looppoint'
 
 // "Yakınında" in the feed: places near the person, best rated first, with
 // at most one labelled sponsored place (shared/yakinMekanlar.ts). Location
@@ -175,7 +175,7 @@ function MekanKarti({ oneri, onAc }: { oneri: YakinOneri; onAc: () => void }) {
       {kampanya && oneri.isletme && (oneri.isletme.indirim || oneri.isletme.oduller.length > 0) && (
         <p className="flex items-center gap-1 text-xs font-semibold text-amber-700 truncate">
           <Icon name="Star" className="w-3.5 h-3.5 shrink-0" />
-          Plan yap, git: +{ziyaretKazanci({ oneCikan: true, plan: true }).puan} {SHARPOINT_ADI}
+          Plan yap, git: +{ziyaretKazanci({ oneCikan: true, plan: true }).puan} {LOOPPOINT_ADI}
         </p>
       )}
     </button>

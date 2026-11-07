@@ -25,7 +25,7 @@ export interface Filtre {
 }
 
 // Free public relays that accept application data (kind 30078). Listed in
-// shared/ because the server writes SharPoint records to the same ones.
+// shared/ because the server writes LoopPoint records to the same ones.
 export { VARSAYILAN_ROLELER }
 
 const BAGLANMA_SURESI_MS = 4000

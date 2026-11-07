@@ -233,7 +233,7 @@ export function mesafeMetni(metre: number): string {
 
 // The page the QR on a code opens. A customer's QR also carries who they
 // are (k), short hashes of today's plan for the place (p) and a reward to
-// spend (o), so the till's scan can count SharPoint (shared/sharpoint.ts).
+// spend (o), so the till's scan can count LoopPoint (shared/looppoint.ts).
 export function dogrulamaAdresi(
   koken: string,
   isletme: string,

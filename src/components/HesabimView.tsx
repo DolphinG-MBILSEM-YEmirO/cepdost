@@ -12,7 +12,7 @@ import { gruplarimiGetir } from '../sosyal/gruplar'
 import { UYGULAMA_ADI } from '../../shared/marka'
 import type { Kayit } from '../db'
 import { PlanOzetiKarti } from './PlanIstatistikleri'
-import { SharpointKarti } from './SharpointKarti'
+import { LooppointKarti } from './LooppointKarti'
 
 // The person themselves: photo, name, username, bio, a summary of their
 // plans, and who sees their availability and profile. Friends, codes and
@@ -80,7 +80,7 @@ function HesabimIcerik({ kayitlar, onArkadaslar }: Props) {
                 onDegisti={tazele}
                 onArkadaslar={onArkadaslar}
               />
-              <SharpointKarti />
+              <LooppointKarti />
               <PlanOzetiKarti kayitlar={kayitlar} />
             </div>
             <GizlilikKarti profil={profil} onDegisti={tazele} />

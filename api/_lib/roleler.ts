@@ -1,8 +1,8 @@
-// The server's own short trips to the Nostr relays, for SharPoint: read a
+// The server's own short trips to the Nostr relays, for LoopPoint: read a
 // few records and write one or two, then hang up. The same free relays as
 // the app (shared/roleler.ts).
 //
-// Settings: SHARPOINT_ROLELERI (comma-separated, only for local testing
+// Settings: LOOPPOINT_ROLELERI (comma-separated, only for local testing
 // against a relay on this machine).
 
 import { SimplePool } from 'nostr-tools/pool'
@@ -10,7 +10,7 @@ import type { Filter } from 'nostr-tools/filter'
 import type { Event } from 'nostr-tools/pure'
 import { VARSAYILAN_ROLELER } from '../../shared/roleler.js'
 
-// What the SharPoint ledger needs from the relays; tests pass an in-memory
+// What the LoopPoint ledger needs from the relays; tests pass an in-memory
 // stand-in.
 export interface RoleErisimi {
   sorgula(filtre: Filter): Promise<Event[]>
@@ -20,7 +20,7 @@ export interface RoleErisimi {
 const BEKLEME_MS = 4000
 
 export function sunucuRoleleri(): string[] {
-  const ayar = process.env.SHARPOINT_ROLELERI?.split(',').map((r) => r.trim()).filter((r) => /^wss?:\/\//.test(r))
+  const ayar = process.env.LOOPPOINT_ROLELERI?.split(',').map((r) => r.trim()).filter((r) => /^wss?:\/\//.test(r))
   return ayar?.length ? ayar : VARSAYILAN_ROLELER
 }
 

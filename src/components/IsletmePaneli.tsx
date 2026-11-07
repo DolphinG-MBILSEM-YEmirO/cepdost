@@ -13,8 +13,8 @@ import {
   type IsletmeProfili,
 } from '../sosyal/isletme'
 import { konumAl } from '../lib/yakin'
-import { kasaAnahtariAl } from '../sosyal/sharpoint'
-import { AZAMI_ODUL, ODUL_EN_AZ, ODUL_EN_COK, SHARPOINT_ADI } from '../../shared/sharpoint'
+import { kasaAnahtariAl } from '../sosyal/looppoint'
+import { AZAMI_ODUL, ODUL_EN_AZ, ODUL_EN_COK, LOOPPOINT_ADI } from '../../shared/looppoint'
 import { useGeriIleKapat } from '../lib/geriTusu'
 import { SITE_ADRESI } from '../../shared/marka'
 import { dogrulamaAdresi } from '../../shared/yakinMekanlar'
@@ -362,10 +362,10 @@ function IsletmePaneli({
         <div className="rounded-2xl bg-amber-50 border border-amber-100 p-4">
           <span className="text-sm font-semibold text-amber-800 flex items-center gap-2">
             <Icon name="Star" className="w-4 h-4" />
-            {SHARPOINT_ADI} ödülleri
+            {LOOPPOINT_ADI} ödülleri
           </span>
           <span className="block text-xs text-amber-700 mt-0.5">
-            Müşteriler Sharloop'la geldikçe {SHARPOINT_ADI} biriktirir. Biriktirdiklerini burada senin ödüllerine harcayabilirler: bir ikram, ekstra
+            Müşteriler Sharloop'la geldikçe {LOOPPOINT_ADI} biriktirir. Biriktirdiklerini burada senin ödüllerine harcayabilirler: bir ikram, ekstra
             indirim ya da rezervasyon önceliği gibi.
           </span>
           <div className="flex flex-col gap-2 mt-3">
@@ -385,7 +385,7 @@ function IsletmePaneli({
                   onChange={(e) => odulDegistir(o.id, { puan: e.target.value.replace(/\D/g, '') })}
                   inputMode="numeric"
                   placeholder="150"
-                  aria-label={`Gereken ${SHARPOINT_ADI}`}
+                  aria-label={`Gereken ${LOOPPOINT_ADI}`}
                 />
                 <button
                   type="button"
@@ -408,7 +408,7 @@ function IsletmePaneli({
               </button>
             )}
             <span className="text-xs text-amber-700">
-              Puan {ODUL_EN_AZ}–{ODUL_EN_COK} arası. Öneri: "Hafta sonu rezervasyon önceliği" için 300, "Bir içecek ikram" için 150. Bir ziyaret 10–100 {SHARPOINT_ADI} kazandırır.
+              Puan {ODUL_EN_AZ}–{ODUL_EN_COK} arası. Öneri: "Hafta sonu rezervasyon önceliği" için 300, "Bir içecek ikram" için 150. Bir ziyaret 10–100 {LOOPPOINT_ADI} kazandırır.
             </span>
           </div>
         </div>
@@ -434,7 +434,7 @@ function IsletmePaneli({
             </h3>
             <p className="text-sm text-ink-400 mb-3">
               Bu QR'ı kasadaki telefonun kamerasıyla <b>bir kez</b> okut. O telefon artık senin kasan: müşterinin QR'ını okuttuğunda indirim
-              onaylanır, müşteri {SHARPOINT_ADI} kazanır ya da ödülünü kullanır. Bu QR'ı müşterilerle paylaşma.
+              onaylanır, müşteri {LOOPPOINT_ADI} kazanır ya da ödülünü kullanır. Bu QR'ı müşterilerle paylaşma.
             </p>
             {dogrulama ? (
               <>

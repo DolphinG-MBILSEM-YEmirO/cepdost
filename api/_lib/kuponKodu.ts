@@ -1,4 +1,4 @@
-// The day's discount codes (see api/kupon.ts): shared with api/sharpoint.ts,
+// The day's discount codes (see api/kupon.ts): shared with api/looppoint.ts,
 // which checks the same codes when a till scans them for points.
 
 import { createHmac } from 'node:crypto'

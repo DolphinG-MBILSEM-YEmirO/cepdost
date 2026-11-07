@@ -1,5 +1,5 @@
-// The SharPoint ledger on the server side: reads and writes the records
-// that carry a person's points (shared/sharpoint.ts explains the rules).
+// The LoopPoint ledger on the server side: reads and writes the records
+// that carry a person's points (shared/looppoint.ts explains the rules).
 //
 // Where things live, all on the public relays:
 //   - each person's points: their pair channel with the server's key,
@@ -18,7 +18,7 @@ import { hmac, jsonCoz, jsonSifrele } from '../../shared/kodlama.js'
 import { OLAY_TURU } from '../../shared/roleler.js'
 import {
   PUANLAR,
-  SHARPOINT_TURU,
+  LOOPPOINT_TURU,
   grupAnahtari,
   hareketAl,
   odulAnahtari,
@@ -27,14 +27,14 @@ import {
   ziyaretAnahtari,
   ziyaretKazanci,
   type IsletmeOdulu,
-  type SharpointHareketi,
-  type SharpointOzeti,
-} from '../../shared/sharpoint.js'
+  type LooppointHareketi,
+  type LooppointOzeti,
+} from '../../shared/looppoint.js'
 import { yetiskinMi } from '../../shared/yakinMekanlar.js'
 import type { RoleErisimi } from './roleler.js'
 
 export function imzaAnahtari(gizli: string): Uint8Array {
-  return new Uint8Array(createHmac('sha256', gizli).update('sharloop-sharpoint/imza').digest())
+  return new Uint8Array(createHmac('sha256', gizli).update('sharloop-looppoint/imza').digest())
 }
 
 export function imzaci(gizli: string): string {
@@ -51,7 +51,7 @@ export async function musteriKanali(sk: Uint8Array, musteri: string): Promise<Ka
 }
 
 async function sunucuKanali(sk: Uint8Array): Promise<KanalAnahtarlari> {
-  return gizlidenTuret(await hmac(sk, 'sharloop/sharpoint/sunucu'))
+  return gizlidenTuret(await hmac(sk, 'sharloop/looppoint/sunucu'))
 }
 
 interface Zarf {
@@ -116,7 +116,7 @@ export async function kayitYaz(
     },
     sk,
   )
-  if ((await role.yayinla(olay)) === 0) throw new Error('SharPoint şu an kaydedilemedi.')
+  if ((await role.yayinla(olay)) === 0) throw new Error('LoopPoint şu an kaydedilemedi.')
 }
 
 export interface IsletmeBilgisi {
@@ -135,10 +135,10 @@ export async function isletmeBilgisi(role: RoleErisimi, isletme: string): Promis
   return { ad: ad.trim().slice(0, 80), oduller: odulleriAl(oduller, yetiskinMi) }
 }
 
-function hareketler(kayitlar: Map<string, Zarf>): Map<string, SharpointHareketi> {
-  const sonuc = new Map<string, SharpointHareketi>()
+function hareketler(kayitlar: Map<string, Zarf>): Map<string, LooppointHareketi> {
+  const sonuc = new Map<string, LooppointHareketi>()
   for (const [k, z] of kayitlar) {
-    if (z.t !== SHARPOINT_TURU) continue
+    if (z.t !== LOOPPOINT_TURU) continue
     const h = hareketAl(z.v)
     if (h) sonuc.set(k, h)
   }
@@ -154,7 +154,7 @@ export type OdulSonucu =
 export interface ZiyaretSonucu {
   // Points this scan added (0 when today's visit was already counted).
   kazanilan: number
-  ozet: SharpointOzeti
+  ozet: LooppointOzeti
   odul: OdulSonucu | null
 }
 
@@ -183,8 +183,8 @@ export async function ziyaretiIsle(girdi: {
   const [kanal, bilgi] = await Promise.all([musteriKanali(sk, musteri), isletmeBilgisi(role, isletme)])
   const defter = hareketler(await kayitlariOku(role, kanal, sunucu))
   const isletmeAdi = bilgi?.ad ?? null
-  const yaz = async (anahtar: string, h: SharpointHareketi, k = kanal) => {
-    await kayitYaz(role, sk, k, SHARPOINT_TURU, anahtar, h)
+  const yaz = async (anahtar: string, h: LooppointHareketi, k = kanal) => {
+    await kayitYaz(role, sk, k, LOOPPOINT_TURU, anahtar, h)
     if (k === kanal) defter.set(anahtar, h)
   }
 
@@ -208,7 +208,7 @@ export async function ziyaretiIsle(girdi: {
     const arkadaslar = liste.filter((g) => g.k !== musteri && g.p.some((p) => isaretler.includes(p)))
     if (arkadaslar.length > 0) {
       const grup = grupAnahtari(isletme, gun)
-      const bonus = (): SharpointHareketi => ({ tur: 'kazanc', puan: PUANLAR.grup, isletme, isletmeAdi, nedenler: ['grup'], odul: null, gun, zaman })
+      const bonus = (): LooppointHareketi => ({ tur: 'kazanc', puan: PUANLAR.grup, isletme, isletmeAdi, nedenler: ['grup'], odul: null, gun, zaman })
       if (!defter.has(grup)) {
         await yaz(grup, bonus())
         kazanilan += PUANLAR.grup

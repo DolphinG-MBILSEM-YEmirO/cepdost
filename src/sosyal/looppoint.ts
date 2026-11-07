@@ -4,20 +4,20 @@ import { motor, motorVarMi, useSosyalSurum } from './cekirdek'
 import { db, type Kayit } from '../db'
 import {
   KASA_ISTEK_TURU,
-  SHARPOINT_TURU,
+  LOOPPOINT_TURU,
   hareketAl,
   ozetle,
   planIsareti,
-  type SharpointHareketi,
-  type SharpointOzeti,
-} from '../../shared/sharpoint'
+  type LooppointHareketi,
+  type LooppointOzeti,
+} from '../../shared/looppoint'
 import { bugunTR, mekanAnahtari } from '../../shared/yakinMekanlar'
 
-// The app's side of SharPoint (rules in shared/sharpoint.ts): reads the
+// The app's side of LoopPoint (rules in shared/looppoint.ts): reads the
 // points the server wrote for me, finds the plans a QR should mention,
 // and gets a business's till key.
 
-const IMZACI_ANAHTARI = 'cepdost_sharpoint_imzacisi'
+const IMZACI_ANAHTARI = 'cepdost_looppoint_imzacisi'
 
 function kayitliImzaci(): string | null {
   try {
@@ -31,16 +31,16 @@ function kayitliImzaci(): string | null {
 let imzaci: Promise<string | null> | null = null
 
 // Tests (and only tests) set the key directly.
-export function sharpointImzacisiniAyarla(anahtar: string | null): void {
+export function looppointImzacisiniAyarla(anahtar: string | null): void {
   imzaci = Promise.resolve(anahtar)
 }
 
 // The server key every points record must be signed with; null when this
-// deployment has SharPoint off. Remembered for offline use.
-export function sharpointImzacisi(): Promise<string | null> {
+// deployment has LoopPoint off. Remembered for offline use.
+export function looppointImzacisi(): Promise<string | null> {
   imzaci ??= (async () => {
     try {
-      const res = await fetch('/api/sharpoint', { signal: AbortSignal.timeout(6000) })
+      const res = await fetch('/api/looppoint', { signal: AbortSignal.timeout(6000) })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const veri = (await res.json()) as { imzaci?: unknown }
       const anahtar = typeof veri.imzaci === 'string' && /^[0-9a-f]{64}$/.test(veri.imzaci) ? veri.imzaci : null
@@ -60,14 +60,14 @@ export function sharpointImzacisi(): Promise<string | null> {
 
 // My points, newest first. `yenile` asks the relays first; otherwise the
 // copy on this device answers.
-export async function sharpointHareketleri(yenile = false): Promise<SharpointHareketi[]> {
+export async function looppointHareketleri(yenile = false): Promise<LooppointHareketi[]> {
   if (!motorVarMi()) return []
-  const anahtar = await sharpointImzacisi()
+  const anahtar = await looppointImzacisi()
   if (!anahtar) return []
   const m = motor()
   const kanal = await m.ciftKanali(anahtar)
   if (yenile) await m.kanalSorgula(kanal, { authors: [anahtar] }).catch(() => {})
-  const kayitlar = await m.kayitlar(kanal.konu, SHARPOINT_TURU)
+  const kayitlar = await m.kayitlar(kanal.konu, LOOPPOINT_TURU)
   return kayitlar
     // Only what the server wrote counts; I could write here too.
     .filter((k) => k.yazar === anahtar)
@@ -75,24 +75,24 @@ export async function sharpointHareketleri(yenile = false): Promise<SharpointHar
     .sort((a, b) => b.zaman - a.zaman)
 }
 
-export interface SharpointDurumu {
-  ozet: SharpointOzeti
-  hareketler: SharpointHareketi[]
+export interface LooppointDurumu {
+  ozet: LooppointOzeti
+  hareketler: LooppointHareketi[]
   yukleniyor: boolean
   yenile: () => void
 }
 
-export function useSharpoint(): SharpointDurumu {
+export function useLooppoint(): LooppointDurumu {
   const surum = useSosyalSurum()
-  const [hareketler, setHareketler] = useState<SharpointHareketi[]>([])
+  const [hareketler, setHareketler] = useState<LooppointHareketi[]>([])
   const [yukleniyor, setYukleniyor] = useState(true)
   const [istek, setIstek] = useState(0)
 
   useEffect(() => {
     let iptal = false
     // The stored copy first, then the relays once per mount or refresh.
-    void sharpointHareketleri(false).then((h) => !iptal && setHareketler(h))
-    void sharpointHareketleri(true)
+    void looppointHareketleri(false).then((h) => !iptal && setHareketler(h))
+    void looppointHareketleri(true)
       .then((h) => !iptal && setHareketler(h))
       .finally(() => !iptal && setYukleniyor(false))
     return () => {
@@ -104,7 +104,7 @@ export function useSharpoint(): SharpointDurumu {
     // Records synced in the background (another device, a scan).
     if (surum === 0) return
     let iptal = false
-    void sharpointHareketleri(false).then((h) => !iptal && setHareketler(h))
+    void looppointHareketleri(false).then((h) => !iptal && setHareketler(h))
     return () => {
       iptal = true
     }
@@ -140,7 +140,7 @@ export async function kasaAnahtariAl(): Promise<string> {
   )
   let res: Response
   try {
-    res = await fetch('/api/sharpoint', {
+    res = await fetch('/api/looppoint', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ islem: 'kasa', istek }),

@@ -1,9 +1,9 @@
 import { sha256Hex } from './kodlama.js'
 
-// SharPoint: points people earn by actually going to the places Sharloop
+// LoopPoint: points people earn by actually going to the places Sharloop
 // suggests, and spend on rewards the businesses choose (a discount, a free
 // drink, reservation priority...). Shared by the server, which writes every
-// earning and spending (api/sharpoint.ts), and the app, which shows them.
+// earning and spending (api/looppoint.ts), and the app, which shows them.
 //
 // Only the server can write points: each movement is a record signed with
 // the server's key on a channel only the person and the server can read
@@ -17,7 +17,7 @@ import { sha256Hex } from './kodlama.js'
 //   - a friend from the same plan was scanned there the same day: +30 each
 // Each kind counts once per business per day.
 
-export const SHARPOINT_ADI = 'SharPoint'
+export const LOOPPOINT_ADI = 'LoopPoint'
 
 export const PUANLAR = {
   ziyaret: 10,
@@ -84,9 +84,9 @@ export function odulleriAl(deger: unknown, urunYasakliMi: (metin: string) => boo
 // ---------- the ledger ----------
 
 // The record type on the person's channel with the server.
-export const SHARPOINT_TURU = 'sharpoint'
+export const LOOPPOINT_TURU = 'looppoint'
 
-export interface SharpointHareketi {
+export interface LooppointHareketi {
   tur: 'kazanc' | 'harcama'
   puan: number
   isletme: string
@@ -101,7 +101,7 @@ export interface SharpointHareketi {
 
 const NEDENLER = new Set<string>(Object.keys(NEDEN_METINLERI))
 
-export function hareketAl(veri: unknown): SharpointHareketi | null {
+export function hareketAl(veri: unknown): LooppointHareketi | null {
   if (typeof veri !== 'object' || veri === null) return null
   const v = veri as Record<string, unknown>
   if (v.tur !== 'kazanc' && v.tur !== 'harcama') return null
@@ -120,7 +120,7 @@ export function hareketAl(veri: unknown): SharpointHareketi | null {
   }
 }
 
-export interface SharpointOzeti {
+export interface LooppointOzeti {
   bakiye: number
   kazanilan: number
   harcanan: number
@@ -128,7 +128,7 @@ export interface SharpointOzeti {
   sonrakiSeviye: { ad: SeviyeAdi; esik: number } | null
 }
 
-export function ozetle(hareketler: SharpointHareketi[]): SharpointOzeti {
+export function ozetle(hareketler: LooppointHareketi[]): LooppointOzeti {
   let kazanilan = 0
   let harcanan = 0
   for (const h of hareketler) {
@@ -141,9 +141,9 @@ export function ozetle(hareketler: SharpointHareketi[]): SharpointOzeti {
 
 // Record keys: one per kind, business and day, so a second scan the same
 // day replaces instead of adding.
-export const ziyaretAnahtari = (isletme: string, gun: string) => `sp:ziyaret:${isletme}:${gun}`
-export const grupAnahtari = (isletme: string, gun: string) => `sp:grup:${isletme}:${gun}`
-export const odulAnahtari = (isletme: string, gun: string, odulId: string) => `sp:odul:${isletme}:${gun}:${odulId}`
+export const ziyaretAnahtari = (isletme: string, gun: string) => `lp:ziyaret:${isletme}:${gun}`
+export const grupAnahtari = (isletme: string, gun: string) => `lp:grup:${isletme}:${gun}`
+export const odulAnahtari = (isletme: string, gun: string, odulId: string) => `lp:odul:${isletme}:${gun}:${odulId}`
 
 // What a visit earns.
 export function ziyaretKazanci(secenek: { oneCikan: boolean; plan: boolean }): { puan: number; nedenler: KazancNedeni[] } {
