@@ -699,7 +699,7 @@ function MarkaPaneli() {
           ))}
         </ul>
       </div>
-      <p className="relative text-sm text-white/70">Ücretsiz. Reklamsız. Paylaştıkların uçtan uca şifreli.</p>
+      <p className="relative text-sm text-white/70">Ücretsiz. Paylaştıkların uçtan uca şifreli.</p>
     </div>
   )
 }

@@ -79,6 +79,12 @@ import {
   Globe,
   Play,
   Flag,
+  Navigation,
+  Ticket,
+  Coffee,
+  Trees,
+  Landmark,
+  LocateFixed,
 } from 'lucide-react'
 
 const iconMap = {
@@ -162,6 +168,12 @@ const iconMap = {
   Globe,
   Play,
   Flag,
+  Navigation,
+  Ticket,
+  Coffee,
+  Trees,
+  Landmark,
+  LocateFixed,
 }
 
 export type IconName = keyof typeof iconMap

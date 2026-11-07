@@ -15,7 +15,7 @@ tutulmalı (özellikle "Veri güvenliği" bölümü `public/legal/privacy.html` 
 | SKU (Apple) | `sharloop` |
 | Kategori | Sosyal Ağ (Social Networking); ikinci kategori: Yaşam Tarzı |
 | Fiyat | Ücretsiz, uygulama içi satın alma yok |
-| Reklam | Şimdilik yok ("Uygulamada reklam var mı?" → Hayır) |
+| Reklam | Kampanya canlıya alındığında **Evet** ("Uygulamada reklam var mı?"): Akış'ta "Sponsorlu" etiketli mekân önerisi. Kişiye özel hedefleme ve reklam kimliği yok; yalnızca o anki yaklaşık konum. Kampanya listesi boşken uygulamada reklam görünmez. |
 | Cihaz | iOS: yalnızca iPhone (iPad ekran görüntüsü gerekmesin diye). Android: telefon |
 | En düşük sürüm | iOS 17, Android 7 (API 24, Capacitor varsayılanı) |
 | Gizlilik politikası | https://sharloop.vercel.app/legal/privacy.html |
@@ -146,7 +146,7 @@ türü takip için kullanılmıyor. Her tür için amaç: **Uygulama İşlevsell
 | Kullanıcı içeriği → Fotoğraflar veya videolar | Evet | Anılar, paylaşımlar |
 | Kullanıcı içeriği → Diğer kullanıcı içeriği | Evet | Mesajlar, planlar, yorumlar |
 | Tanımlayıcılar → Kullanıcı kimliği | Evet | Hesabın açık anahtarı, kullanıcı adı |
-| Konum → Yaklaşık konum | Hayır | Sadece yakındaki mekân önerisi için, saklanmıyor |
+| Konum → Yaklaşık konum | Hayır | Yakındaki mekân önerisi (plan ve Akış "Yakınında"), ~1 km'ye yuvarlanır, saklanmıyor. Sponsorlu mekân seçimi de buna dayanır; bu "takip" sayılmaz çünkü başka şirketlerin verisiyle birleştirilmiyor |
 
 ## 5. Google Play: Veri güvenliği (Data safety) cevapları
 
@@ -241,7 +241,7 @@ kaybolursa Play Console'dan sıfırlatılabilir, yine de yedeklenmeli.
 ## 9. Google Play'de ilk yayın sırası
 
 1. Play Console'da uygulama oluştur: ad Sharloop, dil Türkçe, ücretsiz, uygulama.
-2. *Uygulama içeriği* bölümündeki formlar: gizlilik politikası, reklam yok,
+2. *Uygulama içeriği* bölümündeki formlar: gizlilik politikası, reklam (kampanya varsa "Evet"),
    uygulama erişimi (inceleme hesabı bilgisi), içerik derecelendirmesi, hedef
    kitle, veri güvenliği, hesap silme bağlantısı.
 3. *Test → Kapalı test*: bir test kanalı aç, imzalı `.aab` dosyasını yükle, en az

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>Sharloop İndirim Kodu</title>
+  <link rel="stylesheet" href="/legal/legal.css" />
+  <style>
+    /* The till page: one field, one big answer, readable at arm's length. */
+    main { max-width: 480px; }
+    form { display: flex; gap: 8px; margin-top: 16px; }
+    input {
+      flex: 1; min-width: 0; font: 600 1.4rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: 0.15em; text-transform: uppercase; padding: 14px 12px;
+      border: 2px solid var(--line); border-radius: 14px; background: var(--card); color: var(--ink);
+    }
+    input:focus { outline: none; border-color: var(--accent); }
+    button {
+      font: 600 1rem system-ui, sans-serif; padding: 0 18px; border: 0; border-radius: 14px;
+      background: var(--accent); color: #fff; cursor: pointer;
+    }
+    button:disabled { opacity: 0.6; }
+    .sonuc { margin-top: 20px; padding: 20px; border-radius: 16px; text-align: center; font-weight: 600; font-size: 1.15rem; }
+    .gecerli { background: #e6f7f1; color: #0f6b4f; border: 1px solid #b6e6d4; }
+    .gecersiz { background: #fdecef; color: #a3213b; border: 1px solid #f5c2cc; }
+    .bilgi { background: var(--card); color: var(--muted); border: 1px solid var(--line); font-weight: 500; font-size: 1rem; }
+    .sonuc small { display: block; font-weight: 500; font-size: 0.9rem; margin-top: 6px; }
+    @media (prefers-color-scheme: dark) {
+      .gecerli { background: #10372c; color: #8be3c3; border-color: #1d5a47; }
+      .gecersiz { background: #3d1820; color: #ff9fb1; border-color: #6a2533; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header><a class="brand" href="/">Sharloop</a></header>
+  <h1 id="baslik">İndirim kodu doğrula</h1>
+  <p class="muted" id="aciklama">Müşterinin Sharloop'ta gösterdiği 8 haneli kodu yazın. Kodlar yalnızca alındıkları gün geçerlidir.</p>
+
+  <form id="form" autocomplete="off">
+    <input id="kod" inputmode="text" maxlength="9" placeholder="ABCD-EFGH" aria-label="İndirim kodu" required />
+    <button id="dugme" type="submit">Kontrol et</button>
+  </form>
+  <div id="sonuc" role="status" aria-live="polite"></div>
+
+  <footer>Bu sayfa yalnızca kodun bugün ve bu kampanya için geçerli olup olmadığını söyler; müşteri hakkında bilgi göstermez.
+    Sorular için <a href="mailto:sharloop.destek@gmail.com">sharloop.destek@gmail.com</a></footer>
+</main>
+<script>
+  // The campaign comes from the link the business was given (?k=<id>).
+  const kampanya = new URLSearchParams(location.search).get('k') || ''
+  const form = document.getElementById('form')
+  const girdi = document.getElementById('kod')
+  const dugme = document.getElementById('dugme')
+  const sonuc = document.getElementById('sonuc')
+
+  function goster(sinif, metin, alt) {
+    sonuc.className = 'sonuc ' + sinif
+    sonuc.textContent = metin
+    if (alt) {
+      const s = document.createElement('small')
+      s.textContent = alt
+      sonuc.appendChild(s)
+    }
+  }
+
+  if (!kampanya) {
+    form.hidden = true
+    goster('bilgi', 'Bu sayfayı Sharloop\'un size gönderdiği bağlantıdan açın.')
+  }
+
+  // Types as "ABCD-EFGH" whatever is entered.
+  girdi.addEventListener('input', () => {
+    const temiz = girdi.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)
+    girdi.value = temiz.length > 4 ? temiz.slice(0, 4) + '-' + temiz.slice(4) : temiz
+  })
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault()
+    dugme.disabled = true
+    goster('bilgi', 'Kontrol ediliyor…')
+    try {
+      const yanit = await fetch('/api/kupon?k=' + encodeURIComponent(kampanya) + '&kod=' + encodeURIComponent(girdi.value))
+      const veri = await yanit.json().catch(() => null)
+      if (!yanit.ok || !veri) {
+        goster('gecersiz', (veri && veri.error) || 'Şu an kontrol edilemedi. Biraz sonra tekrar deneyin.')
+      } else if (veri.gecerli) {
+        goster('gecerli', '✓ Kod geçerli', veri.mekanAdi + ' · ' + veri.indirim.metin + (veri.indirim.kosul ? ' (' + veri.indirim.kosul + ')' : ''))
+      } else {
+        goster('gecersiz', '✗ Kod geçerli değil', 'Yanlış yazılmış, başka bir güne ya da başka bir kampanyaya ait olabilir.')
+      }
+    } catch {
+      goster('gecersiz', 'İnternet bağlantısı yok. Tekrar deneyin.')
+    } finally {
+      dugme.disabled = false
+    }
+  })
+</script>
+</body>
+</html>
